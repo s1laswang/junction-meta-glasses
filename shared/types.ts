@@ -49,4 +49,6 @@ export type ServerMsg =
   // and show a spinner; this hides the 2-4 s verify latency
   | { type: "checking"; phase: "start" | "end" }
   // added Sat 15:40 (CEO): HUD connection state, so the phone device panel can show "HUD connected"
-  | { type: "hud"; connected: boolean };
+  | { type: "hud"; connected: boolean }
+  // added Sat 16:40 (CEO): HUD/Neural Band events forwarded to phone sockets (dose log lives on the phone)
+  | { type: "hud_event"; name: "log_dose" | "repeat" | "dismiss" };
