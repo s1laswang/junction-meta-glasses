@@ -1,4 +1,19 @@
 .env
+.env.*
+!.env.example
 node_modules/
 __pycache__/
 .venv/
+dist/
+build/
+.claude/
+*.log
+.DS_Store
+# android
+android-dat/.gradle/
+android-dat/**/build/
+android-dat/local.properties
+android-dat/.idea/
+# eval data (large) lives on freighter /data/silas/junction-meta-glasses
+eval/out/
+eval/synthetic/
