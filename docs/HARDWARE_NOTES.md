@@ -24,7 +24,7 @@ Everything below was checked against the live docs on Sat 14 Nov 2026 (DAT SDK *
 ### Laptop (Momin's)
 - [ ] **Android Studio Narwhal (2025.1.1) or newer**, with **JDK 17** (the bundled JBR is fine). In the SDK Manager install **Android SDK Platform 36** and Build-Tools. (Sample prerequisites: [CameraAccess README](https://github.com/facebook/meta-wearables-dat-android/tree/main/samples/CameraAccess).)
 - [ ] `git clone https://github.com/facebook/meta-wearables-dat-android.git`
-- [ ] `git clone https://github.com/s1laswang/junction-meta-glasses.git` and check out branch `feat/glasses` (until it's merged to main).
+- [ ] `git clone https://github.com/s1laswang/junction-meta-glasses.git` on branch `main` (the bridge is merged).
 - [ ] Open `meta-wearables-dat-android/samples/CameraAccess` in Android Studio and let **Gradle sync finish**. That downloads Gradle 8.14.1, AGP 8.11.1, Kotlin 2.2.21 and the mwdat 1.0.1 AARs while you still have good wifi.
 - [ ] Create `samples/CameraAccess/local.properties` (Android Studio usually creates it with `sdk.dir=...`) and **add** these lines (Developer Mode values, not secrets):
   ```properties
@@ -87,7 +87,7 @@ If it fails, go to §7 Troubleshooting **before** trying our bridge.
 
 What it does: connects to the glasses via DAT, starts a camera stream at **720×1280 (`VideoQuality.HIGH`) @ 2 fps** (the lowest the SDK allows; valid fps are 2/7/15/24/30). It JPEG-encodes **at most ~1 frame/s** and POSTs it to `{server}/ingest/frame` (`image/jpeg`; `?session=<id>` only if a code is entered, otherwise the server uses the latest live session). If a POST is still in flight, the frame is dropped. It also POSTs device state (`connected`, `worn`, `battery`, `streaming`) to `{server}/ingest/state` on every change and every 10 s.
 
-1. The server and tunnel must be running on the demo laptop: `npm run dev` + `npm run tunnel`. Copy the printed `https://….trycloudflare.com` URL.
+1. The server and tunnel must be running on the demo laptop: `npm start` + `npm run tunnel` (with `HOLDUP_KEY` set, put `?key=<k>` on the Server URL field). Copy the printed `https://….trycloudflare.com` URL.
 2. Open the phone PWA (same tunnel URL) and start a session there. A session code is **not needed**: the server attaches the bridge to the latest live session.
 3. Android Studio → open `junction-meta-glasses/android-dat` → sync → **Run ▶ app** on the phone. No `local.properties` edits are needed (Developer Mode IDs default to `0`).
 4. In **HoldUp Bridge**:
