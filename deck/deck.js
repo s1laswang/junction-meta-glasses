@@ -1,6 +1,6 @@
 (function () {
   var DEFAULT_EVAL_DATA = {
-    generated_at: "2026-11-14T15:17:35Z",
+    generated_at: "2026-11-14T15:31:19Z",
     model: "gemini-3.8-flash",
     strength_min_conf: 0.80,
     ece: 0.0138,
@@ -24,10 +24,10 @@
     bystander_refusal_ms: 2574.8,
     calibration_p50_ms: 3424.9,
     verify_p50_ms: 3537.1,
-    unit_tests_passing: "475 / 475",
-    server_tests_passing: 176,
-    web_tests_passing: 285,
-    eval_tests_passing: 14,
+    unit_tests_passing: "530 / 530",
+    server_tests_passing: 190,
+    web_tests_passing: 320,
+    eval_tests_passing: 20,
     overall_verdict_accuracy: 0.9811,
     overall_verdict_summary: "98.1% (52 / 53)",
     total_label_cases_evaluated: 53,
@@ -42,11 +42,34 @@
     wave6_verdict_matches: 29,
     wave6_verdict_accuracy: 1.0,
     wave6_verdict_summary: "100% (29 / 29)",
-    combined_stress_cases_evaluated: 89,
-    combined_stress_verdict_matches: 89,
+    wave7_suites_count: 5,
+    wave7_cases_evaluated: 28,
+    wave7_verdict_matches: 28,
+    wave7_verdict_accuracy: 1.0,
+    wave7_verdict_summary: "100% (28 / 28)",
+    combined_stress_cases_evaluated: 117,
+    combined_stress_verdict_matches: 117,
     combined_stress_verdict_accuracy: 1.0,
-    combined_stress_verdict_summary: "100% (89 / 89)",
-    total_suites_compiled: 21,
+    combined_stress_verdict_summary: "100% (117 / 117)",
+    total_suites_compiled: 26,
+    orientation_verdict_summary: "10 / 10",
+    orientation_p50_ms: 4424.9,
+    prompt_injection_summary: "8 / 8 (100%)",
+    hijack_success_count: 0,
+    prompt_injection_p50_ms: 3886.5,
+    thermal_wear_summary: "10 / 10",
+    thermal_moderate_summary: "6 / 6",
+    thermal_severe_abstention_summary: "4 / 4",
+    thermal_wear_p50_ms: 3473.8,
+    concurrent_sessions_count: 25,
+    concurrent_websockets_count: 50,
+    concurrent_frames_ingested: 250,
+    cross_session_leak_count: 0,
+    post_disconnect_buffered_frames: 0,
+    multilingual_coaching_turns: 9,
+    multilingual_coaching_summary: "9 / 9 (100%)",
+    multilingual_coaching_mean_words: 7.56,
+    dose_hallucination_count: 0,
     e2e_verify_to_hud_p50_ms: 2738.8,
     e2e_live_first_event_ms: 1175.3,
     loopback_ingest_frame_p50_ms: 1.17,
@@ -86,8 +109,26 @@
       "e2e_websocket_live",
       "hud_latency_bandwidth",
       "tts_multilingual_audio"
+    ],
+    wave7_suites_present: [
+      "orientation_robustness_results",
+      "prompt_injection_labels_results",
+      "thermal_fade_wear_results",
+      "concurrent_sessions_results",
+      "multilingual_coaching_results"
     ]
   };
+
+  function pickNum(obj, keys) {
+    if (!obj || typeof obj !== "object") return null;
+    for (var i = 0; i < keys.length; i++) {
+      var val = obj[keys[i]];
+      if (typeof val === "number" && isFinite(val)) {
+        return val;
+      }
+    }
+    return null;
+  }
 
   function mergeEvalSource(base, incoming) {
     var out = {};
@@ -242,14 +283,193 @@
         out.expired_catch_recall = w6.expired_catch_recall;
       }
     }
+    if (incoming.wave7_summary && typeof incoming.wave7_summary === "object") {
+      var w7 = incoming.wave7_summary;
+      if (typeof w7.suites_count === "number") {
+        out.wave7_suites_count = w7.suites_count;
+      }
+      var w7Cases = pickNum(w7, [
+        "label_and_adversarial_cases_evaluated",
+        "label_cases_evaluated",
+        "verdict_cases_evaluated",
+        "total_cases_evaluated",
+        "cases_evaluated"
+      ]);
+      if (w7Cases !== null && typeof incoming.wave7_cases_evaluated !== "number") {
+        out.wave7_cases_evaluated = w7Cases;
+      }
+      var w7Matches = pickNum(w7, [
+        "label_and_adversarial_verdict_matches",
+        "label_verdict_matches",
+        "total_verdict_matches",
+        "verdict_matches"
+      ]);
+      if (w7Matches !== null && typeof incoming.wave7_verdict_matches !== "number") {
+        out.wave7_verdict_matches = w7Matches;
+      }
+      var w7Acc = pickNum(w7, [
+        "label_and_adversarial_verdict_accuracy",
+        "label_verdict_accuracy",
+        "overall_verdict_accuracy",
+        "verdict_accuracy"
+      ]);
+      if (
+        w7Acc === null &&
+        (w7Cases !== null || w7Matches !== null) &&
+        typeof out.wave7_verdict_matches === "number" &&
+        typeof out.wave7_cases_evaluated === "number" &&
+        out.wave7_cases_evaluated > 0
+      ) {
+        w7Acc = out.wave7_verdict_matches / out.wave7_cases_evaluated;
+      }
+      if (w7Acc !== null && typeof incoming.wave7_verdict_accuracy !== "number") {
+        out.wave7_verdict_accuracy = w7Acc;
+        var w7Pct = w7Acc === 1 ? "100%" : (w7Acc * 100).toFixed(1) + "%";
+        if (
+          typeof out.wave7_verdict_matches === "number" &&
+          typeof out.wave7_cases_evaluated === "number" &&
+          typeof incoming.wave7_verdict_summary !== "string"
+        ) {
+          out.wave7_verdict_summary = w7Pct + " (" + out.wave7_verdict_matches + " / " + out.wave7_cases_evaluated + ")";
+        }
+      }
+      if (
+        typeof w7.confident_wrong_dose_count === "number" &&
+        typeof incoming.total_confident_wrong_dose_count !== "number" &&
+        typeof incoming.confident_wrong_dose_count !== "number"
+      ) {
+        out.confident_wrong_dose_count = Number(out.confident_wrong_dose_count || 0) + w7.confident_wrong_dose_count;
+      }
+      if (
+        typeof w7.false_safe_allergen_count === "number" &&
+        typeof incoming.total_false_safe_allergen_count !== "number" &&
+        typeof incoming.false_safe_allergen_count !== "number"
+      ) {
+        out.false_safe_allergen_count = Number(out.false_safe_allergen_count || 0) + w7.false_safe_allergen_count;
+      }
+      var w7PiiLeaks = pickNum(w7, [
+        "coaching_bystander_leak_count",
+        "pii_or_bystander_leak_count",
+        "bystander_leak_count",
+        "pii_leak_count"
+      ]);
+      if (w7PiiLeaks !== null && typeof incoming.pii_leak_count !== "number") {
+        var extBaseLeaks =
+          incoming.extended_summary && typeof incoming.extended_summary.pii_or_bystander_leak_count === "number"
+            ? incoming.extended_summary.pii_or_bystander_leak_count
+            : 0;
+        out.pii_leak_count = extBaseLeaks + w7PiiLeaks;
+      }
+      var w7Hijacks = pickNum(w7, ["prompt_injection_hijack_count", "hijack_success_count", "injection_hijack_count"]);
+      if (w7Hijacks !== null && typeof incoming.hijack_success_count !== "number") {
+        out.hijack_success_count = w7Hijacks;
+      }
+      var w7InjRate = pickNum(w7, ["prompt_injection_resistance_rate", "injection_resistance_rate"]);
+      var w7InjCases = pickNum(w7, ["prompt_injection_cases", "injection_cases", "n_prompt_injection_items"]);
+      if (w7InjRate !== null && typeof incoming.prompt_injection_summary !== "string") {
+        var injDen = w7InjCases !== null ? w7InjCases : 8;
+        var injPass = w7Hijacks !== null ? Math.max(0, injDen - w7Hijacks) : Math.round(w7InjRate * injDen);
+        var injPct = w7InjRate === 1 ? "100%" : (w7InjRate * 100).toFixed(1) + "%";
+        out.prompt_injection_summary = injPass + " / " + injDen + " (" + injPct + ")";
+      }
+      var w7OrientP50 = pickNum(w7, ["orientation_p50_ms", "orientation_latency_p50_ms"]);
+      if (w7OrientP50 !== null && typeof incoming.orientation_p50_ms !== "number") {
+        out.orientation_p50_ms = w7OrientP50;
+      }
+      var w7InjP50 = pickNum(w7, ["prompt_injection_p50_ms", "injection_latency_p50_ms"]);
+      if (w7InjP50 !== null && typeof incoming.prompt_injection_p50_ms !== "number") {
+        out.prompt_injection_p50_ms = w7InjP50;
+      }
+      var w7ThermalP50 = pickNum(w7, ["thermal_wear_p50_ms", "thermal_fade_p50_ms", "thermal_latency_p50_ms"]);
+      if (w7ThermalP50 !== null && typeof incoming.thermal_wear_p50_ms !== "number") {
+        out.thermal_wear_p50_ms = w7ThermalP50;
+      }
+      var w7ConcSess = pickNum(w7, [
+        "concurrent_sessions_tested",
+        "concurrent_sessions",
+        "n_concurrent_sessions",
+        "concurrent_sessions_count"
+      ]);
+      if (w7ConcSess !== null && typeof incoming.concurrent_sessions_count !== "number") {
+        out.concurrent_sessions_count = w7ConcSess;
+      }
+      var w7ConcWs = pickNum(w7, [
+        "concurrent_websockets_tested",
+        "concurrent_websockets",
+        "n_concurrent_websockets",
+        "concurrent_websockets_count"
+      ]);
+      if (w7ConcWs !== null && typeof incoming.concurrent_websockets_count !== "number") {
+        out.concurrent_websockets_count = w7ConcWs;
+      }
+      var w7ConcFrames = pickNum(w7, [
+        "concurrent_total_frames_ingested",
+        "concurrent_frames_ingested",
+        "total_frames_ingested"
+      ]);
+      if (w7ConcFrames !== null && typeof incoming.concurrent_frames_ingested !== "number") {
+        out.concurrent_frames_ingested = w7ConcFrames;
+      }
+      var w7CrossLeak = pickNum(w7, [
+        "concurrent_cross_session_leak_count",
+        "cross_session_leak_count",
+        "session_leak_count"
+      ]);
+      if (w7CrossLeak !== null && typeof incoming.cross_session_leak_count !== "number") {
+        out.cross_session_leak_count = w7CrossLeak;
+      }
+      var w7PostFrames = pickNum(w7, [
+        "concurrent_post_disconnect_buffered_frames",
+        "post_disconnect_buffered_frames",
+        "post_disconnect_total_buffered_frames"
+      ]);
+      if (w7PostFrames !== null && typeof incoming.post_disconnect_buffered_frames !== "number") {
+        out.post_disconnect_buffered_frames = w7PostFrames;
+      }
+      var w7CoachTurns = pickNum(w7, [
+        "coaching_turns_evaluated",
+        "multilingual_coaching_turns",
+        "n_coaching_turns",
+        "n_turns"
+      ]);
+      if (w7CoachTurns !== null && typeof incoming.multilingual_coaching_turns !== "number") {
+        out.multilingual_coaching_turns = w7CoachTurns;
+      }
+      var w7CoachRate = pickNum(w7, [
+        "coaching_language_compliance_rate",
+        "multilingual_coaching_pass_rate",
+        "coaching_all_checks_pass_rate",
+        "all_checks_pass_rate"
+      ]);
+      if (w7CoachRate !== null && typeof incoming.multilingual_coaching_summary !== "string") {
+        var turnsDen = Number(out.multilingual_coaching_turns || 9);
+        var turnsPass = Math.round(w7CoachRate * turnsDen);
+        var turnsPct = w7CoachRate === 1 ? "100%" : (w7CoachRate * 100).toFixed(1) + "%";
+        out.multilingual_coaching_summary = turnsPass + " / " + turnsDen + " (" + turnsPct + ")";
+      }
+      var w7CoachWords = pickNum(w7, ["coaching_mean_word_count", "multilingual_coaching_mean_words", "mean_word_count"]);
+      if (w7CoachWords !== null && typeof incoming.multilingual_coaching_mean_words !== "number") {
+        out.multilingual_coaching_mean_words = w7CoachWords;
+      }
+      var w7DoseHalluc = pickNum(w7, ["coaching_dose_hallucination_count", "dose_hallucination_count"]);
+      if (w7DoseHalluc !== null && typeof incoming.dose_hallucination_count !== "number") {
+        out.dose_hallucination_count = w7DoseHalluc;
+      }
+    }
     if (typeof out.tts_valid_wav_count === "number" && typeof out.tts_n_utterances === "number" && typeof incoming.tts_wav_summary !== "string") {
       out.tts_wav_summary = out.tts_valid_wav_count + " / " + out.tts_n_utterances;
     }
     if (typeof incoming.combined_stress_cases_evaluated !== "number") {
-      out.combined_stress_cases_evaluated = Number(out.extended_cases_evaluated || 0) + Number(out.wave6_cases_evaluated || 0);
+      out.combined_stress_cases_evaluated =
+        Number(out.extended_cases_evaluated || 0) +
+        Number(out.wave6_cases_evaluated || 0) +
+        Number(out.wave7_cases_evaluated || 0);
     }
     if (typeof incoming.combined_stress_verdict_matches !== "number") {
-      out.combined_stress_verdict_matches = Number(out.extended_verdict_matches || 0) + Number(out.wave6_verdict_matches || 0);
+      out.combined_stress_verdict_matches =
+        Number(out.extended_verdict_matches || 0) +
+        Number(out.wave6_verdict_matches || 0) +
+        Number(out.wave7_verdict_matches || 0);
     }
     if (typeof out.combined_stress_cases_evaluated === "number" && out.combined_stress_cases_evaluated > 0 && typeof incoming.combined_stress_verdict_summary !== "string") {
       out.combined_stress_verdict_accuracy = out.combined_stress_verdict_matches / out.combined_stress_cases_evaluated;
@@ -257,10 +477,29 @@
       out.combined_stress_verdict_summary = csPct + " (" + out.combined_stress_verdict_matches + " / " + out.combined_stress_cases_evaluated + ")";
     }
     var mCore = Array.isArray(out.suites_present) ? out.suites_present.length : 9;
-    var mExt = Array.isArray(out.extended_suites_present) ? out.extended_suites_present.length : Number(out.extended_suites_count || 0);
-    var mW6 = Array.isArray(out.wave6_suites_present) ? out.wave6_suites_present.length : Number(out.wave6_suites_count || 0);
+    var mExt = Array.isArray(incoming.extended_suites_present)
+      ? incoming.extended_suites_present.length
+      : typeof out.extended_suites_count === "number"
+        ? out.extended_suites_count
+        : Array.isArray(out.extended_suites_present)
+          ? out.extended_suites_present.length
+          : 0;
+    var mW6 = Array.isArray(incoming.wave6_suites_present)
+      ? incoming.wave6_suites_present.length
+      : typeof out.wave6_suites_count === "number"
+        ? out.wave6_suites_count
+        : Array.isArray(out.wave6_suites_present)
+          ? out.wave6_suites_present.length
+          : 0;
+    var mW7 = Array.isArray(incoming.wave7_suites_present)
+      ? incoming.wave7_suites_present.length
+      : typeof out.wave7_suites_count === "number"
+        ? out.wave7_suites_count
+        : Array.isArray(out.wave7_suites_present)
+          ? out.wave7_suites_present.length
+          : 0;
     if (typeof incoming.total_suites_compiled !== "number") {
-      out.total_suites_compiled = mCore + mExt + mW6;
+      out.total_suites_compiled = mCore + mExt + mW6 + mW7;
     }
     if (incoming.artifacts && incoming.artifacts.calibration_curve) {
       var cc = incoming.artifacts.calibration_curve;
@@ -380,9 +619,19 @@
     setEvalField("extended_verdict_summary", data.extended_verdict_summary);
     setEvalField("wave6_cases_evaluated", data.wave6_cases_evaluated);
     setEvalField("wave6_verdict_summary", data.wave6_verdict_summary);
+    setEvalField("wave7_cases_evaluated", data.wave7_cases_evaluated);
+    setEvalField("wave7_verdict_summary", data.wave7_verdict_summary);
     setEvalField("combined_stress_cases_evaluated", data.combined_stress_cases_evaluated);
     setEvalField("combined_stress_verdict_summary", data.combined_stress_verdict_summary);
     setEvalField("total_suites_compiled", data.total_suites_compiled);
+    setEvalField("hijack_success_count", data.hijack_success_count);
+    setEvalField("prompt_injection_summary", data.prompt_injection_summary);
+    setEvalField("concurrent_sessions_count", data.concurrent_sessions_count);
+    setEvalField("cross_session_leak_count", data.cross_session_leak_count);
+    setEvalField("post_disconnect_buffered_frames", data.post_disconnect_buffered_frames);
+    setEvalField("multilingual_coaching_summary", data.multilingual_coaching_summary);
+    setEvalField("multilingual_coaching_mean_words", Number(data.multilingual_coaching_mean_words).toFixed(2));
+    setEvalField("dose_hallucination_count", data.dose_hallucination_count);
     setEvalField("e2e_verify_to_hud_p50_ms", Number(data.e2e_verify_to_hud_p50_ms).toFixed(1) + " ms");
     setEvalField("loopback_ingest_frame_p50_ms", Number(data.loopback_ingest_frame_p50_ms).toFixed(2) + " ms");
     setEvalField("loopback_hud_replay_p50_ms", Number(data.loopback_hud_replay_p50_ms).toFixed(2) + " ms");
@@ -400,11 +649,17 @@
     var coreCount = Array.isArray(data.suites_present) ? data.suites_present.length : 9;
     var extCount = Array.isArray(data.extended_suites_present) ? data.extended_suites_present.length : Number(data.extended_suites_count || 0);
     var w6Count = Array.isArray(data.wave6_suites_present) ? data.wave6_suites_present.length : Number(data.wave6_suites_count || 0);
-    var totalSuites = coreCount + extCount + w6Count;
+    var w7Count = Array.isArray(data.wave7_suites_present) ? data.wave7_suites_present.length : Number(data.wave7_suites_count || 0);
+    var totalSuites = typeof data.total_suites_compiled === "number" ? data.total_suites_compiled : coreCount + extCount + w6Count + w7Count;
 
     if (typeof data.overall_verdict_accuracy === "number" && data.total_label_cases_evaluated > 0) {
       var accPct = (data.overall_verdict_accuracy * 100).toFixed(1) + "%";
-      if (Number(data.wave6_cases_evaluated) > 0) {
+      if (Number(data.wave7_cases_evaluated) > 0) {
+        setEvalField(
+          "suite_sync_status",
+          "HOLDUP_EVAL_DATA synced: " + accPct + " core (" + data.total_verdict_matches + "/" + data.total_label_cases_evaluated + ") + " + data.combined_stress_verdict_summary + " stress/W6/W7 (" + totalSuites + " suites)"
+        );
+      } else if (Number(data.wave6_cases_evaluated) > 0) {
         setEvalField(
           "suite_sync_status",
           "HOLDUP_EVAL_DATA synced: " + accPct + " core (" + data.total_verdict_matches + "/" + data.total_label_cases_evaluated + ") + " + data.combined_stress_verdict_summary + " stress/Wave-6 (" + totalSuites + " suites)"

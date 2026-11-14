@@ -1,0 +1,616 @@
+{
+  "generated_at": "2026-11-14T15:56:34.276050+00:00",
+  "eval_now_iso": "2026-11-14T12:00:00Z",
+  "model": "gemini-3.8-flash",
+  "profile_summary": {
+    "meds": [
+      "Amlodipin 5 mg (evening)",
+      "Metformin 500 mg (morning/evening)",
+      "Panadol 500 mg (as needed)"
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ]
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "n_items": 8,
+    "n_intact_tile": 4,
+    "n_truncated_strength": 4,
+    "intact_tile_matches": 4,
+    "intact_tile_accuracy": 1.0,
+    "truncated_abstained_count": 4,
+    "truncated_abstention_rate": 1.0,
+    "verdict_matches": 8,
+    "verdict_accuracy": 1.0,
+    "confident_wrong_dose_count": 0,
+    "false_safe_allergen_count": 0,
+    "latency_p50_ms": 4109.0,
+    "latency_p95_ms": 4597.5,
+    "latency_mean_ms": 3921.2,
+    "tokens_in": 19948,
+    "tokens_out": 1045,
+    "tokens_thinking": 360
+  },
+  "items": [
+    {
+      "id": "bs_01",
+      "strip_condition": "intact_repeating_tiles",
+      "cut_mode": "corner_scissor_trim_plus_one_popped_pocket",
+      "question": "Is this my evening pill?",
+      "description": "Partially popped and corner-scissor-trimmed silver blister strip with 3 intact repeating diagonal foil tiles reading Amlodipin 5 mg (amlodipiini / amlodipine) and EXP 2027-11",
+      "image_path": "eval/out/blister_strip_cuts/bs_01.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 98870,
+      "intact_tile": true,
+      "strength_readable": true,
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "expected_strength": "5 mg",
+      "strength_value": "5 mg",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "intact_tile_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "verify_checklabel_parity": true,
+      "latency_ms": 2854.0,
+      "tokens_in": 2493,
+      "tokens_out": 116,
+      "tokens_thinking": 0,
+      "model": "gemini-3.8-flash",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Amlodipin",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Amlodipine 5 mg, your evening pill",
+        "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+        "reasons": [
+          "matches aml",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "aml",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "bs_02",
+      "strip_condition": "intact_repeating_tiles",
+      "cut_mode": "angled_left_scissor_trim_plus_popped_pocket",
+      "question": "Can I take this painkiller?",
+      "description": "Partially popped and scissor-trimmed silver blister strip with 3 intact repeating diagonal foil tiles reading Burana 400 mg (ibuprofeeni / ibuprofen) triggering NSAID avoid warning",
+      "image_path": "eval/out/blister_strip_cuts/bs_02.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 98983,
+      "intact_tile": true,
+      "strength_readable": true,
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "expected_strength": "400 mg",
+      "strength_value": "400 mg",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "intact_tile_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "verify_checklabel_parity": true,
+      "latency_ms": 4243.0,
+      "tokens_in": 2494,
+      "tokens_out": 219,
+      "tokens_thinking": 0,
+      "model": "gemini-3.8-flash",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Burana",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "ibuprofen",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "400 mg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Ibuprofen 400 mg: not on your list",
+        "speech": "This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.",
+        "reasons": [
+          "ibuprofen is an NSAID, on your avoid list",
+          "not on your medication list"
+        ]
+      }
+    },
+    {
+      "id": "bs_03",
+      "strip_condition": "intact_repeating_tiles",
+      "cut_mode": "l_notch_scissor_cut_plus_popped_pocket",
+      "question": "Is this my evening pill?",
+      "description": "Scissor-notched blister foil strip with 1 popped pocket and 3 intact repeating diagonal foil tiles reading Amlodipin 10 mg triggering wrong-strength warning against 5 mg schedule",
+      "image_path": "eval/out/blister_strip_cuts/bs_03.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 94821,
+      "intact_tile": true,
+      "strength_readable": true,
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "expected_strength": "10 mg",
+      "strength_value": "10 mg",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "intact_tile_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "verify_checklabel_parity": true,
+      "latency_ms": 3383.0,
+      "tokens_in": 2493,
+      "tokens_out": 117,
+      "tokens_thinking": 0,
+      "model": "gemini-3.8-flash",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Amlodipin",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "10 mg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-09",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Amlodipine 10 mg: wrong strength",
+        "speech": "This is Amlodipine 10 mg, but your list says 5 mg. Don't take it before checking with a pharmacist.",
+        "reasons": [
+          "strength 10 mg differs from your 5 mg"
+        ],
+        "matchedMedId": "aml"
+      }
+    },
+    {
+      "id": "bs_04",
+      "strip_condition": "intact_repeating_tiles",
+      "cut_mode": "bottom_left_scissor_trim_plus_popped_pocket",
+      "question": "Is this my evening Metformin?",
+      "description": "Partially popped and scissor-trimmed silver blister strip with 3 intact repeating tiles reading Metformin 500 mg and crimped seal EXP 2024-12 triggering expired warning",
+      "image_path": "eval/out/blister_strip_cuts/bs_04.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 98036,
+      "intact_tile": true,
+      "strength_readable": true,
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "expected_strength": "500 mg",
+      "strength_value": "500 mg",
+      "strength_confidence": 0.99,
+      "strength_correct": true,
+      "intact_tile_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "verify_checklabel_parity": true,
+      "latency_ms": 3552.0,
+      "tokens_in": 2494,
+      "tokens_out": 115,
+      "tokens_thinking": 0,
+      "model": "gemini-3.8-flash",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Metformin",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "expiry": {
+          "value": "2024-12",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Metformin 500 mg: expired",
+        "speech": "This is Metformin 500 mg, your medicine, but it expired in December 2024. Don't take it, ask a pharmacist for a new pack.",
+        "reasons": [
+          "expired 2024-12"
+        ],
+        "matchedMedId": "met"
+      }
+    },
+    {
+      "id": "bs_05",
+      "strip_condition": "truncated_strength",
+      "cut_mode": "all_pockets_punched_through_mg_digits",
+      "question": "Is this my evening pill?",
+      "description": "4-pocket metallic blister strip where every popped foil cavity punches directly through the numeric strength leaving only AMLODIPIN [foil hole] mg",
+      "image_path": "eval/out/blister_strip_cuts/bs_05.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 92690,
+      "intact_tile": false,
+      "strength_readable": false,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_correct": null,
+      "intact_tile_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "verify_checklabel_parity": true,
+      "latency_ms": 4178.0,
+      "tokens_in": 2493,
+      "tokens_out": 121,
+      "tokens_thinking": 142,
+      "model": "gemini-3.8-flash",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPIN",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.4,
+        "guidance": "Check the box or an intact blister for the strength."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Amlodipine: strength unclear",
+        "speech": "It looks like Amlodipine, but I can't read the strength confidently. Check the box or an intact blister for the strength.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "aml"
+      }
+    },
+    {
+      "id": "bs_06",
+      "strip_condition": "truncated_strength",
+      "cut_mode": "single_pocket_scissor_stub",
+      "question": "Is this my Metformin?",
+      "description": "Scissor-trimmed single-pocket metallic foil stub where the right-hand scissor cut slices cleanly right after METFORMIN removing every strength digit",
+      "image_path": "eval/out/blister_strip_cuts/bs_06.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 70796,
+      "intact_tile": false,
+      "strength_readable": false,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_correct": null,
+      "intact_tile_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "verify_checklabel_parity": true,
+      "latency_ms": 4040.0,
+      "tokens_in": 2493,
+      "tokens_out": 119,
+      "tokens_thinking": 110,
+      "model": "gemini-3.8-flash",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.6,
+        "guidance": "Show other blister pockets or box to check the strength."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Metformin: strength unclear",
+        "speech": "It looks like Metformin, but I can't read the strength confidently. Show other blister pockets or box to check the strength.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "met"
+      }
+    },
+    {
+      "id": "bs_07",
+      "strip_condition": "truncated_strength",
+      "cut_mode": "narrow_two_pocket_scissor_strip",
+      "question": "What strength is this Panadol?",
+      "description": "Scissor-trimmed 2-pocket Panadol foil strip where one tile has a punched foil hole over the digits (PANADOL [foil hole] mg) and the second tile is sliced off at PANADOL [scissor cut]",
+      "image_path": "eval/out/blister_strip_cuts/bs_07.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 70796,
+      "intact_tile": false,
+      "strength_readable": false,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_correct": null,
+      "intact_tile_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "verify_checklabel_parity": true,
+      "latency_ms": 4685.0,
+      "tokens_in": 2494,
+      "tokens_out": 119,
+      "tokens_thinking": 108,
+      "model": "gemini-3.8-flash",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Panadol",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "paracetamol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.4,
+        "guidance": "The strength number is torn out; check another blister pocket."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Paracetamol: strength unclear",
+        "speech": "It looks like Paracetamol, but I can't read the strength confidently. The strength number is torn out; check another blister pocket.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "par"
+      }
+    },
+    {
+      "id": "bs_08",
+      "strip_condition": "truncated_strength",
+      "cut_mode": "diagonal_scissor_stub_with_popped_cavity",
+      "question": "Is this my blood pressure pill?",
+      "description": "Diagonally scissor-trimmed 2-pocket Amlodipin foil stub combining AMLODIPIN [foil hole] mg on the popped pocket and AMLODIPIN [scissor cut] on the intact pocket",
+      "image_path": "eval/out/blister_strip_cuts/bs_08.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 76236,
+      "intact_tile": false,
+      "strength_readable": false,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.2,
+      "strength_correct": null,
+      "intact_tile_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "verify_checklabel_parity": true,
+      "latency_ms": 4435.0,
+      "tokens_in": 2494,
+      "tokens_out": 119,
+      "tokens_thinking": 0,
+      "model": "gemini-3.8-flash",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPIN",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.2
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.6,
+        "guidance": "Turn the blister to show an intact section."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Amlodipine: strength unclear",
+        "speech": "It looks like Amlodipine, but I can't read the strength confidently. Turn the blister to show an intact section.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "aml"
+      }
+    }
+  ]
+}
