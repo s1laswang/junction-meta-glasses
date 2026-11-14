@@ -20,9 +20,11 @@ export function createApp(opts?: { repoRoot?: string }) {
   const root = opts?.repoRoot ?? REPO_ROOT;
   const app = express();
   app.disable("x-powered-by");
+  app.use("/api", (_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
 
   let healthCache: { at: number; ok: boolean } | undefined;
   app.get("/api/health", async (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
     if (!healthCache || Date.now() - healthCache.at > 30_000) {
       let ok = false;
       try {
@@ -39,11 +41,12 @@ export function createApp(opts?: { repoRoot?: string }) {
     });
   });
 
-  app.get("/api/stats", (_req, res) => { res.json(stats()); });
+  app.get("/api/stats", (_req, res) => { res.setHeader("Cache-Control", "no-store"); res.json(stats()); });
 
   const evalSummaryFile = path.join(root, "eval", "combined_summary.json");
   let evalCache: { at: number; summary: Record<string, unknown> } | undefined;
   app.get("/api/eval-summary", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
     const now = Date.now();
     if (evalCache && now - evalCache.at <= 10_000) {
       res.json({ ok: true, summary: evalCache.summary });
@@ -85,10 +88,11 @@ export function createApp(opts?: { repoRoot?: string }) {
   });
 
   app.post("/api/verify", express.json({ limit: "12mb" }), async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
     const frames = Array.isArray(req.body?.frames) ? (req.body.frames as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 100) : [];
     if (!frames.length) { res.status(400).json({ type: "error", code: "bad_input", message: "frames[] (base64 JPEG) required", recoverable: true }); return; }
     const sessionParam = typeof req.body?.session === "string" ? req.body.session : undefined;
-    const picked = frames.slice(-3).map((f, i) => ({ f, i, s: f.length })).sort((a, b) => b.s - a.s).slice(0, 2).map((x) => x.f);
+    const picked = frames.slice(-3).map((f, i) => ({ f, i, s: jpegSharpness(Buffer.from(f, "base64")) || f.length * 1e-9 })).sort((a, b) => b.s - a.s).slice(0, 2).map((x) => x.f);
     const t = Date.now();
     const r = await verify(picked, toProfile(req.body?.profile), typeof req.body?.question === "string" ? req.body.question : undefined);
     const hub = resolveHub(sessionParam);
@@ -98,6 +102,7 @@ export function createApp(opts?: { repoRoot?: string }) {
   });
 
   app.post("/api/tts", express.json({ limit: "64kb" }), async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
     const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 600) : "";
     if (!text) { res.status(400).json({ type: "error", code: "bad_input", message: "text required", recoverable: true }); return; }
     for (const model of env.ttsModels) {
@@ -158,7 +163,7 @@ export function createApp(opts?: { repoRoot?: string }) {
   });
 
   const dist = path.join(root, "web", "dist");
-  app.use(express.static(dist, { index: "index.html", maxAge: "1h" }));
+  app.use(express.static(dist, { index: "index.html", maxAge: "1h", dotfiles: "allow" }));
   app.use((req, res, next) => {
     if (req.method !== "GET" || /^\/(api|ingest|live|hud-ws|deck)\b/.test(req.path) || /\.html$/i.test(req.path)) return next();
     const indexHtml = path.join(dist, "index.html");
