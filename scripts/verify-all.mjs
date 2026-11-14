@@ -15,11 +15,11 @@ const localTsx = path.join(
   process.platform === "win32" ? "tsx.cmd" : "tsx",
 );
 
-function runCommand(label, cmd, args, extraEnv = {}) {
+function runCommand(label, cmd, args, extraEnv = {}, cwd = REPO_ROOT) {
   const t0 = Date.now();
   return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, {
-      cwd: REPO_ROOT,
+      cwd,
       env: { ...process.env, ...extraEnv },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -177,6 +177,8 @@ function runHygieneAudit() {
     "server/scripts/simulate-bridge.ts",
     "android-dat/verify-structure.mjs",
     "scripts/verify-all.mjs",
+    "scripts/smoke-production.mjs",
+    "scripts/verify-submission.mjs",
   ]);
 
   const apiKeyPattern = new RegExp("AIza" + "[0-9A-Za-z_-]{20,}");
@@ -190,6 +192,8 @@ function runHygieneAudit() {
     "server/scripts/simulate-bridge.ts",
     "android-dat/verify-structure.mjs",
     "scripts/verify-all.mjs",
+    "scripts/smoke-production.mjs",
+    "scripts/verify-submission.mjs",
   ]);
 
   const violations = [];
@@ -243,21 +247,61 @@ function runHygieneAudit() {
   console.log(`PASS hygiene audit: ${trackedFiles.length} tracked files scanned, 0 keys, 0 .env, 0 em-dashes (${Date.now() - t0} ms)`);
 }
 
+function listWorkspaceTests(workspace) {
+  const testDir = path.join(REPO_ROOT, workspace, "test");
+  return fs
+    .readdirSync(testDir)
+    .filter((name) => name.endsWith(".test.ts"))
+    .sort()
+    .map((name) => path.join("test", name));
+}
+
 async function main() {
   const startedAt = Date.now();
-  await runCommand("typecheck", npmCmd, ["run", "typecheck"]);
-  await runCommand("server tests", npmCmd, ["-w", "server", "test", "--", "--test-concurrency=2"], { GEMINI_API_KEY: "", HOLDUP_QUIET: "1" });
-  await runCommand("web tests", npmCmd, ["-w", "web", "test", "--", "--test-concurrency=2"]);
-  await runCommand("production build", npmCmd, ["run", "build"]);
+  await Promise.all([
+    runCommand("typecheck", npmCmd, ["run", "typecheck"]),
+    runCommand("production build", npmCmd, ["run", "build"]),
+  ]);
 
   const tsxCmd = fs.existsSync(localTsx) ? localTsx : npmCmd;
   const tsxArgs = fs.existsSync(localTsx)
     ? ["server/scripts/simulate-bridge.ts", "--self-test"]
     : ["exec", "--", "tsx", "server/scripts/simulate-bridge.ts", "--self-test"];
-  await runCommand("simulate-bridge --self-test", tsxCmd, tsxArgs, { GEMINI_API_KEY: "", HOLDUP_QUIET: "1" });
-  await runCommand("android-dat structure verifier", process.execPath, ["android-dat/verify-structure.mjs"]);
 
-  await verifyLiveHttpRoutes();
+  const serverTestFiles = listWorkspaceTests("server");
+  const webTestFiles = listWorkspaceTests("web");
+  const nodeMajor = Number(process.versions.node.split(".")[0]) || 0;
+  const webRunnerFlags =
+    nodeMajor >= 23
+      ? ["--test-isolation=none"]
+      : nodeMajor === 22
+        ? ["--experimental-test-isolation=none"]
+        : ["--test-concurrency=4"];
+
+  await Promise.all([
+    runCommand(
+      "server tests",
+      process.execPath,
+      ["--import", "tsx", "--test", "--test-concurrency=4", ...serverTestFiles],
+      { GEMINI_API_KEY: "", HOLDUP_QUIET: "1" },
+      path.join(REPO_ROOT, "server"),
+    ),
+    runCommand(
+      "web tests",
+      process.execPath,
+      ["--import", "tsx", "--test", ...webRunnerFlags, ...webTestFiles],
+      {},
+      path.join(REPO_ROOT, "web"),
+    ),
+    (async () => {
+      await runCommand("simulate-bridge --self-test", tsxCmd, tsxArgs, { GEMINI_API_KEY: "", HOLDUP_QUIET: "1" });
+      await runCommand("android-dat structure verifier", process.execPath, ["android-dat/verify-structure.mjs"]);
+      await runCommand("smoke-production", process.execPath, ["scripts/smoke-production.mjs"], { GEMINI_API_KEY: "", HOLDUP_QUIET: "1" });
+      await runCommand("submission integrity", process.execPath, ["scripts/verify-submission.mjs"]);
+      await verifyLiveHttpRoutes();
+    })(),
+  ]);
+
   runHygieneAudit();
 
   console.log(`PASS verify-all complete (${Date.now() - startedAt} ms)`);
