@@ -1,0 +1,173 @@
+{
+ "what": "v1 predictions (gemini-3.8-flash, prompt 814770315c42) re-scored with current safety.ts; no new model calls",
+ "safety_ts_commit": "667312c",
+ "images": 1740,
+ "verdicts_n": 4730,
+ "unsafe_reassurance_silent": {
+  "k": 3,
+  "n": 4730,
+  "rate_pct": 0.1,
+  "wilson95_pct": [
+   0.02,
+   0.19
+  ],
+  "by_category": {
+   "expired_date_misread_or_unseen": 3
+  }
+ },
+ "expired_match_with_expiry_caveat": {
+  "k": 47,
+  "n": 4730,
+  "wilson95_pct": [
+   0.75,
+   1.32
+  ]
+ },
+ "verdict_correct_vs_world": {
+  "k": 2843,
+  "n": 4730,
+  "wilson95_pct": [
+   58.7,
+   61.49
+  ]
+ },
+ "unsure": {
+  "k": 1810,
+  "n": 4730,
+  "wilson95_pct": [
+   36.89,
+   39.66
+  ]
+ },
+ "false_match": 49,
+ "by_scenario": {
+  "allergic_to_absent": {
+   "n": 460,
+   "correct": 54.3,
+   "unsure": 44.1,
+   "unsafe": 1
+  },
+  "allergic_to_contained": {
+   "n": 430,
+   "correct": 68.6,
+   "unsure": 31.4,
+   "unsafe": 0
+  },
+  "not_on_list": {
+   "n": 1280,
+   "correct": 73.9,
+   "unsure": 26.1,
+   "unsafe": 0
+  },
+  "on_list_other_strength": {
+   "n": 1280,
+   "correct": 55.4,
+   "unsure": 44.5,
+   "unsafe": 0
+  },
+  "on_list_same_strength": {
+   "n": 1280,
+   "correct": 50.2,
+   "unsure": 44.5,
+   "unsafe": 2
+  }
+ },
+ "food_reassurance_coverage": {
+  "n_truly_safe": 130,
+  "said_none_of_your_allergens": 44,
+  "ci": [
+   26.28,
+   42.34
+  ]
+ },
+ "unsafe_examples": [
+  {
+   "img_id": "med012__motion_blur_1",
+   "deg": "motion_blur",
+   "sev": 1,
+   "kind": "medication",
+   "scenario": "on_list_same_strength",
+   "world": "warning",
+   "visible": "warning",
+   "pred": "match",
+   "pred_reasons": [
+    "matches m1",
+    "taken today: 0/1"
+   ],
+   "world_reasons": [
+    "expired 2025-09"
+   ],
+   "category": "expired_date_misread_or_unseen"
+  },
+  {
+   "img_id": "med120__low_light_2",
+   "deg": "low_light",
+   "sev": 2,
+   "kind": "medication",
+   "scenario": "on_list_same_strength",
+   "world": "warning",
+   "visible": "warning",
+   "pred": "match",
+   "pred_reasons": [
+    "matches m1",
+    "taken today: 0/1"
+   ],
+   "world_reasons": [
+    "expired 2026-06"
+   ],
+   "category": "expired_date_misread_or_unseen"
+  },
+  {
+   "img_id": "food002__crop_2",
+   "deg": "crop",
+   "sev": 2,
+   "kind": "food",
+   "scenario": "allergic_to_absent",
+   "world": "warning",
+   "visible": "unsure",
+   "pred": "info",
+   "pred_reasons": [
+    "no listed allergen matches your profile"
+   ],
+   "world_reasons": [
+    "expired 2025-06-18"
+   ],
+   "category": "expired_date_misread_or_unseen"
+  }
+ ],
+ "baseline": {
+  "safety_ts": "safety.ts @24cc9d2 (what v1 ran)",
+  "unsafe_reassurance_silent": {
+   "k": 49,
+   "n": 4730,
+   "wilson95_pct": [
+    0.78,
+    1.37
+   ],
+   "by_category": {
+    "expired_date_misread_or_unseen": 32,
+    "missed_allergen": 17
+   }
+  },
+  "verdict_correct_k": 2885,
+  "unsure_k": 1738,
+  "food_reassurance_coverage": {
+   "n_truly_safe": 130,
+   "said_none_of_your_allergens": 88,
+   "ci": [
+    59.25,
+    75.12
+   ]
+  },
+  "transitions": {
+   "verdict changed: food allergic_to_absent info->unsure": 73,
+   "fixed: food allergic_to_absent info->unsure": 29,
+   "fixed: food allergic_to_contained info->unsure": 17,
+   "verdict changed: food allergic_to_contained info->unsure": 17,
+   "verdict changed: medication on_list_same_strength match->warning": 11,
+   "verdict changed: medication on_list_same_strength unsure->warning": 9,
+   "verdict changed: medication on_list_other_strength unsure->warning": 9,
+   "verdict changed: medication on_list_other_strength match->warning": 6
+  }
+ }
+}

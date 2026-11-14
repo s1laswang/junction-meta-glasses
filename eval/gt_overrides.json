@@ -1,0 +1,7 @@
+{
+  "_comment": "Hand-adjudicated ground-truth fixes, applied by run_eval.py at scoring time. Each entry was checked by eye against the clean render (eval/synthetic/clean/<spec_id>.jpg).",
+  "med113": {
+    "strength": "30 mg + 70 mg",
+    "_why": "Spec said '30 mg' but the render (and the spec's own front_text) prints '30 mg Fe + 70 mg Vit. C'; the model's '30 mg + 70 mg' is the full printed strength."
+  }
+}
