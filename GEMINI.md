@@ -39,7 +39,11 @@ Gemini's output never decides safety alone. A deterministic `safety.ts` turns th
 - **Schema-constrained vision with thinking control** gives a confidence per field that is well calibrated (ECE 0.022), which is what makes "I'm not sure" trustworthy.
 - `box_2d` grounding powers the scene mode.
 - Image generation let us build a 1,740-image eval overnight.
-- Directional comparison (n = 12 paired cases, `eval/suites/model_comparison`): Gemini 3.8 and 3.5 Flash got 12/12 verdicts right with 0 confident-wrong reads. Gemma 4 31B got 11/12 with 1 false match, at a p50 of 5.6 s vs 3.2 s.
+- **Measured comparison** (150 paired images, the same prompt and `safety.ts`; `docs/EVAL.md` v2 §2, chart `docs/img/eval_model_compare.png`):
+  - All three models made **0 confident-wrong strength reads**, and they tie on strength accuracy (46/59).
+  - `gemma-4-31b-it` was confidently wrong on other fields **twice as often** (7.2% vs 3.6%, mostly allergens; the only significant paired difference).
+  - Gemma was the only model with a silent unsafe reassurance (2/377), and ran **~9× slower** (p50 27.8 s vs 3.2 s; Gemma speed depends on our endpoint quota).
+  - `gemini-3.5-flash` matched 3.8-flash within the CI and was 1.2 s faster.
 
 ## Usage ledger (metadata only, no content)
 - Every Gemini call is logged as `{ts, feature, model, in, out, thinking, cached, latency_s, ok}`: the server in `server/logs/ledger.jsonl` (served at `GET /api/stats` with p50/p95 per feature), the eval in `eval/out/ledger.jsonl`.
