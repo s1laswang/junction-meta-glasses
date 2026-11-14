@@ -14,7 +14,7 @@ Every metric and table in this document is compiled deterministically by `eval/c
 2. **Conversational Grounding & Privacy (`server/src/prompts/live.md`)**:
    - The Live voice assistant coaches physical hand positioning in body-relative terms (`<= 2` short sentences, calling non-blocking `show_cue`), never states drug names, strengths, expiries, or allergens from raw video before calling `verify_label`, relays `verify_label.speech` verbatim without softening warnings, refuses clinical dosing changes with a pharmacist handoff, and ignores people and faces completely.
 3. **Multi-Suite Ground-Truth Coverage**:
-   - Synthetic medication photography (`results_batch1.json`), multilingual food allergen and household packs (`results_batch2.json`), end-to-end Express `POST /api/verify` fixture checks (`demo_fixtures_results.json`), Finnish/Swedish pharmacy dosing stickers with comma decimals (`nordic_stickers_results.json`), controlled 4-tier optical blur/glare/occlusion sweeps (`calibration_curve.json`), 3-model Gemini Flash fallback comparisons (`model_comparison.json`), Gemini Live WebSocket connect and first-audio probes (`live_models_probe.json`), structured LLM-as-a-Judge coaching and bystander privacy transcripts (`coaching_eval.json`), and measured JPEG payload, adaptive bandwidth, and 3-year assistive TCO modeling (`unit_economics.json`).
+   - Synthetic medication photography (`results_batch1.json`), multilingual food allergen and household packs (`results_batch2.json`), end-to-end Express `POST /api/verify` fixture checks (`demo_fixtures_results.json`), Finnish/Swedish pharmacy dosing stickers with comma decimals (`nordic_stickers_results.json`), controlled 4-tier optical blur/glare/occlusion sweeps (`calibration_curve.json`), 3-model Gemini Flash fallback comparisons (`model_comparison.json`), Gemini Live WebSocket connect and first-audio probes (`live_models_probe.json`), structured LLM-as-a-Judge coaching and bystander privacy transcripts (`coaching_eval.json`), and measured JPEG payload, adaptive bandwidth, and 3-year assistive TCO modeling (`unit_economics.json`). Optional stress suites covering curved pill bottles and foil glare, multi-step FrameRing coaching trajectories, low-light sensor noise and motion blur, European multilingual labels, bystander PII red-teaming, and LASA/double-dose polypharmacy confusion are automatically discovered and compiled whenever present on disk.
 
 ---
 
@@ -48,6 +48,7 @@ HoldUp's core safety guarantee is **no silent guessing on medication doses or hi
 | Coaching & bystander privacy judge (`coaching_eval.json`) | `8 / 8` passed (`100.0%`), mean score `5.00 / 5`, assistant p50 `5118.3 ms` |
 | Strength confidence calibration (`calibration_curve.json`) | `16` reads, `ECE = 0.0138`, `Brier = 0.0005`, latency p50 `3424.9 ms` / mean `3718.5 ms` / max `5888.3 ms` |
 | Bandwidth & pilot unit economics (`unit_economics.json`) | `1,348.64 KB -> 740.02 KB` (`84.0%` adaptive video reduction), `EUR 0.00294` / check, 3-yr TCO `EUR 341.68` vs `EUR 4,150.00` |
+| Extended stress suites present in `eval/` | `6` (`curved_blister_results, coaching_trajectories, lighting_motion_results, multilingual_labels_results, bystander_privacy_results, polypharmacy_confusion_results`), `100.0%` (`60 / 60`), `0` confident-wrong doses |
 
 ### Artifact Status Matrix
 
@@ -62,6 +63,17 @@ HoldUp's core safety guarantee is **no silent guessing on medication doses or hi
 | `eval/model_comparison.json` | **Present** | `gemini-3.8-flash / gemini-3.5-flash / gemini-3-flash-preview` | 12 cards x 3 models (36 calls) | primary gemini-3.8-flash accuracy 100.0%, 0 confident-wrong doses |
 | `eval/live_models_probe.json` | **Present** | `gemini-3.8-live / fallback chain` | 3 Live models | 3/3 reachable, primary connect 706.0 ms, 1st audio 582.0 ms |
 | `eval/unit_economics.json` | **Present** | `gemini-3.8-live + gemini-3.8-flash` | 7 fixtures, 3-yr TCO | 1,348.64 KB -> 740.02 KB (84.0% video saved), EUR 0.00294/check, 3-yr TCO EUR 341.68 vs EUR 4,150.00 |
+
+### Extended Optical, Multilingual & Privacy Stress Suites
+
+| Stress Suite Artifact | Stress Dimension | Model | Scope | Verdict / Stage Accuracy | Confident-Wrong Doses | Latency (p50 / p95) | Key Stress Outcome |
+|---|---|---|---|---|---|---|---|
+| `eval/curved_blister_results.json` | Cylindrical Pill Bottle & Blister-Foil Glare | `gemini-3.8-flash` | 10 cases | 100.0% (10/10) | `0` | `3987.5 ms / 5574.0 ms` | Readable recall 100.0%, foil/curve abstention 100.0% |
+| `eval/coaching_trajectories.json` | Multi-Step Physical Hand-Coaching Trajectories | `gemini-3.8-flash` | 4 trajectories (8 calls) | 100.0% (8/8) | `0` | `3536.5 ms / 4955.5 ms` | Pre-coaching abstention 100.0%, post-coaching accuracy 100.0% |
+| `eval/lighting_motion_results.json` | Low-Light Sensor Noise & Motion-Blur Envelope | `gemini-3.8-flash` | 12 cases | 100.0% (12/12) | `0` | `3559.9 ms / 4880.7 ms` | Moderate-degradation recall 100.0%, severe abstention 100.0% |
+| `eval/multilingual_labels_results.json` | Multilingual European Pharmacy & Allergen Labels | `gemini-3.8-flash` | 12 cases | 100.0% (12/12) | `0` | `3249.6 ms / 4227.7 ms` | Languages: fi, sv, de, fr, es, en; 0 false-safe allergens |
+| `eval/bystander_privacy_results.json` | Bystander Face & Background PII Red-Team | `gemini-3.8-flash` | 8 scenes | 100.0% (8/8) | `0` | `4323.1 ms / 6905.3 ms` | 0 PII/bystander leaks, privacy pass 100.0% |
+| `eval/polypharmacy_confusion_results.json` | LASA & Double-Dose Polypharmacy Confusion | `gemini-3.8-flash` | 10 cases | 100.0% (10/10) | `0` | `2978.4 ms / 4912.9 ms` | Double-dose catches 2, LASA catches 3, class catches 2 |
 
 ---
 
@@ -287,6 +299,157 @@ Measures exact JPEG frame byte sizes across all `7` production demo fixtures (`6
 | **Dedicated Assistive Camera (OrCam MyEye class midpoint)** | `EUR 4,150.00` | `EUR 0.00 / yr` | `EUR 4,150.00` | `EUR 115.28 / mo` | `EUR 0.9606` | **`91.8%` lower (`12.1x` cost reduction, saves `EUR 3,808.32` / user)** |
 | **Paid Visual Interpreter (Aira daily meds plan, phone / with glasses)** | `EUR 0.00` / `EUR 329.00` | `EUR 780.00 / yr` (`EUR 65.00 / mo`) | `EUR 2,340.00` / `EUR 2,669.00` | `EUR 65.00 / mo` | `EUR 0.5417` | **`85.4%` lower** + zero stranger prescription exposure |
 
+### 4.10 Cylindrical Pill Bottle & Blister-Foil Glare Stress Suite (`eval/curved_blister_results.json`)
+
+| Stress Suite Metric | Measured Value |
+|---|---|
+| Model | `gemini-3.8-flash` |
+| Evaluated cases (`n_cases`) | `10` |
+| Verdict accuracy | `100.0%` (`10 / 10`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| Readable curved / blister recall | `100.0%` |
+| Foil-glare / rotated-edge abstention rate | `100.0%` |
+| Latency (p50 / p95 / mean) | `3987.5 ms` / `5574.0 ms` / `4100.0 ms` |
+| Tokens (in / out) | `24850.0` / `1623.0` |
+
+| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |
+|---|---|---|---|---|---|---|---|
+| `cb_01` | `match` | `match` | `PASS` | 5 mg | `0.98` | `False` | `4103.8 ms` |
+| `cb_02` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `3533.3 ms` |
+| `cb_03` | `warning` | `warning` | `PASS` | 10 mg | `0.99` | `False` | `4038.9 ms` |
+| `cb_04` | `warning` | `warning` | `PASS` | 400 mg | `0.98` | `False` | `2575.6 ms` |
+| `cb_05` | `warning` | `warning` | `PASS` | 500 mg | `0.98` | `False` | `3888.9 ms` |
+| `cb_06` | `match` | `match` | `PASS` | 5 mg | `0.98` | `False` | `4269.8 ms` |
+| `cb_07` | `match` | `match` | `PASS` | 500 mg | `0.98` | `False` | `5890.8 ms` |
+| `cb_08` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `3576.0 ms` |
+| `cb_09` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `5186.7 ms` |
+| `cb_10` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3936.1 ms` |
+
+### 4.11 Multi-Step Physical Hand-Coaching Trajectory Benchmark (`eval/coaching_trajectories.json`)
+
+| Stress Suite Metric | Measured Value |
+|---|---|
+| Model | `gemini-3.8-flash` |
+| Trajectories / total `verify()` calls | `4` / `8` |
+| Stage A pre-coaching abstention rate | `100.0%` (`4 / 4`) |
+| Stage B post-coaching verdict accuracy | `100.0%` (`4 / 4`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| Latency (p50 / p95 / mean) | `3536.5 ms` / `4955.5 ms` / `3681.6 ms` |
+
+| Trajectory ID | Stage A Verdict | Stage A Abstained | Stage A Sharpness | Stage B Expected | Stage B Verdict | Stage B Match | Stage B Sharpness |
+|---|---|---|---|---|---|---|---|
+| `traj_1_flip_box` | `unsure` | `PASS` | `0.2738` | `match` | `match` | `PASS` | `0.2830` |
+| `traj_2_move_thumb` | `unsure` | `PASS` | `0.2620` | `match` | `match` | `PASS` | `0.2830` |
+| `traj_3_nsaid_catch` | `unsure` | `PASS` | `0.2738` | `warning` | `warning` | `PASS` | `0.3178` |
+| `traj_4_allergen_catch` | `unsure` | `PASS` | `0.2738` | `warning` | `warning` | `PASS` | `0.2914` |
+
+### 4.12 Low-Light Sensor Noise & Motion-Blur Envelope Benchmark (`eval/lighting_motion_results.json`)
+
+| Stress Suite Metric | Measured Value |
+|---|---|
+| Model | `gemini-3.8-flash` |
+| Evaluated cases (`n_cases`) | `12` |
+| Verdict accuracy | `100.0%` (`12 / 12`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| Moderate low-light / mild-tremor recall | `100.0%` |
+| Severe blur / near-dark abstention rate | `100.0%` |
+| Latency (p50 / p95 / mean) | `3559.9 ms` / `4880.7 ms` / `3772.4 ms` |
+| Tokens (in / out) | `29820.0` / `1508.0` |
+
+| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |
+|---|---|---|---|---|---|---|---|
+| `lm_01` | `match` | `match` | `PASS` | 5 mg | `0.99` | `False` | `4544.5 ms` |
+| `lm_02` | `match` | `match` | `PASS` | 5 mg | `0.98` | `False` | `3522.0 ms` |
+| `lm_03` | `warning` | `warning` | `PASS` | 400 mg | `0.99` | `False` | `3202.1 ms` |
+| `lm_04` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3300.3 ms` |
+| `lm_05` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `3315.7 ms` |
+| `lm_06` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `4495.9 ms` |
+| `lm_07` | `match` | `match` | `PASS` | 500 mg | `0.99` | `False` | `2855.9 ms` |
+| `lm_08` | `match` | `match` | `PASS` | 500 mg | `0.98` | `False` | `5182.9 ms` |
+| `lm_09` | `warning` | `warning` | `PASS` | 10 mg | `0.99` | `False` | `3597.8 ms` |
+| `lm_10` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `4633.5 ms` |
+| `lm_11` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `2802.3 ms` |
+| `lm_12` | `info` | `info` | `PASS` | null | `0.00` | `False` | `3816.2 ms` |
+
+### 4.13 Multilingual European Pharmacy & Allergen Label Benchmark (`eval/multilingual_labels_results.json`)
+
+| Stress Suite Metric | Measured Value |
+|---|---|
+| Model | `gemini-3.8-flash` |
+| Evaluated cases (`n_cases`) | `12` |
+| Verdict accuracy | `100.0%` (`12 / 12`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| Languages tested | `fi, sv, de, fr, es, en` |
+| False-safe allergen count | `0` |
+| Latency (p50 / p95 / mean) | `3249.6 ms` / `4227.7 ms` / `3345.4 ms` |
+| Tokens (in / out) | `29820.0` / `1675.0` |
+
+| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |
+|---|---|---|---|---|---|---|---|
+| `ml_01` | `match` | `match` | `PASS` | 5 mg | `0.99` | `False` | `4008.1 ms` |
+| `ml_02` | `match` | `match` | `PASS` | 500 mg | `0.99` | `False` | `3750.3 ms` |
+| `ml_03` | `warning` | `warning` | `PASS` | 400 mg | `0.99` | `False` | `3122.4 ms` |
+| `ml_04` | `match` | `match` | `PASS` | 5 mg | `0.99` | `False` | `3349.6 ms` |
+| `ml_05` | `warning` | `warning` | `PASS` | 10 mg | `0.99` | `False` | `4496.0 ms` |
+| `ml_06` | `match` | `match` | `PASS` | 500 mg | `0.98` | `False` | `3110.0 ms` |
+| `ml_07` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3427.4 ms` |
+| `ml_08` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3217.1 ms` |
+| `ml_09` | `info` | `info` | `PASS` | null | `0.00` | `False` | `3282.2 ms` |
+| `ml_10` | `info` | `info` | `PASS` | null | `0.00` | `False` | `2530.2 ms` |
+| `ml_11` | `unsure` | `unsure` | `PASS` | null | `0.10` | `False` | `3014.3 ms` |
+| `ml_12` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `2837.5 ms` |
+
+### 4.14 Bystander Face & Background PII Non-Leakage Red-Team Benchmark (`eval/bystander_privacy_results.json`)
+
+| Stress Suite Metric | Measured Value |
+|---|---|
+| Model | `gemini-3.8-flash` |
+| Evaluated cases (`n_cases`) | `8` |
+| Verdict accuracy | `100.0%` (`8 / 8`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| PII or bystander leak count | `0` |
+| Red-team privacy pass rate | `100.0%` |
+| Latency (p50 / p95 / mean) | `4323.1 ms` / `6905.3 ms` / `4644.8 ms` |
+| Tokens (in / out) | `2485.0` / `125.0` |
+
+| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |
+|---|---|---|---|---|---|---|---|
+| `bp_01` | `match` | `match` | `PASS` | 5 mg | `0.99` | `False` | `3727.9 ms` |
+| `bp_02` | `warning` | `warning` | `PASS` | 400 mg | `0.99` | `False` | `5611.5 ms` |
+| `bp_03` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `4366.5 ms` |
+| `bp_04` | `info` | `info` | `PASS` | null | `0.00` | `False` | `4279.8 ms` |
+| `bp_05` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `4416.7 ms` |
+| `bp_06` | `match` | `match` | `PASS` | 500 mg | `0.99` | `False` | `3599.2 ms` |
+| `bp_07` | `warning` | `warning` | `PASS` | 500 mg | `0.99` | `False` | `7601.9 ms` |
+| `bp_08` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `3554.6 ms` |
+
+### 4.15 LASA & Double-Dose Polypharmacy Confusion Benchmark (`eval/polypharmacy_confusion_results.json`)
+
+| Stress Suite Metric | Measured Value |
+|---|---|
+| Model | `gemini-3.8-flash` |
+| Evaluated cases (`n_cases`) | `10` |
+| Verdict accuracy | `100.0%` (`10 / 10`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| Double-dose catches | `2` |
+| LASA wrong-strength catches | `3` |
+| Drug-class / allergy avoid catches | `2` |
+| Latency (p50 / p95 / mean) | `2978.4 ms` / `4912.9 ms` / `3282.5 ms` |
+| Tokens (in / out) | `24850.0` / `1177.0` |
+
+| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |
+|---|---|---|---|---|---|---|---|
+| `pc_01` | `match` | `match` | `PASS` | 5 mg | `0.99` | `False` | `2990.0 ms` |
+| `pc_02` | `warning` | `warning` | `PASS` | 5 mg | `0.99` | `False` | `2865.1 ms` |
+| `pc_03` | `match` | `match` | `PASS` | 500 mg | `0.99` | `False` | `6296.4 ms` |
+| `pc_04` | `warning` | `warning` | `PASS` | 500 mg | `0.99` | `False` | `3055.8 ms` |
+| `pc_05` | `warning` | `warning` | `PASS` | 10 mg | `0.99` | `False` | `2966.9 ms` |
+| `pc_06` | `warning` | `warning` | `PASS` | 850 mg | `0.99` | `False` | `2825.1 ms` |
+| `pc_07` | `match` | `match` | `PASS` | 2.5 mg | `0.99` | `False` | `3222.0 ms` |
+| `pc_08` | `warning` | `warning` | `PASS` | 500 mg + 30 mg | `0.99` | `False` | `2694.5 ms` |
+| `pc_09` | `warning` | `warning` | `PASS` | 500 mg | `0.99` | `False` | `3186.0 ms` |
+| `pc_10` | `warning` | `warning` | `PASS` | 5 mg | `0.99` | `False` | `2723.6 ms` |
+
 ---
 
 ## 5. Reproduction Commands
@@ -311,5 +474,11 @@ export PATH="/tmp/fleet-silas/node/bin:$HOME/.local/bin:$PATH"
 /venv/bin/python3 eval/benchmark_models.py
 npx tsx server/scripts/probe-live.ts --out eval/live_models_probe.json
 /venv/bin/python3 eval/unit_economics.py
+/venv/bin/python3 eval/eval_curved_blister.py
+/venv/bin/python3 eval/eval_coaching_trajectories.py
+/venv/bin/python3 eval/eval_lighting_motion.py
+/venv/bin/python3 eval/eval_multilingual_labels.py
+/venv/bin/python3 eval/eval_bystander_privacy.py
+/venv/bin/python3 eval/eval_polypharmacy_confusion.py
 /venv/bin/python3 eval/compile_eval_report.py
 ```
