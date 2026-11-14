@@ -24,6 +24,8 @@ import {
 import { PermissionBanner } from "./components/PermissionBanner.tsx";
 import { PharmacyImportModal } from "./components/PharmacyImportModal.tsx";
 import { ProfileManager } from "./components/ProfileManager.tsx";
+import { SafetyRuleExplainerCard } from "./components/SafetyRuleExplainerCard.tsx";
+import { ScheduleChecklistCard } from "./components/ScheduleChecklistCard.tsx";
 import { ShortcutsModal } from "./components/ShortcutsModal.tsx";
 import { VerdictCard } from "./components/VerdictCard.tsx";
 import { ViewfinderStage } from "./components/ViewfinderStage.tsx";
@@ -576,6 +578,17 @@ function HoldUpPwaShell({
                   lang={effectiveLang}
                 />
 
+                <ScheduleChecklistCard
+                  profile={effectiveProfile}
+                  lang={effectiveLang}
+                  onVerifyMed={() => {
+                    void ctrl.startCheck();
+                  }}
+                  onLogDose={(medId) => {
+                    ctrl.logDose(medId);
+                  }}
+                />
+
                 <HudPreviewFrame
                   verdict={hudPreviewVerdict}
                   coach={hudPreviewCoach}
@@ -606,6 +619,23 @@ function HoldUpPwaShell({
               aria-labelledby="tab-profile"
               style={COLUMN_STACK_STYLE}
             >
+              <ScheduleChecklistCard
+                profile={effectiveProfile}
+                lang={effectiveLang}
+                onVerifyMed={() => {
+                  setActiveTab("check");
+                  void ctrl.startCheck();
+                }}
+                onLogDose={(medId) => {
+                  ctrl.logDose(medId);
+                }}
+              />
+
+              <SafetyRuleExplainerCard
+                profile={effectiveProfile}
+                lang={effectiveLang}
+              />
+
               <ProfileManager
                 profile={effectiveProfile}
                 onChange={(next) => {
