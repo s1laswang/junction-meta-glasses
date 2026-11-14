@@ -20,6 +20,12 @@ const MAX_WS_MSG = 4 * 1024 * 1024;
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
+  app.use((_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    next();
+  });
   // optional access key (HOLDUP_KEY); /api/health and static files stay public
   app.use(["/api", "/ingest"], requireKey);
 
