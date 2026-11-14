@@ -146,24 +146,24 @@
               <div class="proof-strip-4">
                 <div class="proof-pill">
                   <span class="proof-pill-val text-emerald-luma" data-eval-field="confident_wrong_dose_count">0</span>
-                  <span class="proof-pill-lbl">Confident-wrong dose reads across 113 label/stress cases + 16 calibration reads</span>
+                  <span class="proof-pill-lbl">Confident-wrong doses across <span data-eval-field="total_suites_compiled">21</span> eval suites (53 core + <span data-eval-field="combined_stress_cases_evaluated">89</span> stress/Wave-6 + 16 cal)</span>
                 </div>
                 <div class="proof-pill">
                   <span class="proof-pill-val text-cyan" data-eval-field="live_first_audio_ms">582 ms</span>
-                  <span class="proof-pill-lbl">Gemini 3.8 Live first-audio coaching latency (3/3 Live models verified)</span>
+                  <span class="proof-pill-lbl">Gemini 3.8 Live 1st audio · <span data-eval-field="e2e_verify_to_hud_p50_ms">2738.8 ms</span> glass-to-HUD p50 (<span data-eval-field="loopback_hud_replay_p50_ms">1.78 ms</span> /hud-ws replay)</span>
                 </div>
                 <div class="proof-pill">
                   <span class="proof-pill-val text-amber">EUR 0.0029</span>
-                  <span class="proof-pill-lbl">Cloud cost per 12s guided check (91.8% lower 3-yr TCO vs EUR 4,150 OrCam)</span>
+                  <span class="proof-pill-lbl">Cloud cost per 12s guided check (91.8% lower 3-yr TCO · <span data-eval-field="tts_wav_summary">6 / 6</span> EN/FI/SV WAV TTS)</span>
                 </div>
                 <div class="proof-pill">
-                  <span class="proof-pill-val text-white" data-eval-field="unit_tests_passing">404 / 404</span>
-                  <span class="proof-pill-lbl">Automated server, web, accessibility, safety, and eval compiler tests passing</span>
+                  <span class="proof-pill-val text-white" data-eval-field="unit_tests_passing">475 / 475</span>
+                  <span class="proof-pill-lbl">Automated tests passing (176 server + 285 web + 14 eval · 0 false-safe allergens · 0 PII leaks)</span>
                 </div>
               </div>
             </div>
             <aside class="presenter-note" data-timing="0:00 - 0:20" data-cue="Hold up white pill box while wearing Ray-Ban glasses">
-              Meet HoldUp: Hold it up, know it is the right one. Built on Meta Ray-Ban Gen 2, Meta Ray-Ban Display, and Gemini Live, HoldUp gives blind, low-vision, and older adults hands-free medication and allergen verification with zero silent dose guessing.
+              Meet HoldUp: Hold it up, know it is the right one. Built on Meta Ray-Ban Gen 2, Meta Ray-Ban Display, and Gemini Live, HoldUp gives blind, low-vision, and older adults hands-free medication and allergen verification backed by 21 compiled evaluation suites, zero silent dose guessing, and 475 passing automated tests.
             </aside>
           </section>
 
@@ -941,13 +941,13 @@
                   <span class="eyebrow-tag">Empirical Safety Benchmark · Committed Artifacts in eval/ JSON Suites</span>
                 </div>
                 <div class="top-pill-row">
-                  <span class="meta-chip meta-chip-emerald" data-eval-field="suite_sync_status">HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (60 / 60) stress (15 suites)</span>
+                  <span class="meta-chip meta-chip-emerald" data-eval-field="suite_sync_status">HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (89 / 89) stress/Wave-6 (21 suites)</span>
                 </div>
               </div>
 
               <div class="slide-header">
                 <h2 class="slide-title">Measured Calibration &amp; Safety Proof</h2>
-                <p class="slide-subtitle">Zero fabricated numbers: live Gemini 3.8 Flash &amp; Live measurements across optical degradation, 4 core + 6 stress suites, and safety judge audits.</p>
+                <p class="slide-subtitle">Zero fabricated numbers: live Gemini 3.8 Flash &amp; Live measurements across 21 compiled suites (9 core + 6 extended + 6 Wave-6).</p>
               </div>
 
               <div class="slide-body">
@@ -955,7 +955,7 @@
                   <div class="kpi-tile">
                     <span class="kpi-val text-emerald-luma" data-eval-field="confident_wrong_dose_count">0</span>
                     <span class="kpi-lbl">Confident-Wrong Doses</span>
-                    <span class="kpi-sub">0 across 16 cal + 53 core + 60 stress reads</span>
+                    <span class="kpi-sub">0 across 16 cal + 53 core + 89 stress/Wave-6</span>
                   </div>
                   <div class="kpi-tile">
                     <span class="kpi-val text-cyan" data-eval-field="ece">0.0138</span>
@@ -970,7 +970,7 @@
                   <div class="kpi-tile">
                     <span class="kpi-val text-amber" data-eval-field="calibration_abstention_pct">100%</span>
                     <span class="kpi-lbl">Occluded/Blur Abstain</span>
-                    <span class="kpi-sub">8/8 cal + stress (<span data-eval-field="occluded_abstention_pct">98.2%</span> 53-case core)</span>
+                    <span class="kpi-sub">8/8 cal + 6/6 single-frame (<span data-eval-field="occluded_abstention_pct">98.2%</span> core)</span>
                   </div>
                   <div class="kpi-tile">
                     <span class="kpi-val text-emerald-luma" data-eval-field="coaching_pass">8 / 8 (100%)</span>
@@ -978,9 +978,9 @@
                     <span class="kpi-sub">Score <span data-eval-field="coaching_score">5.00 / 5</span> · <span data-eval-field="pii_leak_count">0</span> PII leaks</span>
                   </div>
                   <div class="kpi-tile">
-                    <span class="kpi-val text-cyan" data-eval-field="unit_tests_passing">404 / 404</span>
+                    <span class="kpi-val text-cyan" data-eval-field="unit_tests_passing">475 / 475</span>
                     <span class="kpi-lbl">Automated Unit Tests</span>
-                    <span class="kpi-sub">154 server + 240 web + 10 eval passing</span>
+                    <span class="kpi-sub">176 server + 285 web + 14 eval passing</span>
                   </div>
                 </div>
 
@@ -1036,7 +1036,7 @@
                   </div>
 
                   <div class="panel-card" style="justify-content: space-between;">
-                    <span class="card-kicker text-cyan">15 / 15 Evaluation Artifacts Verified (9 Core + 6 Stress)</span>
+                    <span class="card-kicker text-cyan"><span data-eval-field="total_suites_compiled">21</span> / 21 Evaluation Suites Verified (9 Core + 6 Extended + 6 Wave-6)</span>
                     <table class="compact-table">
                       <thead>
                         <tr>
@@ -1047,29 +1047,29 @@
                       </thead>
                       <tbody>
                         <tr>
-                          <td><strong class="text-white">Calibration Sweep</strong></td>
-                          <td class="mono">16 reads</td>
-                          <td><span class="mono text-emerald-luma">ECE 0.0138</span> · <span class="mono">0</span> wrong · <span class="mono" data-eval-field="calibration_p50_ms">3,425 ms</span></td>
+                          <td><strong class="text-white">4 Core + Cal Sweep</strong></td>
+                          <td class="mono"><span data-eval-field="total_label_cases_evaluated">53</span> + 16</td>
+                          <td><span class="mono text-emerald-luma" data-eval-field="overall_verdict_summary">98.1% (52 / 53)</span> · <span class="mono">ECE 0.0138</span> (<span class="mono" data-eval-field="calibration_p50_ms">3,425 ms</span>)</td>
                         </tr>
                         <tr>
-                          <td><strong class="text-white">4 Core Label Suites</strong></td>
-                          <td class="mono"><span data-eval-field="total_label_cases_evaluated">53</span> cases</td>
-                          <td><span class="mono text-emerald-luma" data-eval-field="overall_verdict_summary">98.1% (52 / 53)</span> · <span class="mono">2,5-&gt;2.5 mg</span></td>
-                        </tr>
-                        <tr>
-                          <td><strong class="text-white">6 Stress Suites</strong></td>
+                          <td><strong class="text-white">6 Extended Stress</strong></td>
                           <td class="mono"><span data-eval-field="extended_cases_evaluated">60</span> cases</td>
-                          <td><span class="mono text-emerald-luma" data-eval-field="extended_verdict_summary">100% (60 / 60)</span> · bottle/blur/LASA</td>
+                          <td><span class="mono text-emerald-luma" data-eval-field="extended_verdict_summary">100% (60 / 60)</span> · bottle/blur/EU-6/LASA</td>
                         </tr>
                         <tr>
-                          <td><strong class="text-white">Allergens &amp; EU-6</strong></td>
-                          <td class="mono">30 cases</td>
-                          <td><span class="mono text-emerald-luma">100%</span> · <span class="mono" data-eval-field="false_safe_allergen_count">0</span> false-safe (FI/SV/DE/FR/ES/EN)</td>
+                          <td><strong class="text-white">6 Wave-6 Fusion/Safety</strong></td>
+                          <td class="mono"><span data-eval-field="wave6_cases_evaluated">29</span> cases</td>
+                          <td><span class="mono text-emerald-luma" data-eval-field="wave6_verdict_summary">100% (29 / 29)</span> · <span class="mono" data-eval-field="false_safe_allergen_count">0</span> false-safe (<span class="mono" data-eval-field="combined_stress_verdict_summary">100% (89 / 89)</span>)</td>
                         </tr>
                         <tr>
-                          <td><strong class="text-white">Coaching &amp; Privacy</strong></td>
-                          <td class="mono">8 + 8</td>
-                          <td><span class="mono text-emerald-luma">8/8 (5.00/5)</span> · <span class="mono">0/8</span> PII/face leaks</td>
+                          <td><strong class="text-white">Glass-to-HUD &amp; Hub</strong></td>
+                          <td class="mono">3 + 250</td>
+                          <td><span class="mono text-emerald-luma" data-eval-field="e2e_verify_to_hud_p50_ms">2738.8 ms</span> E2E · <span class="mono" data-eval-field="loopback_ingest_frame_p50_ms">1.17 ms</span> /ingest/frame · <span class="mono">1.78 ms</span> /hud-ws</td>
+                        </tr>
+                        <tr>
+                          <td><strong class="text-white">Judge, Privacy &amp; TTS</strong></td>
+                          <td class="mono">8 + 8 + 6</td>
+                          <td><span class="mono text-emerald-luma">8/8 (5.00/5)</span> · <span class="mono">0/8</span> PII · <span class="mono">6/6</span> EN/FI/SV WAV TTS</td>
                         </tr>
                         <tr>
                           <td><strong class="text-white">Live + 3-Model Chain</strong></td>
@@ -1078,13 +1078,13 @@
                         </tr>
                       </tbody>
                     </table>
-                    <p class="card-copy" style="font-size: 13px; color: var(--ink-muted);">Note: the single non-exact case across all 113 suite checks (<span class="mono">b1_18</span>) predicted conservative <span class="mono">WARNING</span> vs <span class="mono">UNSURE</span> (<span class="mono">0</span> false <span class="mono">MATCH</span> events).</p>
+                    <p class="card-copy" style="font-size: 13px; color: var(--ink-muted);">Across all <span class="mono">142</span> verdict checks (<span class="mono">53</span> core + <span class="mono">89</span> stress/Wave-6), <span class="mono">141/142</span> (<span class="mono">99.3%</span>) match ground truth; sole miss (<span class="mono">b1_18</span>) predicted conservative <span class="mono">WARNING</span> vs <span class="mono">UNSURE</span> (<span class="mono">0</span> false <span class="mono">MATCH</span>).</p>
                   </div>
                 </div>
               </div>
             </div>
             <aside class="presenter-note" data-timing="3:05 - 3:25" data-cue="Point to the bimodal separation across the 0.80 gate">
-              Every metric on this slide comes from 15 committed JSON artifacts in eval/. Across 16 progressive degradation reads, ECE is 0.0138, Brier is 0.0005, clean and mild-blur recall is 100 percent, and blurred or thumb-occluded abstention is 100 percent. Across 53 core cases, 60 optical, multilingual, and LASA stress cases, and 16 coaching and red-team privacy checks, confident-wrong dose count is zero, with 404 automated tests passing.
+              Every metric on this slide comes from 21 committed JSON suites in eval/: 9 core, 6 extended stress, and 6 Wave-6 benchmarks. Across 16 degradation reads, ECE is 0.0138 and Brier is 0.0005. Extended and Wave-6 stress suites hit 89 out of 89, 100 percent verdicts, with 2738.8 ms live glass-to-HUD p50, 1.17 ms /ingest/frame p50, 1.78 ms /hud-ws replay p50, 6 out of 6 English, Finnish, and Swedish WAV TTS, zero confident-wrong doses, zero false-safe allergens, zero bystander PII leaks, and 475 passing automated tests.
             </aside>
           </section>
 
@@ -1210,7 +1210,7 @@
                   <span class="eyebrow-tag">Summary &amp; Live Stage Demo · Junction 2026 Meta + Google DeepMind</span>
                 </div>
                 <div class="top-pill-row">
-                  <span class="meta-chip meta-chip-emerald">Prototype + Deck + Hardware Ready</span>
+                  <span class="meta-chip meta-chip-emerald">21 Eval Suites · 475 / 475 Tests Ready</span>
                   <span class="meta-chip meta-chip-cyan">Hold it up. Know it is the right one.</span>
                 </div>
               </div>
@@ -1237,7 +1237,7 @@
                       <span class="pillar-pct">25%</span>
                     </div>
                     <h3 class="card-title">Full-Stack DAT + HUD + Calibrated AI</h3>
-                    <p class="card-copy">Android DAT <span class="mono">1.0.1</span> Kotlin bridge + WCAG AAA React 19 PWA + zero-code <span class="mono">/hud</span> Web App; <span class="mono">gemini-3.8-live</span> (<span class="mono">582 ms</span>) + <span class="mono">gemini-3.8-flash</span> (<span class="mono">ECE 0.0138</span>, <span class="mono">112/113</span> suite verdicts, <span class="mono">0</span> wrong doses); <span class="mono" data-eval-field="unit_tests_passing">404 / 404</span> tests.</p>
+                    <p class="card-copy">Android DAT <span class="mono">1.0.1</span> bridge (<span class="mono">1.17 ms</span> /ingest/frame p50) + WCAG AAA PWA + zero-code <span class="mono">/hud-ws</span> (<span class="mono">1.78 ms</span> replay, <span class="mono">2738.8 ms</span> glass-to-HUD p50); <span class="mono">21</span> suites (<span class="mono">52/53</span> core + <span class="mono">89/89</span> stress/Wave-6, <span class="mono">ECE 0.0138</span>, <span class="mono">0</span> wrong doses); <span class="mono" data-eval-field="unit_tests_passing">475 / 475</span> tests.</p>
                   </div>
 
                   <div class="panel-card panel-card-amber">
@@ -1255,7 +1255,7 @@
                       <span class="pillar-pct">25%</span>
                     </div>
                     <h3 class="card-title">Zero Silent Guessing &amp; All-Ability UX</h3>
-                    <p class="card-copy"><span class="mono">STRENGTH_MIN_CONF = 0.80</span> hard gate, 45s auto-stop, RAM-only <span class="mono">FrameRing(8)</span>, <span class="mono">8/8</span> (<span class="mono">5.00/5</span>) privacy/coaching judge, WCAG AAA (<span class="mono">15.07:1</span> to <span class="mono">20.38:1</span>), EN/FI/SV, Neural Band &amp; earcons.</p>
+                    <p class="card-copy"><span class="mono">STRENGTH_MIN_CONF = 0.80</span> gate (<span class="mono">0</span> wrong doses, <span class="mono">0</span> false-safe allergens, <span class="mono">0</span> PII leaks), 45s auto-stop, RAM <span class="mono">FrameRing(8)</span>, WCAG AAA (<span class="mono">15.07:1</span> to <span class="mono">20.38:1</span>), <span class="mono">6/6</span> EN/FI/SV WAV TTS, Neural Band &amp; earcons.</p>
                   </div>
                 </div>
 
@@ -1279,7 +1279,7 @@
               </div>
             </div>
             <aside class="presenter-note" data-timing="3:45 - 4:00" data-cue="Transition straight into the live glasses demo">
-              HoldUp delivers an everyday smart-glasses interaction that cannot exist on a phone: hands-free coaching, zero-guess deterministic safety, 6-tier fault recovery, WCAG AAA inclusivity, and 91.8 percent lower 3-year TCO. Let us show it to you live right now. Hold it up, know it is the right one.
+              HoldUp delivers an everyday smart-glasses interaction that cannot exist on a phone: hands-free coaching, zero-guess deterministic safety across 21 evaluation suites and 475 passing automated tests, 2738.8 ms live glass-to-HUD verification, 6-tier fault recovery, WCAG AAA inclusivity, and 91.8 percent lower 3-year TCO. Let us show it to you live right now. Hold it up, know it is the right one.
             </aside>
           </section>
 

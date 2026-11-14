@@ -596,7 +596,7 @@ function createDeckHarness(slidesMeta: ParsedSlideMeta[], options: DeckHarnessOp
   };
 }
 
-test("deck/index.html, deck/deck.css, and deck/deck.js exist with all 12 slides, presenter notes, and local-only assets", () => {
+test("deck/index.html, deck/deck.css, and deck/deck.js exist with all 12 slides, inline SVG diagrams, presenter notes, and 21-suite + 475-test proof", () => {
   assert.equal(existsSync(deckHtmlUrl), true, "deck/index.html must exist");
   assert.equal(existsSync(deckCssUrl), true, "deck/deck.css must exist");
   assert.equal(existsSync(deckJsUrl), true, "deck/deck.js must exist");
@@ -605,6 +605,34 @@ test("deck/index.html, deck/deck.css, and deck/deck.js exist with all 12 slides,
   assert.match(html, /^<!DOCTYPE html>\s*<html\s+lang="en">/i);
   assert.match(html, /<link\s+rel="stylesheet"\s+href="\.\/deck\.css"\s*\/?>/i);
   assert.match(html, /<script\s+src="\.\/deck\.js"><\/script>/i);
+
+  const svgTags = [...html.matchAll(/<svg\b([^>]*)>/gi)].map((m) => m[1]);
+  assert.equal(svgTags.length, 7, "deck/index.html must contain 7 inline SVG graphics");
+  const diagramSvgs = svgTags.filter((attrs) => /\brole="img"/i.test(attrs));
+  assert.equal(diagramSvgs.length, 6, "deck/index.html must contain 6 accessible role=img SVG diagrams");
+  for (const diagramAttrs of diagramSvgs) {
+    assert.match(diagramAttrs, /\bviewBox="[^"]+"/i);
+    assert.match(diagramAttrs, /\baria-label="[^"]{20,}"/i);
+  }
+
+  for (const expectedMetricSnippet of [
+    "475 / 475",
+    "176 server + 285 web + 14 eval",
+    "21 suites",
+    "100% (60 / 60)",
+    "100% (29 / 29)",
+    "100% (89 / 89)",
+    "2738.8 ms",
+    "1.17 ms",
+    "1.78 ms",
+    "EN/FI/SV WAV TTS"
+  ]) {
+    assert.equal(
+      html.includes(expectedMetricSnippet),
+      true,
+      `deck/index.html missing expected 21-suite / 475-test snippet: ${expectedMetricSnippet}`
+    );
+  }
 
   const slides = parseSlidesFromHtml(html);
   assert.equal(slides.length, 12, "deck/index.html must contain exactly 12 slides");
@@ -709,6 +737,8 @@ test("deck/index.html, deck/deck.css, deck/deck.js, and deckContract.test.ts con
 
   const scriptSrcs = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/gi)].map((m) => m[1]);
   assert.deepEqual(scriptSrcs, ["./deck.js"]);
+  assert.equal(/<img\b/i.test(html), false, "deck/index.html must contain zero img tags and use inline SVG");
+  assert.equal(/<image\b/i.test(html), false, "deck/index.html must contain zero SVG image tags");
   assert.equal(/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), false, "deck/index.html must not embed inline scripts");
   assert.equal(/<style\b/i.test(html), false, "deck/index.html must not embed inline style blocks");
   assert.doesNotMatch(css, /@import\b/i, "deck/deck.css must not use @import");
@@ -865,7 +895,7 @@ test("deck/deck.js supports keyboard, buttons, presenter notes + timer, 12-slide
   assert.equal(harness.getPrintCount(), 1);
 });
 
-test("deck/deck.js fetches /api/eval-summary over http/https to hydrate window.updateHoldUpEvalData while keeping static numbers on file: or offline", async () => {
+test("deck/deck.js syncs all 21 suites, Wave-6 metrics, and 475 tests, and hydrates /api/eval-summary while keeping static numbers on file: or offline", async () => {
   const slidesMeta = parseSlidesFromHtml(readFileSync(deckHtmlUrl, "utf8"));
   const realCombined = JSON.parse(readFileSync(combinedSummaryUrl, "utf8")) as Record<string, unknown>;
 
@@ -879,10 +909,63 @@ test("deck/deck.js fetches /api/eval-summary over http/https to hydrate window.u
   });
   await fileHarness.getApi().ready;
   assert.equal(fileFetchCalls, 0, "file: protocol must never invoke fetch");
-  assert.equal(fileHarness.getEvalData().confident_wrong_dose_count, 0);
-  assert.equal(fileHarness.getEvalData().ece, 0.0138);
+
+  const defaultData = fileHarness.getEvalData();
+  assert.equal(defaultData.confident_wrong_dose_count, 0);
+  assert.equal(defaultData.false_safe_allergen_count, 0);
+  assert.equal(defaultData.pii_leak_count, 0);
+  assert.equal(defaultData.ece, 0.0138);
+  assert.equal(defaultData.total_suites_compiled, 21);
+  assert.equal((defaultData.suites_present as string[]).length, 9);
+  assert.equal((defaultData.extended_suites_present as string[]).length, 6);
+  assert.equal((defaultData.wave6_suites_present as string[]).length, 6);
+  assert.equal(defaultData.extended_cases_evaluated, 60);
+  assert.equal(defaultData.wave6_cases_evaluated, 29);
+  assert.equal(defaultData.combined_stress_cases_evaluated, 89);
+  assert.equal(defaultData.combined_stress_verdict_summary, "100% (89 / 89)");
+  assert.equal(defaultData.e2e_verify_to_hud_p50_ms, 2738.8);
+  assert.equal(defaultData.loopback_ingest_frame_p50_ms, 1.17);
+  assert.equal(defaultData.loopback_hud_replay_p50_ms, 1.78);
+  assert.equal(defaultData.tts_wav_summary, "6 / 6");
+  assert.equal(defaultData.unit_tests_passing, "475 / 475");
+  assert.equal(defaultData.server_tests_passing, 176);
+  assert.equal(defaultData.web_tests_passing, 285);
+  assert.equal(defaultData.eval_tests_passing, 14);
+
   assert.deepEqual(fileHarness.readEvalFieldValues("ece"), ["0.0138", "0.0138"]);
   assert.deepEqual(fileHarness.readEvalFieldValues("live_first_audio_ms"), ["582 ms", "582 ms"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("extended_verdict_summary"), ["100% (60 / 60)", "100% (60 / 60)"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("wave6_verdict_summary"), ["100% (29 / 29)", "100% (29 / 29)"]);
+  assert.deepEqual(
+    fileHarness.readEvalFieldValues("combined_stress_verdict_summary"),
+    ["100% (89 / 89)", "100% (89 / 89)"]
+  );
+  assert.deepEqual(fileHarness.readEvalFieldValues("loopback_ingest_frame_p50_ms"), ["1.17 ms", "1.17 ms"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("loopback_hud_replay_p50_ms"), ["1.78 ms", "1.78 ms"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("tts_wav_summary"), ["6 / 6", "6 / 6"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("total_suites_compiled"), ["21", "21", "21", "21"]);
+  assert.deepEqual(
+    fileHarness.readEvalFieldValues("e2e_verify_to_hud_p50_ms"),
+    ["2738.8 ms", "2738.8 ms", "2738.8 ms", "2738.8 ms"]
+  );
+  assert.deepEqual(
+    fileHarness.readEvalFieldValues("unit_tests_passing"),
+    ["475 / 475", "475 / 475", "475 / 475", "475 / 475", "475 / 475", "475 / 475"]
+  );
+  assert.deepEqual(fileHarness.readEvalFieldValues("suite_sync_status"), [
+    "HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (89 / 89) stress/Wave-6 (21 suites)",
+    "HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (89 / 89) stress/Wave-6 (21 suites)"
+  ]);
+
+  const syncedReal = fileHarness.updateEvalData(realCombined);
+  assert.equal(syncedReal.confident_wrong_dose_count, 0);
+  assert.equal(syncedReal.false_safe_allergen_count, 0);
+  assert.equal(syncedReal.pii_leak_count, 0);
+  assert.equal(syncedReal.total_suites_compiled, 21);
+  assert.equal(syncedReal.combined_stress_cases_evaluated, 89);
+  assert.equal(syncedReal.e2e_verify_to_hud_p50_ms, 2738.8);
+  assert.equal(syncedReal.loopback_ingest_frame_p50_ms, 1.17);
+  assert.equal(syncedReal.loopback_hud_replay_p50_ms, 1.78);
 
   const requestedUrls: string[] = [];
   const liveSummary = {
@@ -895,6 +978,15 @@ test("deck/deck.js fetches /api/eval-summary over http/https to hydrate window.u
       ece: 0.0112,
       brier_score: 0.0004,
       n_items: 20
+    },
+    wave6_summary: {
+      ...(realCombined.wave6_summary as Record<string, unknown>),
+      label_and_fusion_cases_evaluated: 30,
+      label_and_fusion_verdict_matches: 30,
+      label_and_fusion_verdict_accuracy: 1.0,
+      e2e_verify_to_hud_p50_ms: 2610.4,
+      loopback_ingest_frame_p50_ms: 1.05,
+      loopback_hud_replay_p50_ms: 1.52
     },
     live_probe: {
       ...(realCombined.live_probe as Record<string, unknown>),
@@ -919,6 +1011,11 @@ test("deck/deck.js fetches /api/eval-summary over http/https to hydrate window.u
   assert.equal(httpsHarness.getEvalData().calibration_items, 20);
   assert.equal(httpsHarness.getEvalData().live_first_audio_ms, 540);
   assert.equal(httpsHarness.getEvalData().confident_wrong_dose_count, 0);
+  assert.equal(httpsHarness.getEvalData().wave6_cases_evaluated, 30);
+  assert.equal(httpsHarness.getEvalData().combined_stress_cases_evaluated, 90);
+  assert.equal(httpsHarness.getEvalData().e2e_verify_to_hud_p50_ms, 2610.4);
+  assert.equal(httpsHarness.getEvalData().loopback_ingest_frame_p50_ms, 1.05);
+  assert.equal(httpsHarness.getEvalData().loopback_hud_replay_p50_ms, 1.52);
   assert.deepEqual(httpsHarness.readEvalFieldValues("ece"), ["0.0112", "0.0112"]);
   assert.deepEqual(httpsHarness.readEvalFieldValues("brier_score"), ["0.0004", "0.0004"]);
   assert.deepEqual(httpsHarness.readEvalFieldValues("calibration_items"), ["20", "20"]);
@@ -927,6 +1024,16 @@ test("deck/deck.js fetches /api/eval-summary over http/https to hydrate window.u
     httpsHarness.readEvalFieldValues("overall_verdict_summary"),
     ["100.0% (53 / 53)", "100.0% (53 / 53)"]
   );
+  assert.deepEqual(
+    httpsHarness.readEvalFieldValues("combined_stress_verdict_summary"),
+    ["100% (90 / 90)", "100% (90 / 90)"]
+  );
+  assert.deepEqual(
+    httpsHarness.readEvalFieldValues("e2e_verify_to_hud_p50_ms"),
+    ["2610.4 ms", "2610.4 ms", "2610.4 ms", "2610.4 ms"]
+  );
+  assert.deepEqual(httpsHarness.readEvalFieldValues("loopback_ingest_frame_p50_ms"), ["1.05 ms", "1.05 ms"]);
+  assert.deepEqual(httpsHarness.readEvalFieldValues("loopback_hud_replay_p50_ms"), ["1.52 ms", "1.52 ms"]);
 
   let offlineFetchCalls = 0;
   const offlineHarness = createDeckHarness(slidesMeta, {
@@ -939,6 +1046,7 @@ test("deck/deck.js fetches /api/eval-summary over http/https to hydrate window.u
   await offlineHarness.getApi().ready;
   assert.equal(offlineFetchCalls, 1);
   assert.equal(offlineHarness.getEvalData().ece, 0.0138);
+  assert.equal(offlineHarness.getEvalData().total_suites_compiled, 21);
   assert.deepEqual(offlineHarness.readEvalFieldValues("ece"), ["0.0138", "0.0138"]);
   assert.deepEqual(
     offlineHarness.readEvalFieldValues("overall_verdict_summary"),
