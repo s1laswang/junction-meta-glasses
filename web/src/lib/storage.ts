@@ -1,5 +1,6 @@
 // Everything HoldUp keeps lives here, in this browser's localStorage. Nothing is stored server-side.
 import type { FeatureFlag, Med, Profile } from "../../../shared/types.ts";
+import { clearAccessKey } from "./key.ts";
 
 const PREFIX = "holdup.";
 const K = {
@@ -110,17 +111,23 @@ export function saveSettings(s: Settings) {
 
 /** Wipe every HoldUp key, the offline cache and the session code. */
 export async function deleteAllData() {
+  clearAccessKey();
   try {
-    for (const key of Object.keys(localStorage)) if (key.startsWith(PREFIX)) localStorage.removeItem(key);
+    const keys = new Set<string>(Object.keys(localStorage));
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k !== null) keys.add(k);
+    }
+    for (const key of keys) {
+      if (key.startsWith(PREFIX)) localStorage.removeItem(key);
+    }
+  } catch {}
+  try {
     sessionStorage.clear();
-  } catch {
-    /* ignore */
-  }
+  } catch {}
   try {
     if ("caches" in window) for (const k of await caches.keys()) await caches.delete(k);
-  } catch {
-    /* ignore */
-  }
+  } catch {}
 }
 
 export function newMedId(name: string) {
