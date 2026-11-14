@@ -1,0 +1,776 @@
+{
+  "generated_at": "2026-11-14T17:13:34.642190+00:00",
+  "model": "gemini-3.8-flash",
+  "profile": {
+    "meds": [
+      {
+        "id": "aml",
+        "name": "Amlodipin",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ],
+        "barcode": "6432100012345",
+        "notes": "Blood pressure, 1 tablet in the evening"
+      },
+      {
+        "id": "met",
+        "name": "Metformin",
+        "ingredient": "metformin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ],
+        "barcode": "6432100054321",
+        "notes": "With meals twice daily"
+      },
+      {
+        "id": "par",
+        "name": "Panadol",
+        "ingredient": "paracetamol",
+        "strength": "500 mg",
+        "schedule": [
+          "as needed"
+        ],
+        "barcode": "6432100098765",
+        "notes": "Pain or fever"
+      }
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "strength_min_conf": 0.8,
+    "n_items": 10,
+    "n_readable_tactile": 6,
+    "n_occluded_tactile": 4,
+    "readable_tactile_accuracy": 1.0,
+    "occluded_tactile_abstention_rate": 1.0,
+    "clean_field_accuracy": 1.0,
+    "occluded_abstention_rate": 1.0,
+    "verdict_matches": 10,
+    "verdict_accuracy": 1.0,
+    "confident_wrong_dose_count": 0,
+    "false_safe_allergen_count": 0,
+    "latency_p50_ms": 3569.5,
+    "latency_p95_ms": 4767.7,
+    "latency_mean_ms": 3722.2,
+    "tokens_in": 24850,
+    "tokens_out": 1250,
+    "tokens_thinking": 702
+  },
+  "items": [
+    {
+      "id": "bt_01",
+      "tactile_tier": "readable_tactile",
+      "occlusion_mode": "safe_zone_braille_and_two_bands",
+      "scene_type": "med_box",
+      "description": "EU Art. 56a embossed Braille dots across face + 2 blue evening rubber bands in right margin: Amlodipin 5 mg match",
+      "image_path": "eval/out/braille_tactile_markers/bt_01.jpg",
+      "image_bytes": 83321,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 2,
+      "rubber_bands": 2,
+      "marker_note": "ILTA / EVENING",
+      "strength_readable": true,
+      "has_profile_allergen": false,
+      "expected_strength": "5 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 4212.1,
+      "tokens_in": 2485,
+      "tokens_out": 120,
+      "tokens_thinking": 117,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Amlodipin",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "ILTA / EVENING",
+          "confidence": 0.9
+        },
+        "expiry": {
+          "value": "2027-09",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Amlodipine 5 mg, your evening pill",
+        "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+        "reasons": [
+          "matches aml",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "aml",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "bt_02",
+      "tactile_tier": "readable_tactile",
+      "occlusion_mode": "safe_zone_braille_and_bumpon",
+      "scene_type": "med_box",
+      "description": "Embossed Braille dots + raised orange tactile Bumpon warning dot in safe corner: Burana 400 mg NSAID avoid warning",
+      "image_path": "eval/out/braille_tactile_markers/bt_02.jpg",
+      "image_bytes": 77537,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 2,
+      "rubber_bands": 0,
+      "marker_note": "PAIN ONLY",
+      "strength_readable": true,
+      "has_profile_allergen": false,
+      "expected_strength": "400 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3109.1,
+      "tokens_in": 2485,
+      "tokens_out": 115,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Burana",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "ibuprofen",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "400 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Ibuprofen 400 mg: not on your list",
+        "speech": "This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.",
+        "reasons": [
+          "ibuprofen is an NSAID, on your avoid list",
+          "not on your medication list"
+        ]
+      }
+    },
+    {
+      "id": "bt_03",
+      "tactile_tier": "readable_tactile",
+      "occlusion_mode": "safe_zone_braille_and_band",
+      "scene_type": "med_box",
+      "description": "Embossed Braille dots + green rubber band in safe right zone: Metformin 500 mg EXP 2025-01 expired pack warning",
+      "image_path": "eval/out/braille_tactile_markers/bt_03.jpg",
+      "image_bytes": 82663,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 2,
+      "rubber_bands": 1,
+      "marker_note": "WITH MEALS",
+      "strength_readable": true,
+      "has_profile_allergen": false,
+      "expected_strength": "500 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3831.3,
+      "tokens_in": 2485,
+      "tokens_out": 118,
+      "tokens_thinking": 95,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Metformin",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "WITH MEALS",
+          "confidence": 0.95
+        },
+        "expiry": {
+          "value": "2025-01",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Metformin 500 mg: expired",
+        "speech": "This is Metformin 500 mg, your medicine, but it expired in January 2025. Don't take it, ask a pharmacist for a new pack.",
+        "reasons": [
+          "expired 2025-01"
+        ],
+        "matchedMedId": "met"
+      }
+    },
+    {
+      "id": "bt_04",
+      "tactile_tier": "readable_tactile",
+      "occlusion_mode": "safe_zone_braille_and_bumpon",
+      "scene_type": "med_box",
+      "description": "Embossed Braille dots + yellow tactile Bumpon dot + caregiver note: Amlodipin 10 mg wrong-dose warning vs 5 mg profile",
+      "image_path": "eval/out/braille_tactile_markers/bt_04.jpg",
+      "image_bytes": 82312,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 2,
+      "rubber_bands": 1,
+      "marker_note": "CHECK DOSE",
+      "strength_readable": true,
+      "has_profile_allergen": false,
+      "expected_strength": "10 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 4081.5,
+      "tokens_in": 2485,
+      "tokens_out": 117,
+      "tokens_thinking": 143,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Amlodipin",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "10 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Amlodipine 10 mg: wrong strength",
+        "speech": "This is Amlodipine 10 mg, but your list says 5 mg. Don't take it before checking with a pharmacist.",
+        "reasons": [
+          "strength 10 mg differs from your 5 mg"
+        ],
+        "matchedMedId": "aml"
+      }
+    },
+    {
+      "id": "bt_05",
+      "tactile_tier": "readable_tactile",
+      "occlusion_mode": "safe_zone_food_tactile",
+      "scene_type": "food_pack",
+      "description": "Raised red tactile warning Bumpon + pantry rubber band off-panel: Hazelnut Praline Wafers tree-nut allergen warning",
+      "image_path": "eval/out/braille_tactile_markers/bt_05.jpg",
+      "image_bytes": 97392,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 1,
+      "rubber_bands": 1,
+      "marker_note": "GUEST SNACK",
+      "strength_readable": false,
+      "has_profile_allergen": true,
+      "expected_strength": null,
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3183.9,
+      "tokens_in": 2485,
+      "tokens_out": 132,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "Nordic Confectionery Hazelnut Praline Wafers",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "wafer biscuits",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-10-15",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": [
+            "hazelnut",
+            "wheat",
+            "milk"
+          ],
+          "confidence": 0.98
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.98
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains hazelnut",
+        "speech": "Warning: Nordic Confectionery Hazelnut Praline Wafers contains hazelnut. Your profile lists an allergy to tree nuts.",
+        "reasons": [
+          "contains hazelnut (allergy: tree nuts)"
+        ]
+      }
+    },
+    {
+      "id": "bt_06",
+      "tactile_tier": "readable_tactile",
+      "occlusion_mode": "safe_zone_food_tactile",
+      "scene_type": "food_pack",
+      "description": "Raised green tactile Bumpon dot + rubber band off-panel: Plain Oat Drink safe info verdict",
+      "image_path": "eval/out/braille_tactile_markers/bt_06.jpg",
+      "image_bytes": 86326,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 1,
+      "rubber_bands": 1,
+      "marker_note": "SAFE OAT",
+      "strength_readable": false,
+      "has_profile_allergen": false,
+      "expected_strength": null,
+      "expected_level": "info",
+      "predicted_level": "info",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3307.7,
+      "tokens_in": 2485,
+      "tokens_out": 123,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "Nordic Oat Mill Plain Oat Drink",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "oat drink",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-12-10",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "oats",
+            "gluten"
+          ],
+          "confidence": 0.98
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "info",
+        "headline": "Nordic Oat Mill Plain Oat Drink: none of",
+        "speech": "Nordic Oat Mill Plain Oat Drink: no peanut and tree nuts listed. Best before 10 December 2027.",
+        "reasons": [
+          "no listed allergen matches your profile"
+        ]
+      }
+    },
+    {
+      "id": "bt_07",
+      "tactile_tier": "occluded_tactile",
+      "occlusion_mode": "wide_rubber_band_over_strength",
+      "scene_type": "med_box",
+      "description": "Zero-guess trap: opaque tan rubber band + EVENING PILL caregiver note covering Amlodipin strength digits",
+      "image_path": "eval/out/braille_tactile_markers/bt_07.jpg",
+      "image_bytes": 76569,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 2,
+      "rubber_bands": 0,
+      "marker_note": "EVENING PILL",
+      "strength_readable": false,
+      "has_profile_allergen": false,
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 2921.3,
+      "tokens_in": 2485,
+      "tokens_out": 133,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Amlodipin",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": "EVENING PILL",
+          "confidence": 0.95
+        },
+        "expiry": {
+          "value": "2027-09",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.85,
+        "guidance": "Turn the box to check the strength on the side."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Amlodipine: strength unclear",
+        "speech": "It looks like Amlodipine, but I can't read the strength confidently. Turn the box to check the strength on the side.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "aml"
+      }
+    },
+    {
+      "id": "bt_08",
+      "tactile_tier": "occluded_tactile",
+      "occlusion_mode": "bumpon_stickers_over_digits",
+      "scene_type": "med_box",
+      "description": "Zero-guess trap: two 3D black hemispherical tactile Bumpon dots stuck directly over Metformin dosage digits",
+      "image_path": "eval/out/braille_tactile_markers/bt_08.jpg",
+      "image_bytes": 80267,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 2,
+      "rubber_bands": 0,
+      "marker_note": "TWICE DAILY",
+      "strength_readable": false,
+      "has_profile_allergen": false,
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3066.7,
+      "tokens_in": 2485,
+      "tokens_out": 132,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Metformin Sandoz",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "dosing": {
+          "value": "TWICE DAILY",
+          "confidence": 0.95
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.65,
+        "guidance": "Turn the box to show another side for the strength."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Metformin: strength unclear",
+        "speech": "It looks like Metformin, but I can't read the strength confidently. Turn the box to show another side for the strength.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "met"
+      }
+    },
+    {
+      "id": "bt_09",
+      "tactile_tier": "occluded_tactile",
+      "occlusion_mode": "sharpie_scrawl_over_strength",
+      "scene_type": "med_box",
+      "description": "Zero-guess trap: thick black felt-tip caregiver marker scrawl obliterating Panadol strength badge",
+      "image_path": "eval/out/braille_tactile_markers/bt_09.jpg",
+      "image_bytes": 77757,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 2,
+      "rubber_bands": 0,
+      "marker_note": "FOR FEVER",
+      "strength_readable": false,
+      "has_profile_allergen": false,
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 4620.3,
+      "tokens_in": 2485,
+      "tokens_out": 127,
+      "tokens_thinking": 135,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Panadol",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "paracetamol",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2028-02",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.65,
+        "guidance": "Strength is covered. Turn the box to show another side."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Paracetamol: strength unclear",
+        "speech": "It looks like Paracetamol, but I can't read the strength confidently. Strength is covered.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "par"
+      }
+    },
+    {
+      "id": "bt_10",
+      "tactile_tier": "occluded_tactile",
+      "occlusion_mode": "braille_dymo_tape_over_strength",
+      "scene_type": "med_box",
+      "description": "Zero-guess trap: opaque blue Dymo Braille embossing tape strip stuck directly over Amlodipin strength digits",
+      "image_path": "eval/out/braille_tactile_markers/bt_10.jpg",
+      "image_bytes": 79256,
+      "width": 768,
+      "height": 768,
+      "braille_rows": 2,
+      "rubber_bands": 0,
+      "marker_note": "1 TAB EVENING",
+      "strength_readable": false,
+      "has_profile_allergen": false,
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 4888.3,
+      "tokens_in": 2485,
+      "tokens_out": 133,
+      "tokens_thinking": 212,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Amlodipin",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": "1 TAB EVENING",
+          "confidence": 0.95
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.65,
+        "guidance": "Turn the box to show the strength on another side."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Amlodipine: strength unclear",
+        "speech": "It looks like Amlodipine, but I can't read the strength confidently. Turn the box to show the strength on another side.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "aml"
+      }
+    }
+  ]
+}
