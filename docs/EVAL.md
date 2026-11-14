@@ -8,7 +8,7 @@
 - PIL produced degradations at 3 severities: crop, defocus, glare, low light, motion blur, rotation, back of box.
 - Ground truth per field is marked visible, partial or hidden.
 
-**1,740 images, 0 API errors.** Results come from `eval/out/results.json` via `eval/run_eval.py`. 95% CIs: Wilson for rates, the rule of three for zero events, bootstrap for ECE and latency.
+**1,740 images, 0 API errors.** The 210 kept renders are 170 fronts and 40 back-of-box views; with the clean images and the degradations at up to 3 severities, that makes 1,740 scored images. The full results are committed at **`eval/results/v1_results.json`** (a copy of the run's `eval/out/results.json`, produced by `eval/run_eval.py`). 95% CIs: Wilson for rates, the rule of three for zero events, bootstrap for ECE and latency.
 
 ## Headline
 | Metric | Result |
@@ -17,16 +17,21 @@
 | Strength when visible (n = 926) | 83.2% correct, 16.8% abstained, **0.0% wrong** |
 | Strength when hidden | abstains 98.4% |
 | All fields when visible (n = 4,776) | 82.4% correct, 15.9% abstained, 1.7% wrong |
+| **Confident-wrong product names** (conf ≥ 0.8) | **42 / 1,173 = 3.6%**. Mostly the name read without the strength suffix (e.g. "Pamol" vs "Pamol 24 mg/ml"). Strength is a separate field, gated at 0.8 |
 | Calibration ECE, all answered fields (n = 4,406) | 0.022 (0.018–0.028) |
 | **Unsafe reassurance, end to end** (n = 4,730 image × profile verdicts) | **49 = 1.0% (0.78–1.37%)** before the Sat-evening fixes |
 | Unsafe for "not on my list" and "wrong strength" scenarios (n = 2,560) | **0** |
 | Verify latency per call | p50 3.43 s (3.41–3.46), p95 5.55 s (5.42–5.83) |
 
 ## Where the 49 unsafe reassurances came from, and the fixes
-1. **32 expiry misread or not seen** on a matched medicine. **Fix:** the EU FMD DataMatrix cross-check (`server/src/gs1.ts`, `safety.ts`) reads the exact expiry from the pack's own code. An expired code is a warning, and a code/print conflict is unsure.
+1. **32 expiry misread or not seen** on a matched medicine. **Mitigation, only when the pack's DataMatrix decodes:** the EU FMD DataMatrix cross-check (`server/src/gs1.ts`, `safety.ts`) reads the exact expiry from the pack's own code. An expired code is a warning, and a code/print conflict is unsure.
 2. **17 missed food allergens** (mostly cropped panels where a nut was off-frame). **Fix** (commit `667312c`): "none of your allergens" now needs allergen confidence ≥ 0.95 and readability ≥ 0.8. Otherwise the answer is "not sure, show the whole panel". Replayed on the eval's own predictions, the risky answered food reads drop from **43 to 2 of 334**, and the app still answers on 117. Warnings for a found allergen are unchanged.
 
-A full re-run with both fixes is pending.
+A full re-run with both fixes is pending. Without a decoded code, an unreadable expiry still produces a match that says "I couldn't read the expiry date".
+
+**Scope of the claim:** the product states a strength only when its confidence is ≥ 0.8. Below that it says "I'm not sure". That isn't the same as "never wrong", and the numbers above are synthetic.
+
+A separate, smaller fleet run (160 images, branch `fleet/jr1-eval-and-slide10`, not merged) showed 6 confident-wrong product names, the same failure mode as above.
 
 ## Gemini as the workforce
 These calls built the eval set:

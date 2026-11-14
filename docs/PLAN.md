@@ -81,7 +81,7 @@ The overall winner comes from peer review (top 5), then a 7-person grand jury, s
   - bystanders ignored
 - [ ] Graceful failure is always spoken ("I'm not sure, ask a pharmacist")
 
-**DeepMind (stackable), deliverable `docs/GEMINI.md`** with explicit answers to the 4 required questions plus a usage-ledger summary from `/api/stats` (calls, models, latency p50/p95). Every eval number carries n and a 95% CI. Problem → integration → innovation → why Gemini (native-audio Live + tool calls mid-stream, structured multimodal extraction, spatial `box_2d` scene understanding, model comparison chart, Gemini as the eval workforce, usage ledger).
+**DeepMind (stackable), deliverable `GEMINI.md`** with explicit answers to the 4 required questions plus a usage-ledger summary from `/api/stats` (calls, models, latency p50/p95). Every eval number carries n and a 95% CI. Problem → integration → innovation → why Gemini (native-audio Live + tool calls mid-stream, structured multimodal extraction, spatial `box_2d` scene understanding, model comparison chart, Gemini as the eval workforce, usage ledger).
 
 ## 1. Problem and audience
 
