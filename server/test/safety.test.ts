@@ -56,6 +56,13 @@ test("unsure when strength confidence < 0.8 or missing", () => {
   assert.equal(missing.level, "unsure");
 });
 
+test("blurry label: plausible name at 0.7 + readability 0.4 is unsure, never a match", () => {
+  const v = checkLabel(read({ product: f("Amlodipine Orion", 0.7), strength: f("5 mg", 0.85), readability: 0.4, guidance: "Move it closer to your face." }), profile, NOW);
+  assert.equal(v.level, "unsure");
+  assert.match(v.speech, /might be Amlodipine/);
+  assert.match(v.speech, /Move it closer/);
+});
+
 test("warning: wrong strength", () => {
   const v = checkLabel(read({ ingredient: f("amlodipine"), strength: f("10 mg") }), profile, NOW);
   assert.equal(v.level, "warning");

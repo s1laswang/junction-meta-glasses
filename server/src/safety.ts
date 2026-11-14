@@ -3,6 +3,9 @@ import type { LabelRead, Med, Profile, Verdict } from "../../shared/types.ts";
 
 export const STRENGTH_MIN_CONF = 0.8;
 const NAME_MIN_CONF = 0.6;
+/** A "yes, this is your medicine" needs a confident identity and a readable label, not just a confident strength. */
+export const MATCH_NAME_MIN_CONF = 0.8;
+export const MATCH_MIN_READABILITY = 0.5;
 const ALLERGEN_MIN_CONF = 0.6;
 
 // ---------- normalisation ----------
@@ -296,6 +299,11 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
     }
     // matched a saved med
     if (avoid.length) return v("warning", `${label}: on your avoid list`, `This is ${label}. Your profile says to avoid it.`, { matchedMedId: med.id });
+    const nameConf = Math.max(read.ingredient.value ? read.ingredient.confidence : 0, read.product.value ? read.product.confidence : 0);
+    if (nameConf < MATCH_NAME_MIN_CONF || read.readability < MATCH_MIN_READABILITY) {
+      reasons.push(`identity not confident (name ${nameConf.toFixed(2)}, readability ${read.readability.toFixed(2)})`);
+      return v("unsure", `Might be ${name}, not sure`, `It might be ${name}, but I can't read the label clearly enough to be sure. ${guidance ?? "Bring it a bit closer and hold it still."}`, { matchedMedId: med.id });
+    }
     if (!strengthOk) {
       reasons.push(read.strength.value ? `strength confidence ${read.strength.confidence.toFixed(2)} < ${STRENGTH_MIN_CONF}` : "strength not readable");
       return v("unsure", `${name}: strength unclear`, `It looks like ${name}, but I can't read the strength confidently. ${guidance ?? "Turn the box so the side panel faces you, or ask a pharmacist."}`, { matchedMedId: med.id });
