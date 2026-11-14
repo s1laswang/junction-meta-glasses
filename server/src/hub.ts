@@ -1,6 +1,3 @@
-// Session hubs: one per ?session= id. Holds the phone socket(s), HUD sockets, frame ring, profile (memory only)
-// and the last verdict/coach/device for late HUDs. `session` is optional on /hud-ws and /ingest/*: those then
-// follow the most recently started live session.
 import type { WebSocket } from "ws";
 import type { DeviceState, Profile, ServerMsg, Verdict } from "../../shared/types.ts";
 import { FrameRing, emptyProfile } from "./verify.ts";
@@ -28,7 +25,6 @@ export class Hub {
   touchedAt = Date.now();
   constructor(readonly id: string) {}
 
-  /** Send to the phone client(s) and, for HUD-relevant types, to HUDs (own + floating ones if this is the latest). */
   emit(msg: ServerMsg, opts: { clients?: boolean; hud?: boolean } = {}) {
     this.touchedAt = Date.now();
     if (msg.type === "verdict") this.lastVerdict = msg.verdict;
@@ -39,7 +35,6 @@ export class Hub {
     if (opts.clients !== false) for (const c of this.clients) safeSend(c, s);
     if (opts.hud !== false && HUD_TYPES.has(msg.type)) for (const h of hudsFor(this)) safeSend(h, s);
   }
-  /** Replay buffered state to a HUD that connects late. */
   replay(ws: WebSocket) {
     if (this.lastStatus) safeSend(ws, JSON.stringify(this.lastStatus));
     if (this.device) safeSend(ws, JSON.stringify({ type: "device", device: this.device }));
@@ -54,14 +49,12 @@ export class Hub {
 }
 
 export function safeSend(ws: WebSocket, data: string) {
-  try { if (ws.readyState === 1) ws.send(data); } catch { /* socket gone */ }
+  try { if (ws.readyState === 1) ws.send(data); } catch {}
 }
 
 const hubs = new Map<string, Hub>();
 let latestId: string | undefined;
-/** HUDs connected without ?session=: they follow the latest live session. */
 const floatingHuds = new Set<WebSocket>();
-/** Device state that arrived while no session existed. */
 let orphanDevice: DeviceState | undefined;
 
 function hudsFor(h: Hub): WebSocket[] {
@@ -84,12 +77,10 @@ export function getOrCreateHub(id: string): Hub {
   return h;
 }
 export const latestHub = () => (latestId ? hubs.get(latestId) : undefined);
-/** Resolve an optional session param: explicit id (existing hub only) or the latest live session. */
 export function resolveHub(id?: string | null): Hub | undefined {
   return id ? hubs.get(id) : latestHub();
 }
 
-/** Called when a live session starts: this hub becomes the target for session-less HUDs and ingest. */
 export function markLatest(h: Hub) {
   const prev = latestHub();
   if (!hubs.has(h.id)) hubs.set(h.id, h);
@@ -125,7 +116,6 @@ export function addHud(ws: WebSocket, id?: string | null) {
     if (cur) notifyHudState(cur);
   });
 }
-/** The hub a HUD event should go to. */
 export function hudTarget(id?: string | null) { return resolveHub(id); }
 
 export function setDevice(device: DeviceState, id?: string | null) {
@@ -139,7 +129,6 @@ export function setDevice(device: DeviceState, id?: string | null) {
   h.emit({ type: "device", device });
 }
 
-// Drop idle hubs (and their frames/profile) after 10 minutes without clients or activity.
 setInterval(() => {
   const now = Date.now();
   for (const [id, h] of hubs) {
