@@ -6,9 +6,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CoachCue, DeviceState, LiveState, ScenePosition, Verdict, VerdictLevel } from "../../../shared/types.ts";
 import { CueArrow } from "../components/Icons.tsx";
 import { matchVerdict, mockFoodNuts, mockScene, mockUnsureStrength, mockWarningIbuprofen } from "../lib/verdicts.ts";
-import { demoProfile } from "../lib/storage.ts";
+import { demoProfile, loadProfile } from "../lib/storage.ts";
 import { MOCK_HUD_CHANNEL } from "../lib/mock.ts";
 import { keyHeaders, withKey } from "../lib/key.ts";
+import { cuePhraseId, sayPhrase, verdictPhraseId } from "../lib/phrases.ts";
 
 type HudMsg =
   | { type: "verdict"; verdict: Verdict }
@@ -93,16 +94,22 @@ export function Hud() {
   const speakRef = useRef(speakOn);
   speakRef.current = speakOn;
 
-  const say = useCallback((text: string) => {
-    if (!speakRef.current || !window.speechSynthesis) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-US";
-      window.speechSynthesis.speak(u);
-    } catch {
-      /* ignore */
+  const say = useCallback((text: string, phraseId?: string | null) => {
+    if (!speakRef.current) return;
+    const fallback = () => {
+      if (!window.speechSynthesis) return;
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "en-US";
+        window.speechSynthesis.speak(u);
+      } catch {}
+    };
+    if (phraseId) {
+      void sayPhrase(phraseId, loadProfile().lang, fallback, text);
+      return;
     }
+    fallback();
   }, []);
 
   const onMsg = useCallback(
@@ -111,9 +118,10 @@ export function Hud() {
         setVerdict(m.verdict);
         setCue(null);
         // short on purpose: the glasses speaker is audible to bystanders
-        say(`${LEVEL[m.verdict.level].word.toLowerCase()}. ${m.verdict.headline}`);
+        say(`${LEVEL[m.verdict.level].word.toLowerCase()}. ${m.verdict.headline}`, verdictPhraseId(m.verdict));
       } else if (m.type === "coach") {
         setCue({ cue: m.cue, text: m.text, ts: Date.now() });
+        say(m.text, cuePhraseId(m.cue, m.text));
       } else if (m.type === "status") setLive(m.live);
       else if (m.type === "device") setDevice(m.device);
     },
@@ -169,12 +177,13 @@ export function Hud() {
       try {
         ch = new BroadcastChannel(MOCK_HUD_CHANNEL);
         ch.onmessage = (e) => {
-          gotPhone = true; // a phone tab in mock mode is driving us
-          onMsg(e.data as HudMsg);
+          const d = e.data as { type?: string } | undefined;
+          if (!d || (d.type !== "verdict" && d.type !== "coach" && d.type !== "status" && d.type !== "device")) return;
+          gotPhone = true;
+          onMsg(d as HudMsg);
         };
-      } catch {
-        /* no BroadcastChannel */
-      }
+        ch.postMessage({ type: "hud_hello" });
+      } catch {}
       sendRef.current = (name) => ch?.postMessage({ type: "hud_event", name });
       const p = demoProfile();
       const cycle: HudMsg[] = [
