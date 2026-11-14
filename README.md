@@ -51,7 +51,7 @@ npm install && npm run dev
 ```
 Open http://localhost:5173 (add `?mock=1` to run without a server or Gemini). For a phone or the glasses you need HTTPS: run `npm start` (production build on :8787), then `npm run tunnel`, and open the printed `https://…trycloudflare.com` URL on the phone. The Ray-Ban Display page is at `https://<host>/hud/`.
 
-Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w server run smoke` (real Gemini Live end to end; SKIP if `GEMINI_API_KEY` is unset). `npm -w web test` (contract and a11y). Status on `main`, Sat 14 Nov 2026 late evening: typecheck clean, **server 66/66**, **web 213/213**, smoke **13/13** against real Gemini (incl. scene mode and readiness), `make accept` `RESULT: PASS`.
+Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w server run smoke` (real Gemini Live end to end; SKIP if `GEMINI_API_KEY` is unset). `npm -w web test` (contract and a11y). Status on `main`, Sat 14 Nov 2026 late evening: typecheck clean, **server 223/223**, **web 226/226**, smoke **13/13** against real Gemini (incl. scene mode and readiness), `make accept` `RESULT: PASS`.
 
 ## The plan (authoritative: read this before building anything)
 **THE CHOSEN PLAN IS HOLDUP, as described here and in [docs/PLAN.md](docs/PLAN.md). It is not a pill reminder or a "Did I take my pills?" app.** The core flow, the server, the phone app, the HUD and the glasses bridge are **already built and merged**. Don't rebuild them. Improve them through small PRs.
