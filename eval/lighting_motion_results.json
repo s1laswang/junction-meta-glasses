@@ -1,0 +1,890 @@
+{
+  "generated_at": "2026-11-14T14:31:45.728315+00:00",
+  "model": "gemini-3.8-flash",
+  "profile": {
+    "meds": [
+      {
+        "id": "aml",
+        "name": "Amlodipin",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ],
+        "barcode": "6432100012345",
+        "notes": "Blood pressure, 1 tablet in the evening"
+      },
+      {
+        "id": "met",
+        "name": "Metformin",
+        "ingredient": "metformin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ],
+        "barcode": "6432100054321",
+        "notes": "With meals twice daily"
+      },
+      {
+        "id": "par",
+        "name": "Panadol",
+        "ingredient": "paracetamol",
+        "strength": "500 mg",
+        "schedule": [
+          "as needed"
+        ],
+        "barcode": "6432100098765",
+        "notes": "Pain or fever"
+      }
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "n_items": 12,
+    "verdict_matches": 12,
+    "verdict_accuracy": 1.0,
+    "moderate_degradation_recall": 1.0,
+    "severe_degradation_abstention_rate": 1.0,
+    "clean_field_accuracy": 1.0,
+    "occluded_abstention_rate": 1.0,
+    "confident_wrong_dose_count": 0,
+    "latency_p50_ms": 3559.9,
+    "latency_p95_ms": 4880.7,
+    "latency_mean_ms": 3772.4,
+    "tokens_in": 29820,
+    "tokens_out": 1508,
+    "tokens_thinking": 739,
+    "mean_tokens_in": 2485.0,
+    "mean_tokens_out": 125.7
+  },
+  "items": [
+    {
+      "id": "lm_01",
+      "sweep_group": "ambient_lighting",
+      "degradation_tier": "clean",
+      "description": "Bright daylight 100% luminance AMLODIPINE 5 mg / EXP 2027-08",
+      "image_path": "eval/out/lighting_motion/lm_01.jpg",
+      "image_bytes": 56676,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 100,
+      "iso_noise_sigma": 0.0,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 0,
+      "strength_readable": true,
+      "expected_strength": "5 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 4544.5,
+      "tokens_in": 2485,
+      "tokens_out": 220,
+      "tokens_thinking": 117,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPINE",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-08",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Amlodipine 5 mg, your evening pill",
+        "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+        "reasons": [
+          "matches aml",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "aml",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "lm_02",
+      "sweep_group": "ambient_lighting",
+      "degradation_tier": "moderate",
+      "description": "Indoor evening lamp 50% luminance + mild ISO grain AMLODIPINE 5 mg / EXP 2027-08",
+      "image_path": "eval/out/lighting_motion/lm_02.jpg",
+      "image_bytes": 138923,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 50,
+      "iso_noise_sigma": 5.5,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 0,
+      "strength_readable": true,
+      "expected_strength": "5 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3522.0,
+      "tokens_in": 2485,
+      "tokens_out": 116,
+      "tokens_thinking": 82,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPINE",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-08",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Amlodipine 5 mg, your evening pill",
+        "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+        "reasons": [
+          "matches aml",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "aml",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "lm_03",
+      "sweep_group": "ambient_lighting",
+      "degradation_tier": "moderate",
+      "description": "Dim bedroom 25% luminance + moderate ISO grain BURANA 400 mg / ibuprofeeni",
+      "image_path": "eval/out/lighting_motion/lm_03.jpg",
+      "image_bytes": 172593,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 25,
+      "iso_noise_sigma": 9.0,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 0,
+      "strength_readable": true,
+      "expected_strength": "400 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3202.1,
+      "tokens_in": 2485,
+      "tokens_out": 115,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "BURANA",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "ibuprofen",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "400 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Ibuprofen 400 mg: not on your list",
+        "speech": "This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.",
+        "reasons": [
+          "ibuprofen is an NSAID, on your avoid list",
+          "not on your medication list"
+        ]
+      }
+    },
+    {
+      "id": "lm_04",
+      "sweep_group": "ambient_lighting",
+      "degradation_tier": "moderate",
+      "description": "Dim kitchen 25% luminance Roasted Hazelnut Bar / Ingredients: oats, hazelnuts, honey",
+      "image_path": "eval/out/lighting_motion/lm_04.jpg",
+      "image_bytes": 144140,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 25,
+      "iso_noise_sigma": 6.5,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 0,
+      "strength_readable": false,
+      "expected_strength": null,
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3300.3,
+      "tokens_in": 2485,
+      "tokens_out": 130,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "NORDIC BAKERY Roasted Hazelnut Bar",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "oat & nut snack bar",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-09-18",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "hazelnut",
+            "oats"
+          ],
+          "confidence": 0.98
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains hazelnut",
+        "speech": "Warning: NORDIC BAKERY Roasted Hazelnut Bar contains hazelnut. Your profile lists an allergy to tree nuts.",
+        "reasons": [
+          "contains hazelnut (allergy: tree nuts)"
+        ]
+      }
+    },
+    {
+      "id": "lm_05",
+      "sweep_group": "ambient_lighting",
+      "degradation_tier": "severe",
+      "description": "Near-pitch-black 3% luminance + heavy sensor noise with no readable text",
+      "image_path": "eval/out/lighting_motion/lm_05.jpg",
+      "image_bytes": 238802,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 3,
+      "iso_noise_sigma": 26.0,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 0,
+      "strength_readable": false,
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3315.7,
+      "tokens_in": 2485,
+      "tokens_out": 112,
+      "tokens_thinking": 44,
+      "read": {
+        "kind": "unreadable",
+        "product": {
+          "value": null,
+          "confidence": 0
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0,
+        "guidance": "Turn on the light or uncover the lens."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Can't read the label yet",
+        "speech": "I can't read the label yet. Turn on the light or uncover the lens.",
+        "reasons": [
+          "label not readable"
+        ]
+      }
+    },
+    {
+      "id": "lm_06",
+      "sweep_group": "ambient_lighting",
+      "degradation_tier": "severe",
+      "description": "Blown-out overexposed flashlight hotspot completely washing out the strength digits on METFORMIN",
+      "image_path": "eval/out/lighting_motion/lm_06.jpg",
+      "image_bytes": 63153,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 100,
+      "iso_noise_sigma": 2.5,
+      "flashlight_hotspot": true,
+      "motion_blur_px": 0,
+      "strength_readable": false,
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 4495.9,
+      "tokens_in": 2485,
+      "tokens_out": 120,
+      "tokens_thinking": 104,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Metformin Orion Pharma",
+          "confidence": 0.85
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.7
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.25,
+        "guidance": "Tilt it away from the light to stop the glare."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Metformin: strength unclear",
+        "speech": "It looks like Metformin, but I can't read the strength confidently. Tilt it away from the light to stop the glare.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "met"
+      }
+    },
+    {
+      "id": "lm_07",
+      "sweep_group": "motion_blur",
+      "degradation_tier": "clean",
+      "description": "Crisp static hold (0px blur) METFORMIN 500 mg / EXP 2027-11",
+      "image_path": "eval/out/lighting_motion/lm_07.jpg",
+      "image_bytes": 58689,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 100,
+      "iso_noise_sigma": 0.0,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 0,
+      "strength_readable": true,
+      "expected_strength": "500 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 2855.9,
+      "tokens_in": 2485,
+      "tokens_out": 116,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Metformin 500 mg, your morning pill",
+        "speech": "Yes, Metformin 500 mg, your morning pill. You haven't taken it today.",
+        "reasons": [
+          "matches met",
+          "taken today: 0/2"
+        ],
+        "matchedMedId": "met",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "lm_08",
+      "sweep_group": "motion_blur",
+      "degradation_tier": "moderate",
+      "description": "Mild hand tremor (3px horizontal motion blur) METFORMIN 500 mg / EXP 2027-11",
+      "image_path": "eval/out/lighting_motion/lm_08.jpg",
+      "image_bytes": 84549,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 100,
+      "iso_noise_sigma": 1.8,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 3,
+      "strength_readable": true,
+      "expected_strength": "500 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 5182.9,
+      "tokens_in": 2485,
+      "tokens_out": 116,
+      "tokens_thinking": 159,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Metformin 500 mg, your morning pill",
+        "speech": "Yes, Metformin 500 mg, your morning pill. You haven't taken it today.",
+        "reasons": [
+          "matches met",
+          "taken today: 0/2"
+        ],
+        "matchedMedId": "met",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "lm_09",
+      "sweep_group": "motion_blur",
+      "degradation_tier": "moderate",
+      "description": "Mild hand tremor (3px blur) AMLODIPINE 10 mg wrong-strength trap",
+      "image_path": "eval/out/lighting_motion/lm_09.jpg",
+      "image_bytes": 81622,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 100,
+      "iso_noise_sigma": 1.8,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 3,
+      "strength_readable": true,
+      "expected_strength": "10 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3597.8,
+      "tokens_in": 2485,
+      "tokens_out": 117,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPINE",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "10 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Amlodipine 10 mg: wrong strength",
+        "speech": "This is Amlodipine 10 mg, but your list says 5 mg. Don't take it before checking with a pharmacist.",
+        "reasons": [
+          "strength 10 mg differs from your 5 mg"
+        ],
+        "matchedMedId": "aml"
+      }
+    },
+    {
+      "id": "lm_10",
+      "sweep_group": "motion_blur",
+      "degradation_tier": "severe",
+      "description": "Severe fast swipe (22px motion blur + omitted illegible strength) on AMLODIPINE",
+      "image_path": "eval/out/lighting_motion/lm_10.jpg",
+      "image_bytes": 90702,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 92,
+      "iso_noise_sigma": 3.0,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 22,
+      "strength_readable": false,
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 4633.5,
+      "tokens_in": 2485,
+      "tokens_out": 117,
+      "tokens_thinking": 148,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Amlodipine",
+          "confidence": 0.7
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.6
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.2,
+        "guidance": "Hold still for a second to reduce blur."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Amlodipine: strength unclear",
+        "speech": "It looks like Amlodipine, but I can't read the strength confidently. Hold still for a second to reduce blur.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "aml"
+      }
+    },
+    {
+      "id": "lm_11",
+      "sweep_group": "motion_blur",
+      "degradation_tier": "severe",
+      "description": "Severe fast swipe (24px motion blur) on unidentifiable package",
+      "image_path": "eval/out/lighting_motion/lm_11.jpg",
+      "image_bytes": 112069,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 88,
+      "iso_noise_sigma": 4.0,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 24,
+      "strength_readable": false,
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 2802.3,
+      "tokens_in": 2485,
+      "tokens_out": 109,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "unreadable",
+        "product": {
+          "value": null,
+          "confidence": 0
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0,
+        "guidance": "Hold still for a second."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Can't read the label yet",
+        "speech": "I can't read the label yet. Hold still for a second.",
+        "reasons": [
+          "label not readable"
+        ]
+      }
+    },
+    {
+      "id": "lm_12",
+      "sweep_group": "motion_blur",
+      "degradation_tier": "moderate",
+      "description": "Mild tremor (3px blur) on safe Oat Drink / Ingredients: water, oats (10%), rapeseed oil, salt",
+      "image_path": "eval/out/lighting_motion/lm_12.jpg",
+      "image_bytes": 77038,
+      "width": 768,
+      "height": 768,
+      "luminance_pct": 100,
+      "iso_noise_sigma": 1.8,
+      "flashlight_hotspot": false,
+      "motion_blur_px": 3,
+      "strength_readable": false,
+      "expected_strength": null,
+      "expected_level": "info",
+      "predicted_level": "info",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3816.2,
+      "tokens_in": 2485,
+      "tokens_out": 120,
+      "tokens_thinking": 85,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "Nordic Dairy Free Oat Drink",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "oat drink",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-12-03",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "oats"
+          ],
+          "confidence": 0.98
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "info",
+        "headline": "Nordic Dairy Free Oat Drink: none of your",
+        "speech": "Nordic Dairy Free Oat Drink: no peanut and tree nuts listed. Best before 3 December 2027.",
+        "reasons": [
+          "no listed allergen matches your profile"
+        ]
+      }
+    }
+  ]
+}
