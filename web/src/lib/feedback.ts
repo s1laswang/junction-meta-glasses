@@ -46,6 +46,7 @@ export const earcon = {
   start: () => play([{ f: 523, d: 0.09 }, { f: 784, d: 0.14 }]),
   stop: () => play([{ f: 784, d: 0.09 }, { f: 523, d: 0.14 }]),
   coach: () => play([{ f: 880, d: 0.05, vol: 0.1 }]),
+  checking: () => play([{ f: 659, d: 0.16, type: "sine", vol: 0.07, gap: 0.12 }, { f: 784, d: 0.16, type: "sine", vol: 0.07, gap: 0.12 }, { f: 988, d: 0.28, type: "sine", vol: 0.06 }]), // soft rising shimmer
   ok: () => play([{ f: 988, d: 0.06, vol: 0.12 }, { f: 988, d: 0.06, vol: 0.12 }]),
   match: () => play([{ f: 523, d: 0.11 }, { f: 659, d: 0.11 }, { f: 784, d: 0.22 }]), // rising major arpeggio
   warning: () => play([{ f: 330, d: 0.18, type: "square", vol: 0.1 }, { f: 330, d: 0.18, type: "square", vol: 0.1, gap: 0.08 }, { f: 262, d: 0.3, type: "square", vol: 0.1 }]), // low insistent buzz

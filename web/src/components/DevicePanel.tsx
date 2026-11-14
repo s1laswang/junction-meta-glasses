@@ -68,6 +68,8 @@ export function DevicePanel({ s, checker, open, onToggle }: { s: CheckState; che
         <dd className={d ? tone(d.connected && d.worn) : undefined}>
           {d ? `${d.connected ? "connected" : "disconnected"} · ${d.worn ? "worn" : "not worn"} · battery ${d.battery ?? "?"}% · ${d.streaming ? "streaming" : "idle"}` : "no state yet"}
         </dd>
+        <dt>Display (HUD)</dt>
+        <dd className={tone(s.hudConnected)}>{s.hudConnected == null ? "–" : s.hudConnected ? "connected" : "not connected"}</dd>
         <dt>Auto-stop</dt>
         <dd>{autoStop == null ? "–" : `${autoStop} s`}</dd>
         <dt>Session</dt>

@@ -1,0 +1,19 @@
+{
+  "name": "HoldUp",
+  "short_name": "HoldUp",
+  "description": "Hold it up. Know it's the right one. A hands-free label assistant for blind and low-vision people.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1018",
+  "theme_color": "#0b1018",
+  "categories": ["medical", "health", "accessibility"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

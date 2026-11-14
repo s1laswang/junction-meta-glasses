@@ -116,14 +116,35 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
         </div>
       ) : null}
 
-      <div className="seg" role="group" aria-label="Camera source">
-        <button aria-pressed={s.source === "phone"} onClick={() => void checker.setSource("phone")}>
-          Phone camera
-        </button>
-        <button aria-pressed={s.source === "glasses"} onClick={() => void checker.setSource("glasses")}>
-          Glasses camera
-        </button>
-      </div>
+      {s.verdict ? (
+        <VerdictCard verdict={s.verdict} via={s.verdictVia} headingRef={verdictRef} onRepeat={() => checker.repeat()} onLog={() => checker.logDose()} onDismiss={() => checker.dismissVerdict()} />
+      ) : s.checking ? (
+        <div className="cue checking" aria-busy="true">
+          <span className="arrow">
+            <span className="spinner" aria-hidden="true" />
+          </span>
+          <p className="text">Checking the label…</p>
+        </div>
+      ) : (
+        <div className={`cue ${s.cue ? "" : "idle"}`}>
+          <span className="arrow">
+            <CueArrow cue={s.cue?.cue ?? null} />
+          </span>
+          <p className="text">
+            {s.cue
+              ? s.cue.text
+              : !s.running
+                ? "Press Start, then hold the box up in front of you."
+                : s.mode === "snapshot"
+                  ? "Hold the label steady, then press Check label."
+                  : s.mode === "offline"
+                    ? "Show me the barcode side of your medicine box."
+                    : s.speaking
+                      ? "Listening and watching…"
+                      : "Ask: “Is this my evening pill?”"}
+          </p>
+        </div>
+      )}
 
       <div className="viewfinder" aria-label={cameraOn ? "Camera preview, camera on" : "Camera preview, camera off"} role="img">
         {s.source === "phone" ? <video ref={videoRef} playsInline muted autoPlay aria-hidden="true" /> : null}
@@ -158,28 +179,14 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
         ) : null}
       </div>
 
-      {s.verdict ? (
-        <VerdictCard verdict={s.verdict} via={s.verdictVia} headingRef={verdictRef} onRepeat={() => checker.repeat()} onLog={() => checker.logDose()} onDismiss={() => checker.dismissVerdict()} />
-      ) : (
-        <div className={`cue ${s.cue ? "" : "idle"}`}>
-          <span className="arrow">
-            <CueArrow cue={s.cue?.cue ?? null} />
-          </span>
-          <p className="text">
-            {s.cue
-              ? s.cue.text
-              : !s.running
-                ? "Press Start, then hold the box up in front of you."
-                : s.mode === "snapshot"
-                  ? "Hold the label steady, then press Check label."
-                  : s.mode === "offline"
-                    ? "Show me the barcode side of your medicine box."
-                    : s.speaking
-                      ? "Listening and watching…"
-                      : "Ask: “Is this my evening pill?”"}
-          </p>
-        </div>
-      )}
+      <div className="seg" role="group" aria-label="Camera source">
+        <button aria-pressed={s.source === "phone"} onClick={() => void checker.setSource("phone")}>
+          Phone camera
+        </button>
+        <button aria-pressed={s.source === "glasses"} onClick={() => void checker.setSource("glasses")}>
+          Glasses camera
+        </button>
+      </div>
 
       <section aria-labelledby="caps-h" className="stack" style={{ gap: 8 }}>
         <h2 id="caps-h" className="sr-only">

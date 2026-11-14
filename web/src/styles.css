@@ -591,6 +591,22 @@ main {
   font-size: var(--t-lg);
   font-weight: 800;
 }
+.spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 5px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.cue.checking {
+  border-color: var(--accent);
+}
 .cue.idle .text {
   font-size: var(--t-md);
   font-weight: 700;

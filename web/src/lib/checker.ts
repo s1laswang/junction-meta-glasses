@@ -49,6 +49,8 @@ export type CheckState = {
   verdictVia: Mode | null;
   autoStopAt: number | null;
   snapshotBusy: boolean;
+  checking: boolean;
+  hudConnected: boolean | null;
   speaking: boolean;
   sharpness: number;
   banner: Banner;
@@ -94,6 +96,8 @@ function initial(): CheckState {
     verdictVia: null,
     autoStopAt: null,
     snapshotBusy: false,
+    checking: false,
+    hudConnected: null,
     speaking: false,
     sharpness: 0,
     banner: null,
@@ -123,6 +127,7 @@ export class Checker {
   private lastBarcodeAt = 0;
   private silentAudio: HTMLAudioElement | null = null;
   private routeKey = "";
+  private pendingText: string | null = null;
   onProfileChange?: (p: Profile) => void;
 
   constructor() {
@@ -135,7 +140,10 @@ export class Checker {
     window.addEventListener("offline", this.onOffline);
     document.addEventListener("visibilitychange", this.onVisibility);
     navigator.mediaDevices?.addEventListener?.("devicechange", this.onDeviceChange);
-    if (IS_MOCK) mockHudChannel(this.s.session);
+    if (IS_MOCK) {
+      const ch = mockHudChannel(this.s.session);
+      if (ch) ch.onmessage = (e: MessageEvent<{ type?: string; name?: string }>) => e.data?.type === "hud_event" && this.onHudEvent(e.data.name ?? "");
+    }
     void this.checkHealth();
     this.healthTimer = setInterval(() => void this.checkHealth(), 10_000);
     void audioRoute().then((r) => {
@@ -216,7 +224,7 @@ export class Checker {
     }
     earcon.stop();
     haptic.stop();
-    this.set({ running: false, camera: "off", mic: "off", conn: "idle", autoStopAt: null, cue: null, fps: 0, speaking: false, micLevel: 0, serverLive: null, banner: null });
+    this.set({ running: false, checking: false, camera: "off", mic: "off", conn: "idle", autoStopAt: null, cue: null, fps: 0, speaking: false, micLevel: 0, serverLive: null, banner: null });
     announce(reason, "assertive");
   }
 
@@ -393,16 +401,35 @@ export class Checker {
           announce(friendlyError(m.code));
         }
         break;
+      case "interrupted":
+        this.player.flush();
+        break;
+      case "checking":
+        if (m.phase === "start") {
+          this.set({ checking: true, cue: null });
+          earcon.checking();
+          announce("Checking…");
+        } else this.set({ checking: false });
+        break;
+      case "hud":
+        if (m.connected !== this.s.hudConnected) announce(m.connected ? "Display connected." : "Display disconnected.");
+        this.set({ hudConnected: m.connected });
+        break;
       default: {
-        // tolerate contract additions, e.g. a future {type:"interrupted"}
-        const t = (m as { type?: string }).type;
-        if (t === "interrupted") this.player.flush();
+        // tolerate contract additions: HUD actions forwarded to the phone (proposal)
+        const x = m as { type?: string; name?: string };
+        if (x.type === "hud_event") this.onHudEvent(x.name ?? "");
       }
     }
   }
 
   private onServerStatus(live: LiveState, detail: string) {
     this.set({ serverLive: live, serverDetail: detail });
+    if (live === "closed" && /auto-stop/i.test(detail)) {
+      speak("No label for 45 seconds. I've turned the camera off.");
+      void this.stop("Stopped automatically after 45 seconds without a label. Camera off.");
+      return;
+    }
     if (live === "degraded" || live === "closed") {
       this.setMode("snapshot", `Live assistant unavailable${detail ? ": " + detail : ""}. Switched to snapshot mode.`);
     } else if (live === "reconnecting") {
@@ -431,6 +458,10 @@ export class Checker {
     this.set({ conn: st, connAttempt: info.attempt, nextRetryMs: info.nextRetryMs });
     if (!this.s.running) return;
     if (st === "open") {
+      if (this.pendingText && this.live) {
+        this.live.send({ type: "text", text: this.pendingText });
+        this.pendingText = null;
+      }
       if (this.s.mode !== "offline") {
         if (this.s.mode === "snapshot" && this.s.serverLive !== "degraded") this.setMode("live", "Reconnected. Live assistant is back.");
         else if (this.s.banner?.title.startsWith("Connection")) this.set({ banner: null });
@@ -471,7 +502,7 @@ export class Checker {
 
   // ---- verdicts ----
   private showVerdict(v: Verdict, via: Mode) {
-    this.set({ verdict: v, verdictVia: via, cue: null });
+    this.set({ verdict: v, verdictVia: via, cue: null, checking: false });
     earconForVerdict(v.level);
     haptic.verdict(v.level);
     announce(`${levelWord(v.level)}. ${v.headline}. ${v.speech}`, "assertive");
@@ -484,6 +515,12 @@ export class Checker {
     this.set({ verdict: null });
   }
 
+  private onHudEvent(name: string) {
+    if (name === "log_dose") this.logDose(true);
+    else if (name === "repeat") this.repeat();
+    else if (name === "dismiss") this.dismissVerdict();
+  }
+
   repeat() {
     const v = this.s.verdict;
     if (this.s.mode === "live" && this.live?.isOpen && !IS_MOCK) this.live.send({ type: "event", name: "repeat" });
@@ -491,12 +528,12 @@ export class Checker {
     if (v) announce(v.speech, "assertive");
   }
 
-  logDose() {
+  logDose(fromHud = false) {
     const v = this.s.verdict;
     if (!v?.matchedMedId) return announce("There is no matched medicine to log.", "assertive");
     const p = logDose(loadProfile(), v.matchedMedId);
     this.onProfileChange?.(p);
-    this.live?.send({ type: "event", name: "log_dose" });
+    if (!fromHud) this.live?.send({ type: "event", name: "log_dose" });
     const med = p.meds.find((m) => m.id === v.matchedMedId);
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const msg = `Logged ${med?.name ?? "dose"} at ${time}. Saved on this phone only.`;
@@ -510,8 +547,9 @@ export class Checker {
     const t = text.trim();
     if (!t) return;
     this.armAutoStop();
-    if (this.s.mode === "live" && this.live?.isOpen) {
-      this.live.send({ type: "text", text: t });
+    if (this.s.mode === "live") {
+      if (this.live?.isOpen) this.live.send({ type: "text", text: t });
+      else this.pendingText = t; // sent as soon as the socket opens
       if (!IS_MOCK) this.addCaption("user", t, true);
     } else if (this.s.mode === "snapshot") {
       this.addCaption("user", t, true);
@@ -596,7 +634,10 @@ export class Checker {
     this.set({ online: true });
     announce("Back online. Reconnecting.");
     void this.checkHealth();
-    if (this.s.mode === "offline") this.set({ mode: "snapshot" }); // until the socket proves itself
+    if (this.s.mode === "offline") {
+      if (this.live?.isOpen) this.setMode("live", "Back online. Live assistant connected.");
+      else this.set({ mode: "snapshot", banner: { tone: "warn", title: "Back online", detail: "Reconnecting to the live assistant. Snapshot checks work meanwhile.", action: "snapshot" } }); // until the socket proves itself
+    }
     this.ensureLive();
   };
 
@@ -703,8 +744,8 @@ export class Checker {
     const caps = [...this.s.captions];
     const last = caps[caps.length - 1];
     if (last && last.role === role && !last.final) {
-      const merged = text.startsWith(last.text) ? text : last.text + (/^[\s,.!?]/.test(text) ? "" : " ") + text;
-      caps[caps.length - 1] = { ...last, text: merged, final };
+      // server transcripts are cumulative per utterance: replace the open line until final
+      caps[caps.length - 1] = { ...last, text, final };
     } else {
       caps.push({ id: ++this.captionId, role, text, final });
     }

@@ -143,9 +143,10 @@ export class MockSocket {
       [3600, () => (this.emit({ type: "coach", cue: "rotate_left", text: "Turn it a little left" }), this.say("Turn it a little to the left."))],
       [5600, () => (this.emit({ type: "coach", cue: "closer", text: "A bit closer" }), this.say("A bit closer."))],
       [7400, () => (this.emit({ type: "coach", cue: "hold_still", text: "Hold still. Reading" }), this.say("Hold still, reading."))],
-      [9000, () => this.emit({ type: "coach", cue: "ok", text: "Got it" })],
+      [9000, () => (this.emit({ type: "coach", cue: "ok", text: "Got it" }), this.emit({ type: "checking", phase: "start" }))],
+      [11800, () => this.emit({ type: "checking", phase: "end" })],
       [
-        9800,
+        11800,
         () => {
           const v = idx === 0 ? matchVerdict(p, amlo) : idx === 1 ? mockWarningIbuprofen() : idx === 2 ? mockUnsureStrength() : mockFoodNuts();
           this.lastVerdict = v;
