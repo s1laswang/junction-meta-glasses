@@ -1,0 +1,105 @@
+{
+  "suite": "multiframe_fusion",
+  "model": "gemini-3.8-flash",
+  "thinking_level": "low",
+  "prompt_src": "shared",
+  "prompt_hash": "814770315c42",
+  "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+  "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+  "conf_threshold": 0.8,
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "safety_impl": "server/src/safety.ts via npx tsx",
+  "profile": {
+    "meds": [
+      {
+        "id": "amlodipine",
+        "name": "Amlodipine",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "metformin",
+        "name": "Metformin",
+        "ingredient": "metformin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ]
+      }
+    ],
+    "allergies": [
+      "tree nuts",
+      "peanut"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "n": 12,
+  "errors": 0,
+  "timeouts": 0,
+  "pass_count": 12,
+  "pass_rate": 1.0,
+  "pass_ci95_wilson": [
+    0.7575,
+    1.0
+  ],
+  "confident_wrong_dose_count": 0,
+  "confident_wrong_dose_rate": 0.0,
+  "confident_wrong_dose_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "rule_of_three_95_upper": 0.25,
+  "summary": {
+    "n": 12,
+    "passed": 12,
+    "pass_rate": 100.0,
+    "pass_wilson_95_ci": [
+      75.8,
+      100.0
+    ],
+    "unsafe_reassurance": 0,
+    "unsafe_reassurance_rate": 0.0,
+    "unsafe_wilson_95_ci": [
+      0.0,
+      24.2
+    ],
+    "false_match": 0,
+    "false_match_rate": 0.0,
+    "strength_confident_wrong": 0,
+    "strength_confident_wrong_rate": 0.0,
+    "strength_cw_wilson_95_ci": [
+      0.0,
+      24.2
+    ],
+    "unsure_count": 6,
+    "unsure_rate": 50.0,
+    "latency_s": {
+      "p50": 4.056,
+      "p95": 5.913,
+      "mean": 4.09
+    },
+    "rule_of_three_95_upper_pct": 25.0
+  },
+  "cases": [
+    {"id":"mf_01_single","scenario":"thumb_occluded_front_abstains","question":"Is this my evening pill?","expected_level":"unsure","predicted_level":"unsure","actual_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.5,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":3.581,"error":null,"gt":{"ingredient":"amlodipine","visible_strength":null},"read":{"kind":"medication","product":{"value":"AMLODIPIN ORION","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.5,"guidance":"Move your finger away from the label."},"reasons":["strength not readable"]},
+    {"id":"mf_01_paired","scenario":"front_plus_side_flap_5mg_matches","question":"Is this my evening pill?","expected_level":"match","predicted_level":"match","actual_level":"match","passed":true,"verdict_ok":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.7,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":3.965,"error":null,"gt":{"ingredient":"amlodipine","visible_strength":"5 mg"},"read":{"kind":"medication","product":{"value":"AMLODIPIN ORION","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.7,"guidance":"Turn the box to show the pharmacy label with instructions."},"reasons":["matches amlodipine","taken today: 0/1"]},
+    {"id":"mf_02_single","scenario":"thumb_occluded_wrong_dose_abstains","question":"Is this my evening pill?","expected_level":"unsure","predicted_level":"unsure","actual_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.1,"name_conf":0.98,"readability":0.65,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":3.05,"error":null,"gt":{"ingredient":"amlodipine","visible_strength":null},"read":{"kind":"medication","product":{"value":"AMLODIPIN ORION","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.95},"strength":{"value":null,"confidence":0.1},"dosing":{"value":null,"confidence":0.1},"expiry":{"value":null,"confidence":0.1},"allergens":{"value":null,"confidence":0.1},"barcode":{"value":null,"confidence":0.1},"readability":0.65,"guidance":"Move your finger away from the label."},"reasons":["strength not readable"]},
+    {"id":"mf_02_paired","scenario":"front_plus_side_flap_10mg_warns","question":"Is this my evening pill?","expected_level":"warning","predicted_level":"warning","actual_level":"warning","passed":true,"verdict_ok":true,"strength_read":"10 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.75,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":4.323,"error":null,"gt":{"ingredient":"amlodipine","visible_strength":"10 mg"},"read":{"kind":"medication","product":{"value":"AMLODIPIN ORION","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"10 mg","confidence":0.98},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.75,"guidance":"Turn the box to show the pharmacy sticker."},"reasons":["strength 10 mg differs from your 5 mg"]},
+    {"id":"mf_03_single","scenario":"curved_bottle_left_no_dose_abstains","question":"Can I take this metformin?","expected_level":"unsure","predicted_level":"unsure","actual_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.99,"readability":0.5,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":4.148,"error":null,"gt":{"ingredient":"metformin","visible_strength":null},"read":{"kind":"medication","product":{"value":"METFORMIN","confidence":0.99},"ingredient":{"value":"metformin","confidence":0.99},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.5,"guidance":"Rotate the bottle to show the dose and date."},"reasons":["strength not readable"]},
+    {"id":"mf_03_paired","scenario":"curved_bottle_two_views_expired_warns","question":"Can I take this metformin?","expected_level":"warning","predicted_level":"warning","actual_level":"warning","passed":true,"verdict_ok":true,"strength_read":"500 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":4.902,"error":null,"gt":{"ingredient":"metformin","visible_strength":"500 mg"},"read":{"kind":"medication","product":{"value":"METFORMIN","confidence":0.98},"ingredient":{"value":"metformin","confidence":0.98},"strength":{"value":"500 mg","confidence":0.98},"dosing":{"value":"Take with meals","confidence":0.95},"expiry":{"value":"2025-02","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["expired 2025-02"]},
+    {"id":"mf_04_single","scenario":"food_front_no_allergens_abstains","question":"Does this contain nuts?","expected_level":"unsure","predicted_level":"unsure","actual_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.6,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":2.758,"error":null,"gt":{"ingredient":null,"visible_strength":null},"read":{"kind":"food","product":{"value":"Nordic Crunch Granola Bar","confidence":0.98},"ingredient":{"value":"granola bar","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.6,"guidance":"Turn it around, the label is on the back."},"reasons":["allergen panel not readable"]},
+    {"id":"mf_04_paired","scenario":"food_front_plus_back_hazelnut_warns","question":"Does this contain nuts?","expected_level":"warning","predicted_level":"warning","actual_level":"warning","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.98,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":4.278,"error":null,"gt":{"ingredient":null,"visible_strength":null},"read":{"kind":"food","product":{"value":"Nordic Crunch Granola Bar","confidence":0.98},"ingredient":{"value":"granola bar","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":["hazelnut","oats"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["contains hazelnut (allergy: tree nuts)"]},
+    {"id":"mf_05_single","scenario":"oat_drink_front_no_allergens_abstains","question":"Is this safe with my allergies?","expected_level":"unsure","predicted_level":"unsure","actual_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.5,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":3.237,"error":null,"gt":{"ingredient":null,"visible_strength":null},"read":{"kind":"food","product":{"value":"Nordic Barista Oat Drink","confidence":0.98},"ingredient":{"value":"oat drink","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.5,"guidance":"Turn it around, the label is on the back."},"reasons":["allergen panel not readable"]},
+    {"id":"mf_05_paired","scenario":"oat_drink_front_plus_back_safe_info","question":"Is this safe with my allergies?","expected_level":"info","predicted_level":"info","actual_level":"info","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":1.0,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":6.111,"error":null,"gt":{"ingredient":null,"visible_strength":null},"read":{"kind":"food","product":{"value":"Nordic Barista Oat Drink 1L","confidence":0.98},"ingredient":{"value":"oat drink","confidence":0.98},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":["oats","gluten"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":1.0},"reasons":["no listed allergen matches your profile"]},
+    {"id":"mf_06_single","scenario":"barcode_only_back_abstains","question":"Can I take this for a headache?","expected_level":"unsure","predicted_level":"unsure","actual_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.0,"readability":0.1,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":5.913,"error":null,"gt":{"ingredient":"ibuprofen","visible_strength":null},"read":{"kind":"unreadable","product":{"value":null,"confidence":0.0},"ingredient":{"value":null,"confidence":0.0},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":"6432100099999","confidence":0.99},"readability":0.1,"guidance":"Turn the box around to show the printed side."},"reasons":["label not readable"]},
+    {"id":"mf_06_paired","scenario":"barcode_back_plus_burana_front_warns","question":"Can I take this for a headache?","expected_level":"warning","predicted_level":"warning","actual_level":"warning","passed":true,"verdict_ok":true,"strength_read":"400 mg","strength_conf":1.0,"name_conf":1.0,"readability":0.95,"unsafe_reassurance":false,"false_match":false,"confident_wrong":false,"strength_confident_wrong":false,"latency_s":2.81,"error":null,"gt":{"ingredient":"ibuprofen","visible_strength":"400 mg"},"read":{"kind":"medication","product":{"value":"BURANA","confidence":1.0},"ingredient":{"value":"ibuprofen","confidence":1.0},"strength":{"value":"400 mg","confidence":1.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":1.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":"6432100099999","confidence":1.0},"readability":0.95},"reasons":["ibuprofen is an NSAID, on your avoid list","not on your medication list"]}
+  ]
+}
