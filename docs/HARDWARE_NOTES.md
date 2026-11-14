@@ -89,7 +89,13 @@ What it does: connects to the glasses via DAT, starts a camera stream at **720×
 
 1. The server and tunnel must be running on the demo laptop: `npm start` + `npm run tunnel` (with `HOLDUP_KEY` set, put `?key=<k>` on the Server URL field). Copy the printed `https://….trycloudflare.com` URL.
 2. Open the phone PWA (same tunnel URL) and start a session there. A session code is **not needed**: the server attaches the bridge to the latest live session.
-3. Android Studio → open `junction-meta-glasses/android-dat` → sync → **Run ▶ app** on the phone. No `local.properties` edits are needed (Developer Mode IDs default to `0`).
+3. **Install the prebuilt APK (fastest, no Android Studio needed).** It was built on freighter (Sat 19:03) from main `1557c0a` plus the unit test commit. File: `/tmp/holdup-bridge-debug.apk` on Silas' laptop, 60.5 MB, sha256 `164dea1bb474fbdbcb7bdeccd3270ccc42c46c2c1c5683f2a9bd2b894a3bfe20`. Copy it to the laptop the phone is plugged into (AirDrop/USB stick/`scp`), check the hash (`shasum -a 256 holdup-bridge-debug.apk`), then:
+   ```bash
+   adb devices                                   # phone listed as "device" (USB debugging on, RSA prompt accepted)
+   adb install -r /tmp/holdup-bridge-debug.apk   # -r keeps settings if a build is already installed
+   adb shell am start -n app.holdup.bridge/.MainActivity
+   ```
+   If you get `INSTALL_FAILED_UPDATE_INCOMPATIBLE` (an Android Studio build with another debug key is already installed): `adb uninstall app.holdup.bridge`, then install again. **Alternative:** Android Studio → open `junction-meta-glasses/android-dat` → sync → **Run ▶ app**. No `local.properties` edits are needed (Developer Mode IDs default to `0`).
 4. In **HoldUp Bridge**:
    - **Server URL**: paste the tunnel URL (no trailing slash needed).
    - **Session code**: leave it **blank** (= latest session). Only fill it in if several phones run sessions at once. A link `holdupbridge://connect?server=<url>&session=<code>` (for example from a QR code) fills both fields.
@@ -177,7 +183,8 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 | Time | Who | Finding |
 |---|---|---|
 | Sat 14:20 | glasses agent | Docs research done. SDK 1.0.1 is on Maven Central (no PAT). Dev Mode uses app ID `0`. Web Apps are loaded via Meta AI → Connect Web App. |
-| Sat 14:25 | glasses agent | **Bridge not compiled yet.** freighter (FR8) is unreachable from the venue network (ports 22 and 443 time out), and building on Silas' laptop is off-limits. Every DAT call was checked with `javap` against the real `mwdat-core`/`mwdat-camera` 1.0.1 AARs from Maven Central, so the API names and signatures match. **Momin's first Android Studio sync and build of `android-dat/` is the compile check.** Send any compile error to the glasses agent (paste the first error line). |
+| Sat 14:25 | glasses agent | ~~Bridge not compiled yet~~ (resolved 19:03, see below). freighter (FR8) is unreachable from the venue network (ports 22 and 443 time out), and building on Silas' laptop is off-limits. Every DAT call was checked with `javap` against the real `mwdat-core`/`mwdat-camera` 1.0.1 AARs from Maven Central, so the API names and signatures match. **Momin's first Android Studio sync and build of `android-dat/` is the compile check.** Send any compile error to the glasses agent (paste the first error line). |
 | Sat 14:25 | glasses agent | Uncompressed DAT frames are the raw MediaCodec output. The SDK requests color format 19 (I420, found in the AAR), but phone decoders can return NV12 or padded rows. `YuvJpeg.kt` auto-detects the layout. The bridge shows the detected layout next to the frame size. **If colours look wrong (blue/orange swapped) on the server, note it here.** Text stays readable either way. |
+| Sat 19:03 | glasses agent | **Bridge compiles.** On freighter, a Slurm job (`srun -p normal --time=00:45:00 --cpus-per-task=8 --mem=4G ./gradlew --no-daemon --offline assembleDebug testDebugUnitTest`) gave **BUILD SUCCESSFUL** with no code changes needed, and unit tests passed 4/4 (`UploaderTest`: server URL, `?key=`, session). APK: `app.holdup.bridge` 0.1, minSdk 31 / target 36, arm64-v8a + armeabi-v7a + x86 + x86_64, DAT `APPLICATION_ID`/`CLIENT_TOKEN` = 0. sha256 `164dea1bb474fbdbcb7bdeccd3270ccc42c46c2c1c5683f2a9bd2b894a3bfe20`, laptop copy `/tmp/holdup-bridge-debug.apk`. To rebuild, see `android-dat/README.md` → "Build on freighter". |
 | Sat 14:35 | glasses agent | The bridge sends `worn: null` / `battery: null` when the glasses report UNKNOWN (often the case before the first wear-detection event). `server/src/index.ts` currently maps `worn: !!b.worn`, so null becomes **false (doffed)**, which could trigger the "glasses doffed, use phone camera" fallback wrongly. Server fix requested: keep `null` as unknown. |
 | | | |

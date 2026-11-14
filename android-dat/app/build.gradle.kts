@@ -59,4 +59,5 @@ dependencies {
   implementation(libs.androidx.material3)
   implementation(libs.mwdat.core)
   implementation(libs.mwdat.camera)
+  testImplementation(libs.junit)
 }

@@ -15,6 +15,22 @@ The structure, dependencies and DAT lifecycle are adapted from Meta's sample `sa
 
 CLI alternative: `./gradlew :app:assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk` → `adb install -r …`.
 
+## Build on freighter (FR8, no Android Studio)
+Compute nodes have no internet, so do the downloads on the login node and the build in Slurm with `--offline`:
+```bash
+# laptop: copy the sources
+rsync -a --exclude build --exclude .gradle android-dat/ freighter:junction-meta-glasses-build/android-dat/
+# freighter login node (downloads only): JDK 17 -> ~/tools/jdk17, Android SDK 36 + build-tools 35/36 -> ~/android-sdk
+cd ~/junction-meta-glasses-build/android-dat && bash scripts/setup_android_toolchain.sh
+echo "sdk.dir=$HOME/android-sdk" > local.properties
+export JAVA_HOME=$HOME/tools/jdk17 PATH=$HOME/tools/jdk17/bin:$PATH ANDROID_HOME=$HOME/android-sdk
+./gradlew --no-daemon -I scripts/prefetch.init.gradle prefetchAll   # resolve-only, fills ~/.gradle (incl. aapt2)
+# compute node
+srun -p normal --time=00:45:00 --cpus-per-task=8 --mem=4G ./gradlew --no-daemon --offline assembleDebug testDebugUnitTest
+# -> app/build/outputs/apk/debug/app-debug.apk
+```
+If you bump AGP, update the aapt2 version in `scripts/prefetch.init.gradle`. The offline build error message names the version it needs.
+
 ## Use
 Full runbook: `docs/HARDWARE_NOTES.md` §5. In short: paste the tunnel URL and the session code (or open `holdupbridge://connect?server=<url>&session=<code>`) → **Connect glasses** (approve in Meta AI) → **Start streaming** (allow camera in Meta AI, "Allow always").
 
@@ -26,4 +42,4 @@ Full runbook: `docs/HARDWARE_NOTES.md` §5. In short: paste the tunnel URL and t
 - `MainActivity.kt`: Compose UI, Android and DAT permission flows, deep link.
 
 ## Status
-Written against the SDK 1.0.1 public API, which was checked with `javap` on the Maven Central AARs and against the sample. **Not yet compiled**, see the blocker in `docs/HARDWARE_NOTES.md` (Findings log). The first Android Studio sync and build on Momin's laptop is the compile check.
+Compiles: the freighter Slurm build of `assembleDebug` succeeds and `testDebugUnitTest` passes 4/4 (Sat 19:03). The APK's hash and install command are in `docs/HARDWARE_NOTES.md` §5. Not yet run on real glasses (test slot 1).
