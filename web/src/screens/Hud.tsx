@@ -169,12 +169,13 @@ export function Hud() {
       try {
         ch = new BroadcastChannel(MOCK_HUD_CHANNEL);
         ch.onmessage = (e) => {
-          gotPhone = true; // a phone tab in mock mode is driving us
-          onMsg(e.data as HudMsg);
+          const d = e.data as { type?: string } | undefined;
+          if (!d || (d.type !== "verdict" && d.type !== "coach" && d.type !== "status" && d.type !== "device")) return;
+          gotPhone = true;
+          onMsg(d as HudMsg);
         };
-      } catch {
-        /* no BroadcastChannel */
-      }
+        ch.postMessage({ type: "hud_hello" });
+      } catch {}
       sendRef.current = (name) => ch?.postMessage({ type: "hud_event", name });
       const p = demoProfile();
       const cycle: HudMsg[] = [
@@ -192,9 +193,12 @@ export function Hud() {
       onMsg({ type: "device", device: { connected: true, worn: true, battery: 78, streaming: true, source: "glasses" } });
       let i = 0;
       const tick = () => !gotPhone && onMsg(cycle[i++ % cycle.length]);
-      tick();
+      const first = setTimeout(() => {
+        if (!gotPhone) tick();
+      }, 250);
       const t = setInterval(tick, 4000);
       return () => {
+        clearTimeout(first);
         clearInterval(t);
         ch?.close();
       };

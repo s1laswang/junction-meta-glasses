@@ -47,7 +47,11 @@ export function createApp() {
   // ---------- snapshot verify ----------
   app.post("/api/verify", express.json({ limit: "12mb" }), async (req, res) => {
     const frames = Array.isArray(req.body?.frames) ? (req.body.frames as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 100) : [];
-    const hub = typeof req.body?.session === "string" && req.body.session ? getHub(req.body.session) : undefined;
+    const rawSession = typeof req.body?.session === "string" && req.body.session ? req.body.session : undefined;
+    const validSession = rawSession && /^[\w-]{4,64}$/.test(rawSession) ? rawSession : undefined;
+    const hub = frames.length
+      ? (validSession ? getOrCreateHub(validSession) : rawSession ? undefined : resolveHub(undefined) ?? getOrCreateHub("snapshot"))
+      : (validSession ? getHub(validSession) : undefined);
     let picked: string[];
     let src: string;
     if (frames.length) {
@@ -66,6 +70,11 @@ export function createApp() {
     const profile = req.body?.profile ? toProfile(req.body.profile) : hub?.profile ?? toProfile(undefined);
     const t = Date.now();
     const r = await verify(picked, profile, typeof req.body?.question === "string" ? req.body.question : undefined);
+    if (hub) {
+      hub.emit({ type: "verdict", verdict: r.verdict }, { clients: false });
+      const latest = resolveHub(undefined);
+      if (!latest?.live?.active && latest !== hub) markLatest(hub);
+    }
     log("api.verify", { level: r.verdict.level, model: r.model ?? "none", ms: Date.now() - t, n_frames: picked.length, src });
     res.json(r.verdict);
   });
