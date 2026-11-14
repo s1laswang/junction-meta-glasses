@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HoldUp Printable Stage Prop Labels &amp; Barcodes (A4)</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #eef2f7;
+    color: #0b101b;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .toolbar {
+    max-width: 210mm;
+    margin: 16px auto 12px auto;
+    padding: 18px 22px;
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .toolbar-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .toolbar h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .toolbar p {
+    margin: 4px 0 0 0;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+    line-height: 1.45;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn {
+    appearance: none;
+    border: 1.5px solid #475569;
+    background: #1e293b;
+    color: #f8fafc;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn:hover {
+    border-color: #38bdf8;
+  }
+
+  .btn[aria-pressed="true"] {
+    background: #0284c7;
+    border-color: #7dd3fc;
+    color: #ffffff;
+  }
+
+  .btn-print {
+    background: #10b981;
+    border-color: #34d399;
+    color: #022c22;
+    font-weight: 800;
+  }
+
+  .btn-print:hover {
+    background: #34d399;
+    border-color: #6ee7b7;
+  }
+
+  .rehearsal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #e2e8f0;
+  }
+
+  .rehearsal-step {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 10px;
+    line-height: 1.38;
+  }
+
+  .rehearsal-step strong {
+    color: #38bdf8;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .a4-sheet {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 18px auto;
+    padding: 10mm;
+    background: #ffffff;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.12);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 8mm;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .a4-sheet:last-of-type {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  .sheet-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2.2mm 3.5mm;
+    border: 0.35mm solid #cbd5e1;
+    border-radius: 2mm;
+    background: #f8fafc;
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #334155;
+    letter-spacing: 0.02em;
+  }
+
+  .prop-unit {
+    display: flex;
+    flex-direction: column;
+    gap: 2mm;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .cut-caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 8pt;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0 1mm;
+  }
+
+  .wrap-strip {
+    width: 188mm;
+    height: 106mm;
+    border: 0.55mm solid #0f172a;
+    background: #ffffff;
+    display: grid;
+    grid-template-columns: 80mm 20mm 80mm 8mm;
+    overflow: hidden;
+  }
+
+  .panel-front {
+    width: 80mm;
+    height: 106mm;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .rx-band {
+    padding: 3.2mm 5mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 7.5pt;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .rx-band-match {
+    background: #0f766e;
+    color: #ffffff;
+    border-bottom: 1.2mm solid #14b8a6;
+  }
+
+  .rx-band-nsaid {
+    background: #b91c1c;
+    color: #ffffff;
+    border-bottom: 1.6mm solid #ef4444;
+  }
+
+  .rx-band-expired {
+    background: #1e3a8a;
+    color: #ffffff;
+    border-bottom: 1.2mm solid #60a5fa;
+  }
+
+  .rx-band-food {
+    background: #78350f;
+    color: #fef3c7;
+    border-bottom: 1.2mm solid #f59e0b;
+  }
+
+  .front-body {
+    flex: 1 1 auto;
+    padding: 5mm 5.5mm 4mm 5.5mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .drug-title {
+    margin: 0;
+    font-size: 21.5pt;
+    font-weight: 900;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    color: #090d16;
+  }
+
+  .food-title {
+    margin: 0;
+    font-size: 16.5pt;
+    font-weight: 900;
+    line-height: 1.16;
+    letter-spacing: -0.01em;
+    color: #1c1917;
+  }
+
+  .drug-inn {
+    margin: 2.2mm 0 0 0;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.25;
+  }
+
+  .drug-form {
+    margin: 3.5mm 0 0 0;
+    padding-top: 2.5mm;
+    border-top: 0.35mm solid #cbd5e1;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.35;
+  }
+
+  .ing-panel {
+    margin-top: 2.5mm;
+    padding: 3mm 3.2mm;
+    background: #fffbeb;
+    border: 0.45mm solid #1c1917;
+    border-radius: 1.5mm;
+  }
+
+  .ing-text {
+    margin: 0;
+    font-size: 9.6pt;
+    font-weight: 700;
+    line-height: 1.38;
+    color: #090d16;
+  }
+
+  .allergen-box {
+    margin: 2.2mm 0 0 0;
+    padding-top: 1.8mm;
+    border-top: 0.3mm solid #78350f;
+    font-size: 8.5pt;
+    font-weight: 800;
+    color: #7c2d12;
+    line-height: 1.3;
+  }
+
+  .front-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3mm;
+    padding-top: 3mm;
+    border-top: 0.4mm solid #0f172a;
+    font-size: 11.5pt;
+    font-weight: 800;
+    color: #090d16;
+  }
+
+  .exp-badge {
+    padding: 1mm 2.2mm;
+    border: 0.45mm solid #090d16;
+    border-radius: 1.2mm;
+    background: #f8fafc;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 10.5pt;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: #000000;
+  }
+
+  .panel-spine {
+    width: 20mm;
+    height: 106mm;
+    border-left: 0.45mm dashed #475569;
+    border-right: 0.45mm dashed #475569;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3mm 1mm;
+  }
+
+  .spine-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #334155;
+    white-space: nowrap;
+  }
+
+  .panel-rear {
+    width: 80mm;
+    height: 106mm;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 5mm 5mm 5.5mm 5mm;
+    gap: 3.5mm;
+  }
+
+  .recycle-glyph {
+    opacity: 0.55;
+  }
+
+  .barcode-frame {
+    width: 68mm;
+    padding: 2mm 2mm 1.5mm 2mm;
+    background: #ffffff;
+    border: 0.3mm solid #cbd5e1;
+    border-radius: 1.2mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .barcode-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .barcode-meta {
+    margin-top: 1mm;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 6.5pt;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.04em;
+  }
+
+  .panel-tab {
+    width: 8mm;
+    height: 106mm;
+    border-left: 0.45mm dashed #475569;
+    background: repeating-linear-gradient(
+      -45deg,
+      #f1f5f9,
+      #f1f5f9 2mm,
+      #e2e8f0 2mm,
+      #e2e8f0 4mm
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tab-text {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 7pt;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #475569;
+  }
+
+  @media print {
+    html, body {
+      background: #ffffff;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    .a4-sheet {
+      width: auto;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .barcode-meta {
+      display: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="toolbar no-print">
+  <div class="toolbar-top">
+    <div>
+      <h1>HoldUp Physical Stage Prop Labels &amp; Scannable Barcodes (A4)</h1>
+      <p>Print at 100% scale (Actual Size) on 2 A4 sheets. Cut along solid outer lines, fold 90 degrees on dashed spine lines, and tape around empty pill cartons.</p>
+    </div>
+    <div class="toolbar-actions">
+      <button type="button" class="btn" id="btn-mode-code128" aria-pressed="true">
+        Code-128 (Exact Demo Profile Match)
+      </button>
+      <button type="button" class="btn" id="btn-mode-ean13" aria-pressed="false">
+        GS1 EAN-13 (Guard Bars + Mod-10 Check)
+      </button>
+      <button type="button" class="btn btn-print" id="btn-print-sheet">
+        Print A4 Sheets
+      </button>
+    </div>
+  </div>
+
+  <div class="rehearsal-grid">
+    <div class="rehearsal-step">
+      <strong>1. Back-of-Box -> Match (Prop 1)</strong>
+      Hold rear barcode 6432100012345 toward glasses first ("Turn it around"), flip to Amlodipin 5 mg -> MATCH. Cover "5 mg" with thumb to demo refusal to guess strength.
+    </div>
+    <div class="rehearsal-step">
+      <strong>2. NSAID Safety Catch (Prop 2)</strong>
+      Hold Burana 400 mg (ibuprofeeni / ibuprofen) -> WARNING: not on medication list and profile avoids NSAIDs.
+    </div>
+    <div class="rehearsal-step">
+      <strong>3. Expired Medication Trap (Prop 3)</strong>
+      Hold Metformin 500 mg (EXP 04/2025) -> WARNING: matches saved medication but expired in April 2025.
+    </div>
+    <div class="rehearsal-step">
+      <strong>4. Allergen + Offline Barcode (Prop 4 &amp; 1)</strong>
+      Hold Nordic Oat &amp; Hazelnut Bar -> WARNING: hazelnuts + arachis oil (peanut). Toggle offline and scan 6432100012345 via BarcodeDetector.
+    </div>
+  </div>
+</header>
+
+<section class="a4-sheet" aria-label="Printable Prop Sheet 1">
+  <div class="sheet-banner">
+    <span>HOLDUP HARDWARE REHEARSAL KIT : SHEET 1 OF 2 (PROPS 1 &amp; 2)</span>
+    <span>PRINT AT 100% ACTUAL SIZE | CUT SOLID | FOLD DASHED | TAPE TAB</span>
+  </div>
+
+  <article class="prop-unit">
+    <div class="cut-caption">
+      <span>Prop 1 (Match + Rear Coaching + Offline Match): Amlodipin 5 mg</span>
+      <span>Barcode: 6432100012345</span>
+    </div>
+    <div class="wrap-strip">
+      <div class="panel-front">
+        <div class="rx-band rx-band-match">
+          <span>Nordic Pharmacy</span>
+          <span>Vnr 04 82 19</span>
+        </div>
+        <div class="front-body">
+          <div>
+            <h2 class="drug-title">Amlodipin 5 mg</h2>
+            <p class="drug-inn">amlodipine</p>
+            <p class="drug-form">Film-coated tablets. Oral use: 1 tablet once daily in the evening.</p>
+          </div>
+          <div class="front-footer">
+            <span>30 tablets</span>
+            <span class="exp-badge">EXP 08/2027</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-spine">
+        <span class="spine-label">FOLD 90 DEG | LOT A2708</span>
+      </div>
+
+      <div class="panel-rear">
+        <svg class="recycle-glyph" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3L16 9H8L12 3Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M4 18L8 12L11 18H4Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M20 18H13L16 12L20 18Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <div class="barcode-frame">
+          <svg class="barcode-svg" data-barcode="6432100012345" viewBox="0 0 145 76" shape-rendering="crispEdges" role="img" aria-label="Barcode 6432100012345">
+            <rect x="0" y="0" width="145" height="76" fill="#ffffff"/>
+            <rect x="11" y="4" width="2" height="52" fill="#000000"/><rect x="14" y="4" width="1" height="52" fill="#000000"/><rect x="17" y="4" width="3" height="52" fill="#000000"/><rect x="22" y="4" width="1" height="52" fill="#000000"/><rect x="24" y="4" width="1" height="52" fill="#000000"/><rect x="29" y="4" width="2" height="52" fill="#000000"/><rect x="33" y="4" width="2" height="52" fill="#000000"/><rect x="38" y="4" width="2" height="52" fill="#000000"/><rect x="41" y="4" width="2" height="52" fill="#000000"/><rect x="44" y="4" width="2" height="52" fill="#000000"/><rect x="48" y="4" width="1" height="52" fill="#000000"/><rect x="52" y="4" width="1" height="52" fill="#000000"/><rect x="55" y="4" width="2" height="52" fill="#000000"/><rect x="58" y="4" width="2" height="52" fill="#000000"/><rect x="62" y="4" width="2" height="52" fill="#000000"/><rect x="66" y="4" width="1" height="52" fill="#000000"/><rect x="68" y="4" width="2" height="52" fill="#000000"/><rect x="72" y="4" width="3" height="52" fill="#000000"/><rect x="77" y="4" width="1" height="52" fill="#000000"/><rect x="81" y="4" width="1" height="52" fill="#000000"/><rect x="83" y="4" width="2" height="52" fill="#000000"/><rect x="88" y="4" width="1" height="52" fill="#000000"/><rect x="90" y="4" width="4" height="52" fill="#000000"/><rect x="95" y="4" width="3" height="52" fill="#000000"/><rect x="99" y="4" width="2" height="52" fill="#000000"/><rect x="102" y="4" width="3" height="52" fill="#000000"/><rect x="107" y="4" width="1" height="52" fill="#000000"/><rect x="110" y="4" width="3" height="52" fill="#000000"/><rect x="116" y="4" width="1" height="52" fill="#000000"/><rect x="118" y="4" width="2" height="52" fill="#000000"/><rect x="121" y="4" width="2" height="52" fill="#000000"/><rect x="126" y="4" width="3" height="52" fill="#000000"/><rect x="130" y="4" width="1" height="52" fill="#000000"/><rect x="132" y="4" width="2" height="52" fill="#000000"/>
+            <text x="72.5" y="69" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.2" font-weight="700" letter-spacing="0.8" fill="#000000">6432100012345</text>
+          </svg>
+          <span class="barcode-meta" data-meta-for="6432100012345">CODE-128 EXACT: 6432100012345</span>
+        </div>
+      </div>
+
+      <div class="panel-tab">
+        <span class="tab-text">TAPE TAB</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="prop-unit">
+    <div class="cut-caption">
+      <span>Prop 2 (NSAID Warning): Burana 400 mg</span>
+      <span>Barcode: 6412345000400</span>
+    </div>
+    <div class="wrap-strip">
+      <div class="panel-front">
+        <div class="rx-band rx-band-nsaid">
+          <span>Apteekki / Apotek</span>
+          <span>Vnr 01 49 02</span>
+        </div>
+        <div class="front-body">
+          <div>
+            <h2 class="drug-title">Burana 400 mg</h2>
+            <p class="drug-inn">ibuprofeeni / ibuprofen</p>
+            <p class="drug-form">Kalvopaallysteinen tabletti / Film-coated tablet. Pain and fever relief (NSAID).</p>
+          </div>
+          <div class="front-footer">
+            <span>30 tablettia</span>
+            <span class="exp-badge">EXP 11/2027</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-spine">
+        <span class="spine-label">FOLD 90 DEG | LOT B2711</span>
+      </div>
+
+      <div class="panel-rear">
+        <svg class="recycle-glyph" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3L16 9H8L12 3Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M4 18L8 12L11 18H4Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M20 18H13L16 12L20 18Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <div class="barcode-frame">
+          <svg class="barcode-svg" data-barcode="6412345000400" viewBox="0 0 145 76" shape-rendering="crispEdges" role="img" aria-label="Barcode 6412345000400">
+            <rect x="0" y="0" width="145" height="76" fill="#ffffff"/>
+            <rect x="11" y="4" width="2" height="52" fill="#000000"/><rect x="14" y="4" width="1" height="52" fill="#000000"/><rect x="17" y="4" width="3" height="52" fill="#000000"/><rect x="22" y="4" width="1" height="52" fill="#000000"/><rect x="24" y="4" width="1" height="52" fill="#000000"/><rect x="29" y="4" width="2" height="52" fill="#000000"/><rect x="33" y="4" width="1" height="52" fill="#000000"/><rect x="35" y="4" width="2" height="52" fill="#000000"/><rect x="39" y="4" width="3" height="52" fill="#000000"/><rect x="44" y="4" width="1" height="52" fill="#000000"/><rect x="48" y="4" width="1" height="52" fill="#000000"/><rect x="50" y="4" width="2" height="52" fill="#000000"/><rect x="55" y="4" width="2" height="52" fill="#000000"/><rect x="60" y="4" width="1" height="52" fill="#000000"/><rect x="62" y="4" width="3" height="52" fill="#000000"/><rect x="66" y="4" width="2" height="52" fill="#000000"/><rect x="69" y="4" width="2" height="52" fill="#000000"/><rect x="73" y="4" width="2" height="52" fill="#000000"/><rect x="77" y="4" width="2" height="52" fill="#000000"/><rect x="82" y="4" width="1" height="52" fill="#000000"/><rect x="84" y="4" width="1" height="52" fill="#000000"/><rect x="88" y="4" width="1" height="52" fill="#000000"/><rect x="90" y="4" width="4" height="52" fill="#000000"/><rect x="95" y="4" width="3" height="52" fill="#000000"/><rect x="99" y="4" width="1" height="52" fill="#000000"/><rect x="102" y="4" width="3" height="52" fill="#000000"/><rect x="106" y="4" width="2" height="52" fill="#000000"/><rect x="110" y="4" width="2" height="52" fill="#000000"/><rect x="114" y="4" width="3" height="52" fill="#000000"/><rect x="119" y="4" width="1" height="52" fill="#000000"/><rect x="121" y="4" width="2" height="52" fill="#000000"/><rect x="126" y="4" width="3" height="52" fill="#000000"/><rect x="130" y="4" width="1" height="52" fill="#000000"/><rect x="132" y="4" width="2" height="52" fill="#000000"/>
+            <text x="72.5" y="69" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.2" font-weight="700" letter-spacing="0.8" fill="#000000">6412345000400</text>
+          </svg>
+          <span class="barcode-meta" data-meta-for="6412345000400">CODE-128 EXACT: 6412345000400</span>
+        </div>
+      </div>
+
+      <div class="panel-tab">
+        <span class="tab-text">TAPE TAB</span>
+      </div>
+    </div>
+  </article>
+</section>
+
+<section class="a4-sheet" aria-label="Printable Prop Sheet 2">
+  <div class="sheet-banner">
+    <span>HOLDUP HARDWARE REHEARSAL KIT : SHEET 2 OF 2 (PROPS 3 &amp; 4)</span>
+    <span>PRINT AT 100% ACTUAL SIZE | CUT SOLID | FOLD DASHED | TAPE TAB</span>
+  </div>
+
+  <article class="prop-unit">
+    <div class="cut-caption">
+      <span>Prop 3 (Expired Trap): Metformin 500 mg</span>
+      <span>Barcode: 6432100054321</span>
+    </div>
+    <div class="wrap-strip">
+      <div class="panel-front">
+        <div class="rx-band rx-band-expired">
+          <span>Nordic Pharmacy</span>
+          <span>Vnr 54 32 10</span>
+        </div>
+        <div class="front-body">
+          <div>
+            <h2 class="drug-title">Metformin 500 mg</h2>
+            <p class="drug-inn">metformin hydrochloride</p>
+            <p class="drug-form">Film-coated tablets. Oral use: take with meals morning and evening.</p>
+          </div>
+          <div class="front-footer">
+            <span>30 tablets</span>
+            <span class="exp-badge">EXP 04/2025</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-spine">
+        <span class="spine-label">FOLD 90 DEG | LOT M2304</span>
+      </div>
+
+      <div class="panel-rear">
+        <svg class="recycle-glyph" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3L16 9H8L12 3Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M4 18L8 12L11 18H4Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M20 18H13L16 12L20 18Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <div class="barcode-frame">
+          <svg class="barcode-svg" data-barcode="6432100054321" viewBox="0 0 145 76" shape-rendering="crispEdges" role="img" aria-label="Barcode 6432100054321">
+            <rect x="0" y="0" width="145" height="76" fill="#ffffff"/>
+            <rect x="11" y="4" width="2" height="52" fill="#000000"/><rect x="14" y="4" width="1" height="52" fill="#000000"/><rect x="17" y="4" width="3" height="52" fill="#000000"/><rect x="22" y="4" width="1" height="52" fill="#000000"/><rect x="24" y="4" width="1" height="52" fill="#000000"/><rect x="29" y="4" width="2" height="52" fill="#000000"/><rect x="33" y="4" width="2" height="52" fill="#000000"/><rect x="38" y="4" width="2" height="52" fill="#000000"/><rect x="41" y="4" width="2" height="52" fill="#000000"/><rect x="44" y="4" width="2" height="52" fill="#000000"/><rect x="48" y="4" width="1" height="52" fill="#000000"/><rect x="52" y="4" width="1" height="52" fill="#000000"/><rect x="55" y="4" width="2" height="52" fill="#000000"/><rect x="58" y="4" width="2" height="52" fill="#000000"/><rect x="62" y="4" width="2" height="52" fill="#000000"/><rect x="66" y="4" width="3" height="52" fill="#000000"/><rect x="70" y="4" width="1" height="52" fill="#000000"/><rect x="72" y="4" width="2" height="52" fill="#000000"/><rect x="77" y="4" width="2" height="52" fill="#000000"/><rect x="82" y="4" width="2" height="52" fill="#000000"/><rect x="85" y="4" width="2" height="52" fill="#000000"/><rect x="88" y="4" width="1" height="52" fill="#000000"/><rect x="90" y="4" width="4" height="52" fill="#000000"/><rect x="95" y="4" width="3" height="52" fill="#000000"/><rect x="99" y="4" width="1" height="52" fill="#000000"/><rect x="102" y="4" width="3" height="52" fill="#000000"/><rect x="107" y="4" width="2" height="52" fill="#000000"/><rect x="110" y="4" width="1" height="52" fill="#000000"/><rect x="113" y="4" width="3" height="52" fill="#000000"/><rect x="117" y="4" width="2" height="52" fill="#000000"/><rect x="121" y="4" width="2" height="52" fill="#000000"/><rect x="126" y="4" width="3" height="52" fill="#000000"/><rect x="130" y="4" width="1" height="52" fill="#000000"/><rect x="132" y="4" width="2" height="52" fill="#000000"/>
+            <text x="72.5" y="69" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.2" font-weight="700" letter-spacing="0.8" fill="#000000">6432100054321</text>
+          </svg>
+          <span class="barcode-meta" data-meta-for="6432100054321">CODE-128 EXACT: 6432100054321</span>
+        </div>
+      </div>
+
+      <div class="panel-tab">
+        <span class="tab-text">TAPE TAB</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="prop-unit">
+    <div class="cut-caption">
+      <span>Prop 4 (Allergen Catch): Nordic Oat &amp; Hazelnut Bar</span>
+      <span>Barcode: 7310100555111</span>
+    </div>
+    <div class="wrap-strip">
+      <div class="panel-front">
+        <div class="rx-band rx-band-food">
+          <span>Nordic Bakery</span>
+          <span>Net 55 g</span>
+        </div>
+        <div class="front-body">
+          <div>
+            <h2 class="food-title">Nordic Oat & Hazelnut Bar</h2>
+            <div class="ing-panel">
+              <p class="ing-text">Ingredients: Rolled oats, honey, roasted hazelnuts 12%, arachis oil, cocoa. Best before: 14.09.2027</p>
+              <p class="allergen-box">Allergen info: Contains hazelnuts (tree nuts), arachis oil (peanut), and oats.</p>
+            </div>
+          </div>
+          <div class="front-footer">
+            <span>55 g Bar</span>
+            <span class="exp-badge">14.09.2027</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-spine">
+        <span class="spine-label">FOLD 90 DEG | 55 G BAR</span>
+      </div>
+
+      <div class="panel-rear">
+        <svg class="recycle-glyph" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3L16 9H8L12 3Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M4 18L8 12L11 18H4Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M20 18H13L16 12L20 18Z" stroke="#334155" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <div class="barcode-frame">
+          <svg class="barcode-svg" data-barcode="7310100555111" viewBox="0 0 145 76" shape-rendering="crispEdges" role="img" aria-label="Barcode 7310100555111">
+            <rect x="0" y="0" width="145" height="76" fill="#ffffff"/>
+            <rect x="11" y="4" width="2" height="52" fill="#000000"/><rect x="14" y="4" width="1" height="52" fill="#000000"/><rect x="17" y="4" width="3" height="52" fill="#000000"/><rect x="22" y="4" width="1" height="52" fill="#000000"/><rect x="27" y="4" width="2" height="52" fill="#000000"/><rect x="30" y="4" width="1" height="52" fill="#000000"/><rect x="33" y="4" width="2" height="52" fill="#000000"/><rect x="37" y="4" width="1" height="52" fill="#000000"/><rect x="41" y="4" width="1" height="52" fill="#000000"/><rect x="44" y="4" width="2" height="52" fill="#000000"/><rect x="48" y="4" width="1" height="52" fill="#000000"/><rect x="52" y="4" width="1" height="52" fill="#000000"/><rect x="55" y="4" width="1" height="52" fill="#000000"/><rect x="59" y="4" width="1" height="52" fill="#000000"/><rect x="62" y="4" width="2" height="52" fill="#000000"/><rect x="66" y="4" width="3" height="52" fill="#000000"/><rect x="70" y="4" width="1" height="52" fill="#000000"/><rect x="74" y="4" width="2" height="52" fill="#000000"/><rect x="77" y="4" width="2" height="52" fill="#000000"/><rect x="82" y="4" width="1" height="52" fill="#000000"/><rect x="85" y="4" width="1" height="52" fill="#000000"/><rect x="88" y="4" width="1" height="52" fill="#000000"/><rect x="90" y="4" width="4" height="52" fill="#000000"/><rect x="95" y="4" width="3" height="52" fill="#000000"/><rect x="99" y="4" width="1" height="52" fill="#000000"/><rect x="102" y="4" width="3" height="52" fill="#000000"/><rect x="107" y="4" width="2" height="52" fill="#000000"/><rect x="110" y="4" width="4" height="52" fill="#000000"/><rect x="115" y="4" width="1" height="52" fill="#000000"/><rect x="118" y="4" width="1" height="52" fill="#000000"/><rect x="121" y="4" width="2" height="52" fill="#000000"/><rect x="126" y="4" width="3" height="52" fill="#000000"/><rect x="130" y="4" width="1" height="52" fill="#000000"/><rect x="132" y="4" width="2" height="52" fill="#000000"/>
+            <text x="72.5" y="69" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.2" font-weight="700" letter-spacing="0.8" fill="#000000">7310100555111</text>
+          </svg>
+          <span class="barcode-meta" data-meta-for="7310100555111">CODE-128 EXACT: 7310100555111</span>
+        </div>
+      </div>
+
+      <div class="panel-tab">
+        <span class="tab-text">TAPE TAB</span>
+      </div>
+    </div>
+  </article>
+</section>
+
+<script>
+(function () {
+  var EAN_L = [
+    "0001101", "0011001", "0010011", "0111101", "0100011",
+    "0110001", "0101111", "0111011", "0110111", "0001011"
+  ];
+  var EAN_G = [
+    "0100111", "0110011", "0011011", "0100001", "0011101",
+    "0111001", "0000101", "0010001", "0001001", "0010111"
+  ];
+  var EAN_R = [
+    "1110010", "1100110", "1101100", "1000010", "1011100",
+    "1001110", "1010000", "1000100", "1001000", "1110100"
+  ];
+  var EAN_PARITY = [
+    "LLLLLL", "LLGLGG", "LLGGLG", "LLGGGL", "LGLLGG",
+    "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL"
+  ];
+
+  var CODE128_PATTERNS = [
+    "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312", "132212", "221213",
+    "221312", "231212", "112232", "122132", "122231", "113222", "123122", "123221", "223211", "221132",
+    "221231", "213212", "223112", "312131", "311222", "321122", "321221", "312212", "322112", "322211",
+    "212123", "212321", "232121", "111323", "131123", "131321", "112313", "132113", "132311", "211313",
+    "231113", "231311", "112133", "112331", "132131", "113123", "113321", "133121", "313121", "211331",
+    "231131", "213113", "213311", "213131", "311123", "311321", "331121", "312113", "312311", "332111",
+    "314111", "221411", "431111", "111224", "111422", "121124", "121421", "141122", "141221", "112214",
+    "112412", "122114", "122411", "142112", "142211", "241211", "221114", "413111", "241112", "134111",
+    "111242", "121142", "121241", "114212", "124112", "124211", "411212", "421112", "421211", "212141",
+    "214121", "412121", "111143", "111341", "131141", "114113", "114311", "411113", "411311", "113141",
+    "114131", "311141", "411131", "211412", "211214", "211232", "2331112"
+  ];
+
+  function computeEan13CheckDigit(digits12) {
+    var clean = String(digits12).replace(/\D+/g, "").slice(0, 12);
+    var sum = 0;
+    for (var i = 0; i < 12; i++) {
+      var d = clean.charCodeAt(i) - 48;
+      sum += (i % 2 === 1) ? d * 3 : d;
+    }
+    return String((10 - (sum % 10)) % 10);
+  }
+
+  function encodeEan13(rawCode) {
+    var digits12 = String(rawCode).replace(/\D+/g, "").slice(0, 12);
+    var full = digits12 + computeEan13CheckDigit(digits12);
+    var first = full.charCodeAt(0) - 48;
+    var parity = EAN_PARITY[first];
+    var bits = "101";
+    var guards = [1, 1, 1];
+    var idx;
+    for (idx = 0; idx < 6; idx++) {
+      var leftDigit = full.charCodeAt(idx + 1) - 48;
+      var leftSeg = parity.charAt(idx) === "L" ? EAN_L[leftDigit] : EAN_G[leftDigit];
+      bits += leftSeg;
+      guards.push(0, 0, 0, 0, 0, 0, 0);
+    }
+    bits += "01010";
+    guards.push(1, 1, 1, 1, 1);
+    for (idx = 0; idx < 6; idx++) {
+      var rightDigit = full.charCodeAt(idx + 7) - 48;
+      bits += EAN_R[rightDigit];
+      guards.push(0, 0, 0, 0, 0, 0, 0);
+    }
+    bits += "101";
+    guards.push(1, 1, 1);
+
+    var rects = [];
+    var pos = 0;
+    while (pos < bits.length) {
+      if (bits.charAt(pos) === "1") {
+        var guardFlag = guards[pos];
+        var end = pos + 1;
+        while (end < bits.length && bits.charAt(end) === "1" && guards[end] === guardFlag) {
+          end++;
+        }
+        rects.push({ x: 11 + pos, w: end - pos, guard: guardFlag === 1 });
+        pos = end;
+      } else {
+        pos++;
+      }
+    }
+    return { code: full, totalWidth: 113, rects: rects };
+  }
+
+  function encodeCode128(rawCode) {
+    var text = String(rawCode).trim();
+    var symbols = [];
+    var allDigits = /^\d+$/.test(text);
+    if (allDigits && text.length >= 4) {
+      symbols.push(105);
+      var k = 0;
+      while (k + 1 < text.length) {
+        symbols.push(parseInt(text.slice(k, k + 2), 10));
+        k += 2;
+      }
+      if (k < text.length) {
+        symbols.push(100);
+        symbols.push(text.charCodeAt(k) - 32);
+      }
+    } else {
+      symbols.push(104);
+      for (var c = 0; c < text.length; c++) {
+        symbols.push(text.charCodeAt(c) - 32);
+      }
+    }
+    var checksum = symbols[0];
+    for (var s = 1; s < symbols.length; s++) {
+      checksum += s * symbols[s];
+    }
+    symbols.push(checksum % 103);
+    symbols.push(106);
+
+    var x = 11;
+    var rects = [];
+    for (var m = 0; m < symbols.length; m++) {
+      var pat = CODE128_PATTERNS[symbols[m]];
+      for (var p = 0; p < pat.length; p++) {
+        var w = pat.charCodeAt(p) - 48;
+        if (p % 2 === 0) {
+          rects.push({ x: x, w: w });
+        }
+        x += w;
+      }
+    }
+    return { code: text, totalWidth: x + 11, rects: rects };
+  }
+
+  function renderIntoSvg(svgEl, mode) {
+    var raw = svgEl.getAttribute("data-barcode") || "";
+    var metaEl = document.querySelector('[data-meta-for="' + raw + '"]');
+    if (mode === "ean13") {
+      var ean = encodeEan13(raw);
+      svgEl.setAttribute("viewBox", "0 0 113 78");
+      var parts = ['<rect x="0" y="0" width="113" height="78" fill="#ffffff"/>'];
+      for (var i = 0; i < ean.rects.length; i++) {
+        var r = ean.rects[i];
+        var h = r.guard ? 58 : 51;
+        parts.push('<rect x="' + r.x + '" y="4" width="' + r.w + '" height="' + h + '" fill="#000000"/>');
+      }
+      parts.push('<text x="5.5" y="69" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" font-weight="700" fill="#000000">' + ean.code.charAt(0) + '</text>');
+      parts.push('<text x="35" y="69" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" font-weight="700" letter-spacing="1.1" fill="#000000">' + ean.code.slice(1, 7) + '</text>');
+      parts.push('<text x="81" y="69" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" font-weight="700" letter-spacing="1.1" fill="#000000">' + ean.code.slice(7, 13) + '</text>');
+      svgEl.innerHTML = parts.join("");
+      if (metaEl) {
+        metaEl.textContent = "GS1 EAN-13: " + ean.code + " (DEMO ID: " + raw + ")";
+      }
+    } else {
+      var c128 = encodeCode128(raw);
+      svgEl.setAttribute("viewBox", "0 0 " + c128.totalWidth + " 76");
+      var mid = c128.totalWidth / 2;
+      var out = ['<rect x="0" y="0" width="' + c128.totalWidth + '" height="76" fill="#ffffff"/>'];
+      for (var j = 0; j < c128.rects.length; j++) {
+        var b = c128.rects[j];
+        out.push('<rect x="' + b.x + '" y="4" width="' + b.w + '" height="52" fill="#000000"/>');
+      }
+      out.push('<text x="' + mid + '" y="69" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.2" font-weight="700" letter-spacing="0.8" fill="#000000">' + c128.code + '</text>');
+      svgEl.innerHTML = out.join("");
+      if (metaEl) {
+        metaEl.textContent = "CODE-128 EXACT: " + c128.code;
+      }
+    }
+  }
+
+  function applySymbology(mode) {
+    var svgs = document.querySelectorAll("svg[data-barcode]");
+    for (var i = 0; i < svgs.length; i++) {
+      renderIntoSvg(svgs[i], mode);
+    }
+    var btn128 = document.getElementById("btn-mode-code128");
+    var btnEan = document.getElementById("btn-mode-ean13");
+    if (btn128 && btnEan) {
+      btn128.setAttribute("aria-pressed", mode === "code128" ? "true" : "false");
+      btnEan.setAttribute("aria-pressed", mode === "ean13" ? "true" : "false");
+    }
+  }
+
+  window.HoldUpBarcodes = {
+    computeEan13CheckDigit: computeEan13CheckDigit,
+    encodeEan13: encodeEan13,
+    encodeCode128: encodeCode128,
+    applySymbology: applySymbology
+  };
+
+  var btnCode128 = document.getElementById("btn-mode-code128");
+  var btnEan13 = document.getElementById("btn-mode-ean13");
+  var btnPrint = document.getElementById("btn-print-sheet");
+
+  if (btnCode128) {
+    btnCode128.addEventListener("click", function () { applySymbology("code128"); });
+  }
+  if (btnEan13) {
+    btnEan13.addEventListener("click", function () { applySymbology("ean13"); });
+  }
+  if (btnPrint) {
+    btnPrint.addEventListener("click", function () { window.print(); });
+  }
+})();
+</script>
+</body>
+</html>
