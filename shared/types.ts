@@ -42,4 +42,11 @@ export type ServerMsg =
   | { type: "status"; live: LiveState; detail?: string }
   | { type: "device"; device: DeviceState }
   | { type: "error"; code: string; message: string; recoverable: boolean }
-  | { type: "pong"; t: number };
+  | { type: "pong"; t: number }
+  // added Sat 15:40 (CEO): barge-in → client flushes queued playback immediately
+  | { type: "interrupted" }
+  // added Sat 15:40 (CEO): emitted the instant verify_label starts/ends so the client can play a "checking" earcon
+  // and show a spinner; this hides the 2-4 s verify latency
+  | { type: "checking"; phase: "start" | "end" }
+  // added Sat 15:40 (CEO): HUD connection state, so the phone device panel can show "HUD connected"
+  | { type: "hud"; connected: boolean };
