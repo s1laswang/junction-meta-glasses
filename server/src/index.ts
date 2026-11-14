@@ -1,0 +1,232 @@
+import fs from "node:fs";
+import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import express from "express";
+import { WebSocketServer, type WebSocket } from "ws";
+import { Modality } from "@google/genai";
+import type { ClientMsg, DeviceState } from "../../shared/types.ts";
+import { env, REPO_ROOT } from "./env.ts";
+import { ai, unaryGate } from "./gemini.ts";
+import { addHud, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
+import { ledger, stats } from "./ledger.ts";
+import { LiveProxy } from "./live.ts";
+import { errSummary, log, shortId } from "./log.ts";
+import { jpegSharpness, toProfile, verify } from "./verify.ts";
+
+const MAX_WS_MSG = 4 * 1024 * 1024;
+
+export function createApp() {
+  const app = express();
+  app.disable("x-powered-by");
+
+  // ---------- health (Gemini reachability cached 30 s) ----------
+  let healthCache: { at: number; ok: boolean } | undefined;
+  app.get("/api/health", async (_req, res) => {
+    if (!healthCache || Date.now() - healthCache.at > 30_000) {
+      let ok = false;
+      try {
+        if (env.apiKey) { await ai.models.get({ model: env.verifyModels[0] }); ok = true; }
+      } catch (e) { log("health.gemini_down", { err: errSummary(e) }); }
+      healthCache = { at: Date.now(), ok };
+    }
+    res.json({
+      ok: true,
+      gemini: healthCache.ok ? "ok" : "down",
+      models: { live: env.liveModels, verify: env.verifyModels, tts: env.ttsModels },
+      version: env.version,
+      ...hubStats(),
+    });
+  });
+
+  app.get("/api/stats", (_req, res) => { res.json(stats()); });
+
+  // ---------- snapshot verify ----------
+  app.post("/api/verify", express.json({ limit: "12mb" }), async (req, res) => {
+    const frames = Array.isArray(req.body?.frames) ? (req.body.frames as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 100) : [];
+    if (!frames.length) { res.status(400).json({ type: "error", code: "bad_input", message: "frames[] (base64 JPEG) required", recoverable: true }); return; }
+    // without client sharpness, prefer the largest JPEGs (more detail) among the last 3
+    const picked = frames.slice(-3).map((f, i) => ({ f, i, s: f.length })).sort((a, b) => b.s - a.s).slice(0, 2).map((x) => x.f);
+    const t = Date.now();
+    const r = await verify(picked, toProfile(req.body?.profile), typeof req.body?.question === "string" ? req.body.question : undefined);
+    log("api.verify", { level: r.verdict.level, model: r.model ?? "none", ms: Date.now() - t, n_frames: picked.length });
+    res.json(r.verdict);
+  });
+
+  // ---------- TTS (optional; browser speechSynthesis is the fallback) ----------
+  app.post("/api/tts", express.json({ limit: "64kb" }), async (req, res) => {
+    const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 600) : "";
+    if (!text) { res.status(400).json({ type: "error", code: "bad_input", message: "text required", recoverable: true }); return; }
+    for (const model of env.ttsModels) {
+      const t = Date.now();
+      try {
+        const r = await unaryGate.run(() => ai.models.generateContent({
+          model,
+          contents: [{ role: "user", parts: [{ text: `Say calmly and clearly: ${text}` }] }],
+          config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: process.env.TTS_VOICE ?? "Kore" } } } },
+        }));
+        const part = r.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
+        if (!part?.inlineData?.data) throw new Error("empty reply");
+        const pcm = Buffer.from(part.inlineData.data, "base64");
+        const rate = Number(/rate=(\d+)/.exec(part.inlineData.mimeType ?? "")?.[1] ?? 24000);
+        ledger({ feature: "tts", model, latency_s: (Date.now() - t) / 1000, ok: true, in: r.usageMetadata?.promptTokenCount ?? 0, out: r.usageMetadata?.candidatesTokenCount ?? 0 });
+        res.type("audio/wav").send(wav(pcm, rate));
+        return;
+      } catch (e) {
+        ledger({ feature: "tts", model, latency_s: (Date.now() - t) / 1000, ok: false });
+        log("tts.failed", { model, err: errSummary(e) });
+      }
+    }
+    res.status(503).json({ type: "error", code: "gemini_unavailable", message: "TTS unavailable, use speechSynthesis", recoverable: true });
+  });
+
+  // ---------- glasses bridge ingest (session optional: defaults to the latest live session) ----------
+  app.post("/ingest/frame", express.raw({ type: ["image/jpeg", "application/octet-stream"], limit: "6mb" }), (req, res) => {
+    const buf = req.body as Buffer;
+    if (!Buffer.isBuffer(buf) || buf.length < 100) { res.status(400).json({ type: "error", code: "bad_input", message: "image/jpeg body required", recoverable: true }); return; }
+    const hub = resolveHub(req.query.session as string | undefined);
+    if (hub) {
+      const data = buf.toString("base64");
+      const sharpness = Number(req.query.sharpness) || jpegSharpness(buf);
+      hub.ring.push({ data, sharpness, ts: Date.now(), bytes: buf.length, source: "glasses" });
+      (hub.live as LiveProxy | undefined)?.frame(data);
+    } // no session: frame dropped (never stored)
+    res.status(204).end();
+  });
+  app.post("/ingest/state", express.json({ limit: "16kb" }), (req, res) => {
+    const b = req.body ?? {};
+    const device: DeviceState = {
+      connected: !!b.connected, worn: !!b.worn, streaming: !!b.streaming,
+      battery: typeof b.battery === "number" ? b.battery : null, source: "glasses",
+    };
+    setDevice(device, req.query.session as string | undefined);
+    res.status(204).end();
+  });
+
+  // ---------- production: serve the web build ----------
+  const dist = path.join(REPO_ROOT, "web", "dist");
+  if (fs.existsSync(dist)) {
+    app.use(express.static(dist, { index: "index.html", maxAge: "1h" }));
+    app.use((req, res, next) => {
+      if (req.method !== "GET" || /^\/(api|ingest|live|hud-ws)\b/.test(req.path)) return next();
+      res.sendFile(path.join(dist, "index.html"));
+    });
+  }
+  app.use((_req, res) => { res.status(404).json({ type: "error", code: "not_found", message: "not found", recoverable: false }); });
+  return app;
+}
+
+function wav(pcm: Buffer, rate: number): Buffer {
+  const h = Buffer.alloc(44);
+  h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVE", 8); h.write("fmt ", 12);
+  h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22); h.writeUInt32LE(rate, 24);
+  h.writeUInt32LE(rate * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34); h.write("data", 36); h.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([h, pcm]);
+}
+
+// ---------- WebSockets ----------
+function onLive(ws: WebSocket, sessionParam: string | null) {
+  const id = sessionParam && /^[\w-]{4,64}$/.test(sessionParam) ? sessionParam : crypto.randomUUID();
+  const hub = getOrCreateHub(id);
+  hub.clients.add(ws);
+  log("ws.live.connect", { session: shortId(id) });
+  const err = (code: string, message: string) => safeSend(ws, JSON.stringify({ type: "error", code, message, recoverable: true }));
+
+  ws.on("message", (raw, isBinary) => {
+    if (isBinary) return err("bad_input", "send JSON text frames");
+    let msg: ClientMsg;
+    try { msg = JSON.parse(raw.toString()); } catch { return err("bad_input", "invalid JSON"); }
+    const live = hub.live as LiveProxy | undefined;
+    switch (msg?.type) {
+      case "start": {
+        hub.profile = toProfile(msg.profile);
+        if (msg.lang) hub.profile.lang = String(msg.lang).slice(0, 16);
+        if (live?.active) { log("ws.live.profile_update", { session: shortId(id) }); return; }
+        const proxy = new LiveProxy(hub, { lang: hub.profile.lang || "en", voice: msg.voice !== false });
+        hub.live = proxy;
+        markLatest(hub);
+        if (msg.source === "phone" || msg.source === "glasses") {
+          hub.emit({ type: "device", device: { ...(hub.device ?? { connected: msg.source === "glasses", worn: msg.source === "glasses", battery: null, streaming: false }), source: msg.source } }, { clients: false });
+        }
+        void proxy.start();
+        return;
+      }
+      case "audio":
+        if (typeof msg.data === "string") live?.audio(msg.data);
+        return;
+      case "frame": {
+        if (typeof msg.data !== "string" || msg.data.length < 100) return err("bad_input", "frame.data must be base64 JPEG");
+        const sharp = typeof msg.sharpness === "number" ? Math.max(0, Math.min(1, msg.sharpness)) : jpegSharpness(Buffer.from(msg.data, "base64"));
+        hub.ring.push({ data: msg.data, sharpness: sharp, ts: Date.now(), bytes: Math.round(msg.data.length * 0.75), source: "phone" });
+        live?.frame(msg.data);
+        return;
+      }
+      case "text":
+        if (typeof msg.text === "string" && msg.text.trim()) {
+          if (live?.active) live.text(msg.text);
+          else err("bad_input", "send start first");
+        }
+        return;
+      case "event":
+        if (live) live.handleEvent(msg.name);
+        return;
+      case "ping":
+        safeSend(ws, JSON.stringify({ type: "pong", t: msg.t }));
+        return;
+      default:
+        err("bad_input", "unknown message type");
+    }
+  });
+  ws.on("close", () => {
+    hub.clients.delete(ws);
+    log("ws.live.close", { session: shortId(id), remaining: hub.clients.size });
+    if (hub.clients.size === 0) {
+      hub.live?.stop("client disconnected");
+      hub.ring.clear(); // privacy: frames never outlive the session
+    }
+  });
+  ws.on("error", () => { /* close follows */ });
+}
+
+function onHud(ws: WebSocket, sessionParam: string | null) {
+  addHud(ws, sessionParam);
+  log("ws.hud.connect", { session: sessionParam ? shortId(sessionParam) : "latest" });
+  ws.on("message", (raw) => {
+    try {
+      const m = JSON.parse(raw.toString());
+      if (m?.type !== "event") return;
+      const hub = hudTarget(sessionParam);
+      if (!hub) return;
+      if (m.name === "repeat" || m.name === "log_dose") (hub.live as LiveProxy | undefined)?.handleEvent(m.name);
+      // "dismiss" only affects the HUD itself
+    } catch { /* ignore */ }
+  });
+  ws.on("error", () => { /* */ });
+}
+
+export function startServer(port = env.port): Promise<http.Server> {
+  const app = createApp();
+  const server = http.createServer(app);
+  const wssLive = new WebSocketServer({ noServer: true, maxPayload: MAX_WS_MSG });
+  const wssHud = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
+  server.on("upgrade", (req, socket, head) => {
+    const url = new URL(req.url ?? "/", "http://x");
+    const session = url.searchParams.get("session");
+    if (url.pathname === "/live") wssLive.handleUpgrade(req, socket, head, (ws) => onLive(ws, session));
+    else if (url.pathname === "/hud-ws") wssHud.handleUpgrade(req, socket, head, (ws) => onHud(ws, session));
+    else socket.destroy();
+  });
+  return new Promise((resolve) => server.listen(port, () => {
+    log("server.listening", { port: (server.address() as any)?.port ?? port, gemini_key: !!env.apiKey, live: env.liveModels[0], verify: env.verifyModels[0] });
+    resolve(server);
+  }));
+}
+
+process.on("unhandledRejection", (e) => log("unhandled_rejection", { err: errSummary(e) }));
+process.on("uncaughtException", (e) => log("uncaught_exception", { err: errSummary(e) }));
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  if (!env.apiKey) log("server.warning_no_gemini_key");
+  void startServer();
+}
+export { getHub };

@@ -17,3 +17,6 @@ android-dat/.idea/
 # eval data (large) lives on freighter /data/silas/junction-meta-glasses
 eval/out/
 eval/synthetic/
+
+# server usage ledger (metadata only)
+server/logs/
