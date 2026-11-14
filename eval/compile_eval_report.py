@@ -102,6 +102,65 @@ LABEL_SUITE_IDS = [
     "nordic_stickers_results",
 ]
 
+EXTENDED_ARTIFACT_SPECS = [
+    {
+        "id": "curved_blister_results",
+        "filename": "curved_blister_results.json",
+        "title": "Cylindrical Pill Bottle & Blister-Foil Glare Stress Suite",
+        "dimension": "Cylindrical Pill Bottle & Blister-Foil Glare",
+        "category": "optical_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_curved_blister.py",
+    },
+    {
+        "id": "coaching_trajectories",
+        "filename": "coaching_trajectories.json",
+        "title": "Multi-Step Physical Hand-Coaching Trajectory Benchmark",
+        "dimension": "Multi-Step Physical Hand-Coaching Trajectories",
+        "category": "trajectory_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_coaching_trajectories.py",
+    },
+    {
+        "id": "lighting_motion_results",
+        "filename": "lighting_motion_results.json",
+        "title": "Low-Light Sensor Noise & Motion-Blur Envelope Benchmark",
+        "dimension": "Low-Light Sensor Noise & Motion-Blur Envelope",
+        "category": "optical_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_lighting_motion.py",
+    },
+    {
+        "id": "multilingual_labels_results",
+        "filename": "multilingual_labels_results.json",
+        "title": "Multilingual European Pharmacy & Allergen Label Benchmark",
+        "dimension": "Multilingual European Pharmacy & Allergen Labels",
+        "category": "multilingual_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_multilingual_labels.py",
+    },
+    {
+        "id": "bystander_privacy_results",
+        "filename": "bystander_privacy_results.json",
+        "title": "Bystander Face & Background PII Non-Leakage Red-Team Benchmark",
+        "dimension": "Bystander Face & Background PII Red-Team",
+        "category": "privacy_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_bystander_privacy.py",
+    },
+    {
+        "id": "polypharmacy_confusion_results",
+        "filename": "polypharmacy_confusion_results.json",
+        "title": "LASA & Double-Dose Polypharmacy Confusion Benchmark",
+        "dimension": "LASA & Double-Dose Polypharmacy Confusion",
+        "category": "clinical_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_polypharmacy_confusion.py",
+    },
+]
+
+EXTENDED_SUITE_IDS = [spec["id"] for spec in EXTENDED_ARTIFACT_SPECS]
+
 
 def clean_text(val: Any) -> str:
     if val is None:
@@ -159,7 +218,7 @@ def percentile(vals: list[float], q: float) -> float | None:
 
 
 def extract_items(data: dict[str, Any]) -> list[dict[str, Any]]:
-    for key in ("items", "fixtures", "cases", "results", "scenarios"):
+    for key in ("items", "fixtures", "cases", "results", "scenarios", "trajectories"):
         val = data.get(key)
         if isinstance(val, list) and all(isinstance(x, dict) for x in val):
             return val
@@ -830,6 +889,239 @@ def fmt_comma(val: float | int | None, digits: int = 2) -> str:
     return f"{val:,.{digits}f}"
 
 
+def _extract_stage_sharpness(stage: dict[str, Any], tr: dict[str, Any], fallback_keys: list[str]) -> float | None:
+    direct = to_num(first_val(stage, ["top_sharpness", "max_sharpness", "selected_sharpness", "sharpness", "jpeg_sharpness", "mean_sharpness"]))
+    if direct is not None:
+        return round(direct, 4)
+    for list_key in ("picked_frames", "sharpness_scores", "picked_sharpness", "ring_frames", "ring_sharpness"):
+        arr = stage.get(list_key)
+        if isinstance(arr, list):
+            nums: list[float] = []
+            for x in arr:
+                if isinstance(x, dict):
+                    n = to_num(first_val(x, ["sharpness", "jpeg_sharpness", "score"]))
+                else:
+                    n = to_num(x)
+                if n is not None:
+                    nums.append(n)
+            if nums:
+                return round(max(nums), 4)
+    fb = to_num(first_val(tr, fallback_keys))
+    return round(fb, 4) if fb is not None else None
+
+
+def normalize_coaching_trajectories(data: dict[str, Any]) -> dict[str, Any]:
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    trajs = extract_items(data)
+
+    n_trajs = to_int(first_val(summary, ["n_trajectories", "total_trajectories"]))
+    if n_trajs is None:
+        n_trajs = len(trajs) if trajs else (to_int(first_val(summary, ["n_items", "n_cases", "total", "count"])) or 0)
+
+    total_calls = to_int(first_val(summary, ["total_verify_calls", "n_verify_calls", "verify_calls", "total_calls", "n_calls"]))
+    if total_calls is None:
+        total_calls = n_trajs * 2 if n_trajs > 0 else 0
+
+    stage_a_bools: list[bool] = []
+    stage_b_bools: list[bool] = []
+    stage_lats: list[float] = []
+    item_cwds: list[bool] = []
+    rows: list[dict[str, Any]] = []
+
+    for idx, tr in enumerate(trajs, start=1):
+        tr_id = clean_text(first_val(tr, ["id", "trajectory_id", "case_id", "name"]) or f"traj_{idx:02d}")
+        stage_a = next((tr[k] for k in ("stage_a", "pre_coaching", "step_1", "step1", "before") if isinstance(tr.get(k), dict)), {})
+        stage_b = next((tr[k] for k in ("stage_b", "post_coaching", "step_2", "step2", "after") if isinstance(tr.get(k), dict)), {})
+
+        sa_level = item_verdict_level(stage_a) or first_val(tr, ["stage_a_level", "pre_coaching_level", "initial_level"])
+        sa_abstained: bool | None = None
+        if isinstance(stage_a.get("abstained"), bool):
+            sa_abstained = stage_a["abstained"]
+        elif isinstance(stage_a.get("verdict_match"), bool):
+            sa_abstained = stage_a["verdict_match"]
+        elif isinstance(tr.get("stage_a_abstained"), bool):
+            sa_abstained = tr["stage_a_abstained"]
+        elif isinstance(sa_level, str):
+            sa_abstained = sa_level == "unsure"
+        if sa_abstained is not None:
+            stage_a_bools.append(sa_abstained)
+
+        sb_exp = item_expected_level(stage_b) or first_val(tr, ["stage_b_expected_level", "expected_level", "post_expected_level"])
+        sb_level = item_verdict_level(stage_b) or first_val(tr, ["stage_b_level", "post_coaching_level", "final_level"])
+        sb_match = item_is_verdict_match(stage_b)
+        if sb_match is None:
+            if isinstance(tr.get("stage_b_match"), bool):
+                sb_match = tr["stage_b_match"]
+            elif isinstance(tr.get("post_coaching_match"), bool):
+                sb_match = tr["post_coaching_match"]
+            elif isinstance(sb_level, str) and isinstance(sb_exp, str):
+                sb_match = sb_level == sb_exp
+        if sb_match is not None:
+            stage_b_bools.append(sb_match)
+
+        sa_sharp = _extract_stage_sharpness(stage_a, tr, ["stage_a_sharpness", "pre_sharpness", "pre_coaching_sharpness"])
+        sb_sharp = _extract_stage_sharpness(stage_b, tr, ["stage_b_sharpness", "post_sharpness", "post_coaching_sharpness"])
+
+        sa_lat = to_num(first_val(stage_a, ["latency_ms", "latencyMs", "elapsed_ms", "ms"]))
+        if sa_lat is None:
+            sa_lat = to_num(first_val(tr, ["stage_a_latency_ms", "pre_latency_ms", "pre_coaching_latency_ms"]))
+        sb_lat = to_num(first_val(stage_b, ["latency_ms", "latencyMs", "elapsed_ms", "ms"]))
+        if sb_lat is None:
+            sb_lat = to_num(first_val(tr, ["stage_b_latency_ms", "post_latency_ms", "post_coaching_latency_ms"]))
+        if sa_lat is not None:
+            stage_lats.append(sa_lat)
+        if sb_lat is not None:
+            stage_lats.append(sb_lat)
+
+        tr_cwd = bool(tr.get("confident_wrong_dose", False)) or bool(stage_a.get("confident_wrong_dose", False)) or bool(stage_b.get("confident_wrong_dose", False))
+        if "confident_wrong_dose" in tr or "confident_wrong_dose" in stage_a or "confident_wrong_dose" in stage_b:
+            item_cwds.append(tr_cwd)
+
+        rows.append(
+            {
+                "id": tr_id,
+                "stage_a_level": clean_text(sa_level) if sa_level is not None else None,
+                "stage_a_abstained": sa_abstained,
+                "stage_a_sharpness": sa_sharp,
+                "stage_a_latency_ms": round(sa_lat, 1) if sa_lat is not None else None,
+                "stage_b_expected_level": clean_text(sb_exp) if sb_exp is not None else None,
+                "stage_b_level": clean_text(sb_level) if sb_level is not None else None,
+                "stage_b_match": sb_match,
+                "stage_b_sharpness": sb_sharp,
+                "stage_b_latency_ms": round(sb_lat, 1) if sb_lat is not None else None,
+                "confident_wrong_dose": tr_cwd,
+            }
+        )
+
+    pre_rate = to_rate(first_val(summary, ["pre_coaching_abstention_rate", "stage_a_abstention_rate", "initial_abstention_rate", "abstention_rate"]))
+    if pre_rate is None and stage_a_bools:
+        pre_rate = round(sum(1 for x in stage_a_bools if x) / len(stage_a_bools), 4)
+
+    post_acc = to_rate(first_val(summary, ["post_coaching_verdict_accuracy", "stage_b_verdict_accuracy", "post_coaching_accuracy", "recovery_accuracy", "verdict_accuracy"]))
+    if post_acc is None and stage_b_bools:
+        post_acc = round(sum(1 for x in stage_b_bools if x) / len(stage_b_bools), 4)
+
+    pre_abst = to_int(first_val(summary, ["pre_coaching_abstentions", "stage_a_abstentions", "stage_a_matches"]))
+    if pre_abst is None and pre_rate is not None and n_trajs > 0:
+        pre_abst = int(round(pre_rate * n_trajs))
+
+    post_matches = to_int(first_val(summary, ["post_coaching_matches", "post_coaching_verdict_matches", "stage_b_matches"]))
+    if post_matches is None and post_acc is not None and n_trajs > 0:
+        post_matches = int(round(post_acc * n_trajs))
+
+    verdict_matches = to_int(first_val(summary, ["verdict_matches", "total_matches"]))
+    if verdict_matches is None and pre_abst is not None and post_matches is not None:
+        verdict_matches = pre_abst + post_matches
+
+    verdict_acc = round(verdict_matches / total_calls, 4) if (verdict_matches is not None and total_calls > 0) else post_acc
+
+    cwd = to_int(first_val(summary, ["confident_wrong_dose_count", "confident_wrong_doses"]))
+    if cwd is None:
+        cwd = sum(1 for x in item_cwds if x) if item_cwds else 0
+
+    lat = extract_latency(summary, trajs)
+    if lat["p50"] is None and stage_lats:
+        lat["p50"] = percentile(stage_lats, 0.50)
+    if lat["p95"] is None and stage_lats:
+        lat["p95"] = percentile(stage_lats, 0.95)
+    if lat["mean"] is None and stage_lats:
+        lat["mean"] = round(statistics.mean(stage_lats), 1)
+
+    model = clean_text(first_val(summary, ["model", "verify_model"]) or data.get("model") or "gemini-3.8-flash")
+    tokens_in = to_num(first_val(summary, ["tokens_in", "mean_tokens_in", "total_tokens_in", "input_tokens"]))
+    tokens_out = to_num(first_val(summary, ["tokens_out", "mean_tokens_out", "total_tokens_out", "output_tokens"]))
+
+    return {
+        "suite_id": "coaching_trajectories",
+        "generated_at": clean_text(data.get("generated_at") or data.get("testedAt") or ""),
+        "model": model,
+        "n_trajectories": n_trajs,
+        "total_verify_calls": total_calls,
+        "n_cases": total_calls,
+        "verdict_matches": verdict_matches,
+        "verdict_accuracy": verdict_acc,
+        "pre_coaching_abstentions": pre_abst,
+        "pre_coaching_abstention_rate": pre_rate,
+        "post_coaching_matches": post_matches,
+        "post_coaching_verdict_accuracy": post_acc,
+        "confident_wrong_dose_count": cwd,
+        "false_safe_allergen_count": None,
+        "latency_ms": lat,
+        "tokens_in": round(tokens_in, 1) if tokens_in is not None else None,
+        "tokens_out": round(tokens_out, 1) if tokens_out is not None else None,
+        "trajectories": rows,
+    }
+
+
+def normalize_extended_suite(suite_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    if suite_id == "coaching_trajectories":
+        return normalize_coaching_trajectories(data)
+
+    base = normalize_label_suite(suite_id, data)
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    items = extract_items(data)
+
+    if suite_id == "curved_blister_results":
+        readable_recall = to_rate(first_val(summary, ["readable_recall", "clean_recall", "clean_field_accuracy"]))
+        if readable_recall is None:
+            readable_recall = base["clean_field_accuracy"]
+        occ_abst = to_rate(first_val(summary, ["occluded_abstention_rate", "glare_or_curved_abstention_rate", "unreadable_abstention_rate", "abstention_rate"]))
+        if occ_abst is None:
+            occ_abst = base["occluded_abstention_rate"]
+        base["readable_recall"] = readable_recall
+        base["occluded_abstention_rate"] = occ_abst
+    elif suite_id == "lighting_motion_results":
+        mod_rec = to_rate(first_val(summary, ["moderate_degradation_recall", "readable_recall", "clean_recall", "clean_field_accuracy"]))
+        if mod_rec is None:
+            mod_rec = base["clean_field_accuracy"]
+        sev_abst = to_rate(first_val(summary, ["severe_degradation_abstention_rate", "occluded_abstention_rate", "unreadable_abstention_rate", "abstention_rate"]))
+        if sev_abst is None:
+            sev_abst = base["occluded_abstention_rate"]
+        base["moderate_degradation_recall"] = mod_rec
+        base["severe_degradation_abstention_rate"] = sev_abst
+    elif suite_id == "multilingual_labels_results":
+        langs_raw = first_val(summary, ["languages_tested", "languages", "locales"])
+        if langs_raw is None:
+            langs_raw = first_val(data, ["languages_tested", "languages", "locales"])
+        langs: list[str] = []
+        if isinstance(langs_raw, list):
+            langs = [clean_text(x) for x in langs_raw if clean_text(x)]
+        if not langs:
+            for it in items:
+                lv = clean_text(first_val(it, ["lang", "language", "locale"]))
+                if lv and lv not in langs:
+                    langs.append(lv)
+        base["languages_tested"] = langs
+        if base["false_safe_allergen_count"] is None:
+            item_fsa = [bool(it.get("false_safe_allergen")) for it in items if "false_safe_allergen" in it]
+            if item_fsa:
+                base["false_safe_allergen_count"] = sum(1 for x in item_fsa if x)
+    elif suite_id == "bystander_privacy_results":
+        leaks = to_int(first_val(summary, ["pii_or_bystander_leak_count", "bystander_leak_count", "pii_leak_count", "leak_count", "canary_leak_count"]))
+        if leaks is None and items:
+            leak_flags: list[bool] = []
+            for it in items:
+                if isinstance(it.get("pii_or_bystander_leak"), bool):
+                    leak_flags.append(it["pii_or_bystander_leak"])
+                elif isinstance(it.get("leaked"), bool):
+                    leak_flags.append(it["leaked"])
+                elif isinstance(it.get("privacy_pass"), bool):
+                    leak_flags.append(not it["privacy_pass"])
+            if leak_flags:
+                leaks = sum(1 for x in leak_flags if x)
+        priv_rate = to_rate(first_val(summary, ["privacy_pass_rate", "non_leak_rate", "red_team_pass_rate"]))
+        if priv_rate is None and leaks is not None and base["n_cases"] > 0:
+            priv_rate = round((base["n_cases"] - leaks) / base["n_cases"], 4)
+        base["pii_or_bystander_leak_count"] = leaks
+        base["privacy_pass_rate"] = priv_rate
+    elif suite_id == "polypharmacy_confusion_results":
+        base["double_dose_catches"] = to_int(first_val(summary, ["double_dose_catches", "double_dose_catch_count"]))
+        base["lasa_strength_catches"] = to_int(first_val(summary, ["lasa_strength_catches", "lasa_catches", "wrong_strength_catches"]))
+        base["drug_class_catches"] = to_int(first_val(summary, ["drug_class_catches", "avoid_or_allergy_catches", "class_avoid_catches"]))
+
+    return base
+
+
 def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
     suites_present: list[str] = []
     suites_missing: list[str] = []
@@ -856,6 +1148,16 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         elif sid == "unit_economics":
             artifacts[sid] = normalize_unit_economics(raw)
 
+    extended_suites_present: list[str] = []
+    for spec in EXTENDED_ARTIFACT_SPECS:
+        sid = spec["id"]
+        path = eval_dir / spec["filename"]
+        if not path.exists():
+            continue
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        extended_suites_present.append(sid)
+        artifacts[sid] = normalize_extended_suite(sid, raw)
+
     label_suites_present = [sid for sid in LABEL_SUITE_IDS if sid in artifacts]
     total_label_cases = sum(artifacts[sid]["n_cases"] for sid in label_suites_present)
 
@@ -869,6 +1171,36 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
 
     overall_verdict_accuracy = round(verdict_num / verdict_den, 4) if verdict_den > 0 else None
 
+    ext_cases = sum(artifacts[sid]["n_cases"] for sid in extended_suites_present)
+    ext_verdict_num = 0
+    ext_verdict_den = 0
+    for sid in extended_suites_present:
+        suite = artifacts[sid]
+        if suite.get("verdict_matches") is not None and suite["n_cases"] > 0:
+            ext_verdict_num += suite["verdict_matches"]
+            ext_verdict_den += suite["n_cases"]
+    ext_verdict_acc = round(ext_verdict_num / ext_verdict_den, 4) if ext_verdict_den > 0 else None
+    ext_cwd = sum(artifacts[sid].get("confident_wrong_dose_count") or 0 for sid in extended_suites_present)
+    ext_pii_leaks = (
+        artifacts["bystander_privacy_results"]["pii_or_bystander_leak_count"]
+        if "bystander_privacy_results" in artifacts
+        else None
+    )
+    ext_false_safe_allergen = (
+        artifacts["multilingual_labels_results"]["false_safe_allergen_count"]
+        if "multilingual_labels_results" in artifacts
+        else None
+    )
+    extended_summary = {
+        "suites_count": len(extended_suites_present),
+        "total_cases_evaluated": ext_cases,
+        "total_verdict_matches": ext_verdict_num,
+        "overall_verdict_accuracy": ext_verdict_acc,
+        "confident_wrong_dose_count": ext_cwd,
+        "pii_or_bystander_leak_count": ext_pii_leaks,
+        "false_safe_allergen_count": ext_false_safe_allergen,
+    }
+
     total_cwd = sum(artifacts[sid]["confident_wrong_dose_count"] or 0 for sid in label_suites_present)
     if "calibration_curve" in artifacts and artifacts["calibration_curve"]["confident_wrong_dose_at_080"] is not None:
         total_cwd += artifacts["calibration_curve"]["confident_wrong_dose_at_080"]
@@ -879,6 +1211,7 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         )
         if primary_mc and primary_mc["confident_wrong_dose_count"] is not None:
             total_cwd += primary_mc["confident_wrong_dose_count"]
+    total_cwd += ext_cwd
 
     clean_accs = [
         artifacts[sid]["clean_field_accuracy"]
@@ -933,11 +1266,12 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         "mean": round(statistics.mean(mean_vals), 1) if mean_vals else None,
     }
 
-    false_safe_allergen = (
-        artifacts["results_batch2"]["false_safe_allergen_count"]
-        if "results_batch2" in artifacts
-        else None
-    )
+    allergen_counts = [
+        artifacts[sid]["false_safe_allergen_count"]
+        for sid in [*label_suites_present, *extended_suites_present]
+        if artifacts[sid].get("false_safe_allergen_count") is not None
+    ]
+    false_safe_allergen = sum(allergen_counts) if allergen_counts else None
 
     coaching_summary = None
     if "coaching_eval" in artifacts:
@@ -1096,6 +1430,8 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         },
         "suites_present": suites_present,
         "suites_missing": suites_missing,
+        "extended_suites_present": extended_suites_present,
+        "extended_summary": extended_summary,
         "label_suites_present": label_suites_present,
         "total_label_cases_evaluated": total_label_cases,
         "total_verdict_matches": verdict_num,
@@ -1162,10 +1498,67 @@ def artifact_headline(sid: str, artifacts: dict[str, Any]) -> tuple[str, str]:
     return ("present", "Loaded")
 
 
+def extended_table_cells(sid: str, a: dict[str, Any]) -> tuple[str, str, str, str, str]:
+    lat_str = f"{fmt_ms(a['latency_ms']['p50'])} / {fmt_ms(a['latency_ms']['p95'])}"
+    cwd_str = fmt_num(a.get("confident_wrong_dose_count"), 0)
+    if sid == "coaching_trajectories":
+        scope_str = f"{a['n_trajectories']} trajectories ({a['total_verify_calls']} calls)"
+        acc_str = (
+            f"{fmt_pct(a['verdict_accuracy'])} ({a['verdict_matches']}/{a['n_cases']})"
+            if a.get("verdict_matches") is not None
+            else fmt_pct(a.get("post_coaching_verdict_accuracy"))
+        )
+        outcome_str = (
+            f"Pre-coaching abstention {fmt_pct(a.get('pre_coaching_abstention_rate'))}, "
+            f"post-coaching accuracy {fmt_pct(a.get('post_coaching_verdict_accuracy'))}"
+        )
+        return (scope_str, acc_str, cwd_str, lat_str, outcome_str)
+
+    unit_lbl = "scenes" if sid == "bystander_privacy_results" else "cases"
+    scope_str = f"{a['n_cases']} {unit_lbl}"
+    acc_str = (
+        f"{fmt_pct(a['verdict_accuracy'])} ({a['verdict_matches']}/{a['n_cases']})"
+        if a.get("verdict_matches") is not None
+        else fmt_pct(a.get("verdict_accuracy"))
+    )
+    if sid == "curved_blister_results":
+        outcome_str = (
+            f"Readable recall {fmt_pct(a.get('readable_recall'))}, "
+            f"foil/curve abstention {fmt_pct(a.get('occluded_abstention_rate'))}"
+        )
+    elif sid == "lighting_motion_results":
+        outcome_str = (
+            f"Moderate-degradation recall {fmt_pct(a.get('moderate_degradation_recall'))}, "
+            f"severe abstention {fmt_pct(a.get('severe_degradation_abstention_rate'))}"
+        )
+    elif sid == "multilingual_labels_results":
+        langs_txt = ", ".join(a.get("languages_tested") or []) or "n/a"
+        outcome_str = (
+            f"Languages: {langs_txt}; "
+            f"{fmt_num(a.get('false_safe_allergen_count'), 0)} false-safe allergens"
+        )
+    elif sid == "bystander_privacy_results":
+        outcome_str = (
+            f"{fmt_num(a.get('pii_or_bystander_leak_count'), 0)} PII/bystander leaks, "
+            f"privacy pass {fmt_pct(a.get('privacy_pass_rate'))}"
+        )
+    elif sid == "polypharmacy_confusion_results":
+        outcome_str = (
+            f"Double-dose catches {fmt_num(a.get('double_dose_catches'), 0)}, "
+            f"LASA catches {fmt_num(a.get('lasa_strength_catches'), 0)}, "
+            f"class catches {fmt_num(a.get('drug_class_catches'), 0)}"
+        )
+    else:
+        outcome_str = "Loaded"
+    return (scope_str, acc_str, cwd_str, lat_str, outcome_str)
+
+
 def render_markdown(compiled: dict[str, Any]) -> str:
     lines: list[str] = []
     artifacts = compiled["artifacts"]
     suites_present = compiled["suites_present"]
+    extended_suites_present = compiled.get("extended_suites_present", [])
+    extended_summary = compiled.get("extended_summary")
     label_suites = compiled["label_suites_present"]
     total_cases = compiled["total_label_cases_evaluated"]
     verdict_acc = compiled["overall_verdict_accuracy"]
@@ -1214,7 +1607,10 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         "4-tier optical blur/glare/occlusion sweeps (`calibration_curve.json`), 3-model Gemini Flash fallback comparisons "
         "(`model_comparison.json`), Gemini Live WebSocket connect and first-audio probes (`live_models_probe.json`), "
         "structured LLM-as-a-Judge coaching and bystander privacy transcripts (`coaching_eval.json`), and measured "
-        "JPEG payload, adaptive bandwidth, and 3-year assistive TCO modeling (`unit_economics.json`)."
+        "JPEG payload, adaptive bandwidth, and 3-year assistive TCO modeling (`unit_economics.json`). Optional "
+        "stress suites covering curved pill bottles and foil glare, multi-step FrameRing coaching trajectories, "
+        "low-light sensor noise and motion blur, European multilingual labels, bystander PII red-teaming, and "
+        "LASA/double-dose polypharmacy confusion are automatically discovered and compiled whenever present on disk."
     )
     lines.append("")
     lines.append("---")
@@ -1320,6 +1716,18 @@ def render_markdown(compiled: dict[str, Any]) -> str:
             f"`EUR {fmt_num(ue_s['per_check_gemini_cost_eur_standard'], 5)}` / check, "
             f"3-yr TCO `EUR {fmt_comma(ue_s['tco_3yr_holdup_rayban_meta_gen2_eur'], 2)}` vs `EUR {fmt_comma(ue_s['tco_3yr_orcam_myeye_midpoint_eur'], 2)}` |"
         )
+    if extended_suites_present and extended_summary is not None:
+        ext_joined = ", ".join(extended_suites_present)
+        ext_acc_txt = (
+            f"`{fmt_pct(extended_summary['overall_verdict_accuracy'])}` (`{extended_summary['total_verdict_matches']} / {extended_summary['total_cases_evaluated']}`)"
+            if extended_summary["overall_verdict_accuracy"] is not None
+            else f"`{extended_summary['total_cases_evaluated']}` checks"
+        )
+        lines.append(
+            f"| Extended stress suites present in `eval/` | "
+            f"`{len(extended_suites_present)}` (`{ext_joined}`), {ext_acc_txt}, "
+            f"`{extended_summary['confident_wrong_dose_count']}` confident-wrong doses |"
+        )
     lines.append("")
 
     lines.append(f"{H3} Artifact Status Matrix")
@@ -1336,6 +1744,25 @@ def render_markdown(compiled: dict[str, Any]) -> str:
             f"{md_cell(scope_str)} | {md_cell(headline_str)} |"
         )
     lines.append("")
+
+    if extended_suites_present:
+        lines.append(f"{H3} Extended Optical, Multilingual & Privacy Stress Suites")
+        lines.append("")
+        lines.append(
+            "| Stress Suite Artifact | Stress Dimension | Model | Scope | Verdict / Stage Accuracy | Confident-Wrong Doses | Latency (p50 / p95) | Key Stress Outcome |"
+        )
+        lines.append("|---|---|---|---|---|---|---|---|")
+        for spec in EXTENDED_ARTIFACT_SPECS:
+            sid = spec["id"]
+            if sid not in artifacts:
+                continue
+            scope_str, acc_str, cwd_str, lat_str, outcome_str = extended_table_cells(sid, artifacts[sid])
+            lines.append(
+                f"| `eval/{spec['filename']}` | {md_cell(spec['dimension'])} | `{md_cell(artifacts[sid]['model'])}` | "
+                f"{md_cell(scope_str)} | {md_cell(acc_str)} | `{md_cell(cwd_str)}` | `{md_cell(lat_str)}` | {md_cell(outcome_str)} |"
+            )
+        lines.append("")
+
     lines.append("---")
     lines.append("")
 
@@ -1649,6 +2076,99 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         )
         lines.append("")
 
+    for spec in EXTENDED_ARTIFACT_SPECS:
+        sid = spec["id"]
+        if sid not in artifacts:
+            continue
+        section_num += 1
+        suite = artifacts[sid]
+        lines.append(f"{H3} 4.{section_num} {spec['title']} (`eval/{spec['filename']}`)")
+        lines.append("")
+        lines.append("| Stress Suite Metric | Measured Value |")
+        lines.append("|---|---|")
+        lines.append(f"| Model | `{suite['model']}` |")
+        if sid == "coaching_trajectories":
+            lines.append(f"| Trajectories / total `verify()` calls | `{suite['n_trajectories']}` / `{suite['total_verify_calls']}` |")
+            lines.append(
+                f"| Stage A pre-coaching abstention rate | `{fmt_pct(suite['pre_coaching_abstention_rate'])}` "
+                f"(`{fmt_num(suite['pre_coaching_abstentions'], 0)} / {suite['n_trajectories']}`) |"
+            )
+            lines.append(
+                f"| Stage B post-coaching verdict accuracy | `{fmt_pct(suite['post_coaching_verdict_accuracy'])}` "
+                f"(`{fmt_num(suite['post_coaching_matches'], 0)} / {suite['n_trajectories']}`) |"
+            )
+            lines.append(f"| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `{suite['confident_wrong_dose_count']}` |")
+            lines.append(
+                f"| Latency (p50 / p95 / mean) | "
+                f"`{fmt_ms(suite['latency_ms']['p50'])}` / `{fmt_ms(suite['latency_ms']['p95'])}` / `{fmt_ms(suite['latency_ms']['mean'])}` |"
+            )
+            lines.append("")
+            if suite["trajectories"]:
+                lines.append("| Trajectory ID | Stage A Verdict | Stage A Abstained | Stage A Sharpness | Stage B Expected | Stage B Verdict | Stage B Match | Stage B Sharpness |")
+                lines.append("|---|---|---|---|---|---|---|---|")
+                for tr in suite["trajectories"]:
+                    lines.append(
+                        f"| `{md_cell(tr['id'])}` | `{md_cell(tr['stage_a_level'] or 'n/a')}` | "
+                        f"`{'PASS' if tr['stage_a_abstained'] else ('FAIL' if tr['stage_a_abstained'] is False else 'n/a')}` | "
+                        f"`{fmt_num(tr['stage_a_sharpness'], 4)}` | `{md_cell(tr['stage_b_expected_level'] or 'n/a')}` | "
+                        f"`{md_cell(tr['stage_b_level'] or 'n/a')}` | "
+                        f"`{'PASS' if tr['stage_b_match'] else ('FAIL' if tr['stage_b_match'] is False else 'n/a')}` | "
+                        f"`{fmt_num(tr['stage_b_sharpness'], 4)}` |"
+                    )
+                lines.append("")
+            continue
+
+        lines.append(f"| Evaluated cases (`n_cases`) | `{suite['n_cases']}` |")
+        lines.append(f"| Verdict accuracy | `{fmt_pct(suite['verdict_accuracy'])}` (`{suite['verdict_matches']} / {suite['n_cases']}`) |")
+        lines.append(f"| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `{suite['confident_wrong_dose_count']}` |")
+        if sid == "curved_blister_results":
+            if suite.get("readable_recall") is not None:
+                lines.append(f"| Readable curved / blister recall | `{fmt_pct(suite['readable_recall'])}` |")
+            if suite.get("occluded_abstention_rate") is not None:
+                lines.append(f"| Foil-glare / rotated-edge abstention rate | `{fmt_pct(suite['occluded_abstention_rate'])}` |")
+        elif sid == "lighting_motion_results":
+            if suite.get("moderate_degradation_recall") is not None:
+                lines.append(f"| Moderate low-light / mild-tremor recall | `{fmt_pct(suite['moderate_degradation_recall'])}` |")
+            if suite.get("severe_degradation_abstention_rate") is not None:
+                lines.append(f"| Severe blur / near-dark abstention rate | `{fmt_pct(suite['severe_degradation_abstention_rate'])}` |")
+        elif sid == "multilingual_labels_results":
+            if suite.get("languages_tested"):
+                lines.append(f"| Languages tested | `{', '.join(suite['languages_tested'])}` |")
+            if suite.get("false_safe_allergen_count") is not None:
+                lines.append(f"| False-safe allergen count | `{suite['false_safe_allergen_count']}` |")
+        elif sid == "bystander_privacy_results":
+            if suite.get("pii_or_bystander_leak_count") is not None:
+                lines.append(f"| PII or bystander leak count | `{suite['pii_or_bystander_leak_count']}` |")
+            if suite.get("privacy_pass_rate") is not None:
+                lines.append(f"| Red-team privacy pass rate | `{fmt_pct(suite['privacy_pass_rate'])}` |")
+        elif sid == "polypharmacy_confusion_results":
+            if suite.get("double_dose_catches") is not None:
+                lines.append(f"| Double-dose catches | `{suite['double_dose_catches']}` |")
+            if suite.get("lasa_strength_catches") is not None:
+                lines.append(f"| LASA wrong-strength catches | `{suite['lasa_strength_catches']}` |")
+            if suite.get("drug_class_catches") is not None:
+                lines.append(f"| Drug-class / allergy avoid catches | `{suite['drug_class_catches']}` |")
+        lines.append(
+            f"| Latency (p50 / p95 / mean) | "
+            f"`{fmt_ms(suite['latency_ms']['p50'])}` / `{fmt_ms(suite['latency_ms']['p95'])}` / `{fmt_ms(suite['latency_ms']['mean'])}` |"
+        )
+        if suite["tokens_in"] is not None or suite["tokens_out"] is not None:
+            lines.append(f"| Tokens (in / out) | `{fmt_num(suite['tokens_in'], 1)}` / `{fmt_num(suite['tokens_out'], 1)}` |")
+        lines.append("")
+        if suite["rows"]:
+            lines.append("| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |")
+            lines.append("|---|---|---|---|---|---|---|---|")
+            for r in suite["rows"]:
+                lines.append(
+                    f"| `{md_cell(r['id'])}` | `{md_cell(r['expected_level'] or 'n/a')}` | "
+                    f"`{md_cell(r['predicted_level'] or 'n/a')}` | "
+                    f"`{'PASS' if r['verdict_match'] else ('FAIL' if r['verdict_match'] is False else 'n/a')}` | "
+                    f"{md_cell(r['strength_value'] or 'null')} | "
+                    f"`{fmt_num(r['strength_confidence'], 2)}` | "
+                    f"`{r['confident_wrong_dose']}` | `{fmt_ms(r['latency_ms'])}` |"
+                )
+            lines.append("")
+
     if section_num == 0:
         lines.append("No JSON artifacts are currently present in `eval/`. Run the reproduction commands below to populate.")
         lines.append("")
@@ -1673,6 +2193,9 @@ def render_markdown(compiled: dict[str, Any]) -> str:
     lines.append("export PATH=\"/tmp/fleet-silas/node/bin:$HOME/.local/bin:$PATH\"")
     for spec in ARTIFACT_SPECS:
         lines.append(spec["repro_cmd"])
+    for spec in EXTENDED_ARTIFACT_SPECS:
+        if spec["id"] in artifacts:
+            lines.append(spec["repro_cmd"])
     lines.append("/venv/bin/python3 eval/compile_eval_report.py")
     lines.append("```")
     lines.append("")
@@ -1680,12 +2203,12 @@ def render_markdown(compiled: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Compile HoldUp evaluation JSON artifacts into combined_summary.json and docs/EVAL.md")
     parser.add_argument("--eval-dir", type=pathlib.Path, default=DEFAULT_EVAL_DIR)
     parser.add_argument("--out-json", type=pathlib.Path, default=DEFAULT_OUT_JSON)
     parser.add_argument("--out-md", type=pathlib.Path, default=DEFAULT_OUT_MD)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     compiled = compile_summary(args.eval_dir)
     md_text = render_markdown(compiled)
@@ -1696,11 +2219,17 @@ def main() -> None:
     args.out_json.write_text(json.dumps(compiled, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     args.out_md.write_text(md_text, encoding="utf-8")
 
+    ext_note = (
+        f" + {len(compiled['extended_suites_present'])} extended ({compiled['extended_suites_present']})"
+        if compiled["extended_suites_present"]
+        else ""
+    )
     print(
         f"Compiled {len(compiled['suites_present'])}/{len(ARTIFACT_SPECS)} artifacts "
-        f"({compiled['suites_present']}) -> {args.out_json} and {args.out_md}"
+        f"({compiled['suites_present']}){ext_note} -> {args.out_json} and {args.out_md}"
     )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
