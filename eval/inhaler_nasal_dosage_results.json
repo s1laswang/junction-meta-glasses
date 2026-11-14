@@ -1,0 +1,838 @@
+{
+  "generated_at": "2026-11-14T17:28:25.084376+00:00",
+  "eval_now_iso": "2026-11-14T20:00:00Z",
+  "model": "gemini-3.8-flash",
+  "strength_min_conf": 0.8,
+  "profile": {
+    "meds": [
+      {
+        "id": "sal_mdi",
+        "name": "Ventoline Evohaler",
+        "ingredient": "salbutamol",
+        "strength": "100 mcg/dose",
+        "schedule": [
+          "as needed"
+        ],
+        "notes": "Reliever pressurized metered-dose inhaler, 1 to 2 puffs as needed"
+      },
+      {
+        "id": "flu_ns",
+        "name": "Flixonase",
+        "ingredient": "fluticasone",
+        "strength": "50 mcg/spray",
+        "schedule": [
+          "morning"
+        ],
+        "notes": "Aqueous metered nasal spray once daily in the morning"
+      },
+      {
+        "id": "sym_th",
+        "name": "Symbicort Turbuhaler",
+        "ingredient": "budesonide, formoterol",
+        "strength": "160 mcg / 4.5 mcg",
+        "schedule": [
+          "morning",
+          "evening"
+        ],
+        "notes": "Combination maintenance dry-powder inhaler twice daily"
+      },
+      {
+        "id": "salm_dk",
+        "name": "Serevent Diskus",
+        "ingredient": "salmeterol",
+        "strength": "50 mcg/dose",
+        "schedule": [
+          "morning",
+          "evening"
+        ],
+        "notes": "Circular Diskus dry-powder bronchodilator twice daily"
+      }
+    ],
+    "allergies": [
+      "peanut"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "strength_min_conf": 0.8,
+    "n_cases": 10,
+    "n_items": 10,
+    "n_readable": 6,
+    "n_occluded": 4,
+    "clean_field_accuracy": 1.0,
+    "readable_dosage_accuracy": 1.0,
+    "per_actuation_match_accuracy": 1.0,
+    "n_distractor_counter_cases": 6,
+    "actuation_counter_resistance_rate": 1.0,
+    "n_wrong_strength_traps": 2,
+    "wrong_strength_catch_rate": 1.0,
+    "n_expired_inhalers": 1,
+    "expired_inhaler_catch_rate": 1.0,
+    "occluded_abstention_rate": 1.0,
+    "verdict_matches": 10,
+    "verdict_accuracy": 1.0,
+    "confident_wrong_dose_count": 0,
+    "false_safe_allergen_count": 0,
+    "latency_p50_ms": 3390.2,
+    "latency_p95_ms": 4966.4,
+    "latency_mean_ms": 3605.6,
+    "tokens_in": 24850,
+    "tokens_out": 1477,
+    "tokens_thinking": 447
+  },
+  "items": [
+    {
+      "id": "in_01",
+      "category": "per_actuation_match",
+      "package_type": "pmdi_inhaler",
+      "occlusion_mode": "none",
+      "description": "Pressurized metered-dose inhaler VENTOLINE EVOHALER (salbutamol) 100 mcg/dose with 200 metered doses pack counter match",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_01.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 57835,
+      "strength_readable": true,
+      "is_occluded": false,
+      "has_distractor_counter": true,
+      "printed_strength": "100 mcg/dose",
+      "actuation_counter_text": "200 metered doses",
+      "expected_strength": "100 mcg/dose",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_value": "100 mcg/dose",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "distractor_resisted": true,
+      "trap_caught": null,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3169.8,
+      "tokens_in": 2485,
+      "tokens_out": 122,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "VENTOLINE EVOHALER",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "salbutamol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "100 mcg/dose",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.2
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.95
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.2
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.9
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Salbutamol 100 mcg/dose",
+        "speech": "Yes, Salbutamol 100 mcg/dose, on your list. You haven't taken it today.",
+        "matchedMedId": "sal_mdi",
+        "takenToday": false,
+        "reasons": [
+          "matches sal_mdi",
+          "taken today: 0/1"
+        ]
+      }
+    },
+    {
+      "id": "in_02",
+      "category": "wrong_strength_warning",
+      "package_type": "easyhaler_dpi",
+      "occlusion_mode": "none",
+      "description": "Nordic BUVENTOL EASYHALER (salbutamol) 200 mikrog/annos dry-powder inhaler 2x wrong-strength warning vs 100 mcg/dose profile",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_02.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 56598,
+      "strength_readable": true,
+      "is_occluded": false,
+      "has_distractor_counter": true,
+      "printed_strength": "200 mikrog/annos",
+      "actuation_counter_text": "200 annosta",
+      "expected_strength": "200 mcg/dose",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_value": "200 mikrog/annos",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "distractor_resisted": true,
+      "trap_caught": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3407.3,
+      "tokens_in": 2485,
+      "tokens_out": 228,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "BUVENTOL EASYHALER",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "salbutamol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "200 mikrog/annos",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Salbutamol 200 mikrog/annos: wrong strength",
+        "speech": "This is Salbutamol 200 mikrog/annos, but your list says 100 mcg/dose. Don't take it before checking with a pharmacist.",
+        "matchedMedId": "sal_mdi",
+        "takenToday": null,
+        "reasons": [
+          "strength 200 mikrog/annos differs from your 100 mcg/dose"
+        ]
+      }
+    },
+    {
+      "id": "in_03",
+      "category": "per_actuation_match",
+      "package_type": "nasal_spray",
+      "occlusion_mode": "none",
+      "description": "Aqueous metered nasal spray FLIXONASE (fluticasone propionate) 50 mcg/spray with 120 sprays counter distractor match",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_03.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 51844,
+      "strength_readable": true,
+      "is_occluded": false,
+      "has_distractor_counter": true,
+      "printed_strength": "50 mcg/spray",
+      "actuation_counter_text": "120 metered sprays",
+      "expected_strength": "50 mcg/spray",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_value": "50 mcg/spray",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "distractor_resisted": true,
+      "trap_caught": null,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3415.7,
+      "tokens_in": 2485,
+      "tokens_out": 223,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "FLIXONASE",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "fluticasone",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "50 mcg/spray",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-09",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Fluticasone 50 mcg/spray, your morning pill",
+        "speech": "Yes, Fluticasone 50 mcg/spray, your morning pill. You haven't taken it today.",
+        "matchedMedId": "flu_ns",
+        "takenToday": false,
+        "reasons": [
+          "matches flu_ns",
+          "taken today: 0/1"
+        ]
+      }
+    },
+    {
+      "id": "in_04",
+      "category": "per_actuation_match",
+      "package_type": "turbuhaler_dpi",
+      "occlusion_mode": "none",
+      "description": "Nordic SYMBICORT TURBUHALER (budesonide, formoterol) 160 mcg / 4.5 mcg combination dry-powder inhaler match",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_04.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 55314,
+      "strength_readable": true,
+      "is_occluded": false,
+      "has_distractor_counter": true,
+      "printed_strength": "160 mcg / 4.5 mcg",
+      "actuation_counter_text": "120 doses",
+      "expected_strength": "160 mcg / 4.5 mcg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_value": "160 mcg + 4.5 mcg",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "distractor_resisted": true,
+      "trap_caught": null,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3089.4,
+      "tokens_in": 2485,
+      "tokens_out": 133,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "SYMBICORT TURBUHALER",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "budesonide, formoterol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "160 mcg + 4.5 mcg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-12",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Budesonide, formoterol 160 mcg + 4.5 mcg",
+        "speech": "Yes, Budesonide, formoterol 160 mcg + 4.5 mcg, your morning pill. You haven't taken it today.",
+        "matchedMedId": "sym_th",
+        "takenToday": false,
+        "reasons": [
+          "matches sym_th",
+          "taken today: 0/2"
+        ]
+      }
+    },
+    {
+      "id": "in_05",
+      "category": "wrong_strength_warning",
+      "package_type": "turbuhaler_dpi",
+      "occlusion_mode": "none",
+      "description": "High-strength SYMBICORT TURBUHALER (budesonide, formoterol) 320 mcg / 9 mcg 2x combination DPI trap vs 160 mcg / 4.5 mcg profile",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_05.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 54702,
+      "strength_readable": true,
+      "is_occluded": false,
+      "has_distractor_counter": true,
+      "printed_strength": "320 mcg / 9 mcg",
+      "actuation_counter_text": "60 doses",
+      "expected_strength": "320 mcg / 9 mcg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_value": "320 mcg + 9 mcg",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "distractor_resisted": true,
+      "trap_caught": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 2965.9,
+      "tokens_in": 2485,
+      "tokens_out": 131,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "SYMBICORT TURBUHALER",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "budesonide, formoterol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "320 mcg + 9 mcg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Budesonide, formoterol 320 mcg + 9 mcg: wrong",
+        "speech": "This is Budesonide, formoterol 320 mcg + 9 mcg, but your list says 160 mcg / 4.5 mcg. Don't take it before checking with a pharmacist.",
+        "matchedMedId": "sym_th",
+        "takenToday": null,
+        "reasons": [
+          "strength 320 mcg + 9 mcg differs from your 160 mcg / 4.5 mcg"
+        ]
+      }
+    },
+    {
+      "id": "in_06",
+      "category": "expired_inhaler_warning",
+      "package_type": "diskus_dpi",
+      "occlusion_mode": "none",
+      "description": "Circular SEREVENT DISKUS (salmeterol) 50 mcg/dose dry-powder inhaler with EXP 2025-01 past-expiry safety catch",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_06.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 66731,
+      "strength_readable": true,
+      "is_occluded": false,
+      "has_distractor_counter": true,
+      "printed_strength": "50 mcg/dose",
+      "actuation_counter_text": "60 doses",
+      "expected_strength": "50 mcg/dose",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_value": "50 mcg/dose",
+      "strength_confidence": 0.99,
+      "strength_correct": true,
+      "distractor_resisted": true,
+      "trap_caught": true,
+      "abstained": false,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3903.4,
+      "tokens_in": 2485,
+      "tokens_out": 120,
+      "tokens_thinking": 133,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "SEREVENT DISKUS",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "salmeterol",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "50 mcg/dose",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2025-01",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Salmeterol 50 mcg/dose: expired",
+        "speech": "This is Salmeterol 50 mcg/dose, your medicine, but it expired in January 2025. Don't take it, ask a pharmacist for a new pack.",
+        "matchedMedId": "salm_dk",
+        "takenToday": null,
+        "reasons": [
+          "expired 2025-01"
+        ]
+      }
+    },
+    {
+      "id": "in_07",
+      "category": "degraded_abstention",
+      "package_type": "pmdi_inhaler",
+      "occlusion_mode": "thumb_grip_over_canister",
+      "description": "Zero-guess trap: VENTOLINE EVOHALER (salbutamol) pMDI with thumb grip covering per-dose mcg strength badge",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_07.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 57660,
+      "strength_readable": false,
+      "is_occluded": true,
+      "has_distractor_counter": false,
+      "printed_strength": "100 mcg/dose",
+      "actuation_counter_text": "200 metered doses",
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_correct": null,
+      "distractor_resisted": null,
+      "trap_caught": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 3373.2,
+      "tokens_in": 2485,
+      "tokens_out": 128,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "VENTOLINE EVOHALER",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "salbutamol",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.7,
+        "guidance": "Move your finger to show the strength."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Salbutamol: strength unclear",
+        "speech": "It looks like Salbutamol, but I can't read the strength confidently. Move your finger to show the strength.",
+        "matchedMedId": "sal_mdi",
+        "takenToday": null,
+        "reasons": [
+          "strength not readable"
+        ]
+      }
+    },
+    {
+      "id": "in_08",
+      "category": "degraded_abstention",
+      "package_type": "aluminum_mdi_canister",
+      "occlusion_mode": "curved_aluminum_specular_glare",
+      "description": "Zero-guess trap: pressurized aluminum MDI canister VENTOLINE EVOHALER (salbutamol) with curved metallic specular glare over mcg digits",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_08.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 49564,
+      "strength_readable": false,
+      "is_occluded": true,
+      "has_distractor_counter": false,
+      "printed_strength": "100 mcg/dose",
+      "actuation_counter_text": "200 metered doses",
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_value": null,
+      "strength_confidence": 0.1,
+      "strength_correct": null,
+      "distractor_resisted": null,
+      "trap_caught": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 4855.0,
+      "tokens_in": 2485,
+      "tokens_out": 132,
+      "tokens_thinking": 230,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "VENTOLINE EVOHALER",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "salbutamol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.3
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.3
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.3
+        },
+        "readability": 0.65,
+        "guidance": "Tilt it away from the light to stop the glare."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Salbutamol: strength unclear",
+        "speech": "It looks like Salbutamol, but I can't read the strength confidently. Tilt it away from the light to stop the glare.",
+        "matchedMedId": "sal_mdi",
+        "takenToday": null,
+        "reasons": [
+          "strength not readable"
+        ]
+      }
+    },
+    {
+      "id": "in_09",
+      "category": "degraded_abstention",
+      "package_type": "diskus_dpi",
+      "occlusion_mode": "counter_visible_strength_obliterated",
+      "description": "Zero-guess trap: circular SEREVENT DISKUS (salmeterol) with dose-counter window 60 visible while mcg strength badge is obliterated",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_09.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 67200,
+      "strength_readable": false,
+      "is_occluded": true,
+      "has_distractor_counter": false,
+      "printed_strength": "50 mcg/dose",
+      "actuation_counter_text": "60 doses",
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_correct": null,
+      "distractor_resisted": null,
+      "trap_caught": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 5057.6,
+      "tokens_in": 2485,
+      "tokens_out": 130,
+      "tokens_thinking": 84,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "SEREVENT DISKUS",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "salmeterol",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.85,
+        "guidance": "Turn the inhaler to check the back for strength."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Salmeterol: strength unclear",
+        "speech": "It looks like Salmeterol, but I can't read the strength confidently. Turn the inhaler to check the back for strength.",
+        "matchedMedId": "salm_dk",
+        "takenToday": null,
+        "reasons": [
+          "strength not readable"
+        ]
+      }
+    },
+    {
+      "id": "in_10",
+      "category": "degraded_abstention",
+      "package_type": "nasal_spray",
+      "occlusion_mode": "thumb_and_crust_over_spray_strength",
+      "description": "Zero-guess trap: metered nasal spray FLIXONASE (fluticasone propionate) with thumb and dried spray crust covering mcg/spray digits",
+      "image_path": "eval/out/inhaler_nasal_dosage/in_10.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 51268,
+      "strength_readable": false,
+      "is_occluded": true,
+      "has_distractor_counter": false,
+      "printed_strength": "50 mcg/spray",
+      "actuation_counter_text": "120 metered sprays",
+      "expected_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_value": null,
+      "strength_confidence": 0.2,
+      "strength_correct": null,
+      "distractor_resisted": null,
+      "trap_caught": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "false_safe_allergen": false,
+      "latency_ms": 2819.0,
+      "tokens_in": 2485,
+      "tokens_out": 130,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "FLIXONASE",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "fluticasone propionate",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.2
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-09",
+          "confidence": 0.95
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.65,
+        "guidance": "Move your finger away to reveal the covered text."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Fluticasone: strength unclear",
+        "speech": "It looks like Fluticasone, but I can't read the strength confidently. Move your finger away to reveal the covered text.",
+        "matchedMedId": "flu_ns",
+        "takenToday": null,
+        "reasons": [
+          "strength not readable"
+        ]
+      }
+    }
+  ]
+}
