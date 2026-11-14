@@ -85,7 +85,7 @@ test("connects with ready + open status, streams cumulative transcripts, and flu
   await proxy.start();
   assert.deepEqual(emitted.slice(0, 3), [
     { type: "status", live: "connecting" },
-    { type: "ready", model: "gemini-3.8-live", session: hub.id },
+    { type: "ready", model: "gemini-3.8-live", session: hub.id, features: [] },
     { type: "status", live: "open", detail: "gemini-3.8-live" },
   ]);
   const cb = sessions[0].arg.callbacks;
