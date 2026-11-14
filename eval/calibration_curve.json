@@ -1,0 +1,973 @@
+{
+  "generated_at": "2026-11-14T13:41:47.342092+00:00",
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "production_strength_min_conf": 0.8,
+    "total_items": 16,
+    "readable_items": 8,
+    "unreadable_items": 8,
+    "mean_strength_confidence_by_tier": {
+      "tier_0_clean": 0.9875,
+      "tier_1_mild": 0.9575,
+      "tier_2_heavy": 0.0,
+      "tier_3_occluded": 0.0
+    },
+    "ece": 0.0138,
+    "brier_score": 0.0005,
+    "at_production_threshold_0_80": {
+      "threshold": 0.8,
+      "clean_recall": 1.0,
+      "unreadable_abstention_rate": 1.0,
+      "confident_wrong_dose_count": 0,
+      "accepted_count": 8,
+      "coverage": 0.5,
+      "selective_risk": 0.0
+    },
+    "threshold_sweep": [
+      {
+        "threshold": 0.5,
+        "clean_recall": 1.0,
+        "unreadable_abstention_rate": 1.0,
+        "confident_wrong_dose_count": 0,
+        "accepted_count": 8,
+        "coverage": 0.5,
+        "selective_risk": 0.0
+      },
+      {
+        "threshold": 0.6,
+        "clean_recall": 1.0,
+        "unreadable_abstention_rate": 1.0,
+        "confident_wrong_dose_count": 0,
+        "accepted_count": 8,
+        "coverage": 0.5,
+        "selective_risk": 0.0
+      },
+      {
+        "threshold": 0.7,
+        "clean_recall": 1.0,
+        "unreadable_abstention_rate": 1.0,
+        "confident_wrong_dose_count": 0,
+        "accepted_count": 8,
+        "coverage": 0.5,
+        "selective_risk": 0.0
+      },
+      {
+        "threshold": 0.8,
+        "clean_recall": 1.0,
+        "unreadable_abstention_rate": 1.0,
+        "confident_wrong_dose_count": 0,
+        "accepted_count": 8,
+        "coverage": 0.5,
+        "selective_risk": 0.0
+      },
+      {
+        "threshold": 0.9,
+        "clean_recall": 1.0,
+        "unreadable_abstention_rate": 1.0,
+        "confident_wrong_dose_count": 0,
+        "accepted_count": 8,
+        "coverage": 0.5,
+        "selective_risk": 0.0
+      },
+      {
+        "threshold": 0.95,
+        "clean_recall": 1.0,
+        "unreadable_abstention_rate": 1.0,
+        "confident_wrong_dose_count": 0,
+        "accepted_count": 8,
+        "coverage": 0.5,
+        "selective_risk": 0.0
+      }
+    ],
+    "latency_ms": {
+      "mean": 3718.5,
+      "p50": 3424.9,
+      "max": 5888.3
+    }
+  },
+  "threshold_curve": [
+    {
+      "threshold": 0.5,
+      "clean_recall": 1.0,
+      "unreadable_abstention_rate": 1.0,
+      "confident_wrong_dose_count": 0,
+      "accepted_count": 8,
+      "coverage": 0.5,
+      "selective_risk": 0.0
+    },
+    {
+      "threshold": 0.6,
+      "clean_recall": 1.0,
+      "unreadable_abstention_rate": 1.0,
+      "confident_wrong_dose_count": 0,
+      "accepted_count": 8,
+      "coverage": 0.5,
+      "selective_risk": 0.0
+    },
+    {
+      "threshold": 0.7,
+      "clean_recall": 1.0,
+      "unreadable_abstention_rate": 1.0,
+      "confident_wrong_dose_count": 0,
+      "accepted_count": 8,
+      "coverage": 0.5,
+      "selective_risk": 0.0
+    },
+    {
+      "threshold": 0.8,
+      "clean_recall": 1.0,
+      "unreadable_abstention_rate": 1.0,
+      "confident_wrong_dose_count": 0,
+      "accepted_count": 8,
+      "coverage": 0.5,
+      "selective_risk": 0.0
+    },
+    {
+      "threshold": 0.9,
+      "clean_recall": 1.0,
+      "unreadable_abstention_rate": 1.0,
+      "confident_wrong_dose_count": 0,
+      "accepted_count": 8,
+      "coverage": 0.5,
+      "selective_risk": 0.0
+    },
+    {
+      "threshold": 0.95,
+      "clean_recall": 1.0,
+      "unreadable_abstention_rate": 1.0,
+      "confident_wrong_dose_count": 0,
+      "accepted_count": 8,
+      "coverage": 0.5,
+      "selective_risk": 0.0
+    }
+  ],
+  "calibration_bins": [
+    {
+      "bin_lower": 0.0,
+      "bin_upper": 0.1,
+      "count": 8,
+      "mean_confidence": 0.0,
+      "empirical_accuracy": 0.0,
+      "abs_gap": 0.0
+    },
+    {
+      "bin_lower": 0.9,
+      "bin_upper": 1.0,
+      "count": 8,
+      "mean_confidence": 0.9725,
+      "empirical_accuracy": 1.0,
+      "abs_gap": 0.0275
+    }
+  ],
+  "items": [
+    {
+      "id": "amlodipine_5mg__tier_0_clean",
+      "medication": "Amlodipine 5 mg",
+      "expected_ingredient": "amlodipine",
+      "expected_strength": "5 mg",
+      "tier_index": 0,
+      "tier": "tier_0_clean",
+      "degradation": "clean",
+      "strength_readable": true,
+      "image_path": "eval/out/calibration_sweep/amlodipine_5mg__tier_0_clean.jpg",
+      "latency_ms": 2908.3,
+      "raw_strength_value": "5 mg",
+      "raw_strength_confidence": 0.99,
+      "strength_value": "5 mg",
+      "strength_confidence": 0.99,
+      "strength_match": true,
+      "verdict_at_0_80": "match",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPINE",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-08",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.95
+      }
+    },
+    {
+      "id": "amlodipine_5mg__tier_1_mild",
+      "medication": "Amlodipine 5 mg",
+      "expected_ingredient": "amlodipine",
+      "expected_strength": "5 mg",
+      "tier_index": 1,
+      "tier": "tier_1_mild",
+      "degradation": "mild_blur",
+      "strength_readable": true,
+      "image_path": "eval/out/calibration_sweep/amlodipine_5mg__tier_1_mild.jpg",
+      "latency_ms": 3384.3,
+      "raw_strength_value": "5 mg",
+      "raw_strength_confidence": 0.95,
+      "strength_value": "5 mg",
+      "strength_confidence": 0.95,
+      "strength_match": true,
+      "verdict_at_0_80": "match",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPINE",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.95
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-08",
+          "confidence": 0.95
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.9
+      }
+    },
+    {
+      "id": "amlodipine_5mg__tier_2_heavy",
+      "medication": "Amlodipine 5 mg",
+      "expected_ingredient": "amlodipine",
+      "expected_strength": "5 mg",
+      "tier_index": 2,
+      "tier": "tier_2_heavy",
+      "degradation": "heavy_blur_glare",
+      "strength_readable": false,
+      "image_path": "eval/out/calibration_sweep/amlodipine_5mg__tier_2_heavy.jpg",
+      "latency_ms": 3446.3,
+      "raw_strength_value": null,
+      "raw_strength_confidence": 0.0,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_match": false,
+      "verdict_at_0_80": "unsure",
+      "read": {
+        "kind": "unreadable",
+        "product": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.0,
+        "guidance": "Hold still and focus directly on the label."
+      }
+    },
+    {
+      "id": "amlodipine_5mg__tier_3_occluded",
+      "medication": "Amlodipine 5 mg",
+      "expected_ingredient": "amlodipine",
+      "expected_strength": "5 mg",
+      "tier_index": 3,
+      "tier": "tier_3_occluded",
+      "degradation": "severe_occlusion",
+      "strength_readable": false,
+      "image_path": "eval/out/calibration_sweep/amlodipine_5mg__tier_3_occluded.jpg",
+      "latency_ms": 3261.9,
+      "raw_strength_value": null,
+      "raw_strength_confidence": 0.0,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_match": false,
+      "verdict_at_0_80": "unsure",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPINE",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-08",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.6,
+        "guidance": "Move your finger away from the middle of the label."
+      }
+    },
+    {
+      "id": "metformin_500mg__tier_0_clean",
+      "medication": "Metformin 500 mg",
+      "expected_ingredient": "metformin",
+      "expected_strength": "500 mg",
+      "tier_index": 0,
+      "tier": "tier_0_clean",
+      "degradation": "clean",
+      "strength_readable": true,
+      "image_path": "eval/out/calibration_sweep/metformin_500mg__tier_0_clean.jpg",
+      "latency_ms": 3805.4,
+      "raw_strength_value": "500 mg",
+      "raw_strength_confidence": 0.99,
+      "strength_value": "500 mg",
+      "strength_confidence": 0.99,
+      "strength_match": true,
+      "verdict_at_0_80": "match",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "SANDOZ METFORMIN",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.95
+      }
+    },
+    {
+      "id": "metformin_500mg__tier_1_mild",
+      "medication": "Metformin 500 mg",
+      "expected_ingredient": "metformin",
+      "expected_strength": "500 mg",
+      "tier_index": 1,
+      "tier": "tier_1_mild",
+      "degradation": "mild_blur",
+      "strength_readable": true,
+      "image_path": "eval/out/calibration_sweep/metformin_500mg__tier_1_mild.jpg",
+      "latency_ms": 3403.6,
+      "raw_strength_value": "500 mg",
+      "raw_strength_confidence": 0.95,
+      "strength_value": "500 mg",
+      "strength_confidence": 0.95,
+      "strength_match": true,
+      "verdict_at_0_80": "match",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.95
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.9
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.85
+      }
+    },
+    {
+      "id": "metformin_500mg__tier_2_heavy",
+      "medication": "Metformin 500 mg",
+      "expected_ingredient": "metformin",
+      "expected_strength": "500 mg",
+      "tier_index": 2,
+      "tier": "tier_2_heavy",
+      "degradation": "heavy_blur_glare",
+      "strength_readable": false,
+      "image_path": "eval/out/calibration_sweep/metformin_500mg__tier_2_heavy.jpg",
+      "latency_ms": 3325.3,
+      "raw_strength_value": null,
+      "raw_strength_confidence": 0.0,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_match": false,
+      "verdict_at_0_80": "unsure",
+      "read": {
+        "kind": "unreadable",
+        "product": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.0,
+        "guidance": "Hold still for a second."
+      }
+    },
+    {
+      "id": "metformin_500mg__tier_3_occluded",
+      "medication": "Metformin 500 mg",
+      "expected_ingredient": "metformin",
+      "expected_strength": "500 mg",
+      "tier_index": 3,
+      "tier": "tier_3_occluded",
+      "degradation": "severe_occlusion",
+      "strength_readable": false,
+      "image_path": "eval/out/calibration_sweep/metformin_500mg__tier_3_occluded.jpg",
+      "latency_ms": 4012.4,
+      "raw_strength_value": null,
+      "raw_strength_confidence": 0.0,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_match": false,
+      "verdict_at_0_80": "unsure",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.65,
+        "guidance": "Move your finger away to uncover the strength."
+      }
+    },
+    {
+      "id": "ibuprofen_400mg__tier_0_clean",
+      "medication": "Ibuprofen 400 mg",
+      "expected_ingredient": "ibuprofen",
+      "expected_strength": "400 mg",
+      "tier_index": 0,
+      "tier": "tier_0_clean",
+      "degradation": "clean",
+      "strength_readable": true,
+      "image_path": "eval/out/calibration_sweep/ibuprofen_400mg__tier_0_clean.jpg",
+      "latency_ms": 3056.8,
+      "raw_strength_value": "400 mg",
+      "raw_strength_confidence": 0.98,
+      "strength_value": "400 mg",
+      "strength_confidence": 0.98,
+      "strength_match": true,
+      "verdict_at_0_80": "match",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Ratiopharm Ibuprofen",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "ibuprofen",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "400 mg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.95
+      }
+    },
+    {
+      "id": "ibuprofen_400mg__tier_1_mild",
+      "medication": "Ibuprofen 400 mg",
+      "expected_ingredient": "ibuprofen",
+      "expected_strength": "400 mg",
+      "tier_index": 1,
+      "tier": "tier_1_mild",
+      "degradation": "mild_blur",
+      "strength_readable": true,
+      "image_path": "eval/out/calibration_sweep/ibuprofen_400mg__tier_1_mild.jpg",
+      "latency_ms": 3707.3,
+      "raw_strength_value": "400 mg",
+      "raw_strength_confidence": 0.98,
+      "strength_value": "400 mg",
+      "strength_confidence": 0.98,
+      "strength_match": true,
+      "verdict_at_0_80": "match",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "RATIOPHARM IBUPROFEN",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "ibuprofen",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "400 mg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.95
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.85
+      }
+    },
+    {
+      "id": "ibuprofen_400mg__tier_2_heavy",
+      "medication": "Ibuprofen 400 mg",
+      "expected_ingredient": "ibuprofen",
+      "expected_strength": "400 mg",
+      "tier_index": 2,
+      "tier": "tier_2_heavy",
+      "degradation": "heavy_blur_glare",
+      "strength_readable": false,
+      "image_path": "eval/out/calibration_sweep/ibuprofen_400mg__tier_2_heavy.jpg",
+      "latency_ms": 3499.6,
+      "raw_strength_value": null,
+      "raw_strength_confidence": 0.0,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_match": false,
+      "verdict_at_0_80": "unsure",
+      "read": {
+        "kind": "unreadable",
+        "product": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.0,
+        "guidance": "Hold still to let the camera focus."
+      }
+    },
+    {
+      "id": "ibuprofen_400mg__tier_3_occluded",
+      "medication": "Ibuprofen 400 mg",
+      "expected_ingredient": "ibuprofen",
+      "expected_strength": "400 mg",
+      "tier_index": 3,
+      "tier": "tier_3_occluded",
+      "degradation": "severe_occlusion",
+      "strength_readable": false,
+      "image_path": "eval/out/calibration_sweep/ibuprofen_400mg__tier_3_occluded.jpg",
+      "latency_ms": 3354.8,
+      "raw_strength_value": null,
+      "raw_strength_confidence": 0.0,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_match": false,
+      "verdict_at_0_80": "unsure",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Ratiopharm Ibuprofen",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "ibuprofen",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.95
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.65,
+        "guidance": "Move your finger to reveal the strength."
+      }
+    },
+    {
+      "id": "paracetamol_500mg__tier_0_clean",
+      "medication": "Paracetamol 500 mg",
+      "expected_ingredient": "paracetamol",
+      "expected_strength": "500 mg",
+      "tier_index": 0,
+      "tier": "tier_0_clean",
+      "degradation": "clean",
+      "strength_readable": true,
+      "image_path": "eval/out/calibration_sweep/paracetamol_500mg__tier_0_clean.jpg",
+      "latency_ms": 4340.8,
+      "raw_strength_value": "500 mg",
+      "raw_strength_confidence": 0.99,
+      "strength_value": "500 mg",
+      "strength_confidence": 0.99,
+      "strength_match": true,
+      "verdict_at_0_80": "match",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "TEVA PARACETAMOL",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "paracetamol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2028-02",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.95
+      }
+    },
+    {
+      "id": "paracetamol_500mg__tier_1_mild",
+      "medication": "Paracetamol 500 mg",
+      "expected_ingredient": "paracetamol",
+      "expected_strength": "500 mg",
+      "tier_index": 1,
+      "tier": "tier_1_mild",
+      "degradation": "mild_blur",
+      "strength_readable": true,
+      "image_path": "eval/out/calibration_sweep/paracetamol_500mg__tier_1_mild.jpg",
+      "latency_ms": 3305.8,
+      "raw_strength_value": "500 mg",
+      "raw_strength_confidence": 0.95,
+      "strength_value": "500 mg",
+      "strength_confidence": 0.95,
+      "strength_match": true,
+      "verdict_at_0_80": "match",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "TEVA PARACETAMOL",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "paracetamol",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.95
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2028-02",
+          "confidence": 0.95
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.9
+      }
+    },
+    {
+      "id": "paracetamol_500mg__tier_2_heavy",
+      "medication": "Paracetamol 500 mg",
+      "expected_ingredient": "paracetamol",
+      "expected_strength": "500 mg",
+      "tier_index": 2,
+      "tier": "tier_2_heavy",
+      "degradation": "heavy_blur_glare",
+      "strength_readable": false,
+      "image_path": "eval/out/calibration_sweep/paracetamol_500mg__tier_2_heavy.jpg",
+      "latency_ms": 4794.9,
+      "raw_strength_value": null,
+      "raw_strength_confidence": 0.0,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_match": false,
+      "verdict_at_0_80": "unsure",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": null,
+          "confidence": 0.3
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0.3
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.05,
+        "guidance": "Hold still to let the camera focus on the box."
+      }
+    },
+    {
+      "id": "paracetamol_500mg__tier_3_occluded",
+      "medication": "Paracetamol 500 mg",
+      "expected_ingredient": "paracetamol",
+      "expected_strength": "500 mg",
+      "tier_index": 3,
+      "tier": "tier_3_occluded",
+      "degradation": "severe_occlusion",
+      "strength_readable": false,
+      "image_path": "eval/out/calibration_sweep/paracetamol_500mg__tier_3_occluded.jpg",
+      "latency_ms": 5888.3,
+      "raw_strength_value": null,
+      "raw_strength_confidence": 0.0,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_match": false,
+      "verdict_at_0_80": "unsure",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "PARACETAMOL",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "paracetamol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "expiry": {
+          "value": "2028-02",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.0
+        },
+        "readability": 0.6,
+        "guidance": "Move your finger away to show the covered text."
+      }
+    }
+  ]
+}
