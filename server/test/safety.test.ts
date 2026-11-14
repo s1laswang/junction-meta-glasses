@@ -139,6 +139,19 @@ test("allergens: arachis oil = peanut, hazelnut = tree nuts, may-contain", () =>
   assert.match(c.speech, /Best before 3 December 2026/);
 });
 
+test("'none of your allergens' needs a near-certain, complete panel read (eval v1 allergen fix)", () => {
+  // partial panel: legible but only 0.9 confident -> unsure, not a reassurance
+  const a = checkLabel(read({ kind: "food", product: f("Granola"), allergens: f(["oats"], 0.9) }), profile, NOW);
+  assert.equal(a.level, "unsure");
+  assert.ok(a.reasons.includes("allergen panel may be incomplete"));
+  // confident list but the frame is barely readable (cropped/rotated) -> unsure
+  const b = checkLabel(read({ kind: "food", product: f("Granola"), allergens: f(["oats"], 0.97), readability: 0.6 }), profile, NOW);
+  assert.equal(b.level, "unsure");
+  // a found allergen still warns at moderate confidence (warnings are never gated by the stricter bar)
+  const c = checkLabel(read({ kind: "food", product: f("Granola"), allergens: f(["oats", "hazelnut"], 0.7), readability: 0.6 }), profile, NOW);
+  assert.equal(c.level, "warning");
+});
+
 test("food with unreadable allergen panel is unsure, never 'safe'", () => {
   const v = checkLabel(read({ kind: "food", product: f("Cookies"), allergens: f<string[]>(null, 0.2) }), profile, NOW);
   assert.equal(v.level, "unsure");
