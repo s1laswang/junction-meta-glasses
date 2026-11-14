@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { ScreenReaderAnnouncer } from "./a11y/announcer.tsx";
 import { createLiveAudioBridge } from "./audio/player.ts";
-import { cancelSpeech } from "./audio/tts.ts";
+import { cancelSpeech, speakFallback } from "./audio/tts.ts";
 import { estimateJpegByteSharpness } from "./camera/fixtureLoader.ts";
 import { AppHeader, type AppTab } from "./components/AppHeader.tsx";
 import { CaregiverAlertCard } from "./components/CaregiverAlertCard.tsx";
@@ -26,6 +26,8 @@ import {
   type TourStepAction,
   type TourStepId
 } from "./components/JudgeDemoTour.tsx";
+import { LanguageVoiceSupportCard } from "./components/LanguageVoiceSupportCard.tsx";
+import { OfflineReadinessCard } from "./components/OfflineReadinessCard.tsx";
 import { PermissionBanner } from "./components/PermissionBanner.tsx";
 import { PharmacyImportModal } from "./components/PharmacyImportModal.tsx";
 import { PrivacyFlowCard } from "./components/PrivacyFlowCard.tsx";
@@ -33,6 +35,7 @@ import { ProfileManager } from "./components/ProfileManager.tsx";
 import { SafetyRuleExplainerCard } from "./components/SafetyRuleExplainerCard.tsx";
 import { ScheduleChecklistCard } from "./components/ScheduleChecklistCard.tsx";
 import { ShortcutsModal } from "./components/ShortcutsModal.tsx";
+import { TactileHandlingGuideCard } from "./components/TactileHandlingGuideCard.tsx";
 import { VerdictCard } from "./components/VerdictCard.tsx";
 import { ViewfinderStage } from "./components/ViewfinderStage.tsx";
 import { VoiceActivityPill } from "./components/VoiceActivityPill.tsx";
@@ -419,6 +422,19 @@ function HoldUpPwaShell({
       ? route.scenarioParam
       : ctrl.activeScenarioId;
 
+  const handleChangeLang = useCallback(
+    (nextLang: string): void => {
+      ctrl.updateProfile((prev) =>
+        prev.lang === nextLang ? prev : { ...prev, lang: nextLang }
+      );
+    },
+    [ctrl]
+  );
+
+  const handleOpenPharmacyImport = useCallback((): void => {
+    setPharmacyOpen(true);
+  }, []);
+
   const handleRunTourStep = useCallback(
     (step: TourStepAction): void => {
       setActiveTourStep(step.id);
@@ -523,9 +539,7 @@ function HoldUpPwaShell({
           ctrl.toggleMute();
         }}
         lang={effectiveLang}
-        onChangeLang={(nextLang) => {
-          ctrl.updateProfile((prev) => ({ ...prev, lang: nextLang }));
-        }}
+        onChangeLang={handleChangeLang}
         mode={ctrl.snapshot.mode}
         hudConnected={ctrl.snapshot.hudConnected}
         medCount={effectiveProfile.meds.length}
@@ -650,6 +664,19 @@ function HoldUpPwaShell({
                     ctrl.triggerHudEvent(event);
                   }}
                 />
+
+                <TactileHandlingGuideCard
+                  lang={effectiveLang}
+                  activeCue={ctrl.snapshot.coach?.cue ?? null}
+                  onSpeakTip={(tip) => {
+                    if (!ctrl.muted) {
+                      void speakFallback(tip, {
+                        lang: effectiveLang,
+                        preferServerTts: false
+                      });
+                    }
+                  }}
+                />
               </div>
 
               <div style={COLUMN_STACK_STYLE}>
@@ -747,7 +774,7 @@ function HoldUpPwaShell({
                   ctrl.undoDose();
                 }}
                 caregiverSummaryText={ctrl.getCaregiverSummary()}
-                onOpenPharmacyImport={() => setPharmacyOpen(true)}
+                onOpenPharmacyImport={handleOpenPharmacyImport}
               />
 
               <CaregiverAlertCard
@@ -762,6 +789,20 @@ function HoldUpPwaShell({
               <EmergencyMedCard
                 profile={effectiveProfile}
                 lang={effectiveLang}
+              />
+
+              <LanguageVoiceSupportCard
+                activeLang={effectiveLang}
+                muted={ctrl.muted}
+                onSelectLang={handleChangeLang}
+                onSpeakSample={(text, code) => {
+                  if (!ctrl.muted) {
+                    void speakFallback(text, {
+                      lang: code,
+                      preferServerTts: false
+                    });
+                  }
+                }}
               />
             </div>
           ) : null}
@@ -780,6 +821,13 @@ function HoldUpPwaShell({
                 rttMs={ctrl.snapshot.network.rttMs}
                 cameraActive={ctrl.snapshot.cameraActive}
                 lang={effectiveLang}
+              />
+
+              <OfflineReadinessCard
+                profile={effectiveProfile}
+                mode={ctrl.snapshot.mode}
+                lang={effectiveLang}
+                onOpenPharmacyImport={handleOpenPharmacyImport}
               />
 
               <PrivacyFlowCard
