@@ -1,12 +1,17 @@
 // HoldUp service worker: caches the app shell so the app (and its offline barcode mode) loads without a network.
 // Never caches API calls, sockets, frames or anything user-specific.
-const CACHE = "holdup-shell-v1";
+const CACHE = "holdup-shell-v2";
 const SHELL = ["/", "/index.html", "/hud/", "/manifest.webmanifest", "/pcm-capture-worklet.js", "/icons/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png"];
 const NEVER = /^\/(api|live|hud-ws|ingest)(\/|$|\?)/;
 
 async function precache() {
   const cache = await caches.open(CACHE);
   await Promise.all(SHELL.map((u) => cache.add(new Request(u, { cache: "reload" })).catch(() => {})));
+  try {
+    const m = await (await fetch("/phrases/manifest.json", { cache: "reload" })).json();
+    const files = Object.values(m.phrases ?? {}).flatMap((byId) => Object.values(byId).map((p) => p.file));
+    await Promise.all(["/phrases/manifest.json", ...files].map((u) => cache.add(u).catch(() => {})));
+  } catch {}
   // pull in the hashed JS/CSS/font assets referenced by the HTML entry points
   for (const page of ["/", "/hud/"]) {
     try {
@@ -58,7 +63,7 @@ self.addEventListener("fetch", (e) => {
       (hit) =>
         hit ||
         fetch(req).then((res) => {
-          if (res.ok && (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/"))) {
+          if (res.ok && (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/phrases/"))) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(req, copy));
           }
