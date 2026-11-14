@@ -169,7 +169,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <text x="210" y="400" text-anchor="middle" font-family="Atkinson Hyperlegible Next, system-ui, sans-serif" font-size="22" font-weight="800" fill="#f5f2e9">Yes. Amlodipine 5 mg,</text>
     <text x="210" y="428" text-anchor="middle" font-family="Atkinson Hyperlegible Next, system-ui, sans-serif" font-size="22" font-weight="800" fill="#f5f2e9">your evening pill.</text>
   </svg>
-  <div class="foot"><span>Silas · Momin010 · ivarakerholm-wq · Chintufp</span><span class="pg">1</span></div>
+  <div class="foot"><span>Silas Wang &middot; Momin AlDahdouh &middot; Vaishnav Rane &middot; Ivar Akerholm</span><span class="pg">1</span></div>
 </section>
 
 <!-- 2 PROBLEM -->
@@ -266,7 +266,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <h2 id="s6-h">One server, three thin clients, one Gemini key (server-side).</h2>
   <svg width="1136" height="450" viewBox="0 0 1136 450" role="img" aria-labelledby="s6-t s6-d" style="font-family: var(--font)">
     <title id="s6-t">HoldUp architecture diagram</title>
-    <desc id="s6-d">Ray-Ban Meta glasses stream camera frames through the Android DAT bridge to the server, and act as a Bluetooth headset for the phone. The phone web app streams microphone audio and phone camera frames to the server over a WebSocket and plays the reply audio. The server proxies Gemini Live, runs verify_label with Gemini Flash and the deterministic safety check, and pushes verdicts and coaching cues to the Ray-Ban Display HUD web app.</desc>
+    <desc id="s6-d">Ray-Ban Meta glasses stream camera frames through the Android DAT bridge to the server, and act as a Bluetooth (HFP, 8 kHz mono) headset for the phone. The phone web app streams microphone audio and phone camera frames to the server over a WebSocket and plays the reply audio. The server proxies Gemini Live, runs verify_label with Gemini Flash and the deterministic safety check, and pushes verdicts and coaching cues to the Ray-Ban Display HUD web app.</desc>
     <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b3bdcc"/></marker></defs>
     <g font-size="15" fill="#f5f2e9">
       <!-- glasses column -->
@@ -402,7 +402,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       </ul>
     </div>
   </div>
-  <div class="foot"><span class="src">Full data flow: docs/PRIVACY.md · <span class="todo">TODO: paid Gemini API tier? If yes add “Google does not train on these requests”</span></span><span class="pg">8</span></div>
+  <div class="foot"><span class="src">Full data flow: docs/PRIVACY.md. Paid-tier training claim left out: billing tier is unconfirmed.</span><span class="pg">8</span></div>
 </section>
 
 <!-- 9 RESILIENCE -->
@@ -458,8 +458,8 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <div class="grid3">
     <div class="card hl">
       <h3>1 · Näkövammaisten liitto</h3>
-      <p>Finnish Federation of the Visually Impaired. Proposed 4-week home pilot with <span class="todo">TODO: n</span> members on their own medicines.</p>
-      <p class="small">Measure: confident-wrong answers (target 0), time to verdict, “would use daily”. <span class="todo">TODO: contact status</span></p>
+      <p>Finnish Federation of the Visually Impaired. Proposed 4-week home pilot with 20 members on their own medicines.</p>
+      <p class="small">Measure: confident-wrong answers (target 0), time to verdict, &ldquo;would use daily&rdquo;. Proposed pilot; user outreach in progress.</p>
     </div>
     <div class="card">
       <h3>2 · Pharmacies</h3>
@@ -476,7 +476,6 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <ul class="bul">
         <li>Runs on shipping hardware. Blind users already use Ray-Ban Meta with Be My Eyes, in 21 markets.</li>
         <li>Phone-only works today as a PWA: no install, any phone with a browser.</li>
-        <li>Cost per check is metered by the ledger: <span class="todo">TODO: € per check from /api/stats tokens</span></li>
       </ul>
     </div>
     <div class="card">
@@ -499,13 +498,12 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <div class="card">
       <h3>Team</h3>
       <ul class="bul">
-        <li><b>Silas</b>: founder, product, presenter</li>
-        <li><b>Momin010</b>: hardware, glasses and DAT bridge</li>
-        <li><b>ivarakerholm-wq</b>: accessibility, real-label data, user feedback</li>
-        <li><b>Chintufp</b>: story, research, deck, video</li>
+        <li><b>Silas Wang</b>: founder, product, Gemini Live and safety stack, presenter</li>
+        <li><b>Momin AlDahdouh</b>: hardware, Ray-Ban Meta glasses and Android DAT bridge</li>
+        <li><b>Ivar Akerholm</b>: accessibility, Finnish pharmacy label data and user testing</li>
+        <li><b>Vaishnav Rane</b>: clinical research, story, pitch deck and video</li>
         <li>Plus a Claude engineering team: server, web, glasses, eval agents</li>
       </ul>
-      <p class="small"><span class="todo">TODO: real names and one-line backgrounds</span></p>
     </div>
     <div class="card hl">
       <h3>The ask</h3>
