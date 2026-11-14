@@ -789,8 +789,12 @@ function createSwHarness(): SwHarness {
   };
 }
 
+const SW_CACHE_MATCH = fs.readFileSync(path.join(PUBLIC_DIR, "sw.js"), "utf8").match(/const\s+CACHE\s*=\s*"(holdup-shell-v\d+)"/);
+const SW_CACHE_NAME = SW_CACHE_MATCH?.[1] ?? "";
+
 describe("web/public/sw.js offline shell caching and privacy/API bypass contract", () => {
   test("install precaches app shell, worklet, icons, and hashed HTML /assets/ bundles with cache=reload and calls skipWaiting()", async () => {
+    assert.match(SW_CACHE_NAME, /^holdup-shell-v\d+$/);
     const sw = createSwHarness();
     sw.setFetchImpl(async (req) => {
       const pathname = new URL(req.url).pathname;
@@ -812,8 +816,8 @@ describe("web/public/sw.js offline shell caching and privacy/API bypass contract
     await sw.dispatchInstall();
     assert.equal(sw.skipWaitingCount(), 1);
 
-    const bucket = sw.cacheStore.get("holdup-shell-v1");
-    assert.ok(bucket, "holdup-shell-v1 cache must be created on install");
+    const bucket = sw.cacheStore.get(SW_CACHE_NAME);
+    assert.ok(bucket, `${SW_CACHE_NAME} cache must be created on install`);
 
     const expectedShellPaths = [
       "/",
@@ -856,18 +860,18 @@ describe("web/public/sw.js offline shell caching and privacy/API bypass contract
 
     await sw.dispatchInstall();
     assert.equal(sw.skipWaitingCount(), 1);
-    assert.ok(sw.cacheStore.has("holdup-shell-v1"));
+    assert.ok(sw.cacheStore.has(SW_CACHE_NAME));
   });
 
-  test("activate purges outdated cache versions while keeping holdup-shell-v1 and claiming clients", async () => {
+  test("activate purges outdated cache versions while keeping active holdup-shell cache and claiming clients", async () => {
     const sw = createSwHarness();
     sw.cacheStore.set("holdup-shell-v0", new Map([[`${ORIGIN}/`, new Response("old")]]));
     sw.cacheStore.set("legacy-cache", new Map([[`${ORIGIN}/hud/`, new Response("legacy")]]));
-    sw.cacheStore.set("holdup-shell-v1", new Map([[`${ORIGIN}/`, new Response("current")]]));
+    sw.cacheStore.set(SW_CACHE_NAME, new Map([[`${ORIGIN}/`, new Response("current")]]));
 
     await sw.dispatchActivate();
     assert.equal(sw.claimCount(), 1);
-    assert.deepEqual([...sw.cacheStore.keys()], ["holdup-shell-v1"]);
+    assert.deepEqual([...sw.cacheStore.keys()], [SW_CACHE_NAME]);
   });
 
   test("fetch strictly bypasses non-GET methods, cross-origin URLs, and /api, /live, /hud-ws, /ingest routes", async () => {
@@ -943,7 +947,7 @@ describe("web/public/sw.js offline shell caching and privacy/API bypass contract
     const offlineHud = await sw.dispatchFetch("/hud/?mock=1", { mode: "navigate" });
     assert.equal(await offlineHud.response!.text(), "shell-v2-hud");
 
-    const bucket = sw.cacheStore.get("holdup-shell-v1")!;
+    const bucket = sw.cacheStore.get(SW_CACHE_NAME)!;
     bucket.delete(`${ORIGIN}/hud/`);
     const offlineHudFallbackToIndex = await sw.dispatchFetch("/hud/", { mode: "navigate" });
     assert.equal(await offlineHudFallbackToIndex.response!.text(), "shell-v1-index");
@@ -982,15 +986,15 @@ describe("web/public/sw.js offline shell caching and privacy/API bypass contract
     const newIcon = await sw.dispatchFetch("/icons/maskable-512.png");
     assert.equal(await newIcon.response!.text(), "fresh:/icons/maskable-512.png");
     assert.equal(networkHitCount, 2);
-    assert.ok(sw.cacheStore.get("holdup-shell-v1")!.has(`${ORIGIN}/icons/maskable-512.png`));
+    assert.ok(sw.cacheStore.get(SW_CACHE_NAME)!.has(`${ORIGIN}/icons/maskable-512.png`));
 
     const missingAsset = await sw.dispatchFetch("/assets/missing.js");
     assert.equal(missingAsset.response!.status, 404);
-    assert.equal(sw.cacheStore.get("holdup-shell-v1")!.has(`${ORIGIN}/assets/missing.js`), false);
+    assert.equal(sw.cacheStore.get(SW_CACHE_NAME)!.has(`${ORIGIN}/assets/missing.js`), false);
 
     const miscFile = await sw.dispatchFetch("/robots.txt");
     assert.equal(await miscFile.response!.text(), "fresh:/robots.txt");
-    assert.equal(sw.cacheStore.get("holdup-shell-v1")!.has(`${ORIGIN}/robots.txt`), false);
+    assert.equal(sw.cacheStore.get(SW_CACHE_NAME)!.has(`${ORIGIN}/robots.txt`), false);
   });
 });
 
