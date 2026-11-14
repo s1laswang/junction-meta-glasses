@@ -153,6 +153,7 @@ const COMBO_BRANDS: Record<string, string[]> = {
   symbicort: ["budesonide", "formoterol"], seretide: ["salmeterol", "fluticasone"],
   sinemet: ["levodopa", "carbidopa"], stalevo: ["levodopa", "carbidopa", "entacapone"], duodart: ["dutasteride", "tamsulosin"],
 };
+const LABEL_META = new Set(("active substance substances substans aktiv aktiva vaikuttava vaikuttavat aine aineet wirkstoff wirkstoffe principio activo principe actif").split(" "));
 export function ingredientsOf(...texts: (string | null | undefined)[]): Set<string> {
   const out = new Set<string>();
   for (const t of texts) {
@@ -161,7 +162,7 @@ export function ingredientsOf(...texts: (string | null | undefined)[]): Set<stri
     for (const [brand, inns] of Object.entries(COMBO_BRANDS)) if (hasWord(n, brand)) for (const inn of inns) out.add(inn);
     for (const [brand, inn] of Object.entries(BRANDS)) if (hasWord(n, brand)) out.add(inn);
     for (const w of words(n)) {
-      if (/^\d/.test(w) || w.length < 4 || STOP.has(w)) continue;
+      if (/^\d/.test(w) || w.length < 4 || STOP.has(w) || LABEL_META.has(w)) continue;
       if (COMBO_BRANDS[w]) { for (const inn of COMBO_BRANDS[w]) out.add(inn); continue; }
       out.add(BRANDS[w] ?? w);
     }
@@ -234,10 +235,19 @@ function splitActiveComponents(text: string | null | undefined, isProduct: boole
   for (const [brand, inns] of Object.entries(COMBO_BRANDS)) {
     if (hasWord(n, brand)) return inns.map((inn) => new Set([inn]));
   }
-  const parts = raw
+  const rawParts = raw
     .split(/[,/+;&]|\b(?:and|with|ja|och|med)\b/i)
     .map((p) => ingredientsOf(spokenIngredient(p)))
     .filter((s) => s.size > 0);
+  const parts: Set<string>[] = [];
+  for (const part of rawParts) {
+    const existing = parts.find((ex) => [...ex].some((a) => [...part].some((b) => fuzzyEq(a, b))));
+    if (existing) {
+      for (const tok of part) existing.add(tok);
+    } else {
+      parts.push(part);
+    }
+  }
   if (isProduct && parts.length === 1) {
     const mod = /\b(comp|plus|combo|duo)\b|\b(co-[a-z]{4,})\b/.exec(n);
     if (mod) {
