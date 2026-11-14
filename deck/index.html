@@ -266,7 +266,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <h2 id="s6-h">One server, three thin clients, one Gemini key (server-side).</h2>
   <svg width="1136" height="450" viewBox="0 0 1136 450" role="img" aria-labelledby="s6-t s6-d" style="font-family: var(--font)">
     <title id="s6-t">HoldUp architecture diagram</title>
-    <desc id="s6-d">Ray-Ban Meta glasses stream camera frames through the Android DAT bridge to the server, and act as a Bluetooth headset for the phone. The phone web app streams microphone audio and phone camera frames to the server over a WebSocket and plays the reply audio. The server proxies Gemini Live, runs verify_label with Gemini Flash and the deterministic safety check, and pushes verdicts and coaching cues to the Ray-Ban Display HUD web app.</desc>
+    <desc id="s6-d">Ray-Ban Meta glasses stream camera frames through the Android DAT bridge to the server, and act as a Bluetooth (HFP, 8 kHz mono) headset for the phone. The phone web app streams microphone audio and phone camera frames to the server over a WebSocket and plays the reply audio. The server proxies Gemini Live, runs verify_label with Gemini Flash and the deterministic safety check, and pushes verdicts and coaching cues to the Ray-Ban Display HUD web app.</desc>
     <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b3bdcc"/></marker></defs>
     <g font-size="15" fill="#f5f2e9">
       <!-- glasses column -->
@@ -402,7 +402,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       </ul>
     </div>
   </div>
-  <div class="foot"><span class="src">Full data flow: docs/PRIVACY.md · <span class="todo">TODO: paid Gemini API tier? If yes add “Google does not train on these requests”</span></span><span class="pg">8</span></div>
+  <div class="foot"><span class="src">Full data flow: docs/PRIVACY.md. Paid-tier training claim left out: billing tier is unconfirmed.</span><span class="pg">8</span></div>
 </section>
 
 <!-- 9 RESILIENCE -->
@@ -441,14 +441,14 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <div class="grid4">
     <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>images scored (synthetic) + <span class="todo">TODO</span> real photos</p></div>
     <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>confident-wrong strength reads (confidence ≥ 0.8)</p></div>
-    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>unsafe reassurances: system said “match” when the truth was a warning</p></div>
+    <div class="card stat"><p class="num">0<small>/216</small></p><p>unsafe reassurances. Rules layer only, not the model. Match recall 15/15.</p></div>
     <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>strength accuracy when readable · calibration ECE <span class="todo">TODO</span></p></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>Real photos as the cross-check</h3><p>30 labels photographed at head height by the team: Finnish pharmacy boxes, food allergen panels and deliberately hard cases (glare, curved bottles, tiny print). <span class="todo">TODO: real-photo results</span></p></div>
     <div class="card"><h3>Honest caveat</h3><p>The legibility check uses the same model family as the reader, which may make synthetic ground truth easier. That is why the headline metric is <b>unsafe reassurance</b>, and why real photos are scored separately.</p></div>
   </div>
-  <div class="foot"><span class="src">Method, per-condition tables and caveats: docs/EVAL.md <span class="todo">TODO: link once EVAL.md lands</span></span><span class="pg">10</span></div>
+  <div class="foot"><span class="src">In repo: docs/EVAL.md. 0/216 is the rules eval, not a model score. Image counts, confident-wrong reads, accuracy and ECE are still unmeasured.</span><span class="pg">10</span></div>
 </section>
 
 <!-- 11 ADOPTION -->
@@ -458,8 +458,8 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <div class="grid3">
     <div class="card hl">
       <h3>1 · Näkövammaisten liitto</h3>
-      <p>Finnish Federation of the Visually Impaired. Proposed 4-week home pilot with <span class="todo">TODO: n</span> members on their own medicines.</p>
-      <p class="small">Measure: confident-wrong answers (target 0), time to verdict, “would use daily”. <span class="todo">TODO: contact status</span></p>
+      <p>Finnish Federation of the Visually Impaired. Proposed 4-week home pilot with members on their own medicines.</p>
+      <p class="small">Measure: confident-wrong answers (target 0), time to verdict, “would use daily”. We propose this pilot.</p>
     </div>
     <div class="card">
       <h3>2 · Pharmacies</h3>
@@ -476,7 +476,6 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <ul class="bul">
         <li>Runs on shipping hardware. Blind users already use Ray-Ban Meta with Be My Eyes, in 21 markets.</li>
         <li>Phone-only works today as a PWA: no install, any phone with a browser.</li>
-        <li>Cost per check is metered by the ledger: <span class="todo">TODO: € per check from /api/stats tokens</span></li>
       </ul>
     </div>
     <div class="card">

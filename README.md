@@ -10,6 +10,32 @@ Hold up a medicine box or a food package. HoldUp coaches you by voice until the 
 
 Junction 2026 · Meta "AI Glasses for Everyone, Everyday" · Google DeepMind "Best Use of Gemini API".
 
+## Prerequisites
+
+| Tool | Why | Install |
+|---|---|---|
+| Node.js 20+ (this box ran v24) | workspaces, Vite, TypeScript | https://nodejs.org |
+| npm (comes with Node) | `npm install`, scripts | — |
+| Optional: `cloudflared` | `npm run tunnel` for a phone / glasses HTTPS URL | Cloudflare docs |
+| Optional: Android Studio + DAT 1.0.1 | compile `android-dat/` on the hardware lead's machine | see `android-dat/README.md` |
+| Optional: Meta Ray-Ban Display glasses | the DAT bridge and `/hud/` path | [docs/HARDWARE_NOTES.md](docs/HARDWARE_NOTES.md) |
+
+Environment variables (copy `.env.example` to `.env`; never commit `.env` or print values):
+
+| Variable | Required for | If missing |
+|---|---|---|
+| `GEMINI_API_KEY` | live server (`npm run dev` without `?mock=1`), `npm -w server run smoke`, eval pipeline, TTS | Use **`http://localhost:5173/?mock=1`** (and `/hud/?mock=1`). `npm run typecheck` and `npm -w server test` are keyless. |
+| `LIVE_MODEL`, `VERIFY_MODEL`, `PORT` | optional overrides | defaults in `server/src/env.ts` |
+| `HOLDUP_KEY` | optional shared access key on a public tunnel | static files stay public |
+| `ELEVENLABS_API_KEY` | optional. Pre-rendered phrases and `POST /api/tts/eleven` | Unset: those routes return 404 `disabled`, and the app speaks with the browser voice. Live ElevenLabs TTS also needs `ELEVENLABS_LIVE=1`. The key is read from the environment only. |
+
+One-command check (keyless steps + documented skips):
+
+```bash
+cp .env.example .env    # add GEMINI_API_KEY if you have it
+make accept             # or: bash scripts/judge_accept.sh
+```
+
 ## Run (one command)
 ```bash
 cp .env.example .env   # add GEMINI_API_KEY
@@ -17,7 +43,7 @@ npm install && npm run dev
 ```
 Open http://localhost:5173 (add `?mock=1` to run without a server or Gemini). For a phone or the glasses you need HTTPS: run `npm start` (production build on :8787), then `npm run tunnel`, and open the printed `https://…trycloudflare.com` URL on the phone. The Ray-Ban Display page is at `https://<host>/hud/`.
 
-Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w server run smoke` (real Gemini Live end to end).
+Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w server run smoke` (real Gemini Live end to end; SKIP if `GEMINI_API_KEY` is unset). A 14 Nov 2026 20:32 EET keyless run on `822994b` (before these patches): `npm install` 2.1 s, `npm run typecheck` exit 0 in 2.6 s, `npm -w server test` **19/19 pass** in 0.5 s. Keyless `make accept` on this branch, 14 Nov 2026: `PASS=9 FAIL=0 SKIP=3`, `RESULT: PASS`.
 
 ## The plan (authoritative: read this before building anything)
 **THE CHOSEN PLAN IS HOLDUP, as described here and in [docs/PLAN.md](docs/PLAN.md). It is not a pill reminder or a "Did I take my pills?" app.** The core flow, the server, the phone app, the HUD and the glasses bridge are **already built and merged**. Don't rebuild them. Improve them through small PRs.
@@ -28,7 +54,7 @@ Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w se
 | Phone PWA: consent, permissions, live check, snapshot and offline modes, device panel, a11y (axe clean) | `web/` | ✅ done |
 | Ray-Ban Display HUD Web App (600×600 additive display, Neural Band input) | `web/src/screens/Hud.tsx`, `/hud/` | ✅ done |
 | Device Access Toolkit Android bridge (glasses camera → `/ingest/frame`) | `android-dat/` | ✅ code done, ⏳ first compile on the hardware lead's Android Studio |
-| Eval: synthetic labels (Gemini image) → accuracy, confident-wrong rate, calibration | `eval/` (`bash eval/pipeline.sh …`) | ⏳ pipeline built, full run pending |
+| Eval: synthetic labels (Gemini image) → accuracy, confident-wrong rate, calibration | `eval/` (`bash eval/pipeline.sh …`) | ⏳ model image run pending. Rules layer re-run 14 Nov 2026 20:48 EET: 0/216 unsafe, match recall 15/15. That test is the rules, not the model. |
 | Deck, demo script, privacy one-pager, research, QA | `deck/`, `docs/` | ✅ drafts done, ⏳ eval numbers and the backup video still to add |
 
 **Contract:** [shared/types.ts](shared/types.ts) and [docs/TEAM.md](docs/TEAM.md) (WebSocket and HTTP messages). Only the CEO changes it.
@@ -61,6 +87,8 @@ Ray-Ban Meta ──Bluetooth mic/speaker──► phone PWA ──WSS /live: PCM
 Fallbacks: snapshot mode (POST /api/verify) · offline barcode match · phone camera when the glasses are off
 ```
 
+Glasses mic audio reaches the phone over Bluetooth HFP as 8 kHz mono (DAT docs); the PWA sends it to Gemini Live as 16 kHz PCM16, so voice from the glasses is phone-call quality.
+
 ## How we use Gemini
 | Where | Model (fallbacks in `server/src/env.ts`) | What it does |
 |---|---|---|
@@ -84,6 +112,17 @@ The camera runs only during a check that you start, shows CAMERA ON, and stops a
 | `eval/` | Gemini-workforce dataset generator and the eval harness (`pipeline.sh`) |
 | `deck/index.html` | pitch deck: open it in a browser (arrow keys); print to PDF for a 16:9 handout |
 | `docs/` | PLAN, TEAM, HARDWARE_NOTES, HUD_SPEC, DEMO_SCRIPT, PRIVACY, RESEARCH, QA, EVAL |
+
+## Packaging (private repo)
+
+This repository is private. A judge whose token cannot clone `s1laswang/junction-meta-glasses` will get HTTP 404/403 even though the repo exists. **NEEDS SILAS:** grant judges read access, or make the repo public. This integration branch was cut from `822994bb6cd37ee619ce2a01e30f35bd31c0801b`. Clone the branch that contains the patches:
+
+```bash
+git clone --branch justSilas-meta-integration --single-branch https://github.com/s1laswang/junction-meta-glasses.git holdup
+cd holdup && cp .env.example .env && make accept
+```
+
+Do not mix this tree up with AfterQuery (`s1laswang/agent-arena`) or Valio Aimo (`s1laswang/junction-aimo-agents`). Prefer a release tag such as `meta-v1` pinned to the accepted commit once `make accept` is green. Do not create that tag until Silas says so.
 
 ## Docs
 - [docs/PLAN.md](docs/PLAN.md): idea, architecture, demo script, hardware plan, timeline, questions for Silas

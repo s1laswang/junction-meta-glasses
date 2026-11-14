@@ -24,4 +24,6 @@ export const env = {
   idleStopMs: Number(process.env.IDLE_STOP_MS ?? 45000),
   version: process.env.npm_package_version ?? "0.1.0",
   ledgerPath: process.env.LEDGER_PATH ?? path.join(SERVER_DIR, "logs", "ledger.jsonl"),
+  // ElevenLabs (optional): ELEVENLABS_API_KEY, ELEVENLABS_LIVE=1, ELEVENLABS_MODEL, ELEVENLABS_VOICE_{EN,FI,SV}; see elevenlabs.ts
+  elevenlabs: !!process.env.ELEVENLABS_API_KEY,
 };
