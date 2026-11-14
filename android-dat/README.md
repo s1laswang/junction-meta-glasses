@@ -38,8 +38,8 @@ HoldUp Bridge connects to paired Meta AI Glasses (`Ray-Ban Meta Gen 2` or `Meta 
      ```text
      holdupbridge://connect?server=https%3A%2F%2F<host-domain>&session=<session-id>
      ```
-   - `MainActivity` (`launchMode="singleTop"`) handles `holdupbridge://connect` in both `onCreate` and `onNewIntent`, prefilling **Server URL** and **Session Code** immediately.
-   - Leave **Session Code** blank in single-wearer demos to follow the most recently started `/live` session automatically.
+   - `MainActivity` (`launchMode="singleTop"`) handles `holdupbridge://connect` in both `onCreate` and `onNewIntent`, sanitizing and persisting **Server URL** and **Session Code** via `BridgePreferences.kt` so subsequent app launches reconnect without re-scanning.
+   - Leave **Session Code** blank in single-wearer demos to follow the most recently started `/live` session automatically, or tap **Forget Saved Server** in the **Endpoint Pairing** card to wipe stored endpoint preferences in one tap.
 4. Tap **Connect Glasses** and approve registration in **Meta AI**.
 5. Tap **Start Streaming** and select **Allow always** on the first Meta AI camera permission prompt.
    - The glasses front hardware capture LED illuminates whenever streaming is active, and the UI displays a high-contrast `CAMERA ON - CAPTURE LED ACTIVE` privacy banner alongside live frame and battery telemetry.
@@ -54,7 +54,38 @@ If an OEM battery saver suspends background camera callbacks on a specific phone
 
 ---
 
-## 5. Quick Endpoint Smoke Check (No Glasses Required)
+## 5. Endpoint Persistence, Network Security & App Resources
+
+- **`BridgePreferences.kt`** (`app/src/main/java/app/holdup/bridge/BridgePreferences.kt`): Persists only the sanitized `server_url` (`http` or `https`, `<= 256` chars, trailing slashes stripped, credentials/query/fragment/path-traversal rejected) and optional `session_code` (`^[A-Za-z0-9_-]{4,64}$`) in mode-private `SharedPreferences` (`holdup_bridge_prefs`). Zero health data, medication schedules, or camera frames are ever written to disk. Tapping **Forget Saved Server** in `BridgeScreen.kt` invokes `BridgePreferences.clearSavedEndpoint` and resets `DatBridgeController.updateEndpoint("", "")` in one tap before returning shared or loaner handsets.
+- **`network_security_config.xml`** (`app/src/main/res/xml/network_security_config.xml`): Referenced by `AndroidManifest.xml` (`android:networkSecurityConfig="@xml/network_security_config"`, with global `usesCleartextTraffic` disabled). Enforces HTTPS-by-default via `<base-config cleartextTrafficPermitted="false">` trusting system CAs (`<certificates src="system" />`) for public tunnel and Cloud Run origins, while scoping cleartext HTTP (`<domain-config cleartextTrafficPermitted="true">`) strictly to local development and LAN hosts (`localhost`, `127.0.0.1`, Android emulator host `10.0.2.2`, and `.local` mDNS hostnames).
+- **`ic_launcher_foreground.xml`** (`app/src/main/res/drawable/ic_launcher_foreground.xml`): `108dp` vector launcher drawable (`android:icon="@drawable/ic_launcher_foreground"`) depicting glasses frames, active mint capture-LED indicator, and verification shield inside the `108x108` adaptive icon viewport.
+- **`themes.xml`** (`app/src/main/res/values/themes.xml`): Defines `Theme.HoldUpBridge` (and alias `Theme.HoldUp`) atop `android:Theme.Material.NoActionBar` with low-luminance `#0B0F17` window, status-bar, navigation-bar, and splash backgrounds plus `#121926` dark surface colors matching the Compose Material 3 palette.
+
+---
+
+## 6. JUnit4 Unit Test Suites & Structure Verification
+
+Pure-JVM JUnit 4 (`junit:4.13.2`) test suites live under `app/src/test/java/app/holdup/bridge/`:
+
+- **`BridgeContractTest.kt`**: Verifies `YuvJpegEncoder.i420ToNv21` planar and direct `ByteBuffer` chroma interleaving, `BridgeDeviceState` / `IngestMetrics` / `BridgeUiState` defaults, and `holdupbridge://connect` deep-link parameter validation.
+- **`BridgePreferencesTest.kt`**: Verifies `BridgePreferences.sanitizeServerUrl` (`<= 256` char cap, valid HTTPS and local dev origins, hostile scheme/credential/port/traversal rejection) and `BridgePreferences.sanitizeSessionCode` (`4..64` char bounds and injection guards).
+- **`IngestPayloadContractTest.kt`**: Verifies `IngestClient` and `DatBridgeController` wire contracts including `/ingest/frame?session=...` and `/ingest/state?session=...` URL builders, `DeviceState` JSON payload fields (`connected`, `worn`, `streaming`, `battery`), `<= 1 fps` (`>= 950-1000 ms`) frame throttle and in-flight drop gate math, and low-battery (`< 15%`) / doffed camera fallback state transitions.
+
+Run the JUnit4 unit test suites from `android-dat/` (with JDK 17 and Android SDK configured):
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+Run the fast Node structure, manifest, XML security, `mwdat:1.0.1` version, and comment/em-dash hygiene verifier from the repository root (no Android SDK required):
+
+```bash
+node android-dat/verify-structure.mjs
+```
+
+---
+
+## 7. Quick Endpoint Smoke Check (No Glasses Required)
 
 Verify that your server or tunnel accepts HoldUp Bridge telemetry before connecting hardware:
 
