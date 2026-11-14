@@ -27,6 +27,7 @@ export const LABEL_SCHEMA = inlineRefs(RAW_SCHEMA);
 
 // ---------- frame ring buffer ----------
 export type Frame = { data: string; sharpness: number; ts: number; bytes: number; source: "phone" | "glasses" };
+export const PICK_SAME_ITEM_MS = 1500;
 export class FrameRing {
   private frames: Frame[] = [];
   constructor(private size = 8) {}
@@ -34,11 +35,16 @@ export class FrameRing {
   clear() { this.frames = []; }
   get length() { return this.frames.length; }
   get lastTs() { return this.frames.at(-1)?.ts ?? 0; }
-  /** The n sharpest frames among the recent ones (last `windowMs`, at least the latest 3). */
-  pick(n = 2, windowMs = 5000, now = Date.now()): Frame[] {
+  /**
+   * The n sharpest frames among the NEWEST ones: only frames within `sameItemMs` of the latest frame, so a sharp
+   * old frame of a previous box can never be mixed into a read of the box held now (box-swap safety). Returning
+   * fewer frames is preferred over mixing items. `windowMs` / `now` are kept for API compatibility.
+   */
+  pick(n = 2, windowMs = 5000, now = Date.now(), sameItemMs = PICK_SAME_ITEM_MS): Frame[] {
+    void windowMs; void now;
     if (!this.frames.length) return [];
-    let recent = this.frames.filter((f) => now - f.ts <= windowMs);
-    if (recent.length < Math.min(3, this.frames.length)) recent = this.frames.slice(-3);
+    const latest = this.frames.at(-1)!.ts;
+    const recent = this.frames.filter((f) => latest - f.ts <= sameItemMs);
     return [...recent].sort((a, b) => b.sharpness - a.sharpness || b.ts - a.ts).slice(0, n);
   }
 }

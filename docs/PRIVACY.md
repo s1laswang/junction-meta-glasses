@@ -64,6 +64,6 @@ HoldUp is a hackathon prototype, not a medical device. It never stores pictures,
 
 - **No authentication.** Anyone with the tunnel URL can open `/live`, read `/api/stats`, and, because the session is optional, attach a HUD to the **latest** session via `/hud-ws` and see its verdicts, or post frames to `/ingest/frame` while that session uses the glasses camera. Pilot fix: pair the phone, bridge and HUD with a per-user token.
 - The profile is kept in server memory for up to 10 minutes after the phone disconnects (so that a reconnect can resume). A pilot should drop it on disconnect, or encrypt it per session.
-- The ledger has no rotation.
+- The ledger rotates at 5 MB and keeps one old file (`server/src/ledger.ts`); there is no time-based retention yet.
 - Gemini data handling depends on the API tier (see section 5).
 - **Finnish and Swedish answers:** the verdict and its opener ("Oikea pakkaus." / "Varoitus." / "En ole varma.", and the Swedish equivalents) are fixed, human-written text chosen by the deterministic rules. The details after the opener (names, dates, reasons) are translated by Gemini Live, with names, numbers and dates kept exact. Native speakers haven't yet reviewed that translation.

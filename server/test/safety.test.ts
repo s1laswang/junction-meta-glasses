@@ -152,6 +152,13 @@ test("'none of your allergens' needs a near-certain, complete panel read (eval v
   assert.equal(c.level, "warning");
 });
 
+test("a blurry non-medicine is never named without an allergen hedge for an allergic user (eval v2 'Recovery Gel')", () => {
+  const blurry = checkLabel(read({ kind: "other", product: f("Recovery Gel", 0.6), readability: 0.2 }), profile, NOW);
+  assert.equal(blurry.level, "unsure");
+  const noList = checkLabel(read({ kind: "other", product: f("Dish soap"), readability: 0.9 }), profile, NOW);
+  assert.match(noList.speech, /can't see an allergen list/);
+});
+
 test("food with unreadable allergen panel is unsure, never 'safe'", () => {
   const v = checkLabel(read({ kind: "food", product: f("Cookies"), allergens: f<string[]>(null, 0.2) }), profile, NOW);
   assert.equal(v.level, "unsure");

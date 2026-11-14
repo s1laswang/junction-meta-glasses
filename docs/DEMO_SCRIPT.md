@@ -130,7 +130,7 @@ Fallbacks:
 ### 2:35–3:00 · Proof and path (slides 7, 10, 11, 12)
 **Momin010** [switches the projector to the deck, slide 7].
 
-**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about one to three seconds instead of six." [slide 10] "We measure the failure that matters: a confident wrong dose. Gemini built us 1,740 test images with known answers. Out of 754 confident strength reads, zero were wrong. End to end, 1 in 100 answers was falsely reassuring, from expiry dates and cropped allergen panels, and we've closed both gaps with the pack code and a stricter allergen rule." (Source: docs/EVAL.md, eval/results/v1_results.json.) [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
+**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about one to three seconds instead of six." [slide 10] "We measure the failure that matters: a confident wrong dose. Gemini built us 1,740 test images with known answers. Out of 754 confident strength reads, zero were wrong. After a stricter allergen rule, 3 in 4,730 answers were silently over-reassuring, down from 49. We narrowed that gap; we haven't closed it." (Source: docs/EVAL.md, eval/results/v1_results.json.) [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
 
 - *Fallback:* if time has run out, jump straight to slide 12 and say the last line.
 
