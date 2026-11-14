@@ -3,11 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Hands-free medication and allergen label assistant for blind and low-vision users on Meta AI glasses." />
+    <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#0b0f17" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="HoldUp" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>HoldUp: Hands-Free Label Assistant</title>
   </head>
   <body>
+    <noscript>
+      <div role="alert" style="margin:1.5rem;padding:1.25rem;border:2px solid currentColor;border-radius:12px;font-family:system-ui,-apple-system,sans-serif;font-size:1.125rem;line-height:1.5;">
+        <strong>JavaScript is required for HoldUp.</strong>
+        <p style="margin:0.5rem 0 0;">
+          Enable JavaScript in your browser settings to use hands-free label reading, voice guidance, and offline medication barcode checks.
+        </p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
