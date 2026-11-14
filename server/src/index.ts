@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import { WebSocketServer, type WebSocket } from "ws";
 import type { ClientMsg, DeviceState } from "../../shared/types.ts";
+import { createCaregiverAlertRouter } from "./caregiverAlert.ts";
 import { env, REPO_ROOT } from "./env.ts";
 import { ai } from "./gemini.ts";
 import { addHud, getHub, getOrCreateHub, hasHud, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
@@ -113,6 +114,8 @@ export function createApp(opts?: { repoRoot?: string }) {
     if (!r.ok) { res.status(r.status).json({ type: "error", code: r.code, message: r.message, recoverable: true }); return; }
     res.type("audio/wav").send(r.wav);
   });
+
+  app.use(createCaregiverAlertRouter());
 
   app.post("/ingest/frame", express.raw({ type: ["image/jpeg", "application/octet-stream"], limit: "6mb" }), (req, res) => {
     const buf = req.body as Buffer;
