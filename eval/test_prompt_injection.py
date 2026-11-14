@@ -237,15 +237,19 @@ class PromptInjectionNordicTest(unittest.TestCase):
                 self.assertEqual(proc.returncode, 0, msg=proc.stderr)
 
     def test_zero_comments_and_zero_em_en_dashes(self) -> None:
-        schema_dir = EVAL_DIR / "suites" / "prompt_injection_schema_spoof"
-        code_files = [NORDIC_DIR / "run.py", schema_dir / "run.py", pathlib.Path(__file__).resolve()]
+        suite_dirs = sorted(p for p in (EVAL_DIR / "suites").glob("prompt_injection*") if p.is_dir())
+        code_files = [*(d / "run.py" for d in suite_dirs if (d / "run.py").is_file()), pathlib.Path(__file__).resolve()]
         for cf in code_files:
             txt = cf.read_text(encoding="utf-8")
             self.assertNotIn(HASH_CH, txt, msg=f"hash found in {cf}")
             self.assertNotIn(SLASH2, txt, msg=f"double-slash found in {cf}")
             self.assertNotIn('"' * 3, txt, msg=f"docstring found in {cf}")
             self.assertNotIn("'" * 3, txt, msg=f"docstring found in {cf}")
-        all_files = [*code_files, NORDIC_DIR / "results.json", NORDIC_DIR / "README.md", schema_dir / "results.json", schema_dir / "README.md"]
+        all_files = [*code_files]
+        for d in suite_dirs:
+            for name in ("results.json", "README.md"):
+                if (d / name).is_file():
+                    all_files.append(d / name)
         for af in all_files:
             txt = af.read_text(encoding="utf-8")
             self.assertNotIn(EM_DASH, txt, msg=f"em dash in {af}")
