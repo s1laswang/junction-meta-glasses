@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en" data-preview="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HoldUp: Judge &amp; Mentor Quick-Start Handout (A4)</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  :root {
+    --page-bg: #0b0f17;
+    --surface-bg: #121926;
+    --surface-alt: #182234;
+    --ink-primary: #f8fafc;
+    --ink-secondary: #d8e1ee;
+    --ink-muted: #b5c2d6;
+    --border-subtle: #2b3b55;
+    --border-strong: #4b6387;
+    --accent: #38bdf8;
+    --accent-soft: #0c2742;
+    --match-fg: #6ee7b7;
+    --match-bg: #052e22;
+    --match-border: #10b981;
+    --warn-fg: #fde68a;
+    --warn-bg: #362106;
+    --warn-border: #f59e0b;
+    --unsure-fg: #7dd3fc;
+    --unsure-bg: #082840;
+    --unsure-border: #38bdf8;
+    --kbd-bg: #070b12;
+    --kbd-fg: #f8fafc;
+    --kbd-border: #64748b;
+  }
+
+  html[data-preview="light"] {
+    --page-bg: #ffffff;
+    --surface-bg: #f8fafc;
+    --surface-alt: #eef2f7;
+    --ink-primary: #0b101b;
+    --ink-secondary: #1e293b;
+    --ink-muted: #334155;
+    --border-subtle: #cbd5e1;
+    --border-strong: #0f172a;
+    --accent: #0369a1;
+    --accent-soft: #e0f2fe;
+    --match-fg: #064e3b;
+    --match-bg: #ecfdf5;
+    --match-border: #059669;
+    --warn-fg: #78350f;
+    --warn-bg: #fffbeb;
+    --warn-border: #d97706;
+    --unsure-fg: #0c4a6e;
+    --unsure-bg: #f0f9ff;
+    --unsure-border: #0284c7;
+    --kbd-bg: #ffffff;
+    --kbd-fg: #0b101b;
+    --kbd-border: #0f172a;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #060911;
+    color: var(--ink-primary);
+    font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.34;
+  }
+
+  html[data-preview="light"] body {
+    background: #dbe3ee;
+  }
+
+  .toolbar {
+    max-width: 210mm;
+    margin: 12px auto 10px auto;
+    padding: 12px 16px;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1.5px solid #334155;
+    border-radius: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .toolbar-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .toolbar-title {
+    font-size: 0.94rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .toolbar-sub {
+    font-size: 0.78rem;
+    color: #cbd5e1;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn {
+    appearance: none;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    border: 1.5px solid #64748b;
+    background: #1e293b;
+    color: #f8fafc;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn:focus-visible {
+    outline: 3px solid #ffdd00;
+    outline-offset: 2px;
+  }
+
+  .btn-primary {
+    background: #10b981;
+    border-color: #34d399;
+    color: #022c22;
+    font-weight: 800;
+  }
+
+  .a4-sheet {
+    width: 210mm;
+    max-width: 100%;
+    margin: 0 auto 18px auto;
+    padding: 8.5mm 9.5mm;
+    background: var(--page-bg);
+    color: var(--ink-primary);
+    border: 1.5px solid var(--border-subtle);
+    border-radius: 10px;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 3.4mm;
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: 1.16fr 1fr;
+    gap: 3.5mm;
+    align-items: stretch;
+    padding: 3.2mm 3.6mm;
+    background: var(--surface-bg);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 7px;
+  }
+
+  .hero-copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.8mm;
+  }
+
+  .challenge-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 6.9pt;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+
+  .pill-neutral {
+    background: var(--surface-alt);
+    color: var(--ink-secondary);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .hero h1 {
+    margin: 0;
+    font-size: 13.8pt;
+    line-height: 1.14;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--ink-primary);
+  }
+
+  .hero-lead {
+    margin: 0;
+    font-size: 8.1pt;
+    color: var(--ink-secondary);
+    line-height: 1.33;
+  }
+
+  .hero-invariants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 1px;
+  }
+
+  .inv-tag {
+    font-size: 6.7pt;
+    font-weight: 700;
+    padding: 1.5px 6px;
+    border-radius: 4px;
+    background: var(--surface-alt);
+    color: var(--ink-primary);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .hero-diagram {
+    background: #05080f;
+    border: 1.2px solid #334155;
+    border-radius: 6px;
+    padding: 1.6mm 2mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero-diagram svg {
+    width: 100%;
+    height: auto;
+    max-height: 33mm;
+    display: block;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1.14fr 0.86fr;
+    gap: 3.4mm;
+    align-items: stretch;
+  }
+
+  .panel {
+    background: var(--surface-bg);
+    border: 1.2px solid var(--border-subtle);
+    border-radius: 7px;
+    padding: 2.8mm 3.2mm;
+    display: flex;
+    flex-direction: column;
+    gap: 2mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 1.3mm;
+  }
+
+  .panel-header h2 {
+    margin: 0;
+    font-size: 9.4pt;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--ink-primary);
+  }
+
+  .panel-kicker {
+    font-size: 6.8pt;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .steps-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.7mm;
+  }
+
+  .step-item {
+    display: grid;
+    grid-template-columns: 17px 1fr;
+    gap: 6px;
+    align-items: start;
+    font-size: 7.8pt;
+    color: var(--ink-secondary);
+  }
+
+  .step-num {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    border: 1.2px solid var(--accent);
+    color: var(--accent);
+    font-size: 7pt;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+
+  .step-item strong {
+    color: var(--ink-primary);
+  }
+
+  .tour-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.3mm;
+    margin-top: 0.5mm;
+  }
+
+  .tour-beat {
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    gap: 6px;
+    align-items: center;
+    padding: 1.3mm 2mm;
+    border-radius: 5px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border-subtle);
+    font-size: 7.35pt;
+    color: var(--ink-secondary);
+  }
+
+  .tour-beat strong {
+    color: var(--ink-primary);
+  }
+
+  .badge-verdict {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5px 4px;
+    border-radius: 4px;
+    font-size: 6.4pt;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .v-match {
+    background: var(--match-bg);
+    color: var(--match-fg);
+    border: 1px solid var(--match-border);
+  }
+
+  .v-warn {
+    background: var(--warn-bg);
+    color: var(--warn-fg);
+    border: 1px solid var(--warn-border);
+  }
+
+  .v-unsure {
+    background: var(--unsure-bg);
+    color: var(--unsure-fg);
+    border: 1px solid var(--unsure-border);
+  }
+
+  .controls-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7.35pt;
+  }
+
+  .controls-table th,
+  .controls-table td {
+    padding: 1.15mm 1.4mm;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: middle;
+  }
+
+  .controls-table th {
+    font-size: 6.7pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-muted);
+    background: var(--surface-alt);
+  }
+
+  .controls-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .controls-table td:first-child {
+    white-space: nowrap;
+    width: 32%;
+  }
+
+  .controls-table td:last-child {
+    color: var(--ink-secondary);
+  }
+
+  kbd, code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--kbd-bg);
+    color: var(--kbd-fg);
+    border: 1px solid var(--kbd-border);
+    font-size: 6.9pt;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  code {
+    font-size: 7.1pt;
+    font-weight: 700;
+    color: var(--ink-primary);
+    background: var(--surface-alt);
+    padding: 0.5px 3.5px;
+    border-radius: 3px;
+  }
+
+  .resilience-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2mm;
+  }
+
+  .check-card {
+    background: var(--surface-alt);
+    border: 1px solid var(--border-subtle);
+    border-radius: 5px;
+    padding: 1.8mm 2.2mm;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8mm;
+    font-size: 7.2pt;
+    color: var(--ink-secondary);
+  }
+
+  .check-head {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 800;
+    font-size: 7.5pt;
+    color: var(--ink-primary);
+  }
+
+  .check-box {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1.4px solid var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2mm;
+  }
+
+  .metric-tile {
+    background: var(--surface-alt);
+    border: 1px solid var(--border-subtle);
+    border-radius: 5px;
+    padding: 1.8mm 2mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.7mm;
+  }
+
+  .metric-val {
+    font-size: 10.2pt;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    line-height: 1.1;
+  }
+
+  .metric-val.safe {
+    color: var(--match-fg);
+  }
+
+  html[data-preview="light"] .metric-val.safe {
+    color: var(--match-border);
+  }
+
+  .metric-label {
+    font-size: 6.9pt;
+    font-weight: 800;
+    color: var(--ink-primary);
+    line-height: 1.2;
+  }
+
+  .metric-sub {
+    font-size: 6.35pt;
+    color: var(--ink-muted);
+    line-height: 1.22;
+  }
+
+  .proof-strip {
+    font-size: 7.2pt;
+    color: var(--ink-secondary);
+    padding: 1.4mm 2.2mm;
+    background: var(--surface-alt);
+    border-left: 3px solid var(--match-border);
+    border-radius: 4px;
+  }
+
+  .proof-strip strong {
+    color: var(--ink-primary);
+  }
+
+  .footer-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 1.8mm 2.8mm;
+    background: var(--surface-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    font-size: 6.9pt;
+    color: var(--ink-secondary);
+  }
+
+  .footer-bar strong {
+    color: var(--ink-primary);
+  }
+
+  @media (max-width: 820px) {
+    .hero,
+    .two-col {
+      grid-template-columns: 1fr;
+    }
+    .resilience-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .metrics-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media print {
+    :root {
+      --page-bg: #ffffff;
+      --surface-bg: #f8fafc;
+      --surface-alt: #f1f5f9;
+      --ink-primary: #0b101b;
+      --ink-secondary: #1e293b;
+      --ink-muted: #334155;
+      --border-subtle: #cbd5e1;
+      --border-strong: #0f172a;
+      --accent: #0369a1;
+      --accent-soft: #e0f2fe;
+      --match-fg: #064e3b;
+      --match-bg: #ecfdf5;
+      --match-border: #059669;
+      --warn-fg: #78350f;
+      --warn-bg: #fffbeb;
+      --warn-border: #d97706;
+      --unsure-fg: #0c4a6e;
+      --unsure-bg: #f0f9ff;
+      --unsure-border: #0284c7;
+      --kbd-bg: #ffffff;
+      --kbd-fg: #0b101b;
+      --kbd-border: #0f172a;
+    }
+
+    html, body {
+      background: #ffffff !important;
+      color: #0b101b !important;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    .a4-sheet {
+      width: 190mm;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      gap: 2.8mm;
+    }
+
+    .hero {
+      grid-template-columns: 1.16fr 1fr;
+      padding: 2.6mm 3mm;
+    }
+
+    .two-col {
+      grid-template-columns: 1.14fr 0.86fr;
+      gap: 2.8mm;
+    }
+
+    .resilience-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .metrics-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+
+    .metric-val.safe {
+      color: #047857;
+    }
+  }
+</style>
+</head>
+<body>
+  <aside class="toolbar no-print" aria-label="Handout display and print actions">
+    <div class="toolbar-meta">
+      <div class="toolbar-title">HoldUp Judge &amp; Mentor Quick-Start Handout (A4 1-Page)</div>
+      <div class="toolbar-sub">Self-contained offline sheet served at <code>/judge-handout.html</code> and printable on single-page A4 portrait.</div>
+    </div>
+    <div class="toolbar-actions">
+      <button type="button" id="btn-toggle-preview" class="btn" aria-pressed="false">Light Print Preview</button>
+      <button type="button" id="btn-print-page" class="btn btn-primary">Print A4 Handout</button>
+    </div>
+  </aside>
+
+  <main class="a4-sheet" aria-labelledby="handout-title">
+    <header class="hero">
+      <div class="hero-copy">
+        <div class="challenge-row">
+          <span class="pill">Meta "AI Glasses for Everyone, Everyday"</span>
+          <span class="pill pill-neutral">Junction 2026</span>
+          <span class="pill pill-neutral">Gemini Live + Ray-Ban Display</span>
+        </div>
+        <h1 id="handout-title">HoldUp: Hold it up. Know it is the right one.</h1>
+        <p class="hero-lead">
+          Hands-free medication and food-allergen label verification for blind, low-vision, and older adults on
+          <strong>Ray-Ban Meta Gen 2</strong> (DAT <code>1.0.1</code> POV camera + open-ear BT HFP audio) and
+          <strong>Meta Ray-Ban Display</strong> (<code>600x600</code> additive waveguide HUD + Neural Band).
+          <strong>Never guesses a dose.</strong>
+        </p>
+        <div class="hero-invariants" aria-label="Core safety invariants">
+          <span class="inv-tag">STRENGTH_MIN_CONF = 0.80 Gate</span>
+          <span class="inv-tag">Zero Server Frame Retention</span>
+          <span class="inv-tag">On-Device localStorage Profile</span>
+          <span class="inv-tag">WCAG 2.2 AAA (15.07:1 to 21:1)</span>
+        </div>
+      </div>
+
+      <div class="hero-diagram">
+        <svg viewBox="0 0 520 148" role="img" aria-label="Ray-Ban Meta AI Glasses and 600x600 additive waveguide HUD diagram">
+          <rect x="2" y="2" width="516" height="144" rx="8" fill="#05080f" stroke="#1e293b" stroke-width="1.5"/>
+
+          <text x="16" y="19" fill="#94a3b8" font-size="9" font-weight="700" font-family="sans-serif">RAY-BAN META GEN 2 + DISPLAY</text>
+          <path d="M18 48 C36 42, 92 42, 112 49 L126 51 L140 49 C160 42, 216 42, 234 48 L238 62 C235 90, 214 102, 184 102 C156 102, 141 88, 136 66 L116 66 C111 88, 96 102, 68 102 C38 102, 17 90, 14 62 Z" fill="#0f172a" stroke="#e2e8f0" stroke-width="2.4"/>
+          <rect x="25" y="51" width="84" height="44" rx="14" fill="#091322" stroke="#38bdf8" stroke-width="1.4"/>
+          <rect x="143" y="51" width="84" height="44" rx="14" fill="#05080f" stroke="#34d399" stroke-width="1.8"/>
+
+          <circle cx="24" cy="49" r="4.2" fill="#38bdf8"/>
+          <circle cx="228" cy="49" r="4.2" fill="#fde047"/>
+          <rect x="162" y="58" width="46" height="30" rx="4" fill="#000000" stroke="#34d399" stroke-width="1.3" stroke-dasharray="3 2"/>
+          <text x="185" y="76" text-anchor="middle" fill="#34d399" font-size="8" font-weight="800" font-family="monospace">HUD</text>
+
+          <text x="16" y="118" fill="#7dd3fc" font-size="8.3" font-weight="700" font-family="sans-serif">POV Cam 720x1280 (~1 fps)</text>
+          <text x="16" y="131" fill="#cbd5e1" font-size="8" font-family="sans-serif">Open-Ear BT HFP + Capture LED ON</text>
+
+          <line x1="246" y1="74" x2="284" y2="74" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 3"/>
+          <polygon points="284,69 294,74 284,79" fill="#38bdf8"/>
+          <text x="269" y="64" text-anchor="middle" fill="#38bdf8" font-size="7.8" font-weight="700" font-family="monospace">/hud-ws</text>
+
+          <rect x="302" y="12" width="204" height="124" rx="7" fill="#000000" stroke="#34d399" stroke-width="2"/>
+          <text x="312" y="26" fill="#94a3b8" font-size="8" font-weight="700" font-family="monospace">600x600 WAVEGUIDE (#000000)</text>
+          <text x="496" y="26" text-anchor="end" fill="#6ee7b7" font-size="7.5" font-weight="700" font-family="monospace">&lt;=65% LIT</text>
+
+          <circle cx="323" cy="48" r="9" fill="#052e22" stroke="#22ff88" stroke-width="2"/>
+          <polyline points="318,48 322,52 329,44" fill="none" stroke="#22ff88" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="338" y="39" width="54" height="17" rx="4" fill="#052e22" stroke="#22ff88" stroke-width="1.4"/>
+          <text x="365" y="50.5" text-anchor="middle" fill="#22ff88" font-size="8.5" font-weight="800" font-family="monospace">MATCH</text>
+
+          <text x="312" y="74" fill="#ffffff" font-size="10.5" font-weight="800" font-family="sans-serif">Yes: Amlodipine 5 mg</text>
+          <text x="312" y="88" fill="#cbd5e1" font-size="8.2" font-family="sans-serif">Evening pill | Taken today: 0/1</text>
+
+          <rect x="312" y="99" width="62" height="24" rx="4" fill="#052e22" stroke="#ffffff" stroke-width="2.2"/>
+          <text x="343" y="114" text-anchor="middle" fill="#ffffff" font-size="8" font-weight="800" font-family="sans-serif">Log Dose</text>
+          <rect x="380" y="99" width="54" height="24" rx="4" fill="#0b1320" stroke="#64748b" stroke-width="1.2"/>
+          <text x="407" y="114" text-anchor="middle" fill="#e2e8f0" font-size="8" font-weight="700" font-family="sans-serif">Repeat</text>
+          <rect x="440" y="99" width="56" height="24" rx="4" fill="#0b1320" stroke="#64748b" stroke-width="1.2"/>
+          <text x="468" y="114" text-anchor="middle" fill="#e2e8f0" font-size="8" font-weight="700" font-family="sans-serif">Dismiss</text>
+        </svg>
+      </div>
+    </header>
+
+    <div class="two-col">
+      <section class="panel" aria-labelledby="sec-quickstart">
+        <div class="panel-header">
+          <h2 id="sec-quickstart">1. Try It in 30 Seconds</h2>
+          <span class="panel-kicker">Hands-Free or Browser</span>
+        </div>
+
+        <ol class="steps-list">
+          <li class="step-item">
+            <span class="step-num">1</span>
+            <div>
+              <strong>Put on Ray-Ban Meta / open <code>/</code> + <code>/hud</code>:</strong>
+              Wear paired glasses (BT HFP audio + <code>android-dat</code> stream) or open <code>/</code> and <code>/hud</code> side-by-side. Press <kbd>P</kbd> -&gt; <code>Load Demo Profile (3 Meds + Nut Allergy)</code> for a clean state.
+            </div>
+          </li>
+          <li class="step-item">
+            <span class="step-num">2</span>
+            <div>
+              <strong>Tap <code>Start Check</code> or press <kbd>Space</kbd> and hold up a prop box:</strong>
+              Rising <code>camera_on</code> earcon plays and the glasses LED lights up. Ask <em>"Is this my evening pill?"</em> while <code>gemini-3.8-live</code> coaches rotation before calling <code>verify_label</code>.
+            </div>
+          </li>
+          <li class="step-item">
+            <span class="step-num">3</span>
+            <div>
+              <strong>Test the 5-Step Judge Demo Tour</strong> (physical cartons or 1-click walkthrough banner at top of <code>/</code>):
+            </div>
+          </li>
+        </ol>
+
+        <div class="tour-grid" role="list" aria-label="5-Step Judge Demo Tour beats">
+          <div class="tour-beat" role="listitem">
+            <span class="badge-verdict v-match">1. Match</span>
+            <div><strong><code>Amlodipine 5 mg</code> match:</strong> Coaches rear-to-front flip -&gt; confirms evening pill -&gt; press <kbd>L</kbd> or pinch <code>Log Dose</code> (engages double-dose lock).</div>
+          </div>
+          <div class="tour-beat" role="listitem">
+            <span class="badge-verdict v-warn">2. NSAID</span>
+            <div><strong><code>Burana 400 mg</code> NSAID catch:</strong> Resolves Finnish brand <code>Burana</code> -&gt; <code>ibuprofen</code> -&gt; flags profile <code>avoid: NSAIDs</code> rule.</div>
+          </div>
+          <div class="tour-beat" role="listitem">
+            <span class="badge-verdict v-unsure">3. &lt;0.80</span>
+            <div><strong><code>Covered Dose</code> <code>&lt; 0.80</code> refusal:</strong> Thumb over strength triggers hard <code>STRENGTH_MIN_CONF = 0.80</code> gate; refuses to guess and disables dose logging.</div>
+          </div>
+          <div class="tour-beat" role="listitem">
+            <span class="badge-verdict v-warn">4. Nut</span>
+            <div><strong><code>Hazelnut</code> allergen catch:</strong> Flags <code>Hazelnut</code> + hidden <code>arachis oil</code> (<code>peanut</code> synonym) in EN/FI/SV against nut allergy profile.</div>
+          </div>
+          <div class="tour-beat" role="listitem">
+            <span class="badge-verdict v-match">5. Offline</span>
+            <div><strong><code>Complete Offline</code> EAN-13 barcode match:</strong> Wi-Fi off -&gt; local <code>BarcodeDetector</code> matches EAN-13 <code>6432100012345</code> in <code>localStorage</code> at <code>0 KB</code>.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="sec-controls">
+        <div class="panel-header">
+          <h2 id="sec-controls">2. Keyboard &amp; Meta Neural Band Controls</h2>
+          <span class="panel-kicker">&gt;= 56px Targets</span>
+        </div>
+
+        <table class="controls-table" aria-label="Keyboard and Meta Neural Band controls">
+          <thead>
+            <tr>
+              <th scope="col">Input / Gesture</th>
+              <th scope="col">HoldUp Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><kbd>Space</kbd></td>
+              <td>Start or stop active live label check (45s idle auto-stop)</td>
+            </tr>
+            <tr>
+              <td><kbd>S</kbd></td>
+              <td>Capture &amp; verify single HTTP snapshot (<code>POST /api/verify</code>)</td>
+            </tr>
+            <tr>
+              <td><kbd>B</kbd></td>
+              <td>Scan EAN-13 / QR barcode offline against saved profile</td>
+            </tr>
+            <tr>
+              <td><kbd>L</kbd></td>
+              <td>Log dose for verified <code>MATCH</code> (activates duplicate lock)</td>
+            </tr>
+            <tr>
+              <td><kbd>R</kbd></td>
+              <td>Repeat last spoken verdict or body-relative coaching cue</td>
+            </tr>
+            <tr>
+              <td><kbd>T</kbd></td>
+              <td>Cycle theme (<code>dark</code> -&gt; <code>light</code> -&gt; <code>high-contrast</code>)</td>
+            </tr>
+            <tr>
+              <td><kbd>M</kbd> / <kbd>P</kbd></td>
+              <td>Toggle audio &amp; earcon mute (<code>M</code>) / Open Privacy &amp; Wipe (<code>P</code>)</td>
+            </tr>
+            <tr>
+              <td><code>/hud</code> <kbd>Arrow*</kbd></td>
+              <td>Neural Band thumb swipe moves 4px white focus ring on HUD</td>
+            </tr>
+            <tr>
+              <td><code>/hud</code> <kbd>Enter</kbd></td>
+              <td>Neural Band index pinch confirms <code>Log Dose</code> / <code>Repeat</code> / <code>Dismiss</code></td>
+            </tr>
+            <tr>
+              <td><code>/hud</code> <kbd>Back</kbd></td>
+              <td>System Back / <kbd>Escape</kbd> returns <code>/hud</code> to <code>#000000</code> standby</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <section class="panel" aria-labelledby="sec-resilience">
+      <div class="panel-header">
+        <h2 id="sec-resilience">3. 6-Tier Resilience Checklist (Try Live in the <code>Device &amp; Resilience</code> Tab!)</h2>
+        <span class="panel-kicker">Live Fault Injection</span>
+      </div>
+
+      <div class="resilience-grid">
+        <div class="check-card">
+          <div class="check-head"><span class="check-box" aria-hidden="true"></span><span>1. Toggle <code>WS Drop</code></span></div>
+          <div>Drops <code>/live</code> WebSocket; seamlessly switches to HTTP Snapshot (<code>POST /api/verify</code> + TTS) with backoff + <code>sessionResumption</code>.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-head"><span class="check-box" aria-hidden="true"></span><span>2. Toggle <code>Force Offline</code></span></div>
+          <div>Simulates zero connectivity; switches to on-device <code>BarcodeDetector</code> matching saved EAN-13 meds in <code>localStorage</code> (<code>0 KB</code>).</div>
+        </div>
+        <div class="check-card">
+          <div class="check-head"><span class="check-box" aria-hidden="true"></span><span>3. Toggle <code>Glasses Doffed</code></span></div>
+          <div>DAT <code>!worn</code> state announces transition aloud and hot-swaps active eye from <code>Glasses DAT</code> to <code>Phone Camera</code> mid-session.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-head"><span class="check-box" aria-hidden="true"></span><span>4. Toggle <code>Low Battery &lt;10%</code></span></div>
+          <div>DAT critical battery telemetry warns wearer over open-ear audio and falls back cleanly to <code>Phone Camera</code> without losing state.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-head"><span class="check-box" aria-hidden="true"></span><span>5. Slow Wi-Fi RTT Adaptation</span></div>
+          <div>5s WS <code>ping</code>/<code>pong</code> (&gt;<code>650 ms</code> RTT) scales stream from <code>1.0 fps</code> <code>768 px</code> to <code>0.5 fps</code> <code>512 px</code>, saving <code>84.0%</code> video bytes.</div>
+        </div>
+        <div class="check-card">
+          <div class="check-head"><span class="check-box" aria-hidden="true"></span><span>6. Permissions &amp; 3-Model Chain</span></div>
+          <div>Mic/camera denial unlocks Snapshot or 7-Fixture Prop Mode; <code>429</code>/<code>5xx</code> walks 3-model Live &amp; Flash fallback chains automatically.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="sec-benchmarks">
+      <div class="panel-header">
+        <h2 id="sec-benchmarks">4. Verified Measured Benchmarks (<code>eval/</code> JSON Artifacts)</h2>
+        <span class="panel-kicker">Zero Unverified Claims</span>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-tile">
+          <div class="metric-val safe">0</div>
+          <div class="metric-label">Confident-Wrong Doses</div>
+          <div class="metric-sub">100.0% occluded abstention at 0.80 gate</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val">ECE = 0.0138</div>
+          <div class="metric-label">Strength Calibration</div>
+          <div class="metric-sub">Brier 0.0005 across 4 degradation tiers</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val">582 ms</div>
+          <div class="metric-label">First-Audio Latency</div>
+          <div class="metric-sub"><code>gemini-3.8-live</code> (706 ms WS connect)</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val">84.0%</div>
+          <div class="metric-label">Slow-Net Video Saved</div>
+          <div class="metric-sub">724.64 KB -&gt; 116.02 KB per 12s check</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">91.8%</div>
+          <div class="metric-label">3-Year TCO Savings</div>
+          <div class="metric-sub">EUR 341.68 vs EUR 4,150.00 (12.1x lower)</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">8 / 8</div>
+          <div class="metric-label">Coaching &amp; Privacy</div>
+          <div class="metric-sub">5.0/5 score; 2574.8 ms face refusal</div>
+        </div>
+      </div>
+
+      <div class="proof-strip">
+        <strong>Evidence Breakdown:</strong>
+        <code>ECE = 0.0138</code> and <strong><code>0</code> confident-wrong dose reads</strong> verified across
+        <strong><code>16</code></strong> progressive degradation reads (<code>calibration_curve.json</code>) +
+        <strong><code>36</code></strong> 3-model probe reads (<code>model_comparison.json</code>: <code>gemini-3.8-flash</code>, <code>gemini-3.5-flash</code>, <code>gemini-3-flash-preview</code>, <code>100.0%</code> verdict match) +
+        <strong><code>7</code></strong> <code>/api/verify</code> fixture reads (<code>demo_fixtures_results.json</code>) +
+        <strong><code>18</code></strong> food/allergen reads (<code>results_batch2.json</code>, <code>0</code> false-safe allergens).
+        3-year TCO: <strong><code>EUR 341.68</code></strong> (EUR 329 Ray-Ban Meta Gen 2 + EUR 0.00294/check) vs <strong><code>EUR 4,150.00</code></strong> OrCam midpoint = <strong><code>91.8%</code> savings</strong>.
+      </div>
+    </section>
+
+    <footer class="footer-bar">
+      <div>
+        <strong>Privacy &amp; EU MDR Boundary:</strong> Explicit active check only (45s auto-stop) | 8-slot RAM <code>FrameRing</code> wiped on close | 1-tap <code>wipeAllLocalData()</code> | Assistive optical label reader (pharmacist handoff on uncertainty).
+      </div>
+      <div>
+        <strong>Pilot Path:</strong> 12-week Helsinki cohort (<code>N = 24</code>, Nakovammaisten liitto Iiris Center + 25 mm zero-PII pharmacy QR).
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var previewBtn = document.getElementById("btn-toggle-preview");
+      var printBtn = document.getElementById("btn-print-page");
+      if (previewBtn) {
+        previewBtn.addEventListener("click", function () {
+          var next = root.getAttribute("data-preview") === "light" ? "dark" : "light";
+          root.setAttribute("data-preview", next);
+          previewBtn.setAttribute("aria-pressed", next === "light" ? "true" : "false");
+          previewBtn.textContent = next === "light" ? "Dark Booth View" : "Light Print Preview";
+        });
+      }
+      if (printBtn) {
+        printBtn.addEventListener("click", function () {
+          window.print();
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
