@@ -37,8 +37,9 @@ class BuildAndGitignoreSecurityTest {
     val toml = resolveRepoFile("android-dat/gradle/libs.versions.toml").readText()
     assertTrue(toml.contains("mwdat = \"1.0.1\""))
     assertTrue(toml.contains("kotlin = \"2.2.21\""))
-    assertTrue(toml.contains("com.meta.wearable:mwdat-core"))
-    assertTrue(toml.contains("com.meta.wearable:mwdat-camera"))
+    assertTrue(toml.contains("group = \"com.meta.wearable\""))
+    assertTrue(toml.contains("name = \"mwdat-core\""))
+    assertTrue(toml.contains("name = \"mwdat-camera\""))
   }
 
   @Test
