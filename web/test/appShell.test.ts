@@ -76,7 +76,7 @@ function renderApp(props?: AppProps): string {
   return renderToStaticMarkup(props ? createElement(App, props) : createElement(App));
 }
 
-test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding when unaccepted, JudgeDemoTour, ViewfinderStage, FrameReadinessMeter, VoiceActivityPill, ConversationBar, VoiceCommandCheatSheetCard, VerdictCard, ScheduleChecklistCard, HudPreviewFrame, CaregiverAlertCard, and resource footer", () => {
+test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding when unaccepted, JudgeDemoTour, ViewfinderStage, FrameReadinessMeter, VoiceActivityPill, ConversationBar, VoiceCommandCheatSheetCard, TactileHandlingGuideCard, VerdictCard, ScheduleChecklistCard, HudPreviewFrame, CaregiverAlertCard, and resource footer", () => {
   const storage = createMemoryStorage();
   const html = renderApp({
     initialUrl: `${BASE_URL}/`,
@@ -143,10 +143,12 @@ test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding whe
   const voicePillIdx = html.indexOf('aria-label="Open-ear voice and audio status"');
   const conversationIdx = html.indexOf("Ask HoldUp or Tap a Quick Check");
   const voiceCheatSheetIdx = html.indexOf("voice-command-cheatsheet-card");
+  const tactileGuideIdx = html.indexOf("tactile-handling-guide-card");
   assert.ok(viewfinderIdx > 0 && frameReadinessIdx > viewfinderIdx);
   assert.ok(voicePillIdx > frameReadinessIdx);
   assert.ok(conversationIdx > voicePillIdx);
   assert.ok(voiceCheatSheetIdx > conversationIdx);
+  assert.ok(tactileGuideIdx > voiceCheatSheetIdx);
 
   assert.ok(html.includes("Ask HoldUp or Tap a Quick Check"));
   assert.ok(html.includes("Is this my evening pill?"));
@@ -157,6 +159,17 @@ test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding whe
   assert.ok(html.includes('data-phrase-id="evening_pill"'));
   assert.ok(html.includes('data-hud-gesture="log_dose"'));
 
+  assert.ok(html.includes("tactile-handling-guide-card"));
+  assert.ok(html.includes('id="tactile-handling-guide-heading"'));
+  assert.ok(html.includes("Tactile &amp; Proprioceptive Hold Guide"));
+  assert.ok(html.includes("4 Tactile Holds Ready"));
+  assert.ok(html.includes('data-active-cue="none"'));
+  assert.ok(html.includes('data-action="speak-tip"'));
+  assert.ok(html.includes('data-technique-id="chest_anchor"'));
+  assert.ok(html.includes('data-technique-id="bottle_quarter_turn"'));
+  assert.ok(html.includes('data-technique-id="blister_glare_tilt"'));
+  assert.ok(html.includes('data-technique-id="carton_barcode_find"'));
+
   assert.ok(html.includes("verdict-ready-title"));
   assert.ok(html.includes("Ready to check"));
   assert.equal(html.includes("confidence-breakdown-card"), false);
@@ -164,6 +177,8 @@ test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding whe
   assert.equal(html.includes("dose-timeline-card"), false);
   assert.equal(html.includes("hardware-telemetry-card"), false);
   assert.equal(html.includes("emergency-med-card"), false);
+  assert.equal(html.includes("language-voice-support-card"), false);
+  assert.equal(html.includes("offline-readiness-card"), false);
   assert.equal(html.includes("privacy-flow-card"), false);
 
   assert.ok(html.includes("schedule-checklist-card"));
@@ -180,7 +195,8 @@ test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding whe
   const readyVerdictIdx = html.indexOf("verdict-ready-title");
   const scheduleCheckIdx = html.indexOf("schedule-checklist-card");
   const hudPreviewCheckIdx = html.indexOf("hpf-root");
-  assert.ok(readyVerdictIdx > 0 && scheduleCheckIdx > readyVerdictIdx);
+  assert.ok(readyVerdictIdx > tactileGuideIdx);
+  assert.ok(scheduleCheckIdx > readyVerdictIdx);
   assert.ok(hudPreviewCheckIdx > scheduleCheckIdx);
 
   const footerStartIdx = html.indexOf('aria-label="Submission and hardware resources"');
@@ -299,19 +315,26 @@ test("App renders ConfidenceBreakdownCard between VerdictCard and HudPreviewFram
     assert.ok(localizedHtml.includes("confidence-breakdown-card"));
     assert.ok(localizedHtml.includes("schedule-checklist-card"));
     assert.ok(localizedHtml.includes("voice-command-cheatsheet-card"));
+    assert.ok(localizedHtml.includes("tactile-handling-guide-card"));
     if (locale === "fi") {
       assert.ok(localizedHtml.includes("Optinen terävyys ja käsiohjauksen valmius"));
       assert.ok(localizedHtml.includes("KAMERA LEPOTILASSA"));
+      assert.ok(localizedHtml.includes("Tunto- ja asento-opas pakkausten pitelyyn"));
+      assert.ok(localizedHtml.includes("4 tunto-otetta valmiina"));
+      assert.ok(localizedHtml.includes("Kuuntele ohje"));
     } else {
       assert.ok(localizedHtml.includes("Optisk skärpa och handvägledningsberedskap"));
       assert.ok(localizedHtml.includes("KAMERA VÄNTELÄGE"));
+      assert.ok(localizedHtml.includes("Taktil och proprioceptiv greppguide"));
+      assert.ok(localizedHtml.includes("4 taktila grepp redo"));
+      assert.ok(localizedHtml.includes("Lyssna på tips"));
     }
     assert.equal(localizedHtml.includes(EM_DASH), false);
     assert.equal(localizedHtml.includes(EN_DASH), false);
   }
 });
 
-test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimelineCard, SafetyRuleExplainerCard, ProfileManager, CaregiverAlertCard, EmergencyMedCard, and localized fi/sv output", () => {
+test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimelineCard, SafetyRuleExplainerCard, ProfileManager, CaregiverAlertCard, EmergencyMedCard, LanguageVoiceSupportCard, and localized fi/sv output", () => {
   const storage = createMemoryStorage();
   const html = renderApp({
     initialUrl: `${BASE_URL}/?tab=profile`,
@@ -323,6 +346,8 @@ test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimeli
   assert.equal(html.includes('id="panel-check"'), false);
   assert.equal(html.includes('id="panel-device"'), false);
   assert.equal(html.includes("frame-readiness-meter"), false);
+  assert.equal(html.includes("tactile-handling-guide-card"), false);
+  assert.equal(html.includes("offline-readiness-card"), false);
   assert.equal(html.includes("privacy-flow-card"), false);
 
   assert.ok(html.includes("schedule-checklist-card"));
@@ -348,18 +373,32 @@ test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimeli
   assert.ok(html.includes('data-action="copy-wallet-text"'));
   assert.ok(html.includes('data-action="print-wallet-card"'));
 
+  assert.ok(html.includes("language-voice-support-card"));
+  assert.ok(html.includes('id="language-voice-support-heading"'));
+  assert.ok(html.includes("Language, Voice &amp; Nordic Safety Matrix"));
+  assert.ok(html.includes("8 Gemini Live Voice Languages"));
+  assert.ok(html.includes('data-active-lang="en"'));
+  assert.ok(html.includes('data-muted="false"'));
+  assert.ok(html.includes('data-action="select-lang"'));
+  assert.ok(html.includes('data-action="speak-sample"'));
+  for (const langCode of ["en", "fi", "sv", "de", "es", "fr", "et", "ru"] as const) {
+    assert.ok(html.includes(`data-lang-code="${langCode}"`), `Expected lang row ${langCode}`);
+  }
+
   const scheduleProfileIdx = html.indexOf("schedule-checklist-card");
   const doseTimelineIdx = html.indexOf("dose-timeline-card");
   const safetyExplainerIdx = html.indexOf("safety-rule-explainer-card");
   const profileManagerIdx = html.indexOf("profile-manager");
   const caregiverProfileIdx = html.indexOf("caregiver-share-actions");
   const emergencyMedIdx = html.indexOf("emergency-med-card");
+  const languageVoiceIdx = html.indexOf("language-voice-support-card");
   assert.ok(scheduleProfileIdx > 0);
   assert.ok(doseTimelineIdx > scheduleProfileIdx);
   assert.ok(safetyExplainerIdx > doseTimelineIdx);
   assert.ok(profileManagerIdx > safetyExplainerIdx);
   assert.ok(caregiverProfileIdx > profileManagerIdx);
   assert.ok(emergencyMedIdx > caregiverProfileIdx);
+  assert.ok(languageVoiceIdx > emergencyMedIdx);
 
   for (const med of DEMO_PROFILE.meds) {
     assert.ok(html.includes(med.name), `Expected medication ${med.name} in profile tab`);
@@ -387,6 +426,16 @@ test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimeli
   assert.ok(loggedProfileHtml.includes('data-action="undo-last-dose"'));
   assert.ok(loggedProfileHtml.includes("Undo Last Dose"));
 
+  const mutedProfileStorage = createMemoryStorage();
+  mutedProfileStorage.setItem("holdup.muted", "1");
+  const mutedProfileHtml = renderApp({
+    initialUrl: `${BASE_URL}/?tab=profile`,
+    controllerOptions: { storage: mutedProfileStorage }
+  });
+  assert.ok(mutedProfileHtml.includes('data-muted="true"'));
+  assert.ok(mutedProfileHtml.includes("Audio Muted"));
+  assert.ok(mutedProfileHtml.includes("Sample Muted"));
+
   const fiHtml = renderApp({
     initialUrl: `${BASE_URL}/?lang=fi&tab=profile`,
     controllerOptions: { storage: createMemoryStorage() }
@@ -401,6 +450,10 @@ test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimeli
   assert.ok(fiHtml.includes("emergency-med-card"));
   assert.ok(fiHtml.includes("Hätä- ja apteekkilääkekortti"));
   assert.ok(fiHtml.includes("Kopioi lääkekortin teksti"));
+  assert.ok(fiHtml.includes("language-voice-support-card"));
+  assert.ok(fiHtml.includes('data-active-lang="fi"'));
+  assert.ok(fiHtml.includes("Kieli-, puhe- ja pohjoismainen turvamatriisi"));
+  assert.ok(fiHtml.includes("8 Gemini Live -puhekieltä"));
   assert.equal(fiHtml.includes(EM_DASH), false);
   assert.equal(fiHtml.includes(EN_DASH), false);
 
@@ -418,11 +471,15 @@ test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimeli
   assert.ok(svHtml.includes("emergency-med-card"));
   assert.ok(svHtml.includes("Akut läkemedels- och allergikort"));
   assert.ok(svHtml.includes("Kopiera korttext"));
+  assert.ok(svHtml.includes("language-voice-support-card"));
+  assert.ok(svHtml.includes('data-active-lang="sv"'));
+  assert.ok(svHtml.includes("Språk-, röst- och nordisk säkerhetsmatris"));
+  assert.ok(svHtml.includes("8 Gemini Live-röstspråk"));
   assert.equal(svHtml.includes(EM_DASH), false);
   assert.equal(svHtml.includes(EN_DASH), false);
 });
 
-test("App with initialUrl=?tab=device renders HardwareTelemetryCard, PrivacyFlowCard, DeviceResiliencePanel with real SVG QR codes, EvalProofCard, and HudPreviewFrame", () => {
+test("App with initialUrl=?tab=device renders HardwareTelemetryCard, OfflineReadinessCard, PrivacyFlowCard, DeviceResiliencePanel with real SVG QR codes, EvalProofCard, and HudPreviewFrame", () => {
   const storage = createMemoryStorage();
   const html = renderApp({
     initialUrl: `${BASE_URL}/?tab=device`,
@@ -434,7 +491,9 @@ test("App with initialUrl=?tab=device renders HardwareTelemetryCard, PrivacyFlow
   assert.equal(html.includes('id="panel-check"'), false);
   assert.equal(html.includes('id="panel-profile"'), false);
   assert.equal(html.includes("frame-readiness-meter"), false);
+  assert.equal(html.includes("tactile-handling-guide-card"), false);
   assert.equal(html.includes("emergency-med-card"), false);
+  assert.equal(html.includes("language-voice-support-card"), false);
 
   assert.ok(html.includes("hardware-telemetry-card"));
   assert.ok(html.includes('id="hardware-telemetry-card-heading"'));
@@ -447,6 +506,18 @@ test("App with initialUrl=?tab=device renders HardwareTelemetryCard, PrivacyFlow
   assert.ok(html.includes('data-tile-id="capture-led"'));
   assert.ok(html.includes('data-tile-id="hud-waveguide"'));
   assert.ok(html.includes('data-tile-id="adaptive-bandwidth"'));
+
+  assert.ok(html.includes("offline-readiness-card"));
+  assert.ok(html.includes('id="offline-readiness-card-heading"'));
+  assert.ok(html.includes("On-Device Offline Barcode Coverage &amp; Pack Readiness"));
+  assert.ok(html.includes("Zero-Network On-Device Match"));
+  assert.ok(html.includes("3/3 Ready (100%)"));
+  assert.ok(html.includes('data-coverage-pct="100"'));
+  assert.ok(html.includes('data-ready-count="3"'));
+  assert.ok(html.includes('data-missing-count="0"'));
+  assert.ok(html.includes('data-total-meds="3"'));
+  assert.ok(html.includes('data-action="open-pharmacy-import"'));
+  assert.ok(html.includes("Import Pharmacy QR"));
 
   assert.ok(html.includes("privacy-flow-card"));
   assert.ok(html.includes('id="privacy-flow-card-heading"'));
@@ -461,10 +532,29 @@ test("App with initialUrl=?tab=device renders HardwareTelemetryCard, PrivacyFlow
   assert.ok(html.includes('data-privacy-action="wipe-all"'));
 
   const hardwareTelemetryIdx = html.indexOf("hardware-telemetry-card");
+  const offlineReadinessIdx = html.indexOf("offline-readiness-card");
   const privacyFlowIdx = html.indexOf("privacy-flow-card");
   const resilienceIdx = html.indexOf("Hardware Pairing (Android DAT Bridge + Ray-Ban Display /hud)");
-  assert.ok(hardwareTelemetryIdx > 0 && privacyFlowIdx > hardwareTelemetryIdx);
+  assert.ok(hardwareTelemetryIdx > 0 && offlineReadinessIdx > hardwareTelemetryIdx);
+  assert.ok(privacyFlowIdx > offlineReadinessIdx);
   assert.ok(resilienceIdx > privacyFlowIdx);
+
+  const offlineDeviceStorage = createMemoryStorage();
+  offlineDeviceStorage.setItem(
+    "holdup.chaos",
+    JSON.stringify({
+      forceWsDrop: false,
+      forceOffline: true,
+      simulateGlassesDoffed: false,
+      simulateLowBattery: false
+    })
+  );
+  const offlineDeviceHtml = renderApp({
+    initialUrl: `${BASE_URL}/?tab=device`,
+    controllerOptions: { storage: offlineDeviceStorage }
+  });
+  assert.ok(offlineDeviceHtml.includes('data-offline-callout="active"'));
+  assert.ok(offlineDeviceHtml.includes("Offline Mode Active: On-Device Barcode Matching Only"));
 
   const acceptedDeviceStorage = createMemoryStorage();
   saveConsent(true, acceptedDeviceStorage);
@@ -514,6 +604,9 @@ test("App with initialUrl=?tab=device renders HardwareTelemetryCard, PrivacyFlow
   });
   assert.ok(fiDeviceHtml.includes("hardware-telemetry-card"));
   assert.ok(fiDeviceHtml.includes("Meta AI -lasit, kuvaus-LED ja mukautuva yhteystelemetria"));
+  assert.ok(fiDeviceHtml.includes("offline-readiness-card"));
+  assert.ok(fiDeviceHtml.includes("Laitteen offline-viivakoodikattavuus ja pakkausvalmius"));
+  assert.ok(fiDeviceHtml.includes("Tuo apteekin QR"));
   assert.ok(fiDeviceHtml.includes("privacy-flow-card"));
   assert.ok(fiDeviceHtml.includes("4 tiukkaa tietosuoja- ja suostumusrajaa"));
   assert.equal(fiDeviceHtml.includes(EM_DASH), false);
@@ -525,6 +618,9 @@ test("App with initialUrl=?tab=device renders HardwareTelemetryCard, PrivacyFlow
   });
   assert.ok(svDeviceHtml.includes("hardware-telemetry-card"));
   assert.ok(svDeviceHtml.includes("Meta AI-glasögon, inspelnings-LED och adaptiv länktelemetri"));
+  assert.ok(svDeviceHtml.includes("offline-readiness-card"));
+  assert.ok(svDeviceHtml.includes("Lokal offline-streckkodstäckning och förpackningsberedskap"));
+  assert.ok(svDeviceHtml.includes("Importera apoteks-QR"));
   assert.ok(svDeviceHtml.includes("privacy-flow-card"));
   assert.ok(svDeviceHtml.includes("4 strikta integritets- och samtyckesgränser"));
   assert.equal(svDeviceHtml.includes(EM_DASH), false);
@@ -563,13 +659,16 @@ test("App with initialUrl=/hud renders pure #000000 .hud-root HudApp without pho
   assert.equal(hudHtml.includes("frame-readiness-meter"), false);
   assert.equal(hudHtml.includes("voice-activity-pill"), false);
   assert.equal(hudHtml.includes("voice-command-cheatsheet-card"), false);
+  assert.equal(hudHtml.includes("tactile-handling-guide-card"), false);
   assert.equal(hudHtml.includes("confidence-breakdown-card"), false);
   assert.equal(hudHtml.includes("schedule-checklist-card"), false);
   assert.equal(hudHtml.includes("Did I Take My Pills?"), false);
   assert.equal(hudHtml.includes("dose-timeline-card"), false);
   assert.equal(hudHtml.includes("safety-rule-explainer-card"), false);
   assert.equal(hudHtml.includes("emergency-med-card"), false);
+  assert.equal(hudHtml.includes("language-voice-support-card"), false);
   assert.equal(hudHtml.includes("hardware-telemetry-card"), false);
+  assert.equal(hudHtml.includes("offline-readiness-card"), false);
   assert.equal(hudHtml.includes("privacy-flow-card"), false);
   assert.equal(hudHtml.includes("/judge-handout.html"), false);
   assert.equal(hudHtml.includes("/architecture-poster.html"), false);
@@ -590,11 +689,14 @@ test("App with initialUrl=/hud renders pure #000000 .hud-root HudApp without pho
   assert.equal(sessionHudHtml.includes('class="app-footer"'), false);
   assert.equal(sessionHudHtml.includes("frame-readiness-meter"), false);
   assert.equal(sessionHudHtml.includes("voice-command-cheatsheet-card"), false);
+  assert.equal(sessionHudHtml.includes("tactile-handling-guide-card"), false);
   assert.equal(sessionHudHtml.includes("schedule-checklist-card"), false);
   assert.equal(sessionHudHtml.includes("dose-timeline-card"), false);
   assert.equal(sessionHudHtml.includes("safety-rule-explainer-card"), false);
   assert.equal(sessionHudHtml.includes("emergency-med-card"), false);
+  assert.equal(sessionHudHtml.includes("language-voice-support-card"), false);
   assert.equal(sessionHudHtml.includes("hardware-telemetry-card"), false);
+  assert.equal(sessionHudHtml.includes("offline-readiness-card"), false);
   assert.equal(sessionHudHtml.includes("privacy-flow-card"), false);
   assert.equal(sessionHudHtml.includes("/architecture-poster.html"), false);
   assert.equal(writes.length, 0);

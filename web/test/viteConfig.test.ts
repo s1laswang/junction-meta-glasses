@@ -82,7 +82,7 @@ test("web/vite.config.ts proxies /api, /ingest, /deck, handouts, and WebSocket r
   assert.deepEqual(proxy["/hud-ws"], { target: WS_BACKEND, ws: true });
 });
 
-test("web/vite.config.ts manualChunks splits node_modules into vendor, web/src/components into cards, and leaves app modules in default chunks", () => {
+test("web/vite.config.ts manualChunks splits node_modules into vendor, web/src/components into cards and cards-profile, and leaves app modules in default chunks", () => {
   const output = viteConfig.build?.rollupOptions?.output;
   assert.ok(output && !Array.isArray(output), "expected single rollupOptions.output object");
   assert.equal(typeof output.manualChunks, "function");
@@ -107,16 +107,38 @@ test("web/vite.config.ts manualChunks splits node_modules into vendor, web/src/c
 
   const cardsIds = [
     "/workspace/web/src/components/FrameReadinessMeter.tsx",
-    "/workspace/web/src/components/EmergencyMedCard.tsx",
-    "/workspace/web/src/components/PrivacyFlowCard.tsx",
+    "/workspace/web/src/components/TactileHandlingGuideCard.tsx",
+    "/workspace/web/src/components/VoiceCommandCheatSheetCard.tsx",
+    "/workspace/web/src/components/HardwareTelemetryCard.tsx",
+    "/workspace/web/src/components/SafetyRuleExplainerCard.tsx",
     "/tmp/fleet-silas/wt/meta-w09/web/src/components/VerdictCard.tsx",
     "C:\\repo\\web\\src\\components\\AppHeader.tsx",
-    "src/components/PrivacyFlowCard.tsx",
-    "\0/workspace/web/src/components/EmergencyMedCard.tsx?commonjs-es-import"
+    "src/components/TactileHandlingGuideCard.tsx",
+    "\0/workspace/web/src/components/FrameReadinessMeter.tsx?commonjs-es-import"
   ];
 
   for (const id of cardsIds) {
     assert.equal(chunkFn(id), "cards", `expected cards chunk for ${id}`);
+  }
+
+  const cardsProfileIds = [
+    "/workspace/web/src/components/ProfileManager.tsx",
+    "/workspace/web/src/components/ScheduleChecklistCard.tsx",
+    "/workspace/web/src/components/DoseTimelineCard.tsx",
+    "/workspace/web/src/components/CaregiverAlertCard.tsx",
+    "/workspace/web/src/components/EmergencyMedCard.tsx",
+    "/workspace/web/src/components/PharmacyImportModal.tsx",
+    "/workspace/web/src/components/LanguageVoiceSupportCard.tsx",
+    "/workspace/web/src/components/OfflineReadinessCard.tsx",
+    "/workspace/web/src/components/PrivacyFlowCard.tsx",
+    "/workspace/web/src/components/ConsentOnboarding.tsx",
+    "C:\\repo\\web\\src\\components\\LanguageVoiceSupportCard.tsx",
+    "src/components/OfflineReadinessCard.tsx",
+    "\0/workspace/web/src/components/EmergencyMedCard.tsx?commonjs-es-import"
+  ];
+
+  for (const id of cardsProfileIds) {
+    assert.equal(chunkFn(id), "cards-profile", `expected cards-profile chunk for ${id}`);
   }
 
   const appIds = [
@@ -171,8 +193,18 @@ test("dev proxy routes match server/src/index.ts backend endpoints and built JS 
   if (existsSync(distAssetsUrl)) {
     const jsFiles = readdirSync(distAssetsUrl).filter((file) => file.endsWith(".js"));
     if (jsFiles.some((file) => file.startsWith("vendor-"))) {
-      assert.ok(jsFiles.some((file) => file.startsWith("cards-")), "expected cards-*.js chunk alongside vendor-*.js");
-      assert.ok(jsFiles.some((file) => file.startsWith("index-")), "expected index-*.js chunk alongside vendor-*.js");
+      assert.ok(
+        jsFiles.some((file) => file.startsWith("cards-") && !file.startsWith("cards-profile-")),
+        "expected cards-*.js chunk alongside vendor-*.js"
+      );
+      assert.ok(
+        jsFiles.some((file) => file.startsWith("cards-profile-")),
+        "expected cards-profile-*.js chunk alongside vendor-*.js"
+      );
+      assert.ok(
+        jsFiles.some((file) => file.startsWith("index-")),
+        "expected index-*.js chunk alongside vendor-*.js"
+      );
       for (const file of jsFiles) {
         const sizeBytes = statSync(new URL(`../dist/assets/${file}`, import.meta.url)).size;
         assert.ok(sizeBytes > 0 && sizeBytes < 500_000, `expected ${file} < 500 kB, got ${sizeBytes} bytes`);
