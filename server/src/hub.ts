@@ -93,7 +93,7 @@ export class Hub {
     this.updateReadiness(f.sharpness);
   }
   /** Privacy: drop frames and cached reads. */
-  dropFrames() { this.ring.clear(); this.spec.clear(); this.lastCode = undefined; }
+  dropFrames() { this.ring.clear(); this.spec.clear(); this.lastCode = undefined; this.readiness = { value: -1, sentAt: 0, sharp: 0 }; }
   /** Tell the phone(s) whether a HUD is attached to this session. */
   hudChanged() {
     const s = JSON.stringify({ type: "hud", connected: hudsFor(this).length > 0 });

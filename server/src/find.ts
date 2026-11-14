@@ -42,8 +42,90 @@ const POS_ADJ: Record<ScenePosition, string> = { far_left: "far-left", left: "le
 
 // ---------- per-item labels ----------
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const SCHED = ["morning", "noon", "midday", "evening", "night", "bedtime"];
-const schedWord = (m: Med) => SCHED.find((w) => m.schedule.some((s) => s.toLowerCase().includes(w)));
+type SlotBucket = "morning" | "midday" | "evening" | "night";
+const SCHED = ["morning", "noon", "midday", "evening", "night", "bedtime"] as const;
+const CANON_SLOT: Record<string, SlotBucket> = {
+  morning: "morning", noon: "midday", midday: "midday", evening: "evening", night: "night", bedtime: "night",
+};
+const EN_SLOTS: [string, RegExp][] = [
+  ["morning", /\bmorning\b/],
+  ["noon", /\bnoon\b/],
+  ["midday", /\bmidday\b/],
+  ["evening", /\bevening\b/],
+  ["night", /\b(?:to)?night(?:time)?\b/],
+  ["bedtime", /\bbedtime\b/],
+];
+const NORDIC_SLOTS: [SlotBucket, RegExp][] = [
+  ["morning", /\b(aamu(lla|na|isin|n|laak\w*|piller\w*|tablet\w*)?|morgon(en|ens|medicin\w*|piller|pillret|tablett\w*)?)\b/],
+  ["midday", /\b(keskipaiva\w*|lounas\w*|lounaa(lla|n)|mitt pa dagen|lunch(en|medicin\w*|piller|pillret|tablett\w*)?)\b/],
+  ["evening", /\b(ilta(na|isin|laak\w*|piller\w*|tablet\w*)?|illalla|illan|ikvall|kvall(en|ar|arna|smedicin\w*|spiller|spillret|stablett\w*)?)\b/],
+  ["night", /\b(yo|yolla|yon|yoksi|yolaak\w*|yopiller\w*|yotablet\w*|nukkumaan\w*|natt(en|medicin\w*|piller|pillret|a?tablett\w*)?|laggdags)\b/],
+];
+const FOOD_SAFE_RE = new RegExp(
+  "\\b(no|without|free|safe|ilman|turvalli(nen|sta|set|sia|sin)|utan)\\b" +
+    "|nut-free|allerg" +
+    "|\\bsak(er|ert|ra) for mig\\b" +
+    "|\\b(fri|fria|fritt) fran\\b" +
+    "|\\b(maapahkina|pahkina|gluteeni|laktoosi|maido|maito|kananmuna|muna|soija|vehna|seesami)-?(ton|tonta|ttomat|ttomia)\\b" +
+    "|\\b(jordnots?|hasselnots?|not|mandel|gluten|vete|laktos|mjolk|agg|soja|sesam)-?(fri|fria|fritt)\\b",
+);
+
+function clockSlot(s: string): SlotBucket | undefined {
+  const m = /^(\d{1,2})[:.](\d{2})$/.exec(s.trim());
+  if (!m) return undefined;
+  const h = +m[1], min = +m[2];
+  if (h > 23 || min > 59) return undefined;
+  return h < 11 ? "morning" : h < 15 ? "midday" : h < 21 ? "evening" : "night";
+}
+
+function targetSlot(t: string): string | undefined {
+  const en = EN_SLOTS.find(([, re]) => re.test(t))?.[0];
+  if (en) return en;
+  return NORDIC_SLOTS.find(([, re]) => re.test(t))?.[0];
+}
+
+export function matchesSlot(m: Med, slot: string): boolean {
+  const ts = targetSlot(norm(slot));
+  const want = CANON_SLOT[slot] ?? (ts ? CANON_SLOT[ts] : undefined) ?? clockSlot(slot);
+  if (!want) return false;
+  return m.schedule.some((raw) => {
+    const s = String(raw);
+    const low = s.toLowerCase();
+    if (SCHED.some((w) => CANON_SLOT[w] === want && low.includes(w))) return true;
+    if (clockSlot(s) === want) return true;
+    const n = norm(s);
+    return NORDIC_SLOTS.some(([b, re]) => b === want && re.test(n));
+  });
+}
+
+export function schedWord(m: Med): string | undefined {
+  const buckets = new Set<SlotBucket>();
+  let enWord: string | undefined;
+  let hasNordic = false;
+  for (const raw of m.schedule) {
+    const s = String(raw);
+    const low = s.toLowerCase();
+    for (const w of SCHED) {
+      if (low.includes(w)) {
+        enWord ??= w;
+        buckets.add(CANON_SLOT[w]);
+      }
+    }
+    const n = norm(s);
+    for (const [b, re] of NORDIC_SLOTS) {
+      if (re.test(n)) {
+        hasNordic = true;
+        buckets.add(b);
+      }
+    }
+    const cs = clockSlot(s);
+    if (cs) buckets.add(cs);
+  }
+  if (buckets.size !== 1) return undefined;
+  if (enWord) return enWord;
+  if (hasNordic || m.schedule.length === 1) return [...buckets][0];
+  return undefined;
+}
 
 const EXTRA_SALTS = /\s+(lysine|lysinate|arginate|trometamol|tromethamine|hydrobromide|hbr|hemihydrate|anhydrous)\b/gi;
 const PRODUCT_STRENGTH_RE = /\d+(?:[.,]\d+)?(?:\s*[+/\u2044\u2215]\s*\d+(?:[.,]\d+)?)*\s*(?:%|(?:mg|g|mcg|ug|[\u00b5\u03bc]g|mikrog|mikrogram(?:maa|ma|m)?|microgram(?:mes?|s)?|milligram(?:maa|ma|m|mes?|s)?|gram(?:maa|ma|m|mes?|s)?|ml|millilit(?:ers?|res?|rassa|raa|ra)|iu|ky|ie)\b).*$/i;
@@ -135,8 +217,9 @@ export function buildSceneVerdict(raw: RawItem[], profile: Profile, target?: str
     return out("info", `${items.length} packages seen`, s1 + s2, mine);
   }
 
+  const sw = targetSlot(t);
   // ---- "which one has no nuts / is safe for me" (food) ----
-  if (/\b(no|without|free|safe)\b|nut-free|allerg/.test(t) && !SCHED.some((w) => t.includes(w))) {
+  if (!sw && FOOD_SAFE_RE.test(t)) {
     const safe = items.filter((i) => i.read.kind === "food" && i.level === "info");
     const bad = items.filter((i) => i.level === "warning");
     if (safe.length === 1) {
@@ -150,9 +233,8 @@ export function buildSceneVerdict(raw: RawItem[], profile: Profile, target?: str
   }
 
   // ---- medicine target: schedule word, a med name, or generic "my pill" ----
-  const sw = SCHED.find((w) => t.includes(w));
   const named = profile.meds.filter((m) => [m.name, spokenIngredient(m.ingredient)].some((n) => n && t.includes(norm(n))));
-  const wanted = sw ? profile.meds.filter((m) => schedWord(m) === sw || m.schedule.some((s) => s.toLowerCase().includes(sw))) : named.length ? named : profile.meds;
+  const wanted = sw ? profile.meds.filter((m) => matchesSlot(m, sw)) : named.length ? named : profile.meds;
   const desc = sw ? `your ${sw} pill` : named.length === 1 ? `your ${cap(spokenIngredient(named[0].ingredient) || named[0].name)}` : "your medicine";
   const ids = new Set(wanted.map((m) => m.id));
   const cands = items.filter((i) => i.v.matchedMedId && ids.has(i.v.matchedMedId));
