@@ -135,9 +135,8 @@ const STOP = new Set(("tablet tablets tabletti tabletit tablettia capsule capsul
 function hasWord(hay: string, needle: string): boolean {
   return new RegExp(`(^|[^a-z])${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z]|$)`).test(hay);
 }
-/** Levenshtein, small strings only. */
 function lev(a: string, b: string): number {
-  if (Math.abs(a.length - b.length) > 2) return 99;
+  if (Math.abs(a.length - b.length) > 1) return 99;
   const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
   for (let j = 1; j <= b.length; j++) d[0][j] = j;
   for (let i = 1; i <= a.length; i++)
@@ -145,7 +144,18 @@ function lev(a: string, b: string): number {
       d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
   return d[a.length][b.length];
 }
-const fuzzyEq = (a: string, b: string) => a === b || (a.length >= 6 && b.length >= 6 && lev(a, b) <= 2);
+const INN_STEM = /(dipine|zepam|zolam|prazole|statin|sartan|olol|pril|oxacin|cillin|cycline|mycin|conazole|nidazole|ciclovir|caine|fentanil|setron|triptan|gliptin|gliflozin|tidine|rubicin|platin|lukast|profen|methasone|olone|sone|barbital|citalopram|zopiclone)$/;
+const CHEM_SWAP = new Set(["ol:al", "al:ol", "ate:ite", "ite:ate", "one:ine", "ine:one"]);
+export function fuzzyEq(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (a.length < 7 || b.length < 7 || a.slice(0, 4) !== b.slice(0, 4) || lev(a, b) !== 1) return false;
+  for (const s of ["ol", "al", "ate", "ite", "one", "ine"])
+    for (const t of ["ol", "al", "ate", "ite", "one", "ine"])
+      if (CHEM_SWAP.has(`${s}:${t}`) && a.endsWith(s) && b.endsWith(t)) return false;
+  const sa = INN_STEM.exec(a)?.[0], sb = INN_STEM.exec(b)?.[0];
+  if (sa && sb) return sa === sb && a.length - sa.length >= 5 && b.length - sb.length >= 5;
+  return true;
+}
 
 function medIngredients(m: Med): Set<string> {
   return ingredientsOf(m.ingredient, m.name);
