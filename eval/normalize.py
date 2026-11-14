@@ -65,23 +65,38 @@ UNIT_MAP = {
     "g": "g", "gram": "g", "grams": "g", "ml": "ml", "l": "l", "iu": "iu", "ie": "iu", "ky": "iu", "%": "%",
     "mmol": "mmol", "mg/ml": "mg/ml",
 }
-NUM_UNIT = re.compile(r"(\d+(?:[.,]\d+)?)\s*(mikrogrammaa|mikrogram|micrograms|microgram|milligrammaa|milligrams|"
-                      r"milligram|microg|mikrog|mcg|µg|μg|ug|mg|ml|mmol|iu|ie|ky|g|l|%)(?![a-z])", re.I)
+UNITS_RE = (r"mikrogrammaa|mikrogram|micrograms|microgram|milligrammaa|milligrams|milligram|microg|mikrog|mcg|µg|μg|"
+            r"ug|mg|ml|mmol|iu|ie|ky|g|l|%")
+NUM_UNIT = re.compile(r"(\d+(?:[.,]\d+)?)\s*(" + UNITS_RE + r")(?![a-z])", re.I)
 
 
 def strength_tokens(s: str) -> list[tuple[float, str]]:
     s = fold(s).replace("µ", "u").replace("μ", "u")
+    s = re.sub(r"(?<=\d)[  ](?=\d{3}\b)", "", s)  # thousands separators: "1 000 000 IU"
+    # "160/4.5 mikrog/annos" -> 160 mikrog, 4.5 mikrog
+    s = re.sub(r"(\d+(?:[.,]\d+)?)\s*/\s*(\d+(?:[.,]\d+)?)\s*(" + UNITS_RE + r")(?![a-z])", r"\1 \3 / \2 \3", s)
     toks = []
     for num, unit in NUM_UNIT.findall(s):
         toks.append((float(num.replace(",", ".")), UNIT_MAP.get(unit.lower(), unit.lower())))
     return toks
 
 
-def eq_strength(gt: str, pred: str) -> bool:
+def eq_strength_strict(gt: str, pred: str) -> bool:
+    """Exact: same amounts in the same order (a dropped equivalent like '(3000 IU)' counts as wrong)."""
     g, p = strength_tokens(gt), strength_tokens(pred)
     if not g:
         return norm_text(gt) == norm_text(pred)
     return g == p[: len(g)] and len(p) <= len(g) + 1
+
+
+def eq_strength(gt: str, pred: str) -> bool:
+    """No wrong number: every amount+unit the model reports is printed on the label (so '75 µg' for
+    '75 µg (3000 IU)' is right, '7.5 µg' or '75 mg' is wrong). A dropped secondary/equivalent amount is
+    tracked separately by eq_strength_strict."""
+    g, p = strength_tokens(gt), strength_tokens(pred)
+    if not g:
+        return norm_text(gt) == norm_text(pred)
+    return bool(p) and all(any(abs(x[0] - y[0]) < 1e-9 and x[1] == y[1] for y in g) for x in p)
 
 
 def norm_text(s: str) -> str:
@@ -107,6 +122,11 @@ def eq_ingredient(gt: str, pred: str) -> bool:
     if not g or not p:
         return False
     parts = [x for x in re.split(r"\s*(?:,|\+|/| and | ja | och )\s*", g) if x]
+    # the prompt asks for the INN without the salt ("levothyroxine sodium" -> "levothyroxine")
+    SALTS = r"\s+(sodium|potassium|calcium|magnesium|hydrochloride|hcl|hydrobromide|fumarate|dihydrate|monohydrate|" \
+            r"besilate|besylate|maleate|mesilate|mesylate|succinate|tartrate|citrate|sulphate|sulfate|phosphate|acetate|" \
+            r"bromide|chloride|trihydrate|hemihydrate|anhydrous|dipropionate|propionate|furoate)\b.*$"
+    parts = [re.sub(SALTS, "", x).strip() or x for x in parts]
     def has(part):
         stem = part[: max(5, len(part) - 3)]  # tolerate salt/language suffixes (bisoprololfumar., -iini)
         return stem in p or difflib.SequenceMatcher(None, part, p).ratio() >= 0.85

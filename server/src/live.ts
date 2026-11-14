@@ -6,7 +6,7 @@ import {
   Behavior, FunctionResponseScheduling, Modality, Type,
   type FunctionCall, type FunctionDeclaration, type LiveServerMessage, type Session,
 } from "@google/genai";
-import type { CoachCue, LabelRead, Med, ServerMsg } from "../../shared/types.ts";
+import type { CoachCue, LabelRead, Med, ServerMsg, VerdictLevel } from "../../shared/types.ts";
 import { env, SERVER_DIR } from "./env.ts";
 import { ai, backoffMs } from "./gemini.ts";
 import type { Hub, LiveLike } from "./hub.ts";
@@ -72,6 +72,22 @@ const ADDMED_PROMPT = promptFile("live_addmed.md");
 
 export function toolsFor(features: Set<string>): FunctionDeclaration[] {
   return [...TOOLS, ...(features.has("scene") ? [FIND_ITEM] : []), ...(features.has("addmed") ? [ADD_MEDICATION] : [])];
+}
+
+// Fixed, human-written verdict openers. The safety-critical word (right one / warning / not sure) is never
+// produced by model translation. In FI/SV, only the details after the opener are translated by Live.
+export const VERDICT_LEAD: Record<string, Record<VerdictLevel, string>> = {
+  fi: { match: "Oikea pakkaus.", warning: "Varoitus.", unsure: "En ole varma.", info: "Tieto." },
+  sv: { match: "Rätt förpackning.", warning: "Varning.", unsure: "Jag är inte säker.", info: "Information." },
+};
+export function leadFor(lang: string, level: VerdictLevel): { lead?: string } {
+  const l = VERDICT_LEAD[(lang || "en").slice(0, 2)];
+  return l ? { lead: l[level] } : {};
+}
+export function speakInstruction(lang: string, tail: string): string {
+  return VERDICT_LEAD[(lang || "en").slice(0, 2)]
+    ? `First say \`lead\` exactly as written, then say \`speech\` translated faithfully into the user's language (keep names, numbers and dates exactly), then stop. ${tail}`
+    : `Say \`speech\` word for word, then stop. ${tail}`;
 }
 
 function systemInstruction(hub: Hub, lang: string): string {
@@ -311,7 +327,8 @@ export class LiveProxy implements LiveLike {
           this.respond(fc, {
             level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
             guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
-            instruction: "Say `speech` word for word (translate faithfully if needed), then stop. No disclaimer, add nothing.",
+            ...leadFor(this.opts.lang, v.level),
+            instruction: speakInstruction(this.opts.lang, "No disclaimer, add nothing."),
           });
           log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t, dm: !!v.crossCheck });
           this.lastItemRead = { read, at: Date.now(), gtin: this.hub.freshCode()?.gtin };
@@ -335,7 +352,8 @@ export class LiveProxy implements LiveLike {
           this.respond(fc, {
             mode: "scene", level: v.level, speech: v.speech,
             items: (v.items ?? []).map((i) => ({ position: i.position, level: i.level, headline: i.headline })),
-            instruction: "Say `speech` word for word (translate faithfully if needed), then stop. If they pick one up, call verify_label.",
+            ...leadFor(this.opts.lang, v.level),
+            instruction: speakInstruction(this.opts.lang, "If they pick one up, call verify_label."),
           });
           log("live.find_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_items: v.items?.length ?? 0 });
         } finally {
@@ -418,6 +436,10 @@ export class LiveProxy implements LiveLike {
     const med = this.hub.profile.meds.find((m) => m.id === medId);
     if (!med) return { ok: false, error: "unknown medId" };
     this.hub.profile.doseLog.push({ medId, ts: Date.now() });
+    if (this.hub.lastVerdict?.matchedMedId === medId) {
+      this.hub.lastVerdict = { ...this.hub.lastVerdict, takenToday: true };
+      this.hub.emit({ type: "verdict", verdict: this.hub.lastVerdict }, { clients: false });
+    }
     return { ok: true, med: med.name };
   }
 

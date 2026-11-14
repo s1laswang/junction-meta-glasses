@@ -3,16 +3,24 @@
   "private": true,
   "version": "0.1.0",
   "description": "HoldUp: hands-free label assistant for low-vision users on Meta AI glasses, powered by Gemini Live",
-  "workspaces": ["server", "web"],
+  "workspaces": [
+    "server",
+    "web"
+  ],
   "scripts": {
     "dev": "concurrently -k -n server,web -c blue,magenta \"npm -w server run dev\" \"npm -w web run dev\"",
     "build": "npm -w web run build",
     "start": "npm run build && npm -w server run start",
     "tunnel": "cloudflared tunnel --url http://localhost:8787",
-    "typecheck": "npm -w server run typecheck && npm -w web run typecheck"
+    "typecheck": "npm -w server run typecheck && npm -w web run typecheck",
+    "a11y": "node scripts/a11y-audit.mjs"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "@axe-core/playwright": "^4.10.1",
+    "concurrently": "^9.1.0",
+    "playwright": "^1.49.1"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

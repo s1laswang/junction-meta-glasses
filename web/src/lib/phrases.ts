@@ -1,7 +1,7 @@
 import type { CoachCue, Verdict } from "../../../shared/types.ts";
 
 type Manifest = { model?: string; generated?: string; phrases: Record<string, Record<string, { file: string; text: string }>> };
-type AudioLike = { play(): Promise<void>; pause(): void };
+type AudioLike = { play(): Promise<void>; pause(): void; currentTime?: number };
 type AudioCtor = new (src?: string) => AudioLike;
 let manifest: Manifest | null | undefined;
 let current: AudioLike | undefined;
@@ -46,17 +46,29 @@ export function verdictPhraseId(v: Verdict, via?: string | null): string | null 
   return null;
 }
 
+export function stopPhrase(): void {
+  if (!current) return;
+  try {
+    current.pause();
+  } catch {}
+  try {
+    current.currentTime = 0;
+  } catch {}
+  current = undefined;
+}
+
 export async function playPhrase(id: string, lang = "en"): Promise<boolean> {
   const m = await load();
   const p = m?.phrases[lang]?.[id] ?? m?.phrases.en?.[id];
   const Ctor = (globalThis as { Audio?: AudioCtor }).Audio;
   if (!p || !Ctor) return false;
   try {
-    current?.pause();
+    stopPhrase();
     current = new Ctor(p.file);
     await current.play();
     return true;
   } catch {
+    current = undefined;
     return false;
   }
 }

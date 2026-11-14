@@ -98,7 +98,7 @@ Fallbacks, in order:
 
 **Expected:** a blue **NOT SURE** card (diamond): **"It looks like Metformin…, but I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist."**
 
-**Silas**: "It never guesses a dose. Every field has a confidence, and below the bar it says so."
+**Silas**: "It only states a dose it can read clearly. Every field has a confidence, and below the bar it says so."
 
 - *Fallback:* if the taped box is read as a match (the strength is visible elsewhere on the box), say "It found the strength on the side panel, which is exactly what it should do", and move on.
 - *Optional (only if ahead of time):* the hazelnut snack: "Does this have nuts?" → warning, contains hazelnut.
@@ -130,7 +130,7 @@ Fallbacks:
 ### 2:35–3:00 · Proof and path (slides 7, 10, 11, 12)
 **Momin010** [switches the projector to the deck, slide 7].
 
-**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about one to three seconds instead of six." [slide 10] "We measure the failure that matters: a confident wrong dose. Model image scores are not in yet: [TODO: N, from docs/EVAL.md] labels with known answers, and [TODO: X] confident-wrong strength reads. What we have measured is the rules layer, not the model: 0 of 216 adversarial reads got a reassurance they should not have, and match recall on safe, confident reads was 15/15." (Source: `cd server && npx --yes tsx scripts/eval-rules.ts`, re-run Sat 14 Nov 2026, 20:48 EET, exit 0. It calls `safety.ts` only.) [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
+**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about two to three-and-a-half seconds, median 2.1 seconds over 26 live runs, down from nearly six." [slide 10] "We measure the failure that matters: a confident wrong dose. Gemini built us 1,740 test images with known answers. Out of 754 confident strength reads, zero were wrong. After a stricter allergen rule, 3 in 4,730 answers were silently over-reassuring, down from 49. We narrowed that gap; we haven't closed it." (Source: docs/EVAL.md, eval/results/v1_results.json.) [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
 
 - *Fallback:* if time has run out, jump straight to slide 12 and say the last line.
 

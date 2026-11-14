@@ -8,6 +8,12 @@ const NAME_MIN_CONF = 0.6;
 export const MATCH_NAME_MIN_CONF = 0.8;
 export const MATCH_MIN_READABILITY = 0.5;
 const ALLERGEN_MIN_CONF = 0.6;
+// A "none of your allergens" reassurance needs a near-certain, complete read of the allergen panel.
+// Eval v1 (1,740 synthetic images): at the old 0.6 bar, 43 of 334 answered food reads were unsafe (mostly cropped
+// panels where a nut was off-frame); at conf >= 0.95 and readability >= 0.8, 2 of 117 remained. Warnings
+// (an allergen found) still fire from ALLERGEN_MIN_CONF; only the reassurance is gated.
+export const ALLERGEN_SAFE_CONF = 0.95;
+export const ALLERGEN_SAFE_READABILITY = 0.8;
 
 // ---------- normalisation ----------
 export function norm(s: string | null | undefined): string {
@@ -521,8 +527,19 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
       reasons.push("allergen panel not readable");
       return v("unsure", "Can't read the allergens yet", `This is ${what}, but I can't read the allergen list. ${guidance ?? "Turn the pack to show the ingredients panel."}`);
     }
+    if (read.allergens.confidence < ALLERGEN_SAFE_CONF || read.readability < ALLERGEN_SAFE_READABILITY) {
+      reasons.push("allergen panel may be incomplete");
+      return v("unsure", "Not sure it's free of your allergens", `I can see part of the allergen list on ${what}, but I can't be sure it's complete. ${guidance ?? "Turn the pack so the whole ingredients panel faces you."}`);
+    }
     reasons.push("no listed allergen matches your profile");
     return v("info", `${cap(what)}: none of your allergens`, `${cap(what)}: no ${listAnd(profile.allergies)} listed.${expSpeech}`);
+  }
+  // Eval v2 finding: a blurred milk carton read as kind "other" ("Recovery Gel", readability 0.2). For a user
+  // with allergies, a poorly readable non-medicine must never get a bare "This is X." without an allergen hedge.
+  if (profile.allergies.length && (read.readability < 0.5 || read.allergens.value === null)) {
+    reasons.push(read.readability < 0.5 ? "low readability" : "no allergen list seen");
+    if (read.readability < 0.5) return v("unsure", "Can't see it clearly", `I can't see this clearly enough to be sure what it is. ${guidance ?? "Hold it closer and still."}`);
+    return v("info", cap(what), `This is ${what}. I can't see an allergen list.${expSpeech}`);
   }
   return v("info", cap(what), `This is ${what}.${expSpeech}`);
 }

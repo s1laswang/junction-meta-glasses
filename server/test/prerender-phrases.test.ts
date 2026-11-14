@@ -4,7 +4,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { REPO_ROOT } from "../src/env.ts";
 import { PHRASES } from "../scripts/prerender-phrases.ts";
-import { cuePhraseId, verdictPhraseId } from "../../web/src/lib/phrases.ts";
+import { cuePhraseId, playPhrase, sayPhrase, stopPhrase, verdictPhraseId } from "../../web/src/lib/phrases.ts";
 import type { CoachCue, Verdict } from "../../shared/types.ts";
 
 const EXPECTED_IDS = [
@@ -66,16 +66,21 @@ test("web/public/phrases/manifest.json and all 42 EN/FI/SV audio clips exist wit
     generated: string;
     phrases: Record<string, Record<string, { file: string; text: string }>>;
   };
-  assert.ok(manifest.model.length > 0);
+  assert.equal(manifest.model, "eleven_flash_v2_5");
+  assert.equal(Number.isFinite(Date.parse(manifest.generated)), true);
   let count = 0;
   let totalBytes = 0;
   for (const lang of LANGS) {
     assert.ok(manifest.phrases[lang], `manifest missing lang ${lang}`);
+    const dirFiles = fs.readdirSync(path.join(phrasesDir, lang));
+    assert.equal(dirFiles.length, 14, `expected 14 clips in ${lang}, found ${dirFiles.length}`);
     for (const id of EXPECTED_IDS) {
       const entry = manifest.phrases[lang][id];
       assert.ok(entry, `manifest missing ${lang}/${id}`);
       assert.equal(entry.text, PHRASES[id][lang]);
-      const rel = entry.file.replace(/^\//, "");
+      const expectedExt = id.startsWith("cue_") ? "wav" : "mp3";
+      assert.equal(entry.file, `/phrases/${lang}/${id}.${expectedExt}`);
+      const rel = entry.file.startsWith("/") ? entry.file.slice(1) : entry.file;
       const diskPath = path.join(pubDir, rel);
       assert.equal(fs.existsSync(diskPath), true, `missing clip ${diskPath}`);
       const buf = fs.readFileSync(diskPath);
@@ -95,4 +100,71 @@ test("web/public/phrases/manifest.json and all 42 EN/FI/SV audio clips exist wit
   assert.equal(count, 42);
   const manifestBytes = fs.statSync(manifestPath).size;
   assert.ok(totalBytes + manifestBytes < 2 * 1024 * 1024, `phrases total ${totalBytes + manifestBytes} B exceeds 2 MB`);
+});
+
+test("playPhrase, stopPhrase, and sayPhrase play manifest clips, reset currentTime safely, and fall back cleanly", async () => {
+  const pubDir = path.join(REPO_ROOT, "web", "public");
+  const rawManifest = fs.readFileSync(path.join(pubDir, "phrases", "manifest.json"), "utf8");
+  const prevFetch = globalThis.fetch;
+  const g = globalThis as { Audio?: unknown };
+  const prevAudio = g.Audio;
+
+  const created: { src?: string; paused: number; currentTime: number }[] = [];
+  let throwOnCurrentTime = false;
+  let rejectPlay = false;
+
+  class FakeAudio {
+    src?: string;
+    paused = 0;
+    private time = 4.2;
+    constructor(src?: string) {
+      this.src = src;
+      created.push(this);
+    }
+    get currentTime() {
+      return this.time;
+    }
+    set currentTime(v: number) {
+      if (throwOnCurrentTime) throw new Error("readonly currentTime");
+      this.time = v;
+    }
+    async play() {
+      if (rejectPlay) throw new Error("autoplay blocked");
+    }
+    pause() {
+      this.paused++;
+    }
+  }
+
+  try {
+    globalThis.fetch = (async () => new Response(rawManifest, { status: 200 })) as typeof fetch;
+    g.Audio = FakeAudio;
+
+    stopPhrase();
+    assert.equal(await playPhrase("offline", "fi"), true);
+    assert.equal(created.length, 1);
+    assert.equal(created[0].src, "/phrases/fi/offline.mp3");
+
+    assert.equal(await playPhrase("cue_closer", "sv"), true);
+    assert.equal(created.length, 2);
+    assert.equal(created[0].paused, 1);
+    assert.equal(created[0].currentTime, 0);
+    assert.equal(created[1].src, "/phrases/sv/cue_closer.wav");
+
+    throwOnCurrentTime = true;
+    stopPhrase();
+    assert.equal(created[1].paused, 1);
+    stopPhrase();
+    assert.equal(created[1].paused, 1);
+    throwOnCurrentTime = false;
+
+    rejectPlay = true;
+    const spoken: string[] = [];
+    await sayPhrase("not_sure", "en", (t) => spoken.push(t), "Fallback text");
+    assert.deepEqual(spoken, ["Fallback text"]);
+  } finally {
+    globalThis.fetch = prevFetch;
+    if (prevAudio === undefined) delete g.Audio;
+    else g.Audio = prevAudio;
+  }
 });

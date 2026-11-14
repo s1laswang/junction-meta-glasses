@@ -23,7 +23,7 @@ from pathlib import Path
 
 from common import (DATA, EVAL_DIR, OUT, REPO, SHARED, VERIFY_MODEL, append_jsonl, gen_json, log, pmap,
                     read_jsonl)
-from normalize import COMPARE, canon_allergens
+from normalize import COMPARE, canon_allergens, eq_ingredient, eq_strength_strict
 from safety import verdict as py_verdict
 
 FIELDS = ["product", "ingredient", "strength", "dosing", "expiry", "allergens", "barcode"]
@@ -114,7 +114,15 @@ def predict_one(img_bytes: bytes, prompt: str, schema: dict, mime="image/jpeg"):
 
 # ---------------------------------------------------------------- datasets
 def synthetic_rows():
-    return read_jsonl(DATA / "dataset.jsonl")
+    rows = read_jsonl(DATA / "dataset.jsonl")
+    ov_path = EVAL_DIR / "gt_overrides.json"
+    ov = json.loads(ov_path.read_text()) if ov_path.exists() else {}
+    for r in rows:
+        for f, v in (ov.get(r["spec_id"]) or {}).items():
+            if not f.startswith("_") and f in r["gt"]:
+                r["gt"][f]["value"] = v
+                r["gt"][f]["overridden"] = True
+    return rows
 
 
 def real_rows():
@@ -251,21 +259,66 @@ def agg(items):
         "confident_wrong": len(cw),
         "confident_wrong_rate": pct(len(cw), len(items)),
         "confident_wrong_of_confident": pct(len(cw), sum(1 for i in answered if i["conf"] >= CONF_T)),
+        "k": {  # raw counts, for Wilson CIs in the report
+            "correct_visible": sum(i["outcome"] == "correct" for i in vis),
+            "abstain_visible": sum(i["outcome"] == "abstain" for i in vis),
+            "wrong_visible": sum(i["outcome"] == "wrong" for i in vis),
+            "abstain_hidden": sum(i["outcome"] == "abstain" for i in hid),
+            "wrong_hidden": sum(i["outcome"] == "wrong" for i in hid),
+            "answered": len(answered), "correct_answered": sum(i["outcome"] == "correct" for i in answered),
+            "confident": sum(1 for i in answered if i["conf"] >= CONF_T),
+            "wrong_any": sum(i["outcome"] == "wrong" for i in items),
+        },
     }
 
 
-def calibration(items, bins=(0, .5, .6, .7, .8, .9, .95, 1.0001)):
+def wilson(k: int, n: int, z: float = 1.96):
+    """95% Wilson score interval for k/n, as percentages (lo, hi)."""
+    if not n:
+        return None
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / d
+    return round(100 * max(0.0, c - h), 2), round(100 * min(1.0, c + h), 2)
+
+
+def bootstrap(values, stat, B=1000, seed=0):
+    rng = random.Random(seed)
+    if not values:
+        return None
+    xs = sorted(stat([rng.choice(values) for _ in values]) for _ in range(B))
+    return round(xs[int(0.025 * B)], 3), round(xs[int(0.975 * B) - 1], 3)
+
+
+CAL_BINS = (0, .5, .6, .7, .8, .9, .95, 1.0001)
+
+
+def _ece(ans, bins=CAL_BINS):
+    n = len(ans)
+    if not n:
+        return None
+    e = 0.0
+    for lo, hi in zip(bins[:-1], bins[1:]):
+        b = [i for i in ans if lo <= i["conf"] < hi]
+        if b:
+            acc = sum(i["outcome"] == "correct" for i in b) / len(b)
+            e += len(b) / n * abs(acc - statistics.mean(i["conf"] for i in b))
+    return e
+
+
+def calibration(items, bins=CAL_BINS):
     out = []
     ans = [i for i in items if i["outcome"] != "abstain"]
     for lo, hi in zip(bins[:-1], bins[1:]):
         b = [i for i in ans if lo <= i["conf"] < hi]
-        out.append({"bin": f"[{lo:.2f},{min(hi,1):.2f}{']' if hi > 1 else ')'}", "n": len(b),
+        k = sum(i["outcome"] == "correct" for i in b)
+        out.append({"bin": f"[{lo:.2f},{min(hi,1):.2f}{']' if hi > 1 else ')'}", "n": len(b), "k": k,
                     "mean_conf": round(statistics.mean(i["conf"] for i in b), 3) if b else None,
-                    "accuracy": pct(sum(i["outcome"] == "correct" for i in b), len(b))})
-    # ECE
-    n = len(ans)
-    ece = sum((x["n"] / n) * abs((x["accuracy"] or 0) / 100 - (x["mean_conf"] or 0)) for x in out if x["n"]) if n else None
-    return {"bins": out, "ece": round(ece, 3) if ece is not None else None}
+                    "accuracy": pct(k, len(b)), "acc_ci": wilson(k, len(b))})
+    ece = _ece(ans, bins)
+    return {"bins": out, "n_answered": len(ans), "ece": round(ece, 3) if ece is not None else None,
+            "ece_ci": bootstrap(ans, lambda xs: _ece(xs, bins), B=500)}
 
 
 def threshold_sweep(items, ts=(0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95)):
@@ -311,11 +364,14 @@ def scenarios(row):
         if not ing or not st:
             return out
         base = {"allergies": [], "avoid": [], "doseLog": [], "lang": "en"}
-        out.append(("on_list_same_strength", dict(base, meds=DECOY_MEDS + [
+        # decoys must not share the item's ingredient (else the user really has it on the list)
+        decoys = [d for d in DECOY_MEDS if not (eq_ingredient(d["ingredient"], ing) or eq_ingredient(ing, d["ingredient"])
+                                                or eq_ingredient(d["ingredient"], prod or ""))]
+        out.append(("on_list_same_strength", dict(base, meds=decoys + [
             {"id": "m1", "name": prod, "ingredient": ing, "strength": st, "schedule": ["evening"]}])))
-        out.append(("on_list_other_strength", dict(base, meds=DECOY_MEDS + [
+        out.append(("on_list_other_strength", dict(base, meds=decoys + [
             {"id": "m1", "name": prod, "ingredient": ing, "strength": other_strength(st), "schedule": ["evening"]}])))
-        out.append(("not_on_list", dict(base, meds=DECOY_MEDS)))
+        out.append(("not_on_list", dict(base, meds=decoys)))
     elif row["kind"] == "food":
         al = sorted(set((g["allergens"]["value"] or []) + ((g.get("may_contain") or {}).get("value") or [])))
         base = {"meds": DECOY_MEDS, "avoid": [], "doseLog": [], "lang": "en"}
@@ -380,7 +436,7 @@ def ts_verdicts(cases, ts_path):
 SAFETY_IMPL = {"impl": None}
 
 
-def run_safety(rows, preds, t=None):
+def run_safety(rows, preds, t=None, transform=None):
     """Per-(image, scenario) verdicts from the server's real safety check (TS bridge) or the Python port.
     world   = verdict on the true label (all fields, conf 1)
     visible = verdict an ideal reader would give from what is visible in this image
@@ -390,7 +446,7 @@ def run_safety(rows, preds, t=None):
         p = preds.get(r["img_id"])
         if not p or p.get("error"):
             continue
-        pr = to_label_read(p["pred"])
+        pr = to_label_read(p["pred"]); pr = transform(pr) if transform else pr
         for name, prof in scenarios(r):
             meta.append({"img_id": r["img_id"], "deg": r["deg"], "sev": r["sev"], "kind": r["kind"], "scenario": name})
             cases += [{"read": gt_read(r, False), "profile": prof}, {"read": gt_read(r, True), "profile": prof},
@@ -411,13 +467,35 @@ def run_safety(rows, preds, t=None):
     recs = []
     for i, m in enumerate(meta):
         recs.append(dict(m, world=levels[3 * i], visible=levels[3 * i + 1], pred=levels[3 * i + 2],
-                         pred_reasons=reasons[3 * i + 2][:3]))
+                         pred_reasons=reasons[3 * i + 2][:6], world_reasons=reasons[3 * i][:3]))
     return recs
 
 
 def safety_summary(recs):
     n = len(recs)
-    unsafe = [x for x in recs if x["world"] == "warning" and x["pred"] in ("match", "info")]
+    unsafe_all = [x for x in recs if x["world"] == "warning" and x["pred"] in ("match", "info")]
+    # A match that says "I couldn't read the expiry date" on an expired box is disclosed, not silent.
+    caveated = [x for x in unsafe_all if any("expiry not readable" in r for r in x.get("pred_reasons") or [])
+                and any(r.startswith("expired") for r in x.get("world_reasons") or [])]
+    unsafe = [x for x in unsafe_all if x not in caveated]
+    def cat(x):
+        w = " ".join(x.get("world_reasons") or [])
+        if "allergy:" in w:
+            return "missed_allergen"
+        if "differs" in w:
+            return "wrong_strength_matched"
+        if "not on your" in w:
+            return "not_on_list_matched"
+        if "avoid" in w:
+            return "avoid_list_missed"
+        if "expired" in w:
+            return "expired_date_misread_or_unseen"
+        return "other"
+    for x in unsafe:
+        x["category"] = cat(x)
+    unsafe_by_cat = {}
+    for x in unsafe:
+        unsafe_by_cat[x["category"]] = unsafe_by_cat.get(x["category"], 0) + 1
     false_match = [x for x in recs if x["pred"] == "match" and x["world"] != "match"]
     correct = [x for x in recs if x["pred"] == x["world"]]
     unsure = [x for x in recs if x["pred"] == "unsure"]
@@ -427,14 +505,18 @@ def safety_summary(recs):
         by_scen[x["scenario"]].append(x)
     return {
         "n": n, "unsafe_reassurance": len(unsafe), "unsafe_reassurance_rate": pct(len(unsafe), n),
+        "unsafe_ci": wilson(len(unsafe), n), "correct_k": len(correct), "unsure_k": len(unsure),
+        "correct_ci": wilson(len(correct), n), "unsure_ci": wilson(len(unsure), n),
+        "expired_match_with_caveat": len(caveated), "caveated_examples": caveated[:10],
+        "unsafe_by_category": unsafe_by_cat,
         "false_match": len(false_match), "false_match_rate": pct(len(false_match), n),
         "verdict_correct_vs_world": pct(len(correct), n), "unsure_rate": pct(len(unsure), n),
         "agree_with_ideal_reader": pct(len(agree_vis), n),
         "by_scenario": {k: {"n": len(v), "correct": pct(sum(x["pred"] == x["world"] for x in v), len(v)),
                             "unsure": pct(sum(x["pred"] == "unsure" for x in v), len(v)),
-                            "unsafe": sum(1 for x in v if x["world"] == "warning" and x["pred"] in ("match", "info"))}
+                            "unsafe": sum(1 for x in v if x in unsafe)}
                         for k, v in sorted(by_scen.items())},
-        "unsafe_examples": unsafe[:15],
+        "unsafe_examples": unsafe[:40],
     }
 
 
@@ -453,6 +535,9 @@ def score_set(rows, preds, label):
     per_field_deg = defaultdict(list)
     per_field_degsev = defaultdict(list)
     wrong_examples = []
+    allergen_sets = []
+    field_specs = defaultdict(set)
+    strength_incomplete = []
     lat = []
     errors = 0
     for r in rows:
@@ -468,17 +553,41 @@ def score_set(rows, preds, label):
             c = classify(r, pr, f)
             if c is None:
                 continue
-            per_field[f].append(c)
+            per_field[f].append(c); field_specs[f].add(r["spec_id"])
+            if f == "strength" and c["outcome"] == "correct":
+                gv, _ = gt_value(r, f)
+                pv, _ = pred_field(pr, f)
+                if not eq_strength_strict(gv, pv):  # right numbers, but a printed equivalent/second part dropped
+                    strength_incomplete.append({"img_id": r["img_id"], "gt": gv, "pred": pv, "conf": c["conf"]})
             per_field_deg[(f, r["deg"])].append(c)
             per_field_degsev[(f, r["deg"], r["sev"])].append(c)
-            if c["outcome"] == "wrong" and c["conf"] >= CONF_T and len(wrong_examples) < 60:
+            if c["outcome"] == "wrong" and c["conf"] >= CONF_T and len(wrong_examples) < 400:
                 gv, st = gt_value(r, f)
                 wrong_examples.append({"img_id": r["img_id"], "field": f, "status": st, "gt": gv,
-                                       "pred": pred_field(pr, f)[0], "conf": c["conf"]})
+                                       "pred": pred_field(pr, f)[0], "conf": c["conf"], "deg": r["deg"], "sev": r["sev"]})
+            if f == "allergens" and c["status"] == "visible" and c["outcome"] != "abstain":
+                gv, _ = gt_value(r, f)
+                got = canon_allergens(pred_field(pr, f)[0] or [])
+                allergen_sets.append({"missed": sorted(set(gv) - got), "extra": sorted(got - set(gv)),
+                                      "img_id": r["img_id"], "conf": c["conf"]})
     allf = [c for f in FIELDS for c in per_field[f]]
+    na = len(allergen_sets)
+    allergen_recall = {
+        "n_answered_visible": na,
+        "all_allergens_found": pct(sum(not x["missed"] for x in allergen_sets), na),
+        "missed_any": sum(1 for x in allergen_sets if x["missed"]),
+        "all_found_ci": wilson(sum(not x["missed"] for x in allergen_sets), na),
+        "missed_confident_ci": wilson(sum(1 for x in allergen_sets if x["missed"] and x["conf"] >= 0.6), na),
+        "missed_any_confident": sum(1 for x in allergen_sets if x["missed"] and x["conf"] >= 0.6),
+        "extra_any": sum(1 for x in allergen_sets if x["extra"]),
+        "missed_examples": [x for x in allergen_sets if x["missed"]][:20],
+    }
     res = {
         "label": label, "images_scored": len(lat), "errors": errors,
-        "latency_s": {"p50": quantile(lat, .5), "p95": quantile(lat, .95), "mean": round(statistics.mean(lat), 2) if lat else None},
+        "latency_s": {"n": len(lat), "p50": quantile(lat, .5), "p95": quantile(lat, .95),
+                      "p50_ci": bootstrap(lat, lambda xs: quantile(xs, .5)),
+                      "p95_ci": bootstrap(lat, lambda xs: quantile(xs, .95)),
+                      "mean": round(statistics.mean(lat), 2) if lat else None},
         "overall": agg(allf),
         "per_field": {f: agg(v) for f, v in per_field.items()},
         "per_field_deg": {f"{f}|{d}": agg(v) for (f, d), v in sorted(per_field_deg.items())},
@@ -487,7 +596,9 @@ def score_set(rows, preds, label):
         "calibration_strength": calibration(per_field["strength"]),
         "threshold_sweep_strength": threshold_sweep(per_field["strength"]),
         "threshold_sweep_all": threshold_sweep(allf),
-        "confident_wrong_examples": wrong_examples,
+        "confident_wrong_examples": sorted(wrong_examples, key=lambda e: (e["field"] != "strength", e["field"])),
+        "allergen_recall": allergen_recall,
+        "specs_per_field": {k: len(v) for k, v in field_specs.items()}, "strength_incomplete": {"n": len(strength_incomplete), "examples": strength_incomplete[:20]},
     }
     sweeps = {}
     recs = run_safety(rows, preds, None)  # server's safety.ts if node+tsx available
@@ -496,8 +607,28 @@ def score_set(rows, preds, label):
     sweeps["server"]["by_deg"] = {d: safety_summary([x for x in recs if x["deg"] == d]) for d in sorted({x["deg"] for x in recs})}
     for d in sweeps["server"]["by_deg"].values():
         d.pop("by_scenario", None); d.pop("unsafe_examples", None)
-    for t in (0.6, 0.7, 0.8, 0.9):
-        sweeps[f"py_t{t}"] = safety_summary(run_safety(rows, preds, t))
+    # Counterfactual policies, applied to the model's read before the same safety.ts runs.
+    import copy
+
+    def food_partial_unsure(r):
+        r = copy.deepcopy(r)
+        if r["kind"] == "food" and (r["readability"] < 0.7 or r.get("guidance")) and r["allergens"]["value"] is not None:
+            r["allergens"]["confidence"] = min(r["allergens"]["confidence"], 0.3)
+        return r
+
+    def expiry_09(r):
+        r = copy.deepcopy(r)
+        if r["expiry"]["value"] and r["expiry"]["confidence"] < 0.9:
+            r["expiry"]["confidence"] = min(r["expiry"]["confidence"], 0.5)
+        return r
+
+    variants = {"A_food_partial_panel_unsure": food_partial_unsure, "B_expiry_trust_0.9": expiry_09,
+                "A+B": lambda r: expiry_09(food_partial_unsure(r))}
+    if SAFETY_IMPL["impl"] and "safety.ts" in SAFETY_IMPL["impl"]:
+        for name, fn in variants.items():
+            s = safety_summary(run_safety(rows, preds, None, transform=fn))
+            s.pop("unsafe_examples", None); s.pop("caveated_examples", None)
+            sweeps["variant " + name] = s
     res["safety"] = sweeps
     return res
 

@@ -9,7 +9,7 @@ Goal: by Sun 05:00, at least **one real person with low vision, or a screen-read
 4. **Your own network:** a grandparent or older relative who manages several medicines is a valid user too (the second audience). A 10-minute video call is fine.
 
 ### Message template (EN; translate to FI as needed)
-> Hi! We're a student team at Junction 2026 (Helsinki) building **HoldUp**, a free prototype on Meta AI glasses that helps blind and low-vision people check a medicine box or food package hands-free. You hold it up, it guides you by voice until the label is readable, and then it tells you whether it's *your* evening pill or contains your allergen. It never guesses a dose. Could you, or someone you know who's blind or has low vision, try it for 10 minutes on Sunday morning (on site or by video), or give us 5 minutes of honest feedback? No data about you is stored. Thank you!
+> Hi! We're a student team at Junction 2026 (Helsinki) building **HoldUp**, a free prototype on Meta AI glasses that helps blind and low-vision people check a medicine box or food package hands-free. You hold it up, it guides you by voice until the label is readable, and then it tells you whether it's *your* evening pill or contains your allergen. It only states a dose it can read clearly; otherwise it says it isn't sure. Could you, or someone you know who's blind or has low vision, try it for 10 minutes on Sunday morning (on site or by video), or give us 5 minutes of honest feedback? No data about you is stored. Thank you!
 
 ## The 10-minute session
 1. **Consent (read aloud, record a verbal yes):**

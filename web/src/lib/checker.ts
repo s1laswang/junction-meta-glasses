@@ -159,6 +159,7 @@ export class Checker {
   private readinessTimer: ReturnType<typeof setTimeout> | null = null;
   private proposalTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingText: string | null = null;
+  private mockHudCh: BroadcastChannel | null = null;
   onProfileChange?: (p: Profile) => void;
 
   constructor() {
@@ -177,7 +178,19 @@ export class Checker {
     navigator.mediaDevices?.addEventListener?.("devicechange", this.onDeviceChange);
     if (IS_MOCK) {
       const ch = mockHudChannel();
-      if (ch) ch.onmessage = (e: MessageEvent<{ type?: string; name?: string }>) => e.data?.type === "hud_event" && this.onHudEvent(e.data.name ?? "");
+      this.mockHudCh = ch;
+      if (ch) {
+        ch.onmessage = (e: MessageEvent<{ type?: string; name?: string }>) => {
+          if (e.data?.type === "hud_event") this.onHudEvent(e.data.name ?? "");
+          else if (e.data?.type === "hud_hello") {
+            this.set({ hudConnected: true });
+            ch.postMessage({ type: "status", live: this.s.serverLive ?? "open" });
+            if (this.s.device) ch.postMessage({ type: "device", device: this.s.device });
+            if (this.s.cue) ch.postMessage({ type: "coach", cue: this.s.cue.cue, text: this.s.cue.text });
+            if (this.s.verdict) ch.postMessage({ type: "verdict", verdict: this.s.verdict });
+          }
+        };
+      }
     }
     void this.checkHealth();
     this.healthTimer = setInterval(() => void this.checkHealth(), 10_000);
@@ -579,6 +592,7 @@ export class Checker {
     this.stopSonar();
     this.verdictAt = Date.now();
     this.set({ verdict: v, verdictVia: via, cue: null, checking: false });
+    if (IS_MOCK && via === "offline") this.mockHudCh?.postMessage({ type: "verdict", verdict: v });
     earconForVerdict(v.level);
     haptic.verdict(v.level);
     announce(`${levelWord(v.level)}. ${v.headline}. ${v.speech}`, "assertive");
@@ -624,7 +638,9 @@ export class Checker {
     const med = p.meds.find((m) => m.id === v.matchedMedId);
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const msg = `Logged ${med?.name ?? "dose"} at ${time}. Saved on this phone only.`;
-    this.set({ verdict: { ...v, takenToday: true } });
+    const next = { ...v, takenToday: true };
+    this.set({ verdict: next });
+    if (IS_MOCK && !this.live?.isOpen) this.mockHudCh?.postMessage({ type: "verdict", verdict: next });
     earcon.ok();
     announce(msg, "assertive");
     if (this.s.mode !== "live" || IS_MOCK) speak(msg);
@@ -1000,6 +1016,8 @@ export class Checker {
     document.removeEventListener("visibilitychange", this.onVisibility);
     navigator.mediaDevices?.removeEventListener?.("devicechange", this.onDeviceChange);
     if (this.healthTimer) clearInterval(this.healthTimer);
+    this.mockHudCh?.close();
+    this.mockHudCh = null;
     void this.player.close();
   }
 }

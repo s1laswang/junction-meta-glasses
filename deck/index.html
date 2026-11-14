@@ -195,8 +195,9 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <h3>What exists today</h3>
       <ul class="bul">
         <li><b>Braille on the box</b> gives the name (EU law): not the pharmacy dosing sticker, expiry or allergens.</li>
-        <li><b>Phone OCR apps</b> need a third hand and read everything, with no idea what matters to <i>you</i>.</li>
-        <li><b>Calling a person</b> costs independence, and medication is private.</li>
+        <li><b>Seeing AI</b> (phone OCR) needs a free hand to aim blind; reads raw text with no med or allergy check.</li>
+        <li><b>Be My Eyes</b> calls a volunteer (private meds) or describes scenes with no <code>safety.ts</code> or pack-code check.</li>
+        <li><b>Built-in "Hey Meta"</b> describes a scene without a 0.8 dose gate, personal regimen, or dose log.</li>
       </ul>
     </div>
   </div>
@@ -227,9 +228,9 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <ol class="loop">
     <li class="step"><span class="n">01</span><h3>Ask</h3><p><b>“Is this my evening pill?”</b> By voice, typed text, the big button, or a Bluetooth play/pause tap.</p></li>
     <li class="step"><span class="n">02</span><h3>Coach</h3><p>Gemini Live watches ~1 frame/s and gives <b>one physical cue at a time</b>. Cue arrow on screen and HUD, plus an earcon and a vibration.</p></li>
-    <li class="step"><span class="n">03</span><h3>Read</h3><p><code>verify_label</code>: the 2 sharpest recent frames, strict JSON schema, <b>a confidence for every field</b>, null when not legible.</p></li>
+    <li class="step"><span class="n">03</span><h3>Read</h3><p><code>verify_label</code>: up to 2 sharpest frames from the last 1.5 s (often 1 on the glasses at ~1 fps), strict JSON schema, <b>a confidence for every field</b>, null when not legible.</p></li>
     <li class="step"><span class="n">04</span><h3>Check</h3><p>Deterministic rules against <b>your on-device profile</b>: medicines, strengths, schedule, allergies, avoid list, expiry, today's doses.</p></li>
-    <li class="step"><span class="n">05</span><h3>Answer</h3><p>Spoken <b>word for word</b> from the checker, with a verdict card on the phone and in the lens.</p></li>
+    <li class="step"><span class="n">05</span><h3>Answer</h3><p>The checker writes the sentence; Live is instructed to say it as written (FI/SV: fixed openers, details translated). The verdict card on the phone and in the lens is deterministic.</p></li>
     <li class="step"><span class="n">06</span><h3>Log</h3><p><b>“I took it”</b> saves the dose on the phone, so next time: “You already took it today.”</p></li>
   </ol>
   <div class="verdicts" role="list" aria-label="The three verdicts, as spoken">
@@ -291,7 +292,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <text x="646" y="30" font-weight="800" font-size="19">Server · Node + TS</text>
       <text x="646" y="52" fill="#b3bdcc" font-size="14">one HTTPS origin via cloudflared</text>
       <g font-size="15">
-        <text x="646" y="88"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">/live</tspan> Live proxy, 3 tools</text>
+        <text x="646" y="88"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">/live</tspan> Live proxy, 5 tools</text>
         <text x="646" y="120">Frame ring (8, memory only)</text>
         <text x="646" y="152">Speculative verify cache</text>
         <text x="646" y="184"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">verify_label</tspan> reader</text>
@@ -345,7 +346,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
         <li>Audio + video in, native audio out, transcripts, barge-in.</li>
         <li>Tools: <code>verify_label</code>, <code>show_cue</code> (non-blocking, silent), <code>log_dose</code>.</li>
         <li>Session resumption + context compression: drops keep context.</li>
-        <li><b>Hard rule:</b> Live never states a name, dose, expiry or allergen from its own view; it calls the reader and speaks the result word for word.</li>
+        <li><b>Hard rule:</b> Live never states a name, dose, expiry or allergen from its own view; it calls the reader and is instructed to say the checker's sentence as written (not enforced; the card is deterministic).</li>
       </ul>
     </div>
     <div class="card">
@@ -361,25 +362,25 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <h3>Speculative verify</h3>
       <p class="small" style="color:var(--text)">While you are still asking, the server already reads the sharpest new frame (one call in flight, ≥ 2 s apart). The tool call is answered from that cache, or joins the read in flight.</p>
       <div class="bars" role="img" aria-labelledby="s7-chart-t">
-        <span id="s7-chart-t" class="sr-only">Latency from server logs. Question to first spoken audio: 5.8 seconds before speculative verify, 0.8 to 3.3 seconds now. One verify call: 2.7 to 3.7 seconds. Cache hit: under 5 milliseconds.</span>
-        <div class="bar"><div class="lab"><b>0.8–3.3 s</b>question → first audio, now</div><div class="track"><div class="seg range" style="left:13.3%; width:41.7%"></div></div></div>
+        <span id="s7-chart-t" class="sr-only">Latency from server logs. Question to first spoken audio: 5.8 seconds before speculative verify (one run), now median 2.1 seconds, 95th percentile 3.4 seconds over 26 sessions. One verify call: median 3.4 seconds, 95th percentile 5.6 seconds (1,740 eval calls). Cache hit: under 5 milliseconds.</span>
+        <div class="bar"><div class="lab"><b>2.1 s p50 · 3.4 s p95</b>question → first audio, now (n=26 sessions)</div><div class="track"><div class="seg range" style="left:35%; width:22.5%"></div></div></div>
         <div class="bar"><div class="lab"><b>5.8 s</b>before speculative verify</div><div class="track"><div class="seg old" style="left:0; width:96.7%"></div></div></div>
-        <div class="bar"><div class="lab"><b>2.7–3.7 s</b>one verify call (Flash)</div><div class="track"><div class="seg range" style="left:45%; width:16.7%"></div></div></div>
+        <div class="bar"><div class="lab"><b>3.4 s p50 · 5.6 s p95</b>one verify call (Flash, n=1,740)</div><div class="track"><div class="seg range" style="left:57%; width:36%"></div></div></div>
         <div class="bar"><div class="lab"><b>&lt; 5 ms</b>speculative cache hit</div><div class="track"><div class="seg range" style="left:0; width:4px"></div></div></div>
         <div class="axis" aria-hidden="true"><span></span><div class="ticks"><span style="left:0">0</span><span style="left:50%">3 s</span><span style="left:100%">6 s</span></div></div>
       </div>
     </div>
   </div>
   <div class="card" style="padding:12px 20px">
-    <p style="font-size:16.5px"><b class="accent">Why Gemini specifically:</b> one API gives us realtime audio+video with tool calls mid-conversation, schema-constrained vision with thinking control, native-audio voices, TTS, and image generation to build our own eval set. Every call is metered: <code>/api/stats</code> reports p50/p95 latency, first-audio time, tool latency and tokens per feature from a metadata-only ledger.</p>
+    <p style="font-size:16.5px"><b class="accent">Why Gemini specifically:</b> one API gives us realtime audio+video with tool calls mid-conversation, schema-constrained vision with thinking control, native-audio voices, TTS, and image generation to build our own eval set. Every call is metered: <code>/api/stats</code> reports p50/p95 latency, first-audio time, tool latency and tokens per feature from a metadata-only ledger. Measured on 150 paired images: all models 0 confident-wrong strengths, but Gemma 4 31B was confidently wrong on other fields twice as often (7.2% vs 3.6%, mostly allergens), gave the only unsafe reassurances (2/377) and was ~9× slower.</p>
   </div>
-  <div class="foot"><span class="src">Latency: server logs and /api/stats, Sat 14 Nov 2026, demo laptop over venue Wi-Fi. <span class="todo">TODO: refresh p50/p95 from /api/stats after rehearsal</span></span><span class="pg">7</span></div>
+  <div class="foot"><span class="src">Latency: server logs and /api/stats, Sat 14 Nov 2026, demo laptop over venue Wi-Fi; verify p50/p95 from the 1,740-call eval (docs/EVAL.md).</span><span class="pg">7</span></div>
 </section>
 
 <!-- 8 TRUST -->
 <section class="slide" aria-roledescription="slide" aria-labelledby="s8-h">
   <p class="eyebrow">Trust and safety</p>
-  <h2 id="s8-h">It never guesses a dose. It doesn't keep your pictures.</h2>
+  <h2 id="s8-h">No clear read, no dose. It doesn't keep your pictures.</h2>
   <div class="grid2">
     <div class="card">
       <h3>Honest answers</h3>
@@ -387,7 +388,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
         <li><b>Per-field confidence</b>, shown on the card: “What I read, and how sure I am”.</li>
         <li>A strength counts only at confidence ≥ 0.8. A “yes, it's yours” also needs a confident name (≥ 0.8) and a readable label. Otherwise: <b>Not sure</b>, plus how to turn the box.</li>
         <li><b>Deterministic rules, no model</b> (<code>safety.ts</code>, unit-tested): wrong strength, not on your list, avoid list by drug class (NSAIDs), allergen synonyms (arachis oil → peanut, whey → milk, Finnish, Swedish), expired, already taken today.</li>
-        <li>Not a medical device: uncertain cases go to a pharmacist.</li>
+        <li>Regulation: a med-list check is likely EU MDR software (Class IIa, Rule 11). So the pilot runs as a supervised study with NKL and pharmacists before any CE path. Uncertain cases always go to a pharmacist.</li>
       </ul>
     </div>
     <div class="card">
@@ -439,16 +440,16 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <li class="step"><span class="n">05 · Product</span><h3>Score</h3><p>The shipped prompt, schema and <code>safety.ts</code> run on every image and profile.</p></li>
   </ol>
   <div class="grid4">
-    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>images scored (synthetic) + <span class="todo">TODO</span> real photos</p></div>
-    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>confident-wrong strength reads (confidence ≥ 0.8)</p></div>
-    <div class="card stat"><p class="num">0<small>/216</small></p><p>unsafe reassurances. Rules layer only, not the model. Match recall 15/15.</p></div>
-    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>strength accuracy when readable · calibration ECE <span class="todo">TODO</span></p></div>
+    <div class="card stat"><p class="num">1,740</p><p>images scored: 172 Gemini-written labels → 210 renders (170 front, 40 back) → a sampled mix: 170 clean, 40 back-of-box, ~1,530 degraded (6 types, 3 severities). 0 API errors</p></div>
+    <div class="card stat"><p class="num">0<small>/754</small></p><p>confident-wrong strength reads (confidence ≥ 0.8). 95% upper bound 0.4%. Product names: 42/1,173 (3.6%) confident-wrong, mostly strength missing from the name</p></div>
+    <div class="card stat"><p class="num">0.06%</p><p>silent unsafe reassurances end to end, after the allergen gate: 3/4,730 (CI 0.02–0.19%; was 49 = 1.0%). Cost: safe foods now get "not sure" more often (34% vs 68% told "allergen-free")</p></div>
+    <div class="card stat"><p class="num">0%</p><p>wrong strength when readable (83% read, 17% abstained, n=926) · calibration ECE 0.022</p></div>
   </div>
   <div class="grid2">
-    <div class="card"><h3>Real photos as the cross-check</h3><p>30 labels photographed at head height by the team: Finnish pharmacy boxes, food allergen panels and deliberately hard cases (glare, curved bottles, tiny print). <span class="todo">TODO: real-photo results</span></p></div>
+    <div class="card"><h3>Next: real photos</h3><p>Synthetic labels are the start. Scoring the team's own photos of Finnish pharmacy boxes and food panels comes next, reported separately (not yet scored).</p></div>
     <div class="card"><h3>Honest caveat</h3><p>The legibility check uses the same model family as the reader, which may make synthetic ground truth easier. That is why the headline metric is <b>unsafe reassurance</b>, and why real photos are scored separately.</p></div>
   </div>
-  <div class="foot"><span class="src">In repo: docs/EVAL.md. 0/216 is the rules eval, not a model score. Image counts, confident-wrong reads, accuracy and ECE are still unmeasured.</span><span class="pg">10</span></div>
+  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json. gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">10</span></div>
 </section>
 
 <!-- 11 ADOPTION -->

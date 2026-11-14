@@ -162,7 +162,7 @@ def check(img: bytes, s: dict, back: bool) -> dict:
         f"not legible/matching.\n\nExpected ({'BACK side view' if back else 'main label'}):\n{exp_txt}"
     )
     contents = [types.Part.from_bytes(data=img, mime_type="image/jpeg"), prompt]
-    data, _, _ = gen_json(CHECK_MODEL, contents, schema=CHECK_SCHEMA, thinking="high", max_tokens=8192,
+    data, _, _ = gen_json(CHECK_MODEL, contents, schema=CHECK_SCHEMA, thinking="high", max_tokens=24576,
                           feature="gen_images.check", label="check")
     return data
 

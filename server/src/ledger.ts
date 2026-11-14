@@ -9,19 +9,20 @@ export type LedgerLine = {
   latency_s: number; ok: boolean; [k: string]: unknown;
 };
 
-let dirReady = false;
+let readyDir = "";
 let writes = 0;
 const LEDGER_MAX_BYTES = 5 * 1024 * 1024;
 export function ledger(line: Omit<LedgerLine, "ts"> & { ts?: number }) {
   const row = { ts: Date.now(), ...line };
   try {
-    if (!dirReady) { fs.mkdirSync(path.dirname(env.ledgerPath), { recursive: true }); dirReady = true; }
-    // retention: keep at most ~2 x 5 MB (current + one rotated file)
+    const target = env.ledgerPath;
+    const dir = path.dirname(target);
+    if (readyDir !== dir) { fs.mkdirSync(dir, { recursive: true }); readyDir = dir; }
     if (++writes % 200 === 1) {
-      try { if (fs.statSync(env.ledgerPath).size > LEDGER_MAX_BYTES) fs.renameSync(env.ledgerPath, env.ledgerPath + ".1"); } catch { /* no file yet */ }
+      try { if (fs.statSync(target).size > LEDGER_MAX_BYTES) fs.renameSync(target, target + ".1"); } catch {}
     }
-    fs.appendFile(env.ledgerPath, JSON.stringify(row) + "\n", () => {});
-  } catch { /* ledger must never break the product */ }
+    fs.appendFileSync(target, JSON.stringify(row) + "\n");
+  } catch {}
 }
 
 /** Pull token counts from a generateContent usageMetadata (shape-tolerant). */
