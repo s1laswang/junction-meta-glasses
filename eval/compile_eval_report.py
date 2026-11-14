@@ -269,7 +269,57 @@ WAVE7_ARTIFACT_SPECS = [
 ]
 
 WAVE7_SUITE_IDS = [spec["id"] for spec in WAVE7_ARTIFACT_SPECS]
-OPTIONAL_SUITE_IDS = [*EXTENDED_SUITE_IDS, *WAVE6_SUITE_IDS, *WAVE7_SUITE_IDS]
+
+WAVE8_ARTIFACT_SPECS = [
+    {
+        "id": "blister_strip_cuts_results",
+        "filename": "blister_strip_cuts_results.json",
+        "title": "Scissor-Trimmed & Popped Blister Strip Foil Cut Benchmark",
+        "dimension": "Scissor-Trimmed & Popped Blister Strip Cuts",
+        "category": "blister_cut_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_blister_strip_cuts.py",
+    },
+    {
+        "id": "two_boxes_in_frame_results",
+        "filename": "two_boxes_in_frame_results.json",
+        "title": "Two Boxes in Frame & Countertop Multi-Package Clutter Benchmark",
+        "dimension": "Two Boxes in Frame & Multi-Package Clutter",
+        "category": "multi_box_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_two_boxes_in_frame.py",
+    },
+    {
+        "id": "cellophane_tremor_results",
+        "filename": "cellophane_tremor_results.json",
+        "title": "Glossy Cellophane Overwrap Glare & Hand-Tremor Compound Benchmark",
+        "dimension": "Cellophane Overwrap Glare & Hand-Tremor Compound",
+        "category": "compound_optical_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_cellophane_tremor.py",
+    },
+    {
+        "id": "ws_reconnect_resilience",
+        "filename": "ws_reconnect_resilience.json",
+        "title": "WebSocket /hud-ws Flap Replay & Hostile Payload Storm Resilience Benchmark",
+        "dimension": "WebSocket Flap Replay & Hostile Payload Storm",
+        "category": "resilience_systems",
+        "primary_model": "node-24-loopback",
+        "repro_cmd": "/venv/bin/python3 eval/eval_ws_reconnect_resilience.py",
+    },
+    {
+        "id": "spoken_verdict_clarity_results",
+        "filename": "spoken_verdict_clarity_results.json",
+        "title": "Spoken Safety Verdict Clarity, Brevity & EU MDR Boundary Judge Benchmark",
+        "dimension": "Spoken Verdict Clarity, Caps & EU MDR Boundary",
+        "category": "spoken_clarity_judge",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_spoken_verdict_clarity.py",
+    },
+]
+
+WAVE8_SUITE_IDS = [spec["id"] for spec in WAVE8_ARTIFACT_SPECS]
+OPTIONAL_SUITE_IDS = [*EXTENDED_SUITE_IDS, *WAVE6_SUITE_IDS, *WAVE7_SUITE_IDS, *WAVE8_SUITE_IDS]
 
 
 def clean_text(val: Any) -> str:
@@ -428,6 +478,9 @@ def item_is_verdict_match(item: dict[str, Any]) -> bool | None:
         if isinstance(item.get(key), bool):
             return item[key]
     pred = item_verdict_level(item)
+    acc = item.get("accepted_levels")
+    if pred and isinstance(acc, list) and acc and all(isinstance(x, str) for x in acc):
+        return pred in acc
     exp = item_expected_level(item)
     if pred and exp:
         return pred == exp
@@ -2592,6 +2645,589 @@ def normalize_wave7_suite(suite_id: str, data: dict[str, Any]) -> dict[str, Any]
     return base
 
 
+def normalize_ws_reconnect_resilience(data: dict[str, Any]) -> dict[str, Any]:
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    containers = [summary, data] if summary is not data else [summary]
+
+    flap_obj = _first_dict(containers, ["hud_flap_reconnect_benchmark", "hud_flap", "reconnect_benchmark", "flap"])
+    storm_obj = _first_dict(containers, ["hostile_payload_storm_benchmark", "hostile_storm", "payload_storm", "storm"])
+    rep_lat_obj = _first_dict([flap_obj, *containers], ["replay_reconnect_latency_ms", "reconnect_latency_ms"])
+    ping_obj = _first_dict([storm_obj, *containers], ["post_storm_ping_pong", "ping_pong_after_storm"])
+    ping_lat_obj = _first_dict([ping_obj], ["latency_ms"])
+
+    n_reconnect = to_int(first_val(summary, ["n_reconnect_cycles", "reconnect_cycles", "n_flap_cycles"]))
+    if n_reconnect is None:
+        n_reconnect = to_int(first_val(flap_obj, ["n_reconnect_cycles", "reconnect_cycles", "n_cycles"]))
+
+    complete_replays = to_int(first_val(summary, ["complete_4_msg_replays", "complete_replays"]))
+    if complete_replays is None:
+        complete_replays = to_int(first_val(flap_obj, ["complete_4_msg_replays", "complete_replays"]))
+
+    replay_rate = to_rate(first_val(summary, ["replay_completeness_rate", "replay_pass_rate", "completeness_rate"]))
+    if replay_rate is None:
+        replay_rate = to_rate(first_val(flap_obj, ["replay_completeness_rate", "replay_pass_rate"]))
+    if replay_rate is None and complete_replays is not None and n_reconnect and n_reconnect > 0:
+        replay_rate = round(complete_replays / n_reconnect, 4)
+    if complete_replays is None and replay_rate is not None and n_reconnect and n_reconnect > 0:
+        complete_replays = int(round(replay_rate * n_reconnect))
+
+    rep_samples = flap_obj.get("samples_ms") if isinstance(flap_obj.get("samples_ms"), list) else []
+    sample_nums = [x for s in rep_samples if (x := to_num(s)) is not None]
+
+    rep_p50 = to_num(first_val(summary, ["replay_reconnect_p50_ms", "reconnect_p50_ms"]))
+    if rep_p50 is None:
+        rep_p50 = to_num(first_val(rep_lat_obj, ["p50", "p50_ms", "median", "median_ms"]))
+    if rep_p50 is None and sample_nums:
+        xs = sorted(sample_nums)
+        mid = len(xs) // 2
+        rep_p50 = xs[mid] if len(xs) % 2 == 1 else (xs[mid - 1] + xs[mid]) / 2.0
+
+    rep_p95 = to_num(first_val(summary, ["replay_reconnect_p95_ms", "reconnect_p95_ms"]))
+    if rep_p95 is None:
+        rep_p95 = to_num(first_val(rep_lat_obj, ["p95", "p95_ms", "max", "max_ms"]))
+    if rep_p95 is None and sample_nums:
+        xs = sorted(sample_nums)
+        idx95 = min(len(xs) - 1, int(math.ceil(0.95 * len(xs))) - 1)
+        rep_p95 = xs[max(0, idx95)]
+
+    wire_bytes = to_int(first_val(summary, ["replay_wire_bytes_per_cycle", "replay_wire_bytes"]))
+    if wire_bytes is None:
+        wire_bytes = to_int(first_val(flap_obj, ["replay_wire_bytes_per_cycle", "replay_wire_bytes"]))
+
+    n_hostile = to_int(first_val(summary, ["n_hostile_payloads", "hostile_payloads", "n_storm_payloads"]))
+    if n_hostile is None:
+        n_hostile = to_int(first_val(storm_obj, ["n_hostile_payloads", "hostile_payloads"]))
+    if n_hostile is None and isinstance(storm_obj.get("categories"), dict):
+        sent_counts = [
+            s
+            for cat in storm_obj["categories"].values()
+            if isinstance(cat, dict) and (s := to_int(cat.get("sent"))) is not None
+        ]
+        if sent_counts:
+            n_hostile = sum(sent_counts)
+
+    graceful_cnt = to_int(first_val(summary, ["graceful_rejections", "graceful_rejection_count"]))
+    if graceful_cnt is None:
+        graceful_cnt = to_int(first_val(storm_obj, ["graceful_rejections", "graceful_rejection_count"]))
+    if graceful_cnt is None and isinstance(storm_obj.get("categories"), dict):
+        gr_counts = [
+            g
+            for cat in storm_obj["categories"].values()
+            if isinstance(cat, dict) and (g := to_int(cat.get("graceful"))) is not None
+        ]
+        if gr_counts:
+            graceful_cnt = sum(gr_counts)
+
+    graceful_rate = to_rate(first_val(summary, ["graceful_rejection_rate", "hostile_rejection_rate", "rejection_rate"]))
+    if graceful_rate is None:
+        graceful_rate = to_rate(first_val(storm_obj, ["graceful_rejection_rate", "rejection_rate"]))
+    if graceful_rate is None and graceful_cnt is not None and n_hostile and n_hostile > 0:
+        graceful_rate = round(graceful_cnt / n_hostile, 4)
+    if graceful_cnt is None and graceful_rate is not None and n_hostile and n_hostile > 0:
+        graceful_cnt = int(round(graceful_rate * n_hostile))
+
+    crash_cnt = to_int(first_val(summary, ["server_crash_count", "crashes", "crash_count"]))
+    if crash_cnt is None:
+        crash_cnt = to_int(first_val(storm_obj, ["server_crash_count", "unhandled_exception_or_rejection_count", "crash_count"]))
+    if crash_cnt is None:
+        crash_cnt = 0
+
+    ping_ms = to_num(first_val(summary, ["ping_pong_after_storm_ms", "post_storm_ping_pong_p50_ms"]))
+    if ping_ms is None:
+        ping_ms = to_num(first_val(ping_lat_obj, ["p50", "p50_ms", "median"]))
+    if ping_ms is None:
+        ping_ms = to_num(first_val(ping_obj, ["p50_ms", "first_probe_ms"]))
+
+    post_frames = to_int(first_val(summary, ["post_storm_buffered_frames", "post_disconnect_buffered_frames"]))
+    if post_frames is None:
+        post_frames = to_int(first_val(storm_obj, ["post_storm_buffered_frames", "post_disconnect_buffered_frames"]))
+
+    leaked_refs = to_int(first_val(summary, ["leaked_hud_refs_in_health", "leaked_hud_refs", "post_storm_leaked_hud_refs"]))
+    if leaked_refs is None:
+        leaked_refs = to_int(
+            first_val(storm_obj, ["post_storm_leaked_hud_refs", "leaked_hud_refs"])
+            if first_val(storm_obj, ["post_storm_leaked_hud_refs", "leaked_hud_refs"]) is not None
+            else first_val(flap_obj, ["leaked_hud_refs"])
+        )
+
+    model = clean_text(first_val(summary, ["model", "runtime"]) or data.get("model") or "node-24-loopback")
+
+    return {
+        "suite_id": "ws_reconnect_resilience",
+        "generated_at": clean_text(data.get("generated_at") or data.get("testedAt") or ""),
+        "model": model,
+        "n_cases": (n_reconnect or 0) + (n_hostile or 0),
+        "verdict_matches": None,
+        "verdict_accuracy": None,
+        "confident_wrong_dose_count": None,
+        "false_safe_allergen_count": None,
+        "n_reconnect_cycles": n_reconnect,
+        "complete_replays": complete_replays,
+        "replay_completeness_rate": replay_rate,
+        "replay_reconnect_p50_ms": round(rep_p50, 3) if rep_p50 is not None else None,
+        "replay_reconnect_p95_ms": round(rep_p95, 3) if rep_p95 is not None else None,
+        "replay_wire_bytes_per_cycle": wire_bytes,
+        "n_hostile_payloads": n_hostile,
+        "graceful_rejections": graceful_cnt,
+        "graceful_rejection_rate": graceful_rate,
+        "server_crash_count": crash_cnt,
+        "ping_pong_after_storm_ms": round(ping_ms, 3) if ping_ms is not None else None,
+        "post_storm_buffered_frames": post_frames,
+        "leaked_hud_refs": leaked_refs,
+        "latency_ms": {
+            "p50": round(rep_p50, 3) if rep_p50 is not None else None,
+            "p95": round(rep_p95, 3) if rep_p95 is not None else None,
+            "mean": None,
+        },
+    }
+
+
+def normalize_spoken_verdict_clarity(data: dict[str, Any]) -> dict[str, Any]:
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    items = extract_items(data)
+
+    n_cases = to_int(first_val(summary, ["n_cases", "n_items", "total_cases", "total", "count"]))
+    if n_cases is None:
+        n_cases = len(items)
+
+    headline_cap = to_int(first_val(summary, ["headline_word_cap"])) or 8
+    sentence_cap = to_int(first_val(summary, ["speech_sentence_cap"])) or 2
+
+    item_matches: list[bool] = []
+    headline_oks: list[bool] = []
+    sentence_oks: list[bool] = []
+    em_dash_oks: list[bool] = []
+    headline_wcs: list[float] = []
+    speech_scs: list[float] = []
+    speech_wcs: list[float] = []
+    clarity_vals: list[float] = []
+    auditory_oks: list[bool] = []
+    mdr_oks: list[bool] = []
+    actionable_oks: list[bool] = []
+    item_cwds: list[bool] = []
+    item_fsas: list[bool] = []
+    rows: list[dict[str, Any]] = []
+
+    for idx, it in enumerate(items, start=1):
+        cid = clean_text(first_val(it, ["id", "case_id", "name"]) or f"sv_{idx:02d}")
+        rubric = it.get("rubric") if isinstance(it.get("rubric"), dict) else {}
+
+        exp_lvl = item_expected_level(it)
+        pred_lvl = item_verdict_level(it)
+        vm = item_is_verdict_match(it)
+        if vm is not None:
+            item_matches.append(vm)
+
+        headline_txt = clean_text(first_val(it, ["headline"]))
+        speech_txt = clean_text(first_val(it, ["speech", "final_speech", "spoken_text"]))
+
+        hwc = to_int(first_val(it, ["headline_word_count"]))
+        if hwc is None and headline_txt:
+            hwc = len(headline_txt.split())
+        if hwc is not None:
+            headline_wcs.append(float(hwc))
+
+        h_ok = it.get("headline_word_cap_ok")
+        if not isinstance(h_ok, bool) and hwc is not None:
+            h_ok = 1 <= hwc <= headline_cap
+        if isinstance(h_ok, bool):
+            headline_oks.append(h_ok)
+
+        ssc = to_int(first_val(it, ["speech_sentence_count"]))
+        if ssc is None and speech_txt:
+            parts = [p.strip() for p in speech_txt.replace("!", ".").replace("?", ".").split(".") if p.strip()]
+            ssc = len(parts)
+        if ssc is not None:
+            speech_scs.append(float(ssc))
+
+        s_ok = it.get("speech_sentence_cap_ok")
+        if not isinstance(s_ok, bool) and ssc is not None:
+            s_ok = 1 <= ssc <= sentence_cap
+        if isinstance(s_ok, bool):
+            sentence_oks.append(s_ok)
+
+        swc = to_int(first_val(it, ["speech_word_count"]))
+        if swc is None and speech_txt:
+            swc = len(speech_txt.split())
+        if swc is not None:
+            speech_wcs.append(float(swc))
+
+        z_ok = it.get("zero_em_dash_ok")
+        if isinstance(z_ok, bool):
+            em_dash_oks.append(z_ok)
+
+        c_score = to_num(first_val(it, ["clarity_1_to_5", "clarity_score"]))
+        if c_score is None:
+            c_score = to_num(first_val(rubric, ["clarity_1_to_5", "clarity_score", "overall_score_1_to_5"]))
+        if c_score is not None:
+            clarity_vals.append(c_score)
+
+        aud_ok = first_val(it, ["auditory_level_distinct", "auditory_distinct"])
+        if not isinstance(aud_ok, bool):
+            aud_ok = first_val(rubric, ["auditory_level_distinct", "auditory_distinct"])
+        if isinstance(aud_ok, bool):
+            auditory_oks.append(aud_ok)
+
+        mdr_ok = first_val(it, ["non_medical_boundary_safe", "mdr_boundary_safe"])
+        if not isinstance(mdr_ok, bool):
+            mdr_ok = first_val(rubric, ["non_medical_boundary_safe", "mdr_boundary_safe"])
+        if isinstance(mdr_ok, bool):
+            mdr_oks.append(mdr_ok)
+
+        act_ok = first_val(it, ["actionable_for_blind_listener", "blind_actionable"])
+        if not isinstance(act_ok, bool):
+            act_ok = first_val(rubric, ["actionable_for_blind_listener", "blind_actionable"])
+        if isinstance(act_ok, bool):
+            actionable_oks.append(act_ok)
+
+        cwd_flag = bool(it.get("confident_wrong_dose", False))
+        if "confident_wrong_dose" in it:
+            item_cwds.append(cwd_flag)
+
+        fsa_flag = bool(it.get("false_safe_allergen", False))
+        if "false_safe_allergen" in it:
+            item_fsas.append(fsa_flag)
+
+        lat_v = to_num(first_val(it, ["latency_ms", "latencyMs", "elapsed_ms", "ms"]))
+        rows.append(
+            {
+                "id": cid,
+                "category": clean_text(first_val(it, ["category"])) or None,
+                "expected_level": exp_lvl,
+                "predicted_level": pred_lvl,
+                "verdict_match": vm,
+                "headline": headline_txt or None,
+                "speech": speech_txt or None,
+                "headline_word_count": hwc,
+                "headline_word_cap_ok": h_ok if isinstance(h_ok, bool) else None,
+                "speech_sentence_count": ssc,
+                "speech_sentence_cap_ok": s_ok if isinstance(s_ok, bool) else None,
+                "clarity_score": int(round(c_score)) if c_score is not None else None,
+                "auditory_level_distinct": aud_ok if isinstance(aud_ok, bool) else None,
+                "non_medical_boundary_safe": mdr_ok if isinstance(mdr_ok, bool) else None,
+                "actionable_for_blind_listener": act_ok if isinstance(act_ok, bool) else None,
+                "confident_wrong_dose": cwd_flag,
+                "false_safe_allergen": fsa_flag,
+                "latency_ms": round(lat_v, 1) if lat_v is not None else None,
+            }
+        )
+
+    verdict_matches = to_int(first_val(summary, ["verdict_matches", "verdict_correct", "matches", "passed_count"]))
+    if verdict_matches is None and item_matches and len(item_matches) == n_cases:
+        verdict_matches = sum(1 for m in item_matches if m)
+    verdict_acc = to_rate(first_val(summary, ["verdict_accuracy", "accuracy"]))
+    if verdict_acc is None and verdict_matches is not None and n_cases > 0:
+        verdict_acc = round(verdict_matches / n_cases, 4)
+    if verdict_matches is None and verdict_acc is not None and n_cases > 0:
+        verdict_matches = int(round(verdict_acc * n_cases))
+
+    h_cap_rate = to_rate(first_val(summary, ["headline_word_cap_pass_rate", "headline_cap_pass_rate"]))
+    if h_cap_rate is None and headline_oks:
+        h_cap_rate = round(sum(1 for x in headline_oks if x) / len(headline_oks), 4)
+
+    s_cap_rate = to_rate(first_val(summary, ["speech_sentence_cap_pass_rate", "sentence_cap_pass_rate"]))
+    if s_cap_rate is None and sentence_oks:
+        s_cap_rate = round(sum(1 for x in sentence_oks if x) / len(sentence_oks), 4)
+
+    em_rate = to_rate(first_val(summary, ["zero_em_dash_rate"]))
+    if em_rate is None and em_dash_oks:
+        em_rate = round(sum(1 for x in em_dash_oks if x) / len(em_dash_oks), 4)
+
+    mean_hw = to_num(first_val(summary, ["mean_headline_words"]))
+    if mean_hw is None and headline_wcs:
+        mean_hw = round(statistics.mean(headline_wcs), 2)
+    max_hw = to_int(first_val(summary, ["max_headline_words"]))
+    if max_hw is None and headline_wcs:
+        max_hw = int(round(max(headline_wcs)))
+
+    mean_ss = to_num(first_val(summary, ["mean_speech_sentences"]))
+    if mean_ss is None and speech_scs:
+        mean_ss = round(statistics.mean(speech_scs), 2)
+    max_ss = to_int(first_val(summary, ["max_speech_sentences"]))
+    if max_ss is None and speech_scs:
+        max_ss = int(round(max(speech_scs)))
+
+    mean_sw = to_num(first_val(summary, ["mean_speech_words"]))
+    if mean_sw is None and speech_wcs:
+        mean_sw = round(statistics.mean(speech_wcs), 2)
+
+    mean_cl = to_num(first_val(summary, ["mean_clarity_score", "mean_overall_score"]))
+    if mean_cl is None and clarity_vals:
+        mean_cl = round(statistics.mean(clarity_vals), 3)
+    min_cl = to_int(first_val(summary, ["min_clarity_score", "min_overall_score"]))
+    if min_cl is None and clarity_vals:
+        min_cl = int(round(min(clarity_vals)))
+    max_cl = to_int(first_val(summary, ["max_clarity_score", "max_overall_score"]))
+    if max_cl is None and clarity_vals:
+        max_cl = int(round(max(clarity_vals)))
+
+    aud_rate = to_rate(first_val(summary, ["auditory_distinction_pass_rate", "auditory_level_distinct_rate"]))
+    if aud_rate is None and auditory_oks:
+        aud_rate = round(sum(1 for x in auditory_oks if x) / len(auditory_oks), 4)
+
+    mdr_rate = to_rate(first_val(summary, ["non_medical_boundary_pass_rate", "mdr_boundary_pass_rate"]))
+    if mdr_rate is None and mdr_oks:
+        mdr_rate = round(sum(1 for x in mdr_oks if x) / len(mdr_oks), 4)
+
+    act_rate = to_rate(first_val(summary, ["blind_actionability_pass_rate", "actionable_pass_rate"]))
+    if act_rate is None and actionable_oks:
+        act_rate = round(sum(1 for x in actionable_oks if x) / len(actionable_oks), 4)
+
+    cwd = to_int(first_val(summary, ["confident_wrong_dose_count", "confident_wrong_doses"]))
+    if cwd is None:
+        cwd = sum(1 for x in item_cwds if x) if item_cwds else 0
+
+    fsa = to_int(first_val(summary, ["false_safe_allergen_count", "false_negative_allergen_count"]))
+    if fsa is None:
+        fsa = sum(1 for x in item_fsas if x) if item_fsas else 0
+
+    lat = extract_latency(summary, items)
+    tokens_in = to_num(first_val(summary, ["tokens_in", "mean_tokens_in", "total_tokens_in", "input_tokens"]))
+    tokens_out = to_num(first_val(summary, ["tokens_out", "mean_tokens_out", "total_tokens_out", "output_tokens"]))
+    model = clean_text(first_val(summary, ["model", "judge_model"]) or data.get("model") or "gemini-3.8-flash")
+
+    return {
+        "suite_id": "spoken_verdict_clarity_results",
+        "generated_at": clean_text(data.get("generated_at") or data.get("testedAt") or ""),
+        "model": model,
+        "n_cases": n_cases,
+        "verdict_matches": verdict_matches,
+        "verdict_accuracy": verdict_acc,
+        "headline_word_cap": headline_cap,
+        "speech_sentence_cap": sentence_cap,
+        "headline_word_cap_pass_rate": h_cap_rate,
+        "speech_sentence_cap_pass_rate": s_cap_rate,
+        "zero_em_dash_rate": em_rate,
+        "mean_headline_words": round(mean_hw, 2) if mean_hw is not None else None,
+        "max_headline_words": max_hw,
+        "mean_speech_sentences": round(mean_ss, 2) if mean_ss is not None else None,
+        "max_speech_sentences": max_ss,
+        "mean_speech_words": round(mean_sw, 2) if mean_sw is not None else None,
+        "mean_clarity_score": round(mean_cl, 3) if mean_cl is not None else None,
+        "min_clarity_score": min_cl,
+        "max_clarity_score": max_cl,
+        "auditory_distinction_pass_rate": aud_rate,
+        "non_medical_boundary_pass_rate": mdr_rate,
+        "blind_actionability_pass_rate": act_rate,
+        "confident_wrong_dose_count": cwd,
+        "false_safe_allergen_count": fsa,
+        "latency_ms": lat,
+        "tokens_in": round(tokens_in, 1) if tokens_in is not None else None,
+        "tokens_out": round(tokens_out, 1) if tokens_out is not None else None,
+        "rows": rows,
+    }
+
+
+def normalize_wave8_suite(suite_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    if suite_id == "ws_reconnect_resilience":
+        return normalize_ws_reconnect_resilience(data)
+    if suite_id == "spoken_verdict_clarity_results":
+        return normalize_spoken_verdict_clarity(data)
+
+    base = normalize_label_suite(suite_id, data)
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    items = extract_items(data)
+
+    if base["false_safe_allergen_count"] is None and items:
+        item_fsa = [bool(it.get("false_safe_allergen")) for it in items if "false_safe_allergen" in it]
+        if item_fsa:
+            base["false_safe_allergen_count"] = sum(1 for x in item_fsa if x)
+
+    if suite_id == "blister_strip_cuts_results":
+        n_intact = to_int(first_val(summary, ["n_intact_tile", "intact_tile_count", "n_intact"]))
+        n_trunc = to_int(first_val(summary, ["n_truncated_strength", "truncated_strength_count", "n_truncated"]))
+
+        intact_bools: list[bool] = []
+        trunc_bools: list[bool] = []
+        intact_count_items = 0
+        trunc_count_items = 0
+        for it in items:
+            cond_txt = clean_text(first_val(it, ["strip_condition", "condition", "cut_mode"])).lower()
+            is_intact = it.get("intact_tile") is True or ("intact" in cond_txt and it.get("intact_tile") is not False)
+            is_trunc = it.get("intact_tile") is False or "truncat" in cond_txt
+            if is_intact:
+                intact_count_items += 1
+                ic = it.get("intact_tile_correct")
+                if not isinstance(ic, bool):
+                    ic = item_is_verdict_match(it)
+                if isinstance(ic, bool):
+                    intact_bools.append(ic)
+            elif is_trunc:
+                trunc_count_items += 1
+                lvl = item_verdict_level(it)
+                abst = it.get("abstained") if isinstance(it.get("abstained"), bool) else (lvl == "unsure" if lvl else None)
+                if abst is not None:
+                    trunc_bools.append(abst)
+
+        if n_intact is None and intact_count_items > 0:
+            n_intact = intact_count_items
+        if n_trunc is None and trunc_count_items > 0:
+            n_trunc = trunc_count_items
+
+        intact_acc = to_rate(
+            first_val(summary, ["intact_tile_accuracy", "intact_accuracy", "intact_recall", "readable_recall"])
+        )
+        if intact_acc is None:
+            if intact_bools:
+                intact_acc = round(sum(1 for x in intact_bools if x) / len(intact_bools), 4)
+            else:
+                intact_acc = base["clean_field_accuracy"]
+
+        trunc_abst = to_rate(
+            first_val(
+                summary,
+                [
+                    "truncated_abstention_rate",
+                    "truncated_strength_abstention_rate",
+                    "cut_abstention_rate",
+                    "unreadable_abstention_rate",
+                ],
+            )
+        )
+        if trunc_abst is None:
+            if trunc_bools:
+                trunc_abst = round(sum(1 for x in trunc_bools if x) / len(trunc_bools), 4)
+            else:
+                trunc_abst = base["occluded_abstention_rate"]
+
+        base["n_intact_tile"] = n_intact
+        base["n_truncated_strength"] = n_trunc
+        base["intact_tile_accuracy"] = intact_acc
+        base["truncated_abstention_rate"] = trunc_abst
+        for row, it in zip(base["rows"], items):
+            sc = clean_text(first_val(it, ["strip_condition", "cut_mode"]))
+            row["strip_condition"] = sc if sc else None
+
+    elif suite_id == "two_boxes_in_frame_results":
+        n_fg = to_int(first_val(summary, ["n_foreground_items", "foreground_count", "n_foreground"]))
+        n_twin = to_int(first_val(summary, ["n_twin_box_items", "twin_box_count", "n_twin_boxes", "n_multi_box"]))
+
+        fg_bools: list[bool] = []
+        twin_safe_bools: list[bool] = []
+        conflict_false_matches: list[bool] = []
+        fg_count_items = 0
+        twin_count_items = 0
+        for it in items:
+            grp_txt = clean_text(first_val(it, ["scene_group", "group", "layout"])).lower()
+            is_twin = "twin" in grp_txt or "multi" in grp_txt or it.get("conflicting_doses") is True
+            is_fg = "foreground" in grp_txt or (not is_twin and it.get("conflicting_doses") is False)
+            if is_fg:
+                fg_count_items += 1
+                m = item_is_verdict_match(it)
+                if m is not None:
+                    fg_bools.append(m)
+            elif is_twin:
+                twin_count_items += 1
+                fmc = it.get("false_match_on_conflict")
+                if not isinstance(fmc, bool):
+                    lvl = item_verdict_level(it)
+                    fmc = (lvl == "match") if lvl else None
+                if isinstance(fmc, bool):
+                    conflict_false_matches.append(fmc)
+                m = item_is_verdict_match(it)
+                if m is not None:
+                    twin_safe_bools.append(m)
+                elif isinstance(fmc, bool):
+                    twin_safe_bools.append(not fmc)
+
+            if "false_match_on_conflict" in it and not is_twin and isinstance(it.get("false_match_on_conflict"), bool):
+                conflict_false_matches.append(bool(it["false_match_on_conflict"]))
+
+        if n_fg is None and fg_count_items > 0:
+            n_fg = fg_count_items
+        if n_twin is None and twin_count_items > 0:
+            n_twin = twin_count_items
+
+        fg_acc = to_rate(first_val(summary, ["foreground_focus_accuracy", "foreground_accuracy", "held_box_accuracy"]))
+        if fg_acc is None and fg_bools:
+            fg_acc = round(sum(1 for x in fg_bools if x) / len(fg_bools), 4)
+
+        mb_safe = to_rate(first_val(summary, ["multi_box_safety_rate", "twin_box_safety_rate", "conflict_safety_rate"]))
+        if mb_safe is None and twin_safe_bools:
+            mb_safe = round(sum(1 for x in twin_safe_bools if x) / len(twin_safe_bools), 4)
+
+        fmc_cnt = to_int(
+            first_val(summary, ["false_match_on_conflict_count", "conflict_false_match_count", "false_matches_on_conflict"])
+        )
+        if fmc_cnt is None:
+            if conflict_false_matches:
+                fmc_cnt = sum(1 for x in conflict_false_matches if x)
+            elif items:
+                fmc_cnt = 0
+
+        base["n_foreground_items"] = n_fg
+        base["n_twin_box_items"] = n_twin
+        base["foreground_focus_accuracy"] = fg_acc
+        base["multi_box_safety_rate"] = mb_safe
+        base["false_match_on_conflict_count"] = fmc_cnt
+        for row, it in zip(base["rows"], items):
+            sg = clean_text(first_val(it, ["scene_group", "group"]))
+            row["scene_group"] = sg if sg else None
+
+    elif suite_id == "cellophane_tremor_results":
+        n_mod = to_int(first_val(summary, ["n_moderate_compound", "moderate_compound_count", "n_moderate"]))
+        n_sev = to_int(first_val(summary, ["n_severe_compound", "severe_compound_count", "n_severe"]))
+
+        mod_bools: list[bool] = []
+        sev_bools: list[bool] = []
+        mod_count_items = 0
+        sev_count_items = 0
+        for it in items:
+            tier_txt = clean_text(first_val(it, ["compound_tier", "glare_mode", "tier"])).lower()
+            if "moderate" in tier_txt:
+                mod_count_items += 1
+                m = item_is_verdict_match(it)
+                if m is not None:
+                    mod_bools.append(m)
+            elif "severe" in tier_txt:
+                sev_count_items += 1
+                lvl = item_verdict_level(it)
+                abst = it.get("abstained") if isinstance(it.get("abstained"), bool) else (lvl == "unsure" if lvl else None)
+                if abst is not None:
+                    sev_bools.append(abst)
+
+        if n_mod is None and mod_count_items > 0:
+            n_mod = mod_count_items
+        if n_sev is None and sev_count_items > 0:
+            n_sev = sev_count_items
+
+        mod_acc = to_rate(
+            first_val(summary, ["moderate_compound_accuracy", "moderate_compound_recall", "moderate_accuracy", "readable_recall"])
+        )
+        if mod_acc is None:
+            if mod_bools:
+                mod_acc = round(sum(1 for x in mod_bools if x) / len(mod_bools), 4)
+            else:
+                mod_acc = base["clean_field_accuracy"]
+
+        sev_abst = to_rate(
+            first_val(
+                summary,
+                [
+                    "severe_compound_abstention_rate",
+                    "severe_abstention_rate",
+                    "compound_abstention_rate",
+                    "unreadable_abstention_rate",
+                ],
+            )
+        )
+        if sev_abst is None:
+            if sev_bools:
+                sev_abst = round(sum(1 for x in sev_bools if x) / len(sev_bools), 4)
+            else:
+                sev_abst = base["occluded_abstention_rate"]
+
+        base["n_moderate_compound"] = n_mod
+        base["n_severe_compound"] = n_sev
+        base["moderate_compound_accuracy"] = mod_acc
+        base["severe_compound_abstention_rate"] = sev_abst
+        for row, it in zip(base["rows"], items):
+            ct = clean_text(first_val(it, ["compound_tier", "tier"]))
+            row["compound_tier"] = ct if ct else None
+
+    return base
+
+
 def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
     suites_present: list[str] = []
     suites_missing: list[str] = []
@@ -2648,7 +3284,22 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         wave7_suites_present.append(sid)
         artifacts[sid] = normalize_wave7_suite(sid, raw)
 
-    optional_suites_present = [*extended_suites_present, *wave6_suites_present, *wave7_suites_present]
+    wave8_suites_present: list[str] = []
+    for spec in WAVE8_ARTIFACT_SPECS:
+        sid = spec["id"]
+        path = eval_dir / spec["filename"]
+        if not path.exists():
+            continue
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        wave8_suites_present.append(sid)
+        artifacts[sid] = normalize_wave8_suite(sid, raw)
+
+    optional_suites_present = [
+        *extended_suites_present,
+        *wave6_suites_present,
+        *wave7_suites_present,
+        *wave8_suites_present,
+    ]
 
     label_suites_present = [sid for sid in LABEL_SUITE_IDS if sid in artifacts]
     total_label_cases = sum(artifacts[sid]["n_cases"] for sid in label_suites_present)
@@ -2903,6 +3554,187 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         ),
     }
 
+    w8_label_sids = [
+        sid
+        for sid in (
+            "blister_strip_cuts_results",
+            "two_boxes_in_frame_results",
+            "cellophane_tremor_results",
+        )
+        if sid in artifacts
+    ]
+    w8_label_num = 0
+    w8_label_den = 0
+    for sid in w8_label_sids:
+        suite = artifacts[sid]
+        if suite.get("verdict_matches") is not None and (suite.get("n_cases") or 0) > 0:
+            w8_label_num += suite["verdict_matches"]
+            w8_label_den += suite["n_cases"]
+    w8_label_acc = round(w8_label_num / w8_label_den, 4) if w8_label_den > 0 else None
+
+    w8_verdict_sids = [
+        sid
+        for sid in (
+            "blister_strip_cuts_results",
+            "two_boxes_in_frame_results",
+            "cellophane_tremor_results",
+            "spoken_verdict_clarity_results",
+        )
+        if sid in artifacts
+    ]
+    w8_verdict_num = 0
+    w8_verdict_den = 0
+    for sid in w8_verdict_sids:
+        suite = artifacts[sid]
+        if suite.get("verdict_matches") is not None and (suite.get("n_cases") or 0) > 0:
+            w8_verdict_num += suite["verdict_matches"]
+            w8_verdict_den += suite["n_cases"]
+    w8_verdict_acc = round(w8_verdict_num / w8_verdict_den, 4) if w8_verdict_den > 0 else None
+
+    wave8_cwd = sum(artifacts[sid].get("confident_wrong_dose_count") or 0 for sid in wave8_suites_present)
+    wave8_fsa = sum(artifacts[sid].get("false_safe_allergen_count") or 0 for sid in wave8_suites_present)
+    wave8_summary = {
+        "suites_count": len(wave8_suites_present),
+        "label_cases_evaluated": w8_label_den,
+        "label_verdict_matches": w8_label_num,
+        "label_verdict_accuracy": w8_label_acc,
+        "verdict_and_clarity_cases_evaluated": w8_verdict_den,
+        "verdict_and_clarity_matches": w8_verdict_num,
+        "verdict_and_clarity_accuracy": w8_verdict_acc,
+        "confident_wrong_dose_count": wave8_cwd,
+        "false_safe_allergen_count": wave8_fsa,
+        "blister_intact_tile_accuracy": (
+            artifacts["blister_strip_cuts_results"]["intact_tile_accuracy"]
+            if "blister_strip_cuts_results" in artifacts
+            else None
+        ),
+        "blister_truncated_abstention_rate": (
+            artifacts["blister_strip_cuts_results"]["truncated_abstention_rate"]
+            if "blister_strip_cuts_results" in artifacts
+            else None
+        ),
+        "blister_cuts_latency_p50_ms": (
+            artifacts["blister_strip_cuts_results"]["latency_ms"]["p50"]
+            if "blister_strip_cuts_results" in artifacts
+            else None
+        ),
+        "two_boxes_foreground_focus_accuracy": (
+            artifacts["two_boxes_in_frame_results"]["foreground_focus_accuracy"]
+            if "two_boxes_in_frame_results" in artifacts
+            else None
+        ),
+        "two_boxes_multi_box_safety_rate": (
+            artifacts["two_boxes_in_frame_results"]["multi_box_safety_rate"]
+            if "two_boxes_in_frame_results" in artifacts
+            else None
+        ),
+        "two_boxes_false_match_on_conflict_count": (
+            artifacts["two_boxes_in_frame_results"]["false_match_on_conflict_count"]
+            if "two_boxes_in_frame_results" in artifacts
+            else None
+        ),
+        "two_boxes_latency_p50_ms": (
+            artifacts["two_boxes_in_frame_results"]["latency_ms"]["p50"]
+            if "two_boxes_in_frame_results" in artifacts
+            else None
+        ),
+        "cellophane_moderate_compound_accuracy": (
+            artifacts["cellophane_tremor_results"]["moderate_compound_accuracy"]
+            if "cellophane_tremor_results" in artifacts
+            else None
+        ),
+        "cellophane_severe_compound_abstention_rate": (
+            artifacts["cellophane_tremor_results"]["severe_compound_abstention_rate"]
+            if "cellophane_tremor_results" in artifacts
+            else None
+        ),
+        "cellophane_tremor_latency_p50_ms": (
+            artifacts["cellophane_tremor_results"]["latency_ms"]["p50"]
+            if "cellophane_tremor_results" in artifacts
+            else None
+        ),
+        "ws_reconnect_cycles_tested": (
+            artifacts["ws_reconnect_resilience"]["n_reconnect_cycles"]
+            if "ws_reconnect_resilience" in artifacts
+            else None
+        ),
+        "ws_replay_completeness_rate": (
+            artifacts["ws_reconnect_resilience"]["replay_completeness_rate"]
+            if "ws_reconnect_resilience" in artifacts
+            else None
+        ),
+        "ws_replay_reconnect_p50_ms": (
+            artifacts["ws_reconnect_resilience"]["replay_reconnect_p50_ms"]
+            if "ws_reconnect_resilience" in artifacts
+            else None
+        ),
+        "ws_hostile_payloads_tested": (
+            artifacts["ws_reconnect_resilience"]["n_hostile_payloads"]
+            if "ws_reconnect_resilience" in artifacts
+            else None
+        ),
+        "ws_graceful_rejection_rate": (
+            artifacts["ws_reconnect_resilience"]["graceful_rejection_rate"]
+            if "ws_reconnect_resilience" in artifacts
+            else None
+        ),
+        "ws_server_crash_count": (
+            artifacts["ws_reconnect_resilience"]["server_crash_count"]
+            if "ws_reconnect_resilience" in artifacts
+            else None
+        ),
+        "ws_post_storm_buffered_frames": (
+            artifacts["ws_reconnect_resilience"]["post_storm_buffered_frames"]
+            if "ws_reconnect_resilience" in artifacts
+            else None
+        ),
+        "spoken_clarity_cases_evaluated": (
+            artifacts["spoken_verdict_clarity_results"]["n_cases"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+        "spoken_clarity_verdict_matches": (
+            artifacts["spoken_verdict_clarity_results"]["verdict_matches"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+        "spoken_clarity_verdict_accuracy": (
+            artifacts["spoken_verdict_clarity_results"]["verdict_accuracy"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+        "spoken_headline_word_cap_pass_rate": (
+            artifacts["spoken_verdict_clarity_results"]["headline_word_cap_pass_rate"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+        "spoken_speech_sentence_cap_pass_rate": (
+            artifacts["spoken_verdict_clarity_results"]["speech_sentence_cap_pass_rate"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+        "spoken_mean_clarity_score": (
+            artifacts["spoken_verdict_clarity_results"]["mean_clarity_score"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+        "spoken_non_medical_boundary_pass_rate": (
+            artifacts["spoken_verdict_clarity_results"]["non_medical_boundary_pass_rate"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+        "spoken_blind_actionability_pass_rate": (
+            artifacts["spoken_verdict_clarity_results"]["blind_actionability_pass_rate"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+        "spoken_clarity_latency_p50_ms": (
+            artifacts["spoken_verdict_clarity_results"]["latency_ms"]["p50"]
+            if "spoken_verdict_clarity_results" in artifacts
+            else None
+        ),
+    }
+
     total_cwd = sum(artifacts[sid]["confident_wrong_dose_count"] or 0 for sid in label_suites_present)
     if "calibration_curve" in artifacts and artifacts["calibration_curve"]["confident_wrong_dose_at_080"] is not None:
         total_cwd += artifacts["calibration_curve"]["confident_wrong_dose_at_080"]
@@ -2913,7 +3745,7 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         )
         if primary_mc and primary_mc["confident_wrong_dose_count"] is not None:
             total_cwd += primary_mc["confident_wrong_dose_count"]
-    total_cwd += ext_cwd + wave6_cwd + wave7_cwd
+    total_cwd += ext_cwd + wave6_cwd + wave7_cwd + wave8_cwd
 
     clean_accs = [
         artifacts[sid]["clean_field_accuracy"]
@@ -2970,7 +3802,13 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
 
     allergen_counts = [
         artifacts[sid]["false_safe_allergen_count"]
-        for sid in [*label_suites_present, *extended_suites_present, *wave6_suites_present, *wave7_suites_present]
+        for sid in [
+            *label_suites_present,
+            *extended_suites_present,
+            *wave6_suites_present,
+            *wave7_suites_present,
+            *wave8_suites_present,
+        ]
         if artifacts[sid].get("false_safe_allergen_count") is not None
     ]
     false_safe_allergen = sum(allergen_counts) if allergen_counts else None
@@ -3138,6 +3976,8 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         "wave6_summary": wave6_summary,
         "wave7_suites_present": wave7_suites_present,
         "wave7_summary": wave7_summary,
+        "wave8_suites_present": wave8_suites_present,
+        "wave8_summary": wave8_summary,
         "optional_suites_present": optional_suites_present,
         "label_suites_present": label_suites_present,
         "total_label_cases_evaluated": total_label_cases,
@@ -3445,6 +4285,97 @@ def wave7_table_cells(sid: str, a: dict[str, Any]) -> tuple[str, str, str, str]:
     return ("present", "Loaded", lat_str, "Loaded")
 
 
+def wave8_table_cells(sid: str, a: dict[str, Any]) -> tuple[str, str, str, str]:
+    lat_str = f"{fmt_ms(a['latency_ms']['p50'])} / {fmt_ms(a['latency_ms']['p95'])}"
+    if sid == "blister_strip_cuts_results":
+        scope_str = f"{a['n_cases']} cases"
+        metric_str = (
+            f"Verdict accuracy {fmt_pct(a.get('verdict_accuracy'))} ({a['verdict_matches']}/{a['n_cases']})"
+            if a.get("verdict_matches") is not None
+            else fmt_pct(a.get("verdict_accuracy"))
+        )
+        outcome_str = (
+            f"Intact tiles {fmt_pct(a.get('intact_tile_accuracy'))}, "
+            f"truncated abstention {fmt_pct(a.get('truncated_abstention_rate'))}, "
+            f"{fmt_num(a.get('confident_wrong_dose_count'), 0)} confident-wrong doses, "
+            f"{fmt_num(a.get('false_safe_allergen_count'), 0)} false-safe allergens"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    if sid == "two_boxes_in_frame_results":
+        scope_str = f"{a['n_cases']} cases"
+        metric_str = (
+            f"Verdict accuracy {fmt_pct(a.get('verdict_accuracy'))} ({a['verdict_matches']}/{a['n_cases']})"
+            if a.get("verdict_matches") is not None
+            else fmt_pct(a.get("verdict_accuracy"))
+        )
+        outcome_str = (
+            f"Foreground focus {fmt_pct(a.get('foreground_focus_accuracy'))}, "
+            f"multi-box safety {fmt_pct(a.get('multi_box_safety_rate'))}, "
+            f"{fmt_num(a.get('false_match_on_conflict_count'), 0)} conflict false matches, "
+            f"{fmt_num(a.get('confident_wrong_dose_count'), 0)} confident-wrong doses"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    if sid == "cellophane_tremor_results":
+        scope_str = f"{a['n_cases']} cases"
+        metric_str = (
+            f"Verdict accuracy {fmt_pct(a.get('verdict_accuracy'))} ({a['verdict_matches']}/{a['n_cases']})"
+            if a.get("verdict_matches") is not None
+            else fmt_pct(a.get("verdict_accuracy"))
+        )
+        outcome_str = (
+            f"Moderate compound {fmt_pct(a.get('moderate_compound_accuracy'))}, "
+            f"severe abstention {fmt_pct(a.get('severe_compound_abstention_rate'))}, "
+            f"{fmt_num(a.get('confident_wrong_dose_count'), 0)} confident-wrong doses, "
+            f"{fmt_num(a.get('false_safe_allergen_count'), 0)} false-safe allergens"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    if sid == "ws_reconnect_resilience":
+        parts: list[str] = []
+        if a.get("n_reconnect_cycles") is not None:
+            parts.append(f"{a['n_reconnect_cycles']} reconnects")
+        if a.get("n_hostile_payloads") is not None:
+            parts.append(f"{a['n_hostile_payloads']} hostile payloads")
+        scope_str = ", ".join(parts) if parts else "WebSocket reconnects"
+        metric_str = (
+            f"Replay {fmt_pct(a.get('replay_completeness_rate'))}, "
+            f"hostile rejection {fmt_pct(a.get('graceful_rejection_rate'))}"
+        )
+        rp50 = f"{fmt_num(a.get('replay_reconnect_p50_ms'), 3)} ms" if a.get("replay_reconnect_p50_ms") is not None else "n/a"
+        rp95 = f"{fmt_num(a.get('replay_reconnect_p95_ms'), 3)} ms" if a.get("replay_reconnect_p95_ms") is not None else "n/a"
+        ws_lat_str = f"Replay {rp50} / {rp95}"
+        leak_part = (
+            f", leaked HUD refs {fmt_num(a.get('leaked_hud_refs'), 0)}"
+            if a.get("leaked_hud_refs") is not None
+            else ""
+        )
+        outcome_str = (
+            f"{fmt_num(a.get('server_crash_count'), 0)} crashes, "
+            f"post-storm frames {fmt_num(a.get('post_storm_buffered_frames'), 0)}{leak_part}"
+        )
+        return (scope_str, metric_str, ws_lat_str, outcome_str)
+    if sid == "spoken_verdict_clarity_results":
+        scope_str = f"{a['n_cases']} cases"
+        verdict_part = (
+            f"Verdicts {a['verdict_matches']}/{a['n_cases']} ({fmt_pct(a.get('verdict_accuracy'))})"
+            if a.get("verdict_matches") is not None
+            else f"Verdict accuracy {fmt_pct(a.get('verdict_accuracy'))}"
+        )
+        clarity_part = (
+            f", clarity {fmt_num(a.get('mean_clarity_score'), 2)}/5"
+            if a.get("mean_clarity_score") is not None
+            else ""
+        )
+        metric_str = f"{verdict_part}{clarity_part}"
+        outcome_str = (
+            f"Headline cap {fmt_pct(a.get('headline_word_cap_pass_rate'))}, "
+            f"sentence cap {fmt_pct(a.get('speech_sentence_cap_pass_rate'))}, "
+            f"MDR boundary {fmt_pct(a.get('non_medical_boundary_pass_rate'))}, "
+            f"blind actionable {fmt_pct(a.get('blind_actionability_pass_rate'))}"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    return ("present", "Loaded", lat_str, "Loaded")
+
+
 def render_markdown(compiled: dict[str, Any]) -> str:
     lines: list[str] = []
     artifacts = compiled["artifacts"]
@@ -3455,6 +4386,8 @@ def render_markdown(compiled: dict[str, Any]) -> str:
     wave6_summary = compiled.get("wave6_summary")
     wave7_suites_present = compiled.get("wave7_suites_present", [])
     wave7_summary = compiled.get("wave7_summary")
+    wave8_suites_present = compiled.get("wave8_suites_present", [])
+    wave8_summary = compiled.get("wave8_summary")
     label_suites = compiled["label_suites_present"]
     total_cases = compiled["total_label_cases_evaluated"]
     verdict_acc = compiled["overall_verdict_accuracy"]
@@ -3509,7 +4442,9 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         "LASA/double-dose polypharmacy confusion, multi-frame partial-view fusion, adversarial hidden allergens, "
         "international expiry formats, end-to-end Live WebSocket + HUD wire latency, loopback FrameRing throughput, "
         "multilingual `/api/tts` WAV synthesis, blind-hold orientation robustness, visual prompt-injection red-teaming, "
-        "thermal-fade and worn-carton legibility, 25-session concurrent isolation, and multilingual hand-coaching safety "
+        "thermal-fade and worn-carton legibility, 25-session concurrent isolation, multilingual hand-coaching safety, "
+        "scissor-cut blister strips, multi-box countertop clutter, cellophane glare with hand tremor, "
+        "WebSocket reconnect/storm resilience, and spoken verdict clarity judging "
         "are automatically discovered and compiled whenever present on disk."
     )
     lines.append("")
@@ -3654,6 +4589,24 @@ def render_markdown(compiled: dict[str, Any]) -> str:
             f"`{len(wave7_suites_present)}` (`{w7_joined}`){w7_acc_part}, "
             f"`{wave7_summary['confident_wrong_dose_count']}` confident-wrong doses |"
         )
+    if wave8_suites_present and wave8_summary is not None:
+        w8_joined = ", ".join(wave8_suites_present)
+        w8_acc_part = (
+            f", `{fmt_pct(wave8_summary['verdict_and_clarity_accuracy'])}` "
+            f"(`{wave8_summary['verdict_and_clarity_matches']} / {wave8_summary['verdict_and_clarity_cases_evaluated']}`)"
+            if wave8_summary["verdict_and_clarity_accuracy"] is not None
+            else (
+                f", `{fmt_pct(wave8_summary['label_verdict_accuracy'])}` "
+                f"(`{wave8_summary['label_verdict_matches']} / {wave8_summary['label_cases_evaluated']}`)"
+                if wave8_summary["label_verdict_accuracy"] is not None
+                else ""
+            )
+        )
+        lines.append(
+            f"| Wave-8 blister-cut, multi-box, compound-glare, WS resilience & spoken-clarity benchmarks present in `eval/` | "
+            f"`{len(wave8_suites_present)}` (`{w8_joined}`){w8_acc_part}, "
+            f"`{wave8_summary['confident_wrong_dose_count']}` confident-wrong doses |"
+        )
     lines.append("")
 
     lines.append(f"{H3} Artifact Status Matrix")
@@ -3719,6 +4672,26 @@ def render_markdown(compiled: dict[str, Any]) -> str:
             if sid not in artifacts:
                 continue
             scope_str, metric_str, lat_str, outcome_str = wave7_table_cells(sid, artifacts[sid])
+            lines.append(
+                f"| `eval/{spec['filename']}` | {md_cell(spec['dimension'])} | `{md_cell(artifacts[sid]['model'])}` | "
+                f"{md_cell(scope_str)} | {md_cell(metric_str)} | `{md_cell(lat_str)}` | {md_cell(outcome_str)} |"
+            )
+        lines.append("")
+
+    if wave8_suites_present:
+        lines.append(
+            f"{H3} Wave-8 Blister-Cut, Multi-Box, Compound-Glare, Reconnect & Spoken-Clarity Benchmarks"
+        )
+        lines.append("")
+        lines.append(
+            "| Benchmark Artifact | Evaluation Dimension | Engine / Model | Scope | Primary Metric | Latency (p50 / p95) | Safety & Systems Outcome |"
+        )
+        lines.append("|---|---|---|---|---|---|---|")
+        for spec in WAVE8_ARTIFACT_SPECS:
+            sid = spec["id"]
+            if sid not in artifacts:
+                continue
+            scope_str, metric_str, lat_str, outcome_str = wave8_table_cells(sid, artifacts[sid])
             lines.append(
                 f"| `eval/{spec['filename']}` | {md_cell(spec['dimension'])} | `{md_cell(artifacts[sid]['model'])}` | "
                 f"{md_cell(scope_str)} | {md_cell(metric_str)} | `{md_cell(lat_str)}` | {md_cell(outcome_str)} |"
@@ -4447,6 +5420,154 @@ def render_markdown(compiled: dict[str, Any]) -> str:
                 )
             lines.append("")
 
+    for spec in WAVE8_ARTIFACT_SPECS:
+        sid = spec["id"]
+        if sid not in artifacts:
+            continue
+        section_num += 1
+        suite = artifacts[sid]
+        lines.append(f"{H3} 4.{section_num} {spec['title']} (`eval/{spec['filename']}`)")
+        lines.append("")
+        lines.append("| Benchmark Metric | Measured Value |")
+        lines.append("|---|---|")
+        lines.append(f"| Engine / Model | `{suite['model']}` |")
+        if sid == "ws_reconnect_resilience":
+            lines.append(f"| `/hud-ws` flap reconnect cycles (`n_reconnect_cycles`) | `{fmt_num(suite.get('n_reconnect_cycles'), 0)}` |")
+            lines.append(
+                f"| 4-message state replay completeness (`replay_completeness_rate`) | "
+                f"`{fmt_pct(suite.get('replay_completeness_rate'))}` "
+                f"(`{fmt_num(suite.get('complete_replays'), 0)} / {fmt_num(suite.get('n_reconnect_cycles'), 0)}`) |"
+            )
+            rp50 = f"{fmt_num(suite.get('replay_reconnect_p50_ms'), 3)} ms" if suite.get("replay_reconnect_p50_ms") is not None else "n/a"
+            rp95 = f"{fmt_num(suite.get('replay_reconnect_p95_ms'), 3)} ms" if suite.get("replay_reconnect_p95_ms") is not None else "n/a"
+            lines.append(f"| Reconnect + 4-message replay latency (p50 / p95) | `{rp50}` / `{rp95}` |")
+            if suite.get("replay_wire_bytes_per_cycle") is not None:
+                lines.append(f"| Replay wire payload per cycle | `{fmt_comma(suite['replay_wire_bytes_per_cycle'], 0)} B` |")
+            lines.append(f"| Hostile / malformed payload storm (`n_hostile_payloads`) | `{fmt_num(suite.get('n_hostile_payloads'), 0)}` |")
+            lines.append(
+                f"| Graceful payload rejection rate (`graceful_rejection_rate`) | "
+                f"`{fmt_pct(suite.get('graceful_rejection_rate'))}` "
+                f"(`{fmt_num(suite.get('graceful_rejections'), 0)} / {fmt_num(suite.get('n_hostile_payloads'), 0)}`) |"
+            )
+            lines.append(f"| Server crash count (`server_crash_count`) | `{fmt_num(suite.get('server_crash_count'), 0)}` |")
+            if suite.get("ping_pong_after_storm_ms") is not None:
+                lines.append(f"| Post-storm `/live` ping-pong latency | `{fmt_num(suite['ping_pong_after_storm_ms'], 3)} ms` |")
+            lines.append(
+                f"| Post-storm buffered `FrameRing` frames (`post_storm_buffered_frames`) | "
+                f"`{fmt_num(suite.get('post_storm_buffered_frames'), 0)}` |"
+            )
+            if suite.get("leaked_hud_refs") is not None:
+                lines.append(f"| Leaked HUD WebSocket references | `{fmt_num(suite['leaked_hud_refs'], 0)}` |")
+            lines.append("")
+            continue
+
+        if sid == "spoken_verdict_clarity_results":
+            lines.append(f"| Evaluated spoken-verdict cases (`n_cases`) | `{suite['n_cases']}` |")
+            lines.append(
+                f"| Verdict accuracy | `{fmt_pct(suite.get('verdict_accuracy'))}` "
+                f"(`{fmt_num(suite.get('verdict_matches'), 0)} / {suite['n_cases']}`) |"
+            )
+            lines.append(f"| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `{suite['confident_wrong_dose_count']}` |")
+            lines.append(f"| False-safe allergen count | `{suite['false_safe_allergen_count']}` |")
+            hw_detail = (
+                f" (mean `{fmt_num(suite['mean_headline_words'], 2)}`, max `{suite['max_headline_words']}`)"
+                if suite.get("mean_headline_words") is not None and suite.get("max_headline_words") is not None
+                else ""
+            )
+            lines.append(
+                f"| Waveguide headline word-cap (`<= {suite['headline_word_cap']}` words) pass rate | "
+                f"`{fmt_pct(suite.get('headline_word_cap_pass_rate'))}`{hw_detail} |"
+            )
+            ss_detail = (
+                f" (mean `{fmt_num(suite['mean_speech_sentences'], 2)}`, max `{suite['max_speech_sentences']}`)"
+                if suite.get("mean_speech_sentences") is not None and suite.get("max_speech_sentences") is not None
+                else ""
+            )
+            lines.append(
+                f"| Spoken verdict sentence-cap (`<= {suite['speech_sentence_cap']}` sentences) pass rate | "
+                f"`{fmt_pct(suite.get('speech_sentence_cap_pass_rate'))}`{ss_detail} |"
+            )
+            lines.append(
+                f"| Mean / Min / Max clarity score (1 to 5) | "
+                f"`{fmt_num(suite.get('mean_clarity_score'), 2)}` / "
+                f"`{fmt_num(suite.get('min_clarity_score'), 0)}` / "
+                f"`{fmt_num(suite.get('max_clarity_score'), 0)}` |"
+            )
+            if suite.get("auditory_distinction_pass_rate") is not None:
+                lines.append(f"| Auditory verdict distinction pass rate | `{fmt_pct(suite['auditory_distinction_pass_rate'])}` |")
+            lines.append(f"| Non-medical EU MDR boundary pass rate | `{fmt_pct(suite.get('non_medical_boundary_pass_rate'))}` |")
+            lines.append(f"| Blind listener actionability pass rate | `{fmt_pct(suite.get('blind_actionability_pass_rate'))}` |")
+            lines.append(
+                f"| Judge latency (p50 / p95 / mean) | "
+                f"`{fmt_ms(suite['latency_ms']['p50'])}` / `{fmt_ms(suite['latency_ms']['p95'])}` / `{fmt_ms(suite['latency_ms']['mean'])}` |"
+            )
+            if suite.get("tokens_in") is not None or suite.get("tokens_out") is not None:
+                lines.append(f"| Tokens (in / out) | `{fmt_num(suite.get('tokens_in'), 1)}` / `{fmt_num(suite.get('tokens_out'), 1)}` |")
+            lines.append("")
+            if suite["rows"]:
+                lines.append(
+                    "| Case ID | Expected | Predicted | Match | Headline Words | Speech Sentences | Clarity | MDR Safe | Blind Actionable | Latency |"
+                )
+                lines.append("|---|---|---|---|---|---|---|---|---|---|")
+                for r in suite["rows"]:
+                    cl_txt = f"{r['clarity_score']}/5" if r.get("clarity_score") is not None else "n/a"
+                    lines.append(
+                        f"| `{md_cell(r['id'])}` | `{md_cell(r['expected_level'] or 'n/a')}` | "
+                        f"`{md_cell(r['predicted_level'] or 'n/a')}` | "
+                        f"`{'PASS' if r['verdict_match'] else ('FAIL' if r['verdict_match'] is False else 'n/a')}` | "
+                        f"`{fmt_num(r['headline_word_count'], 0)}` | "
+                        f"`{fmt_num(r['speech_sentence_count'], 0)}` | "
+                        f"`{cl_txt}` | "
+                        f"`{'PASS' if r['non_medical_boundary_safe'] else ('FAIL' if r['non_medical_boundary_safe'] is False else 'n/a')}` | "
+                        f"`{'PASS' if r['actionable_for_blind_listener'] else ('FAIL' if r['actionable_for_blind_listener'] is False else 'n/a')}` | "
+                        f"`{fmt_ms(r['latency_ms'])}` |"
+                    )
+                lines.append("")
+            continue
+
+        lines.append(f"| Evaluated cases (`n_cases`) | `{suite['n_cases']}` |")
+        lines.append(f"| Verdict accuracy | `{fmt_pct(suite['verdict_accuracy'])}` (`{suite['verdict_matches']} / {suite['n_cases']}`) |")
+        lines.append(f"| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `{suite['confident_wrong_dose_count']}` |")
+        if suite.get("false_safe_allergen_count") is not None:
+            lines.append(f"| False-safe allergen count | `{suite['false_safe_allergen_count']}` |")
+        if sid == "blister_strip_cuts_results":
+            if suite.get("intact_tile_accuracy") is not None:
+                lines.append(f"| Intact blister-tile accuracy (`intact_tile_accuracy`) | `{fmt_pct(suite['intact_tile_accuracy'])}` |")
+            if suite.get("truncated_abstention_rate") is not None:
+                lines.append(f"| Scissor-cut / popped-digit abstention rate (`truncated_abstention_rate`) | `{fmt_pct(suite['truncated_abstention_rate'])}` |")
+        elif sid == "two_boxes_in_frame_results":
+            if suite.get("foreground_focus_accuracy") is not None:
+                lines.append(f"| Held foreground-box focus accuracy (`foreground_focus_accuracy`) | `{fmt_pct(suite['foreground_focus_accuracy'])}` |")
+            if suite.get("multi_box_safety_rate") is not None:
+                lines.append(f"| Multi-box conflict safety rate (`multi_box_safety_rate`) | `{fmt_pct(suite['multi_box_safety_rate'])}` |")
+            if suite.get("false_match_on_conflict_count") is not None:
+                lines.append(f"| False `match` on conflicting boxes (`false_match_on_conflict_count`) | `{suite['false_match_on_conflict_count']}` |")
+        elif sid == "cellophane_tremor_results":
+            if suite.get("moderate_compound_accuracy") is not None:
+                lines.append(f"| Moderate compound glare + tremor accuracy (`moderate_compound_accuracy`) | `{fmt_pct(suite['moderate_compound_accuracy'])}` |")
+            if suite.get("severe_compound_abstention_rate") is not None:
+                lines.append(f"| Severe compound glare + tremor abstention rate (`severe_compound_abstention_rate`) | `{fmt_pct(suite['severe_compound_abstention_rate'])}` |")
+        lines.append(
+            f"| Latency (p50 / p95 / mean) | "
+            f"`{fmt_ms(suite['latency_ms']['p50'])}` / `{fmt_ms(suite['latency_ms']['p95'])}` / `{fmt_ms(suite['latency_ms']['mean'])}` |"
+        )
+        if suite["tokens_in"] is not None or suite["tokens_out"] is not None:
+            lines.append(f"| Tokens (in / out) | `{fmt_num(suite['tokens_in'], 1)}` / `{fmt_num(suite['tokens_out'], 1)}` |")
+        lines.append("")
+        if suite["rows"]:
+            lines.append("| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |")
+            lines.append("|---|---|---|---|---|---|---|---|")
+            for r in suite["rows"]:
+                lines.append(
+                    f"| `{md_cell(r['id'])}` | `{md_cell(r['expected_level'] or 'n/a')}` | "
+                    f"`{md_cell(r['predicted_level'] or 'n/a')}` | "
+                    f"`{'PASS' if r['verdict_match'] else ('FAIL' if r['verdict_match'] is False else 'n/a')}` | "
+                    f"{md_cell(r['strength_value'] or 'null')} | "
+                    f"`{fmt_num(r['strength_confidence'], 2)}` | "
+                    f"`{r['confident_wrong_dose']}` | `{fmt_ms(r['latency_ms'])}` |"
+                )
+            lines.append("")
+
     if section_num == 0:
         lines.append("No JSON artifacts are currently present in `eval/`. Run the reproduction commands below to populate.")
         lines.append("")
@@ -4478,6 +5599,9 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         if spec["id"] in artifacts:
             lines.append(spec["repro_cmd"])
     for spec in WAVE7_ARTIFACT_SPECS:
+        if spec["id"] in artifacts:
+            lines.append(spec["repro_cmd"])
+    for spec in WAVE8_ARTIFACT_SPECS:
         if spec["id"] in artifacts:
             lines.append(spec["repro_cmd"])
     lines.append("/venv/bin/python3 eval/compile_eval_report.py")
@@ -4518,9 +5642,14 @@ def main(argv: list[str] | None = None) -> int:
         if compiled["wave7_suites_present"]
         else ""
     )
+    w8_note = (
+        f" + {len(compiled['wave8_suites_present'])} wave8 ({compiled['wave8_suites_present']})"
+        if compiled["wave8_suites_present"]
+        else ""
+    )
     print(
         f"Compiled {len(compiled['suites_present'])}/{len(ARTIFACT_SPECS)} artifacts "
-        f"({compiled['suites_present']}){ext_note}{w6_note}{w7_note} -> {args.out_json} and {args.out_md}"
+        f"({compiled['suites_present']}){ext_note}{w6_note}{w7_note}{w8_note} -> {args.out_json} and {args.out_md}"
     )
     return 0
 
