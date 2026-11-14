@@ -588,8 +588,10 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date(), 
   // GTIN
   if (codeG) {
     const g = code.gtin;
+    const strengthOk = !!read.strength.value && read.strength.confidence >= STRENGTH_MIN_CONF;
     if (gtinMed && textMed && gtinMed.id !== textMed.id) { conflict = true; details.push(`GTIN ${g} = your ${gtinMed.name}, but the print reads ${textMed.name}`); }
     else if (gtinMed && !textMed && nameOk) { conflict = true; details.push(`GTIN ${g} = your ${gtinMed.name}, but the print reads a medicine not on your list`); }
+    else if (gtinMed && strengthOk && !sameStrength(read.strength.value, gtinMed.strength)) { conflict = true; details.push(`GTIN ${g} = your ${gtinMed.name} ${gtinMed.strength}, but the print reads ${read.strength.value}`); }
     else if (gtinMed && textMed) { agree++; details.push(`GTIN ${g} = your ${gtinMed.name}`); }
     else if (gtinMed) details.push(`GTIN ${g} = your ${gtinMed.name} (print not legible)`);
     else details.push(`GTIN ${g} not saved in your list`);
@@ -603,20 +605,23 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date(), 
 
   // the code's expiry is exact: a past date is a warning regardless of how well the print was read
   if (code.expiry && isExpired(code.expiry, now)) {
+    if (!conflict) crossCheck.agrees = null;
     const who = textMed ? `This is ${medName(textMed)}, but the` : "The";
     return mk("warning", `Expired ${monthYear(code.expiry)} (pack code)`,
       `${who} pack's code says it expired in ${monthYear(code.expiry)}. Don't take it, ask a pharmacist for a new one.`, { matchedMedId: textMed?.id });
   }
   if (gtinMed && !textMed) {
+    if (!conflict) crossCheck.agrees = null;
     return mk("unsure", `Code says ${medName(gtinMed)}, label unreadable`,
       `The pack's code matches your ${medName(gtinMed)}, but I can't read the label to confirm. ${read.guidance?.trim() ?? "Turn it so the front faces you."}`, { matchedMedId: gtinMed.id });
   }
   // text check, with the exact code expiry standing in for an illegible printed one
   const eff: LabelRead = code.expiry && !printedOk ? { ...read, expiry: { value: code.expiry, confidence: 1 } } : read;
   const v = checkLabelText(eff, profile, now);
+  if (!conflict && v.level !== "match") crossCheck.agrees = null;
   v.read = read;
   v.reasons = [...v.reasons, ...details];
   v.crossCheck = crossCheck;
-  if (crossCheck.agrees) v.speech = clampSpeech(withPhrase(v.speech, "double-checked with the pack's code"));
+  if (crossCheck.agrees && v.level === "match") v.speech = clampSpeech(withPhrase(v.speech, "double-checked with the pack's code"));
   return v;
 }
