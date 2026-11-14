@@ -45,10 +45,20 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const SCHED = ["morning", "noon", "midday", "evening", "night", "bedtime"];
 const schedWord = (m: Med) => SCHED.find((w) => m.schedule.some((s) => s.toLowerCase().includes(w)));
 
+const EXTRA_SALTS = /\s+(lysine|lysinate|arginate|trometamol|tromethamine|hydrobromide|hbr|hemihydrate|anhydrous)\b/gi;
+const PRODUCT_STRENGTH_RE = /\d+(?:[.,]\d+)?(?:\s*[+/\u2044\u2215]\s*\d+(?:[.,]\d+)?)*\s*(?:%|(?:mg|g|mcg|ug|[\u00b5\u03bc]g|mikrog|mikrogram(?:maa|ma|m)?|microgram(?:mes?|s)?|milligram(?:maa|ma|m|mes?|s)?|gram(?:maa|ma|m|mes?|s)?|ml|millilit(?:ers?|res?|rassa|raa|ra)|iu|ky|ie)\b).*$/i;
+const cleanSalt = (s: string) => spokenIngredient(s).replace(EXTRA_SALTS, "").replace(/\s+/g, " ").trim();
+
 function itemName(read: LabelRead, med?: Med): string {
-  if (med) return cap(spokenIngredient(med.ingredient) || med.name);
-  if (read.ingredient.value && read.ingredient.confidence >= 0.6 && read.kind === "medication") return cap(read.ingredient.value.split(",")[0].trim());
-  if (read.product.value && read.product.confidence >= 0.6) return read.product.value.replace(/\d+(?:[.,]\d+)?\s*(mg|g|mcg|µg|ml|iu)\b.*$/i, "").trim();
+  if (med) return cap(cleanSalt(med.ingredient) || med.name);
+  if (read.ingredient.value && read.ingredient.confidence >= 0.6 && read.kind === "medication") {
+    const ing = cleanSalt(read.ingredient.value.split(/[,/+;&]/)[0]) || read.ingredient.value.split(",")[0].trim();
+    if (ing) return cap(ing);
+  }
+  if (read.product.value && read.product.confidence >= 0.6) {
+    const prod = read.product.value.replace(PRODUCT_STRENGTH_RE, "").trim() || read.product.value.trim();
+    if (prod) return prod;
+  }
   return read.kind === "food" ? "a food package" : "a package I can't read";
 }
 function itemLabel(read: LabelRead, med?: Med): string {
