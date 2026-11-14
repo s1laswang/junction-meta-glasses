@@ -1,0 +1,112 @@
+{
+  "suite": "pharmacy_sticker_conflict",
+  "model": "gemini-3.8-flash",
+  "thinking_level": "low",
+  "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+  "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+  "eval_now_iso": "2026-11-14T19:30:00+02:00",
+  "languages_tested": [
+    "fi",
+    "sv"
+  ],
+  "profile": {
+    "meds": [
+      {
+        "id": "norvasc",
+        "name": "Norvasc",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "cardace",
+        "name": "Cardace",
+        "ingredient": "ramipril",
+        "strength": "5 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "glucophage",
+        "name": "Glucophage",
+        "ingredient": "metformin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ]
+      },
+      {
+        "id": "panadol",
+        "name": "Panadol",
+        "ingredient": "paracetamol",
+        "strength": "500 mg",
+        "schedule": [
+          "as needed"
+        ]
+      }
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [
+      {
+        "medId": "cardace",
+        "ts": 1794643200000
+      },
+      {
+        "medId": "glucophage",
+        "ts": 1794643200000
+      }
+    ],
+    "lang": "en"
+  },
+  "n": 12,
+  "errors": 0,
+  "timeouts": 0,
+  "pass_count": 12,
+  "pass_rate": 1.0,
+  "pass_ci95_wilson": [
+    0.7575,
+    1.0
+  ],
+  "confident_wrong_dose_count": 0,
+  "confident_wrong_dose_rate": 0.0,
+  "confident_wrong_dose_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "false_safe_allergen_count": 0,
+  "false_safe_allergen_rate": 0.0,
+  "false_safe_allergen_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "rule_of_three_95_upper": 0.25,
+  "latency_s": {
+    "p50": 3.31,
+    "p95": 4.565,
+    "mean": 3.567
+  },
+  "cases": [
+    {"id":"ps_01","language":"fi","kind":"medication","scenario":"fi_generic_substitution_amlodipin_orion_5mg_sticker_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"5 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.479,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPIN ORION","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"5 mg","confidence":0.98},"dosing":{"value":"1 tabletti iltaisin verenpaineen hoitoon.","confidence":0.95},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["matches norvasc","taken today: 0/1"]},
+    {"id":"ps_02","language":"fi","kind":"medication","scenario":"fi_sticker_partially_obscuring_strength_digits_amlodipin_unsure","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.1,"name_conf":0.99,"readability":0.65,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.85,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPIN KRKA","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.99},"strength":{"value":null,"confidence":0.1},"dosing":{"value":"Ota iltaisin lääkärin ohjeen mukaan.","confidence":0.95},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.65,"guidance":"Turn the box to show the strength on the side."},"reasons":["strength not readable"]},
+    {"id":"ps_03","language":"sv","kind":"medication","scenario":"sv_wrong_strength_amlodipin_sandoz_10mg_vs_5mg_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"10 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.619,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPIN SANDOZ","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.99},"strength":{"value":"10 mg","confidence":0.99},"dosing":{"value":"1 tablett på kvällen mot högt blodtryck.","confidence":0.98},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["strength 10 mg differs from your 5 mg"]},
+    {"id":"ps_04","language":"sv","kind":"medication","scenario":"sv_spouse_metoprolol_50mg_sticker_when_user_takes_amlodipine_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"50 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.073,"error":null,"read":{"kind":"medication","product":{"value":"METOPROLOL HEXAL","confidence":0.99},"ingredient":{"value":"metoprolol","confidence":0.98},"strength":{"value":"50 mg","confidence":0.99},"dosing":{"value":"1 tablett på morgonen.","confidence":0.97},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["not on your medication list"]},
+    {"id":"ps_05","language":"fi","kind":"medication","scenario":"fi_nsaid_burana_ibumax_400mg_sticker_avoid_list_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"400 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":2.844,"error":null,"read":{"kind":"medication","product":{"value":"BURANA","confidence":0.99},"ingredient":{"value":"ibuprofen","confidence":0.99},"strength":{"value":"400 mg","confidence":0.99},"dosing":{"value":"1 tabletti tarvittaessa kipuun, enintään 3 krt/vrk.","confidence":0.95},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["ibuprofen is an NSAID, on your avoid list","not on your medication list"]},
+    {"id":"ps_06","language":"fi","kind":"medication","scenario":"fi_matching_norvasc_5mg_pack_past_expiry_2025_04_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.475,"error":null,"read":{"kind":"medication","product":{"value":"NORVASC","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.99},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":"1 tabletti iltaisin säännöllisesti.","confidence":0.98},"expiry":{"value":"2025-04","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["expired 2025-04"]},
+    {"id":"ps_07","language":"fi","kind":"medication","scenario":"fi_already_logged_morning_ramipril_5mg_dose_today_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.109,"error":null,"read":{"kind":"medication","product":{"value":"RAMIPRIL ORION","confidence":0.99},"ingredient":{"value":"ramipril","confidence":0.99},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":"1 tabletti aamuisin verenpaineeseen","confidence":0.98},"expiry":{"value":"2027-12","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["matches cardace","taken today: 1/1"]},
+    {"id":"ps_08","language":"sv","kind":"medication","scenario":"sv_torn_faded_thermal_sticker_and_ripped_carton_strength_unsure","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.1,"name_conf":0.98,"readability":0.5,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.016,"error":null,"read":{"kind":"medication","product":{"value":"RAMIPRIL HEXAL","confidence":0.98},"ingredient":{"value":"ramipril","confidence":0.98},"strength":{"value":null,"confidence":0.1},"dosing":{"value":null,"confidence":0.1},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0.1},"barcode":{"value":null,"confidence":0.1},"readability":0.5,"guidance":"Turn the box to show the other side panels."},"reasons":["strength not readable"]},
+    {"id":"ps_09","language":"fi","kind":"medication","scenario":"bilingual_fi_sv_softgel_maapahkinaoljy_arachis_oil_excipient_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"50 mikrog","strength_conf":0.98,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.558,"error":null,"read":{"kind":"medication","product":{"value":"KOLEKALSIFEROLI ORION","confidence":0.99},"ingredient":{"value":"colecalciferol","confidence":0.98},"strength":{"value":"50 mikrog","confidence":0.98},"dosing":{"value":"1 kapseli päivässä / 1 kapsel dagligen.","confidence":0.98},"expiry":{"value":"2027-10","confidence":0.99},"allergens":{"value":["arachis oil","peanut"],"confidence":0.99},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["contains arachis oil (allergy: peanut)"]},
+    {"id":"ps_10","language":"sv","kind":"medication","scenario":"bilingual_sv_fi_substituted_panadol_softgel_arachis_oil_override_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"500 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.141,"error":null,"read":{"kind":"medication","product":{"value":"PARACETAMOL ACTAVIS","confidence":0.99},"ingredient":{"value":"paracetamol","confidence":0.99},"strength":{"value":"500 mg","confidence":0.99},"dosing":{"value":"1 kapsel vid behov / 1 kapseli tarvittaessa","confidence":0.98},"expiry":{"value":"2027-11","confidence":0.99},"allergens":{"value":["peanut","arachis oil"],"confidence":0.99},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["contains peanut (allergy: peanut)"]},
+    {"id":"ps_11","language":"sv","kind":"medication","scenario":"bilingual_sv_fi_twice_daily_metformin_500mg_1_of_2_taken_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"500 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.52,"error":null,"read":{"kind":"medication","product":{"value":"METFORMIN ACTAVIS","confidence":0.98},"ingredient":{"value":"metformin","confidence":0.98},"strength":{"value":"500 mg","confidence":0.98},"dosing":{"value":"1 tablett morgon och kväll / 1 tabletti aamulla ja illalla","confidence":0.98},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["matches glucophage","taken today: 1/2"]},
+    {"id":"ps_12","language":"fi","kind":"medication","scenario":"bilingual_fi_sv_blur_glare_low_readability_abstention_unsure","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.0,"readability":0.0,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.12,"error":null,"read":{"kind":"unreadable","product":{"value":null,"confidence":0.0},"ingredient":{"value":null,"confidence":0.0},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.0,"guidance":"Hold still to let the camera focus properly."},"reasons":["label not readable"]}
+  ]
+}
