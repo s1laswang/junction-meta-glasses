@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en" data-preview="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HoldUp: Technical Architecture &amp; Safety Boundary Poster (A4/A3 Landscape)</title>
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+
+  :root {
+    --page-bg: #0b0f17;
+    --surface-bg: #111827;
+    --surface-alt: #182234;
+    --ink-primary: #f8fafc;
+    --ink-secondary: #d8e2f0;
+    --ink-muted: #b0bfd4;
+    --border-subtle: #2b3b55;
+    --border-strong: #4b6387;
+    --accent: #38bdf8;
+    --accent-soft: #0c2742;
+    --safe-fg: #6ee7b7;
+    --safe-bg: #052e22;
+    --safe-border: #10b981;
+    --warn-fg: #fde68a;
+    --warn-bg: #362106;
+    --warn-border: #f59e0b;
+    --code-bg: #080d16;
+  }
+
+  html[data-preview="light"] {
+    --page-bg: #ffffff;
+    --surface-bg: #f8fafc;
+    --surface-alt: #eef2f7;
+    --ink-primary: #0b101b;
+    --ink-secondary: #1e293b;
+    --ink-muted: #334155;
+    --border-subtle: #cbd5e1;
+    --border-strong: #0f172a;
+    --accent: #0369a1;
+    --accent-soft: #e0f2fe;
+    --safe-fg: #064e3b;
+    --safe-bg: #ecfdf5;
+    --safe-border: #059669;
+    --warn-fg: #78350f;
+    --warn-bg: #fffbeb;
+    --warn-border: #d97706;
+    --code-bg: #e2e8f0;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #060911;
+    color: var(--ink-primary);
+    font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.3;
+  }
+
+  html[data-preview="light"] body {
+    background: #dbe3ee;
+  }
+
+  .toolbar {
+    max-width: 281mm;
+    margin: 10px auto 8px auto;
+    padding: 10px 16px;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1.5px solid #334155;
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .toolbar-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .toolbar-sub {
+    font-size: 0.77rem;
+    color: #cbd5e1;
+    margin-top: 2px;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .btn {
+    appearance: none;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #64748b;
+    background: #1e293b;
+    color: #f8fafc;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .btn:focus-visible {
+    outline: 3px solid #ffdd00;
+    outline-offset: 2px;
+  }
+
+  .btn-primary {
+    background: #10b981;
+    border-color: #34d399;
+    color: #022c22;
+    font-weight: 800;
+  }
+
+  .poster-sheet {
+    width: 281mm;
+    max-width: 100%;
+    margin: 0 auto 16px auto;
+    padding: 5.5mm 6.5mm;
+    background: var(--page-bg);
+    color: var(--ink-primary);
+    border: 1.5px solid var(--border-subtle);
+    border-radius: 10px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 2.8mm;
+  }
+
+  .poster-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3mm;
+    padding: 2.4mm 3.2mm;
+    background: var(--surface-bg);
+    border: 1.5px solid var(--border-strong);
+    border-radius: 7px;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1mm;
+    max-width: 66%;
+  }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 1.5px 7px;
+    border-radius: 999px;
+    font-size: 6.7pt;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+
+  .pill-safe {
+    background: var(--safe-bg);
+    color: var(--safe-fg);
+    border: 1px solid var(--safe-border);
+  }
+
+  .pill-neutral {
+    background: var(--surface-alt);
+    color: var(--ink-secondary);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .poster-header h1 {
+    margin: 0;
+    font-size: 12.6pt;
+    line-height: 1.15;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--ink-primary);
+  }
+
+  .header-lead {
+    margin: 0;
+    font-size: 7.5pt;
+    color: var(--ink-secondary);
+  }
+
+  .boundary-tags {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 4px 6px;
+  }
+
+  .b-tag {
+    font-size: 6.6pt;
+    font-weight: 800;
+    padding: 2.5px 7px;
+    border-radius: 5px;
+    background: var(--surface-alt);
+    color: var(--ink-primary);
+    border: 1px solid var(--border-subtle);
+    white-space: nowrap;
+  }
+
+  .diagram-card {
+    background: #050811;
+    border: 1.5px solid #2b3b55;
+    border-radius: 7px;
+    padding: 1.8mm 2.2mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .arch-svg {
+    width: 100%;
+    height: auto;
+    max-height: 88mm;
+    display: block;
+  }
+
+  .metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .metric-card {
+    background: var(--surface-bg);
+    border: 1.2px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 1.6mm 2mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.6mm;
+  }
+
+  .metric-num {
+    font-size: 9.8pt;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    line-height: 1.08;
+  }
+
+  .metric-num.safe {
+    color: var(--safe-fg);
+  }
+
+  html[data-preview="light"] .metric-num.safe {
+    color: var(--safe-border);
+  }
+
+  .metric-title {
+    font-size: 6.7pt;
+    font-weight: 800;
+    color: var(--ink-primary);
+    line-height: 1.18;
+  }
+
+  .metric-detail {
+    font-size: 6.1pt;
+    color: var(--ink-muted);
+    line-height: 1.2;
+  }
+
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.4mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .spec-panel {
+    background: var(--surface-bg);
+    border: 1.2px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 2mm 2.6mm;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2mm;
+  }
+
+  .spec-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 0.9mm;
+  }
+
+  .spec-head h2 {
+    margin: 0;
+    font-size: 8.2pt;
+    font-weight: 800;
+    color: var(--ink-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .spec-kicker {
+    font-size: 6.2pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+
+  .spec-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1mm;
+    font-size: 6.85pt;
+    color: var(--ink-secondary);
+    line-height: 1.27;
+  }
+
+  .spec-list strong {
+    color: var(--ink-primary);
+  }
+
+  code, kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 6.5pt;
+    font-weight: 700;
+    background: var(--code-bg);
+    color: var(--ink-primary);
+    padding: 0.5px 3.5px;
+    border-radius: 3px;
+  }
+
+  kbd {
+    border: 1px solid var(--border-strong);
+  }
+
+  @media (max-width: 980px) {
+    .header-left {
+      max-width: 100%;
+    }
+    .metrics-strip {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .bottom-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media print {
+    :root {
+      --page-bg: #ffffff;
+      --surface-bg: #f8fafc;
+      --surface-alt: #f1f5f9;
+      --ink-primary: #0b101b;
+      --ink-secondary: #1e293b;
+      --ink-muted: #334155;
+      --border-subtle: #cbd5e1;
+      --border-strong: #0f172a;
+      --accent: #0369a1;
+      --accent-soft: #e0f2fe;
+      --safe-fg: #064e3b;
+      --safe-bg: #ecfdf5;
+      --safe-border: #059669;
+      --warn-fg: #78350f;
+      --warn-bg: #fffbeb;
+      --warn-border: #d97706;
+      --code-bg: #e2e8f0;
+    }
+
+    html, body {
+      background: #ffffff !important;
+      color: #0b101b !important;
+    }
+
+    .no-print {
+      display: none !important;
+    }
+
+    .poster-sheet {
+      width: 281mm;
+      margin: 0;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      gap: 2.2mm;
+    }
+
+    .arch-svg {
+      max-height: 85mm;
+    }
+
+    .metrics-strip {
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .bottom-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .metric-num.safe {
+      color: #047857;
+    }
+  }
+</style>
+</head>
+<body>
+  <aside class="toolbar no-print" aria-label="Poster display and print controls">
+    <div>
+      <div class="toolbar-title">HoldUp Technical Architecture &amp; Safety Boundary Poster (A4/A3 Landscape &amp; 16:9)</div>
+      <div class="toolbar-sub">Self-contained HTML + inline SVG reference sheet citing only committed measurements from <code>eval/</code> JSON artifacts.</div>
+    </div>
+    <div class="toolbar-actions">
+      <button type="button" id="btn-toggle-preview" class="btn" aria-pressed="false">Light Print Preview</button>
+      <button type="button" id="btn-print-poster" class="btn btn-primary">Print Landscape Poster</button>
+    </div>
+  </aside>
+
+  <main class="poster-sheet" aria-labelledby="poster-title">
+    <header class="poster-header">
+      <div class="header-left">
+        <div class="badge-row">
+          <span class="pill">Meta "AI Glasses for Everyone, Everyday"</span>
+          <span class="pill pill-safe">Google DeepMind "Best Use of Gemini API"</span>
+          <span class="pill pill-neutral">Junction 2026 Booth Reference</span>
+        </div>
+        <h1 id="poster-title">HoldUp: Ephemeral 3-Surface Smart-Glasses Architecture &amp; Deterministic Safety Boundary</h1>
+        <p class="header-lead">
+          One stateless <strong>Node 24 TypeScript</strong> session hub unifies <strong>Android DAT SDK 1.0.1</strong> first-person camera streaming,
+          a <strong>WCAG 2.2 AAA React 19 PWA</strong> over Bluetooth HFP open-ear audio, and a pure <code>#000000</code> <strong>Ray-Ban Display 600x600 Web App</strong>
+          behind a hard <code>STRENGTH_MIN_CONF = 0.80</code> never-guess gate.
+        </p>
+      </div>
+      <div class="boundary-tags" aria-label="Core privacy and safety invariants">
+        <span class="b-tag">STRENGTH_MIN_CONF = 0.80 Gate</span>
+        <span class="b-tag">FrameRing(8) RAM-Only (0 Disk)</span>
+        <span class="b-tag">0 Profile Bytes Sent to Vision</span>
+        <span class="b-tag">EU MDR Art. 2(1) Assistive Reader</span>
+      </div>
+    </header>
+
+    <section class="diagram-card" aria-label="System architecture, hardware SDK wiring, and privacy boundaries">
+      <svg class="arch-svg" viewBox="0 0 1200 404" role="img" aria-label="HoldUp technical architecture diagram showing Android DAT SDK 1.0.1 bridge, React 19 WCAG 2.2 AAA PWA, Ray-Ban Display 600x600 #000000 waveguide HUD, Node 24 TypeScript ephemeral Hub with FrameRing(8), LiveProxy gemini-3.8-live, verify_label gemini-3.8-flash, and safety.ts STRENGTH_MIN_CONF = 0.80 gate">
+        <rect x="2" y="2" width="1196" height="400" rx="9" fill="#050811" stroke="#243249" stroke-width="1.5"/>
+
+        <rect x="14" y="12" width="322" height="380" rx="8" fill="#09101d" stroke="#334155" stroke-width="1.4"/>
+        <text x="26" y="28" fill="#7dd3fc" font-size="9.5" font-weight="800" font-family="sans-serif">1. THREE THIN HARDWARE &amp; CLIENT SURFACES</text>
+
+        <rect x="24" y="36" width="302" height="106" rx="6" fill="#0e1729" stroke="#38bdf8" stroke-width="1.6"/>
+        <text x="34" y="53" fill="#f8fafc" font-size="10.2" font-weight="800" font-family="sans-serif">1A. ANDROID DAT BRIDGE (android-dat/, Kotlin)</text>
+        <text x="34" y="68" fill="#bae6fd" font-size="8.6" font-weight="700" font-family="monospace">Meta Wearables DAT SDK 1.0.1 (mwdat-core/camera)</text>
+        <text x="34" y="82" fill="#cbd5e1" font-size="8.5" font-family="sans-serif">Ray-Ban Meta Gen 2 (V128+, Dev Mode ID 0) | LED ON</text>
+        <text x="34" y="96" fill="#cbd5e1" font-size="8.5" font-family="sans-serif">720x1280 @ 2 fps -&gt; &lt;= ~1 fps JPEG (q=78) + worn/batt</text>
+        <rect x="34" y="106" width="282" height="26" rx="4" fill="#08243a" stroke="#0284c7" stroke-width="1"/>
+        <text x="42" y="122" fill="#7dd3fc" font-size="8.1" font-weight="700" font-family="monospace">Boundary: URL only | 0 frames or health PII stored</text>
+
+        <rect x="24" y="150" width="302" height="114" rx="6" fill="#0e1729" stroke="#a78bfa" stroke-width="1.6"/>
+        <text x="34" y="167" fill="#f8fafc" font-size="10.2" font-weight="800" font-family="sans-serif">1B. PHONE / LAPTOP PWA (web/, React 19 + Vite 6)</text>
+        <text x="34" y="182" fill="#ddd6fe" font-size="8.6" font-weight="700" font-family="sans-serif">WCAG 2.2 AAA (15.07:1 to 21:1) | Dual ARIA Announcer</text>
+        <text x="34" y="196" fill="#cbd5e1" font-size="8.5" font-family="sans-serif">BT HFP Open-Ear PCM16 (16 kHz mic -&gt; 24 kHz + earcons)</text>
+        <text x="34" y="210" fill="#cbd5e1" font-size="8.5" font-family="sans-serif">getUserMedia backup | 7 Demo Props | BarcodeDetector</text>
+        <rect x="34" y="220" width="282" height="34" rx="4" fill="#1b1433" stroke="#8b5cf6" stroke-width="1"/>
+        <text x="42" y="234" fill="#e9d5ff" font-size="8.1" font-weight="700" font-family="monospace">On-Device Only: localStorage (holdup.* + holdup:&#47;&#47;rx)</text>
+        <text x="42" y="247" fill="#cbd5e1" font-size="7.9" font-family="monospace">1-tap wipeAllLocalData() | Offline EAN match = 0.0 KB</text>
+
+        <rect x="24" y="272" width="302" height="110" rx="6" fill="#000000" stroke="#34d399" stroke-width="1.8"/>
+        <text x="34" y="289" fill="#6ee7b7" font-size="10.2" font-weight="800" font-family="sans-serif">1C. RAY-BAN DISPLAY WEB APP (/hud, 600x600)</text>
+        <text x="34" y="304" fill="#f8fafc" font-size="8.6" font-weight="700" font-family="monospace">Pure #000000 additive waveguide (&lt;= 65% lit fill)</text>
+        <text x="34" y="318" fill="#cbd5e1" font-size="8.5" font-family="sans-serif">4-channel Circle / Triangle / Diamond / Square | &lt;= 8w</text>
+        <text x="34" y="332" fill="#cbd5e1" font-size="8.5" font-family="sans-serif">Meta Neural Band: Arrow* focus + Enter pinch (150 ms)</text>
+        <rect x="34" y="342" width="282" height="30" rx="4" fill="#04241b" stroke="#10b981" stroke-width="1"/>
+        <text x="42" y="360" fill="#6ee7b7" font-size="8.1" font-weight="700" font-family="monospace">Loaner-Safe: 0 B storage | &lt;= 2 popstate history cap</text>
+
+        <line x1="326" y1="68" x2="458" y2="68" stroke="#38bdf8" stroke-width="1.8"/>
+        <polygon points="458,64 467,68 458,72" fill="#38bdf8"/>
+        <text x="396" y="61" text-anchor="middle" fill="#7dd3fc" font-size="7.9" font-weight="800" font-family="monospace">POST /ingest/frame</text>
+        <text x="396" y="79" text-anchor="middle" fill="#94a3b8" font-size="7.5" font-family="monospace">1.17 ms p50 (58.4 KB)</text>
+
+        <line x1="326" y1="106" x2="458" y2="106" stroke="#38bdf8" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <polygon points="458,102 467,106 458,110" fill="#38bdf8"/>
+        <text x="396" y="99" text-anchor="middle" fill="#7dd3fc" font-size="7.9" font-weight="800" font-family="monospace">POST /ingest/state</text>
+        <text x="396" y="117" text-anchor="middle" fill="#94a3b8" font-size="7.5" font-family="monospace">1.30 ms fan-out p50</text>
+
+        <line x1="335" y1="188" x2="458" y2="188" stroke="#a78bfa" stroke-width="1.9"/>
+        <polygon points="335,184 326,188 335,192" fill="#a78bfa"/>
+        <polygon points="458,184 467,188 458,192" fill="#a78bfa"/>
+        <text x="396" y="181" text-anchor="middle" fill="#ddd6fe" font-size="7.9" font-weight="800" font-family="monospace">WSS /live (PCM16+RTT)</text>
+        <text x="396" y="199" text-anchor="middle" fill="#94a3b8" font-size="7.5" font-family="monospace">431.6 ms ready | 4 MiB cap</text>
+
+        <line x1="326" y1="230" x2="458" y2="230" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="458,226 467,230 458,234" fill="#c084fc"/>
+        <text x="396" y="223" text-anchor="middle" fill="#e9d5ff" font-size="7.7" font-weight="700" font-family="monospace">POST /api/verify &amp; /tts</text>
+        <text x="396" y="241" text-anchor="middle" fill="#94a3b8" font-size="7.4" font-family="monospace">Snapshot fallback (38.7 KB)</text>
+
+        <line x1="335" y1="312" x2="467" y2="312" stroke="#34d399" stroke-width="1.9"/>
+        <polygon points="335,308 326,312 335,316" fill="#34d399"/>
+        <text x="396" y="305" text-anchor="middle" fill="#6ee7b7" font-size="7.9" font-weight="800" font-family="monospace">WSS /hud-ws (0-code)</text>
+        <text x="396" y="323" text-anchor="middle" fill="#94a3b8" font-size="7.5" font-family="monospace">1.78 ms replay (&lt;=695 B)</text>
+
+        <line x1="326" y1="352" x2="458" y2="352" stroke="#34d399" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <polygon points="458,348 467,352 458,356" fill="#34d399"/>
+        <text x="396" y="345" text-anchor="middle" fill="#a7f3d0" font-size="7.7" font-weight="700" font-family="monospace">event: log_dose / repeat</text>
+        <text x="396" y="363" text-anchor="middle" fill="#94a3b8" font-size="7.4" font-family="monospace">64 KiB frame cap</text>
+
+        <rect x="468" y="12" width="384" height="380" rx="8" fill="#081221" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="6 4"/>
+        <text x="480" y="28" fill="#38bdf8" font-size="9.5" font-weight="800" font-family="sans-serif">2. NODE 24 TYPESCRIPT HUB (server/ | RAM-ONLY BOUNDARY)</text>
+
+        <rect x="480" y="36" width="360" height="82" rx="6" fill="#0f1b2e" stroke="#38bdf8" stroke-width="1.5"/>
+        <text x="490" y="52" fill="#f8fafc" font-size="9.8" font-weight="800" font-family="sans-serif">2A. Session Hub &amp; FrameRing(8) (hub.ts / index.ts / log.ts)</text>
+        <text x="490" y="67" fill="#bae6fd" font-size="8.3" font-weight="700" font-family="monospace">Bounded 8-slot RAM JPEG ring + jpegSharpness() + pick(2, 5000 ms)</text>
+        <text x="490" y="81" fill="#cbd5e1" font-size="8.2" font-family="sans-serif">hub.ring.clear() on /live close -&gt; 0 frames | 45s IDLE_STOP_MS | 10m GC</text>
+        <text x="490" y="95" fill="#cbd5e1" font-size="8.2" font-family="sans-serif">floatingHuds + orphanDevice | HUD_TYPES fan-out | DENY + AIza log scrub</text>
+        <text x="490" y="110" fill="#6ee7b7" font-size="8" font-weight="700" font-family="monospace">0.0 KB client re-upload on verify_label | 0 user files written to disk</text>
+
+        <rect x="480" y="126" width="360" height="80" rx="6" fill="#0f1b2e" stroke="#60a5fa" stroke-width="1.5"/>
+        <text x="490" y="142" fill="#f8fafc" font-size="9.8" font-weight="800" font-family="sans-serif">2B. LiveProxy Voice &amp; Coaching Orchestrator (live.ts)</text>
+        <text x="490" y="157" fill="#bfdbfe" font-size="8.3" font-weight="700" font-family="monospace">gemini-3.8-live | &lt;= 1 fps (&gt;= 900 ms) frames | sessionResumption</text>
+        <text x="490" y="171" fill="#cbd5e1" font-size="8.2" font-family="sans-serif">Tools: show_cue (NON_BLOCKING), verify_label, log_dose | Barge-in cancel</text>
+        <text x="490" y="185" fill="#fde68a" font-size="8.1" font-weight="700" font-family="sans-serif">Safety prompt rule: barred from reading drug names or doses from Live video</text>
+        <text x="490" y="199" fill="#94a3b8" font-size="7.9" font-family="monospace">Emits checking pulse + hold_still cue during Flash read (zero dead air)</text>
+
+        <rect x="480" y="214" width="360" height="76" rx="6" fill="#0f1b2e" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="490" y="230" fill="#f8fafc" font-size="9.8" font-weight="800" font-family="sans-serif">2C. Multi-Frame Reader: verify_label / readLabel() (verify.ts)</text>
+        <text x="490" y="245" fill="#fde68a" font-size="8.3" font-weight="700" font-family="monospace">gemini-3.8-flash (ThinkingLevel.LOW) + shared/label_schema.json</text>
+        <text x="490" y="259" fill="#cbd5e1" font-size="8.2" font-family="sans-serif">Extracts product, ingredient, strength, expiry, allergens with [0, 1] conf</text>
+        <text x="490" y="273" fill="#6ee7b7" font-size="8.1" font-weight="700" font-family="monospace">Profile Isolation: 0 Profile bytes sent | null&lt;=0.30 | 2,5 mg -&gt; 2.5 mg</text>
+
+        <rect x="480" y="298" width="360" height="84" rx="6" fill="#05231b" stroke="#10b981" stroke-width="1.8"/>
+        <text x="490" y="314" fill="#6ee7b7" font-size="9.8" font-weight="800" font-family="sans-serif">2D. Deterministic Personal Safety Engine: checkLabel() (safety.ts)</text>
+        <text x="490" y="329" fill="#ffffff" font-size="8.4" font-weight="800" font-family="monospace">STRENGTH_MIN_CONF = 0.80 | NAME 0.60 | ALLERGEN 0.60 | EXPIRY 0.70</text>
+        <text x="490" y="343" fill="#d1fae5" font-size="8.2" font-family="sans-serif">49 Nordic/INN aliases (Burana-&gt;ibuprofen-&gt;NSAID) + EU-14 EN/FI/SV allergens</text>
+        <text x="490" y="357" fill="#d1fae5" font-size="8.2" font-family="sans-serif">ISO expiry check + same-day doseLog duplicate guard + &lt;= 8-word clampHeadline</text>
+        <text x="490" y="372" fill="#fde68a" font-size="8" font-weight="700" font-family="monospace">Below 0.80 -&gt; UNSURE + pharmacist handoff (0 confident-wrong doses)</text>
+
+        <line x1="660" y1="118" x2="660" y2="126" stroke="#38bdf8" stroke-width="1.6"/>
+        <line x1="660" y1="206" x2="660" y2="214" stroke="#fbbf24" stroke-width="1.6"/>
+        <line x1="660" y1="290" x2="660" y2="298" stroke="#10b981" stroke-width="1.8"/>
+
+        <line x1="849" y1="158" x2="912" y2="104" stroke="#60a5fa" stroke-width="1.8"/>
+        <polygon points="846,154 840,164 851,161" fill="#60a5fa"/>
+        <polygon points="910,100 919,98 915,107" fill="#60a5fa"/>
+        <text x="884" y="118" text-anchor="middle" fill="#93c5fd" font-size="7.6" font-weight="700" font-family="monospace">Bidi WS</text>
+        <text x="884" y="129" text-anchor="middle" fill="#94a3b8" font-size="7.3" font-family="monospace">582 ms 1st</text>
+
+        <line x1="840" y1="246" x2="911" y2="230" stroke="#fbbf24" stroke-width="1.8"/>
+        <polygon points="910,226 919,228 912,234" fill="#fbbf24"/>
+        <text x="880" y="226" text-anchor="middle" fill="#fde68a" font-size="7.6" font-weight="700" font-family="monospace">1-3 JPEGs</text>
+        <text x="880" y="255" text-anchor="middle" fill="#6ee7b7" font-size="7.4" font-weight="700" font-family="monospace">0 PII sent</text>
+
+        <rect x="920" y="12" width="266" height="380" rx="8" fill="#09101d" stroke="#334155" stroke-width="1.4"/>
+        <text x="932" y="28" fill="#fde68a" font-size="9.5" font-weight="800" font-family="sans-serif">3. GEMINI CHAINS &amp; RED-TEAM GATES</text>
+
+        <rect x="930" y="36" width="246" height="110" rx="6" fill="#0e1729" stroke="#60a5fa" stroke-width="1.5"/>
+        <text x="940" y="53" fill="#f8fafc" font-size="9.6" font-weight="800" font-family="sans-serif">3A. Gemini Live 3-Model Chain</text>
+        <text x="940" y="69" fill="#93c5fd" font-size="8.2" font-weight="700" font-family="monospace">1. gemini-3.8-live (706/582 ms)</text>
+        <text x="940" y="83" fill="#cbd5e1" font-size="8.1" font-family="monospace">2. gemini-3.1-flash-live-preview</text>
+        <text x="940" y="97" fill="#cbd5e1" font-size="8.1" font-family="monospace">3. gemini-2.5-flash-native-audio</text>
+        <text x="940" y="113" fill="#94a3b8" font-size="8" font-family="sans-serif">Sliding context window + resumption</text>
+        <text x="940" y="127" fill="#6ee7b7" font-size="7.9" font-weight="700" font-family="monospace">3/3 Live models verified reachable</text>
+
+        <rect x="930" y="156" width="246" height="122" rx="6" fill="#0e1729" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="940" y="173" fill="#f8fafc" font-size="9.6" font-weight="800" font-family="sans-serif">3B. Verify &amp; TTS Fallback Chains</text>
+        <text x="940" y="189" fill="#fde68a" font-size="8.2" font-weight="700" font-family="monospace">1. gemini-3.8-flash (p50 3530.9 ms)</text>
+        <text x="940" y="203" fill="#cbd5e1" font-size="8.1" font-family="monospace">2. gemini-3.5-flash (p50 1946.0 ms)</text>
+        <text x="940" y="217" fill="#cbd5e1" font-size="8.1" font-family="monospace">3. gemini-3-flash-preview (1310 ms)</text>
+        <text x="940" y="233" fill="#cbd5e1" font-size="8" font-family="monospace">TTS: gemini-3.8-flash-tts (24 kHz)</text>
+        <text x="940" y="248" fill="#94a3b8" font-size="7.9" font-family="sans-serif">Semaphore(4) + jittered 429 backoff</text>
+        <text x="940" y="264" fill="#6ee7b7" font-size="7.9" font-weight="700" font-family="monospace">36/36 probe calls: 100% acc, 0 wrong</text>
+
+        <rect x="930" y="288" width="246" height="94" rx="6" fill="#05231b" stroke="#10b981" stroke-width="1.5"/>
+        <text x="940" y="305" fill="#6ee7b7" font-size="9.6" font-weight="800" font-family="sans-serif">3C. Bystander &amp; Secret Isolation</text>
+        <text x="940" y="321" fill="#f8fafc" font-size="8.2" font-weight="700" font-family="monospace">GEMINI_API_KEY in server RAM only</text>
+        <text x="940" y="336" fill="#d1fae5" font-size="8.1" font-family="sans-serif">live.md + verify_prompt.md forbid</text>
+        <text x="940" y="349" fill="#d1fae5" font-size="8.1" font-family="sans-serif">describing people, faces, or rooms</text>
+        <text x="940" y="366" fill="#fde68a" font-size="8.1" font-weight="800" font-family="monospace">0 PII/bystander leaks (8/8 scenes)</text>
+      </svg>
+    </section>
+
+    <section class="metrics-strip" aria-label="Measured latency, safety, and privacy benchmarks from eval JSON artifacts">
+      <div class="metric-card">
+        <div class="metric-num safe">0</div>
+        <div class="metric-title">Confident-Wrong Doses</div>
+        <div class="metric-detail">Across all suites at <code>0.80</code> gate (<code>52/53</code> core = <code>98.1%</code>, <code>ECE = 0.0138</code>)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">1.17 ms</div>
+        <div class="metric-title"><code>/ingest/frame</code> p50</div>
+        <div class="metric-detail">p95 <code>5.27 ms</code> (<code>n=100</code>, <code>58.4 KB</code> JPEG -&gt; <code>FrameRing(8)</code>)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">1.30 ms</div>
+        <div class="metric-title">State Fan-Out p50</div>
+        <div class="metric-detail"><code>/ingest/state</code> -&gt; <code>/hud-ws</code> (<code>1.18 ms</code>) + <code>/live</code> (<code>1.12 ms</code>)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">1.78 ms</div>
+        <div class="metric-title"><code>/hud-ws</code> Replay p50</div>
+        <div class="metric-detail">Zero-code 4-msg late-join replay (<code>898 B</code> total, <code>674 B</code> verdict)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">431.6 ms</div>
+        <div class="metric-title">Live Session Ready</div>
+        <div class="metric-detail"><code>gemini-3.8-live</code> open (<code>582 ms</code> probe 1st audio, <code>1175.3 ms</code> 1st cue)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num">2738.8 ms</div>
+        <div class="metric-title">Glass-to-HUD Verdict p50</div>
+        <div class="metric-detail">DAT frame -&gt; <code>gemini-3.8-flash</code> -&gt; <code>safety.ts</code> -&gt; <code>/hud-ws</code></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-num safe">0</div>
+        <div class="metric-title">PII / Bystander Leaks</div>
+        <div class="metric-detail"><code>8/8</code> red-team scenes + <code>8/8</code> (<code>5.0/5</code>) face refusal (<code>2574.8 ms</code>)</div>
+      </div>
+    </section>
+
+    <div class="bottom-grid">
+      <section class="spec-panel" aria-labelledby="col-hardware">
+        <div class="spec-head">
+          <h2 id="col-hardware">Hardware SDK Wiring &amp; Waveguide Budget</h2>
+          <span class="spec-kicker">Meta Wearables</span>
+        </div>
+        <ul class="spec-list">
+          <li><strong>Android DAT Bridge (<code>android-dat/</code>):</strong> Kotlin 2.2.21 + <code>mwdat-core:1.0.1</code> &amp; <code>mwdat-camera:1.0.1</code> (Dev Mode app ID <code>0</code>); streams <code>720x1280</code> frames throttled to <code>&lt;= ~1 fps</code> JPEG + wear/battery state; hardware Capture LED locked ON in firmware (<code>V128+</code>).</li>
+          <li><strong>Ray-Ban Display HUD (<code>/hud</code>):</strong> <code>600x600</code> pure <code>#000000</code> additive waveguide (<code>&lt;= 65%</code> card fill, <code>&lt;= 35%</code> <code>CoachCue</code>, <code>&lt;= 8</code> words); 4-channel redundant encoding; <strong>Meta Neural Band</strong> <kbd>Arrow*</kbd> / <kbd>Enter</kbd> + <code>&lt;= 2</code>-entry <code>popstate</code> history.</li>
+          <li><strong>Phone / Laptop PWA (<code>web/</code>):</strong> WCAG 2.2 AAA React 19 UI, Bluetooth HFP PCM16 audio (<code>16 kHz</code> in / <code>24 kHz</code> out), 7 Demo Prop Fixtures, zero-PII <code>holdup:&#47;&#47;rx</code> pharmacy QR, and offline <code>BarcodeDetector</code>.</li>
+        </ul>
+      </section>
+
+      <section class="spec-panel" aria-labelledby="col-privacy">
+        <div class="spec-head">
+          <h2 id="col-privacy">Memory, Privacy &amp; Clinical Safety Gates</h2>
+          <span class="spec-kicker">Zero Retention</span>
+        </div>
+        <ul class="spec-list">
+          <li><strong>RAM-Only Ephemeral Lifecycle:</strong> <code>FrameRing(8)</code> holds at most <code>8</code> JPEGs in server RAM, wipes immediately on <code>/live</code> disconnect (<code>ring_len_after_disconnect = 0</code>), auto-stops active camera at <code>45 s</code> (<code>IDLE_STOP_MS</code>), and GCs idle hubs after <code>10 min</code>.</li>
+          <li><strong>Profile-Blind Vision Extraction:</strong> <code>readLabel()</code> sends <code>1-3</code> sharpest frames + <code>shared/label_schema.json</code> with <strong>zero</strong> medication or allergy profile attached; <code>localStorage</code> stays on the phone (<code>0 B</code> written on <code>/hud</code> loaner glasses) with 1-tap <code>wipeAllLocalData()</code>.</li>
+          <li><strong>Deterministic Never-Guess Gate:</strong> <code>safety.ts</code> enforces <code>STRENGTH_MIN_CONF = 0.80</code>, clamping <code>null</code> fields <code>&lt;= 0.30</code>, normalizing <code>2,5 mg -&gt; 2.5 mg</code>, and handing off any ambiguity to a pharmacist under EU MDR Art. 2(1).</li>
+        </ul>
+      </section>
+
+      <section class="spec-panel" aria-labelledby="col-resilience">
+        <div class="spec-head">
+          <h2 id="col-resilience">6-Tier Resilience &amp; Assistive Unit Economics</h2>
+          <span class="spec-kicker">Measured Proof</span>
+        </div>
+        <ul class="spec-list">
+          <li><strong>RTT-Adaptive &amp; Transport Fallbacks:</strong> 5s WS <code>ping</code>/<code>pong</code> scales capture above <code>650 ms</code> RTT to <code>512 px @ 0.5 fps</code> (saving <code>84.0%</code> video bytes: <code>724.64 -&gt; 116.02 KB</code>); WS drop -&gt; HTTP Snapshot (<code>38.67 KB</code> + TTS); Offline -&gt; <code>BarcodeDetector</code> (<code>0.0 KB</code>).</li>
+          <li><strong>Hardware Hot-Swap &amp; Model Chains:</strong> DAT <code>!worn</code> or <code>battery &lt; 15%</code> hot-swaps active eye from <code>glasses</code> to <code>phone</code> mid-session; HTTP <code>429</code>/<code>5xx</code> walks 3-model Live and Flash fallback chains automatically.</li>
+          <li><strong>91.8% 3-Year TCO Reduction:</strong> <code>EUR 0.00294</code>/check (<code>EUR 0.35/mo</code>) + EUR 329 Ray-Ban Meta Gen 2 = <strong><code>EUR 341.68</code></strong> 3-yr TCO vs <strong><code>EUR 4,150.00</code></strong> OrCam midpoint (<code>12.1x</code> lower; equips <code>1,214</code> users per 100-OrCam budget).</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var previewBtn = document.getElementById("btn-toggle-preview");
+      var printBtn = document.getElementById("btn-print-poster");
+      if (previewBtn) {
+        previewBtn.addEventListener("click", function () {
+          var next = root.getAttribute("data-preview") === "light" ? "dark" : "light";
+          root.setAttribute("data-preview", next);
+          previewBtn.setAttribute("aria-pressed", next === "light" ? "true" : "false");
+          previewBtn.textContent = next === "light" ? "Dark Booth View" : "Light Print Preview";
+        });
+      }
+      if (printBtn) {
+        printBtn.addEventListener("click", function () {
+          window.print();
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
