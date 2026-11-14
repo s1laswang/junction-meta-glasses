@@ -1,0 +1,62 @@
+{
+  "suite": "food_may_contain_nordic",
+  "model": "gemini-3.8-flash",
+  "thinking_level": "low",
+  "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+  "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+  "eval_now_iso": "2026-11-14T20:00:00Z",
+  "profile_allergies": [
+    "peanut",
+    "tree nuts",
+    "milk",
+    "egg",
+    "soy",
+    "sesame"
+  ],
+  "languages_tested": [
+    "fi",
+    "sv",
+    "en"
+  ],
+  "n": 12,
+  "errors": 0,
+  "timeouts": 0,
+  "pass_count": 12,
+  "pass_rate": 1.0,
+  "pass_ci95_wilson": [
+    0.7575,
+    1.0
+  ],
+  "confident_wrong_dose_count": 0,
+  "confident_wrong_dose_rate": 0.0,
+  "confident_wrong_dose_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "false_safe_allergen_count": 0,
+  "false_safe_allergen_rate": 0.0,
+  "false_safe_allergen_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "rule_of_three_95_upper": 0.25,
+  "latency_s": {
+    "p50": 3.12,
+    "p95": 5.631,
+    "mean": 3.567
+  },
+  "cases": [
+    {"id":"nf_01","language":"fi","kind":"food","scenario":"fi_puolukka_mysli_saattaa_sisaltaa_maapahkinaa_precautionary_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.016,"error":null,"read":{"kind":"food","product":{"value":"Pohjolan Mylly Puolukka & Kaura Mysli","confidence":0.98},"ingredient":{"value":"muesli","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":["oats","gluten","may contain: peanut"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["may contain peanut (allergy: peanut)"]},
+    {"id":"nf_02","language":"sv","kind":"food","scenario":"sv_kardemummaskorpor_kan_innehalla_spar_av_hasselnotter_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.95,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.139,"error":null,"read":{"kind":"food","product":{"value":"Skånska Bageriet Kardemummaskorpor","confidence":0.95},"ingredient":{"value":"cardamom rusks","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.95},"allergens":{"value":["wheat","gluten","may contain: hazelnut"],"confidence":0.95},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["may contain hazelnut (allergy: tree nuts)"]},
+    {"id":"nf_03","language":"en","kind":"food","scenario":"en_nordic_rye_thins_may_contain_traces_of_sesame_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":5.773,"error":null,"read":{"kind":"food","product":{"value":"Helsinki Bakehouse Flax & Pumpkin Rye Thins","confidence":0.98},"ingredient":{"value":"rye crackers","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":["gluten","may contain: sesame"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["may contain sesame (allergy: sesame)"]},
+    {"id":"nf_04","language":"en","kind":"food","scenario":"en_bilberry_oat_clusters_may_contain_traces_of_tree_nuts_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.8,"error":null,"read":{"kind":"food","product":{"value":"Wild Bilberry Oat Clusters","confidence":0.98},"ingredient":{"value":"oat cereal","confidence":0.9},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-12","confidence":0.98},"allergens":{"value":["oats","gluten","may contain: tree nuts","may contain: almond","may contain: walnut"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["may contain tree nuts (allergy: tree nuts)"]},
+    {"id":"nf_05","language":"fi","kind":"food","scenario":"fi_sv_yrttisipsit_hidden_herajauhe_vasslepulver_milk_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.95,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.03,"error":null,"read":{"kind":"food","product":{"value":"Saaristolais Yrttisipsit","confidence":0.95},"ingredient":{"value":"potato crisps","confidence":0.9},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":["milk","whey"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["contains milk (allergy: milk)"]},
+    {"id":"nf_06","language":"sv","kind":"food","scenario":"sv_fi_havrevafflor_hidden_kananmunajauhe_aggvita_egg_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.067,"error":null,"read":{"kind":"food","product":{"value":"Krispiga Havrevåfflor","confidence":0.99},"ingredient":{"value":"oat wafers","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.99},"allergens":{"value":["egg","gluten"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["contains egg (allergy: egg)"]},
+    {"id":"nf_07","language":"fi","kind":"food","scenario":"fi_kaakaokaurapala_hidden_soijalesitiini_soy_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.95,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.206,"error":null,"read":{"kind":"food","product":{"value":"Korpiherkku Tumma Kaakao-Kaurapala","confidence":0.95},"ingredient":{"value":"oat snack with cocoa","confidence":0.9},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":["oat","gluten","soy"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["contains soy (allergy: soy)"]},
+    {"id":"nf_08","language":"fi","kind":"food","scenario":"fi_pohjolan_kaurajuoma_clean_safe_oat_drink_info","expected_level":"info","actual_level":"info","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.95,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.298,"error":null,"read":{"kind":"food","product":{"value":"Pohjolan Kaura Täyteläinen Kaurajuoma","confidence":0.95},"ingredient":{"value":"oat drink","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.95},"allergens":{"value":["oat"],"confidence":0.95},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["no listed allergen matches your profile"]},
+    {"id":"nf_09","language":"sv","kind":"food","scenario":"sv_nordiskt_ragknackebrod_clean_safe_rye_crisp_info","expected_level":"info","actual_level":"info","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":2.85,"error":null,"read":{"kind":"food","product":{"value":"Kvarnens Bröd Nordiskt Rågknäckebröd","confidence":0.98},"ingredient":{"value":"rye crispbread","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-12","confidence":0.98},"allergens":{"value":["gluten"],"confidence":0.95},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["no listed allergen matches your profile"]},
+    {"id":"nf_10","language":"fi","kind":"food","scenario":"fi_puolukkahillo_expired_parasta_ennen_02_2025_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.009,"error":null,"read":{"kind":"food","product":{"value":"Kainuun Marja Perinteinen Puolukkahillo","confidence":0.98},"ingredient":{"value":"lingonberry jam","confidence":0.98},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2025-02","confidence":0.98},"allergens":{"value":[],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["expired 2025-02"]},
+    {"id":"nf_11","language":"fi","kind":"food","scenario":"fi_thumb_covered_ainesosat_ingredienser_panel_unsure","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.95,"readability":0.4,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.102,"error":null,"read":{"kind":"food","product":{"value":"Pohjolan Välipalapatukka","confidence":0.95},"ingredient":{"value":"berry cereal bar","confidence":0.85},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-09","confidence":0.95},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.4,"guidance":"Move your finger away from the ingredients list."},"reasons":["allergen panel not readable"]},
+    {"id":"nf_12","language":"sv","kind":"food","scenario":"sv_condensation_blurred_ingredienser_ainesosat_panel_unsure","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.95,"readability":0.4,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":5.514,"error":null,"read":{"kind":"food","product":{"value":"Nordisk Rödbetssallad","confidence":0.95},"ingredient":{"value":"beetroot salad","confidence":0.9},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2026-12","confidence":0.95},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.4,"guidance":"The ingredient panel is obscured, show a clear view."},"reasons":["allergen panel not readable"]}
+  ]
+}
