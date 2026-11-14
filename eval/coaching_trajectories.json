@@ -1,0 +1,855 @@
+{
+  "generated_at": "2026-11-14T14:35:02.612469+00:00",
+  "pipeline": "Hub.ring (FrameRing(8)) -> pick(2) -> verify() (gemini-3.8-flash) -> checkLabel()",
+  "profile_summary": {
+    "meds": [
+      "Amlodipin 5 mg (evening)",
+      "Metformin 500 mg (morning/evening)",
+      "Panadol 500 mg (as needed)"
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ]
+  },
+  "fixture_sharpness": {
+    "back_of_box.jpg": {
+      "bytes": 56531,
+      "width": 768,
+      "height": 768,
+      "jpeg_sharpness": 0.27384
+    },
+    "amlodipine.jpg": {
+      "bytes": 58414,
+      "width": 768,
+      "height": 768,
+      "jpeg_sharpness": 0.282961
+    },
+    "blurry_amlodipine.jpg": {
+      "bytes": 54085,
+      "width": 768,
+      "height": 768,
+      "jpeg_sharpness": 0.261991
+    },
+    "ibuprofen.jpg": {
+      "bytes": 65615,
+      "width": 768,
+      "height": 768,
+      "jpeg_sharpness": 0.317843
+    },
+    "hazelnut_bar.jpg": {
+      "bytes": 60162,
+      "width": 768,
+      "height": 768,
+      "jpeg_sharpness": 0.291428
+    }
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "n_trajectories": 4,
+    "n_verify_calls": 8,
+    "ring_capacity": 8,
+    "pick_top_n": 2,
+    "strength_min_conf": 0.8,
+    "pre_coaching_abstentions": 4,
+    "pre_coaching_abstention_rate": 1.0,
+    "post_coaching_verdict_matches": 4,
+    "post_coaching_verdict_accuracy": 1.0,
+    "post_coaching_sharp_selected_first_count": 4,
+    "post_coaching_sharp_selected_first_rate": 1.0,
+    "confident_wrong_dose_count": 0,
+    "stage_a_latency_p50_ms": 3705.5,
+    "stage_a_latency_p95_ms": 5240.9,
+    "stage_a_latency_mean_ms": 3924.2,
+    "stage_b_latency_p50_ms": 3536.5,
+    "stage_b_latency_p95_ms": 3745.0,
+    "stage_b_latency_mean_ms": 3439.0,
+    "latency_p50_ms": 3536.5,
+    "latency_p95_ms": 4955.5,
+    "latency_mean_ms": 3681.6,
+    "tokens_in": 26480,
+    "tokens_out": 1356,
+    "tokens_thinking": 212,
+    "ledger_stats": {
+      "since": 1794666876462,
+      "total": 8,
+      "features": {
+        "verify_live": {
+          "calls": 8,
+          "ok": 8,
+          "errors": 0,
+          "latency_p50_s": 3.54,
+          "latency_p95_s": 5.455,
+          "tokens_in": 26480,
+          "tokens_out": 1356,
+          "tokens_thinking": 212,
+          "models": {
+            "gemini-3.8-flash": 8
+          }
+        }
+      }
+    }
+  },
+  "trajectories": [
+    {
+      "id": "traj_1_flip_box",
+      "description": "Flip medicine box from barcode rear panel to sharp front label",
+      "coaching_cue": "Turn the package around so the front label faces you.",
+      "question": "Is this my evening pill?",
+      "stage_a": {
+        "pushed_fixtures": [
+          "back_of_box.jpg",
+          "back_of_box.jpg"
+        ],
+        "ring_length": 2,
+        "ring_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666872177
+          },
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666873077
+          }
+        ],
+        "picked_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666873077
+          },
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666872177
+          }
+        ],
+        "expected_level": "unsure",
+        "predicted_level": "unsure",
+        "abstained": true,
+        "strength_value": null,
+        "strength_confidence": 0.0,
+        "confident_wrong_dose": false,
+        "model": "gemini-3.8-flash",
+        "frames_verified": 2,
+        "latency_ms": 3383.0,
+        "verdict": {
+          "level": "unsure",
+          "headline": "Can't read the label yet",
+          "speech": "I can't read the label yet. Turn the box around, the label is on the front.",
+          "read": {
+            "kind": "unreadable",
+            "product": {
+              "value": null,
+              "confidence": 0
+            },
+            "ingredient": {
+              "value": null,
+              "confidence": 0
+            },
+            "strength": {
+              "value": null,
+              "confidence": 0
+            },
+            "dosing": {
+              "value": null,
+              "confidence": 0
+            },
+            "expiry": {
+              "value": null,
+              "confidence": 0
+            },
+            "allergens": {
+              "value": null,
+              "confidence": 0
+            },
+            "barcode": {
+              "value": "6432100012345",
+              "confidence": 0.99
+            },
+            "readability": 0.2,
+            "guidance": "Turn the box around, the label is on the front."
+          },
+          "reasons": [
+            "label not readable"
+          ]
+        }
+      },
+      "stage_b": {
+        "pushed_fixtures": [
+          "amlodipine.jpg"
+        ],
+        "ring_length": 3,
+        "mixed_ring_preserved": true,
+        "ring_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666872177
+          },
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666873077
+          },
+          {
+            "fixture": "amlodipine.jpg",
+            "sharpness": 0.282961,
+            "bytes": 58414,
+            "source": "glasses",
+            "ts": 1794666876467
+          }
+        ],
+        "picked_frames": [
+          {
+            "fixture": "amlodipine.jpg",
+            "sharpness": 0.282961,
+            "bytes": 58414,
+            "source": "glasses",
+            "ts": 1794666876467
+          },
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666873077
+          }
+        ],
+        "sharp_post_coaching_selected_first": true,
+        "expected_level": "match",
+        "predicted_level": "match",
+        "verdict_match": true,
+        "reason_check_ok": true,
+        "strength_readable": true,
+        "expected_strength": "5 mg",
+        "strength_value": "5 mg",
+        "strength_confidence": 0.99,
+        "strength_correct": true,
+        "confident_wrong_dose": false,
+        "model": "gemini-3.8-flash",
+        "frames_verified": 2,
+        "latency_ms": 3541.0,
+        "verdict": {
+          "level": "match",
+          "headline": "Yes: Amlodipine 5 mg, your evening pill",
+          "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+          "read": {
+            "kind": "medication",
+            "product": {
+              "value": "Amlodipin",
+              "confidence": 0.99
+            },
+            "ingredient": {
+              "value": "amlodipine",
+              "confidence": 0.99
+            },
+            "strength": {
+              "value": "5 mg",
+              "confidence": 0.99
+            },
+            "dosing": {
+              "value": null,
+              "confidence": 0
+            },
+            "expiry": {
+              "value": "2027-08",
+              "confidence": 0.99
+            },
+            "allergens": {
+              "value": null,
+              "confidence": 0
+            },
+            "barcode": {
+              "value": "6432100012345",
+              "confidence": 0.98
+            },
+            "readability": 0.95,
+            "guidance": "Turn to side panels to check pharmacy dosing label."
+          },
+          "reasons": [
+            "matches aml",
+            "taken today: 0/1"
+          ],
+          "matchedMedId": "aml",
+          "takenToday": false
+        }
+      },
+      "trajectory_passed": true
+    },
+    {
+      "id": "traj_2_move_thumb",
+      "description": "Slide thumb off occluded dose digits on front label",
+      "coaching_cue": "Move your thumb slightly off the strength numbers and hold still.",
+      "question": "Is this my evening pill?",
+      "stage_a": {
+        "pushed_fixtures": [
+          "blurry_amlodipine.jpg",
+          "blurry_amlodipine.jpg"
+        ],
+        "ring_length": 2,
+        "ring_frames": [
+          {
+            "fixture": "blurry_amlodipine.jpg",
+            "sharpness": 0.261991,
+            "bytes": 54085,
+            "source": "glasses",
+            "ts": 1794666879140
+          },
+          {
+            "fixture": "blurry_amlodipine.jpg",
+            "sharpness": 0.261991,
+            "bytes": 54085,
+            "source": "glasses",
+            "ts": 1794666880040
+          }
+        ],
+        "picked_frames": [
+          {
+            "fixture": "blurry_amlodipine.jpg",
+            "sharpness": 0.261991,
+            "bytes": 54085,
+            "source": "glasses",
+            "ts": 1794666880040
+          },
+          {
+            "fixture": "blurry_amlodipine.jpg",
+            "sharpness": 0.261991,
+            "bytes": 54085,
+            "source": "glasses",
+            "ts": 1794666879140
+          }
+        ],
+        "expected_level": "unsure",
+        "predicted_level": "unsure",
+        "abstained": true,
+        "strength_value": null,
+        "strength_confidence": 0.2,
+        "confident_wrong_dose": false,
+        "model": "gemini-3.8-flash",
+        "frames_verified": 2,
+        "latency_ms": 4028.0,
+        "verdict": {
+          "level": "unsure",
+          "headline": "Amlodipine: strength unclear",
+          "speech": "It looks like Amlodipine, but I can't read the strength confidently. Move your thumb to reveal the dose.",
+          "read": {
+            "kind": "medication",
+            "product": {
+              "value": "Amlodipin",
+              "confidence": 0.98
+            },
+            "ingredient": {
+              "value": "amlodipine",
+              "confidence": 0.98
+            },
+            "strength": {
+              "value": null,
+              "confidence": 0.2
+            },
+            "dosing": {
+              "value": null,
+              "confidence": 0
+            },
+            "expiry": {
+              "value": null,
+              "confidence": 0
+            },
+            "allergens": {
+              "value": null,
+              "confidence": 0
+            },
+            "barcode": {
+              "value": null,
+              "confidence": 0
+            },
+            "readability": 0.5,
+            "guidance": "Move your thumb to reveal the dose."
+          },
+          "reasons": [
+            "strength not readable"
+          ],
+          "matchedMedId": "aml"
+        }
+      },
+      "stage_b": {
+        "pushed_fixtures": [
+          "amlodipine.jpg"
+        ],
+        "ring_length": 3,
+        "mixed_ring_preserved": true,
+        "ring_frames": [
+          {
+            "fixture": "blurry_amlodipine.jpg",
+            "sharpness": 0.261991,
+            "bytes": 54085,
+            "source": "glasses",
+            "ts": 1794666879140
+          },
+          {
+            "fixture": "blurry_amlodipine.jpg",
+            "sharpness": 0.261991,
+            "bytes": 54085,
+            "source": "glasses",
+            "ts": 1794666880040
+          },
+          {
+            "fixture": "amlodipine.jpg",
+            "sharpness": 0.282961,
+            "bytes": 58414,
+            "source": "glasses",
+            "ts": 1794666884082
+          }
+        ],
+        "picked_frames": [
+          {
+            "fixture": "amlodipine.jpg",
+            "sharpness": 0.282961,
+            "bytes": 58414,
+            "source": "glasses",
+            "ts": 1794666884082
+          },
+          {
+            "fixture": "blurry_amlodipine.jpg",
+            "sharpness": 0.261991,
+            "bytes": 54085,
+            "source": "glasses",
+            "ts": 1794666880040
+          }
+        ],
+        "sharp_post_coaching_selected_first": true,
+        "expected_level": "match",
+        "predicted_level": "match",
+        "verdict_match": true,
+        "reason_check_ok": true,
+        "strength_readable": true,
+        "expected_strength": "5 mg",
+        "strength_value": "5 mg",
+        "strength_confidence": 0.99,
+        "strength_correct": true,
+        "confident_wrong_dose": false,
+        "model": "gemini-3.8-flash",
+        "frames_verified": 2,
+        "latency_ms": 3532.0,
+        "verdict": {
+          "level": "match",
+          "headline": "Yes: Amlodipine 5 mg, your evening pill",
+          "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+          "read": {
+            "kind": "medication",
+            "product": {
+              "value": "Amlodipin",
+              "confidence": 0.99
+            },
+            "ingredient": {
+              "value": "amlodipine",
+              "confidence": 0.99
+            },
+            "strength": {
+              "value": "5 mg",
+              "confidence": 0.99
+            },
+            "dosing": {
+              "value": null,
+              "confidence": 0
+            },
+            "expiry": {
+              "value": "2027-08",
+              "confidence": 0.99
+            },
+            "allergens": {
+              "value": null,
+              "confidence": 0
+            },
+            "barcode": {
+              "value": null,
+              "confidence": 0
+            },
+            "readability": 0.75,
+            "guidance": "Turn the box around to find the pharmacy dosing sticker."
+          },
+          "reasons": [
+            "matches aml",
+            "taken today: 0/1"
+          ],
+          "matchedMedId": "aml",
+          "takenToday": false
+        }
+      },
+      "trajectory_passed": true
+    },
+    {
+      "id": "traj_3_nsaid_catch",
+      "description": "Flip box from blank rear panel to Burana 400 mg and catch NSAID avoid rule",
+      "coaching_cue": "Turn the package around so the front label faces you.",
+      "question": "Can I take this for a headache?",
+      "stage_a": {
+        "pushed_fixtures": [
+          "back_of_box.jpg"
+        ],
+        "ring_length": 1,
+        "ring_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666887619
+          }
+        ],
+        "picked_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666887619
+          }
+        ],
+        "expected_level": "unsure",
+        "predicted_level": "unsure",
+        "abstained": true,
+        "strength_value": null,
+        "strength_confidence": 0.0,
+        "confident_wrong_dose": false,
+        "model": "gemini-3.8-flash",
+        "frames_verified": 1,
+        "latency_ms": 2831.0,
+        "verdict": {
+          "level": "unsure",
+          "headline": "Can't read the label yet",
+          "speech": "I can't read the label yet. Turn the box around to show the front label.",
+          "read": {
+            "kind": "unreadable",
+            "product": {
+              "value": null,
+              "confidence": 0
+            },
+            "ingredient": {
+              "value": null,
+              "confidence": 0
+            },
+            "strength": {
+              "value": null,
+              "confidence": 0
+            },
+            "dosing": {
+              "value": null,
+              "confidence": 0
+            },
+            "expiry": {
+              "value": null,
+              "confidence": 0
+            },
+            "allergens": {
+              "value": null,
+              "confidence": 0
+            },
+            "barcode": {
+              "value": "6432100012345",
+              "confidence": 0.98
+            },
+            "readability": 0.2,
+            "guidance": "Turn the box around to show the front label."
+          },
+          "reasons": [
+            "label not readable"
+          ]
+        }
+      },
+      "stage_b": {
+        "pushed_fixtures": [
+          "ibuprofen.jpg"
+        ],
+        "ring_length": 2,
+        "mixed_ring_preserved": true,
+        "ring_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666887619
+          },
+          {
+            "fixture": "ibuprofen.jpg",
+            "sharpness": 0.317843,
+            "bytes": 65615,
+            "source": "glasses",
+            "ts": 1794666890450
+          }
+        ],
+        "picked_frames": [
+          {
+            "fixture": "ibuprofen.jpg",
+            "sharpness": 0.317843,
+            "bytes": 65615,
+            "source": "glasses",
+            "ts": 1794666890450
+          },
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666887619
+          }
+        ],
+        "sharp_post_coaching_selected_first": true,
+        "expected_level": "warning",
+        "predicted_level": "warning",
+        "verdict_match": true,
+        "reason_check_ok": true,
+        "strength_readable": true,
+        "expected_strength": "400 mg",
+        "strength_value": "400 mg",
+        "strength_confidence": 0.98,
+        "strength_correct": true,
+        "confident_wrong_dose": false,
+        "model": "gemini-3.8-flash",
+        "frames_verified": 2,
+        "latency_ms": 3781.0,
+        "verdict": {
+          "level": "warning",
+          "headline": "Ibuprofen 400 mg: not on your list",
+          "speech": "This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.",
+          "read": {
+            "kind": "medication",
+            "product": {
+              "value": "burana",
+              "confidence": 0.98
+            },
+            "ingredient": {
+              "value": "ibuprofen",
+              "confidence": 0.98
+            },
+            "strength": {
+              "value": "400 mg",
+              "confidence": 0.98
+            },
+            "dosing": {
+              "value": null,
+              "confidence": 0
+            },
+            "expiry": {
+              "value": null,
+              "confidence": 0
+            },
+            "allergens": {
+              "value": null,
+              "confidence": 0
+            },
+            "barcode": {
+              "value": "6432100012345",
+              "confidence": 0.95
+            },
+            "readability": 0.95
+          },
+          "reasons": [
+            "ibuprofen is an NSAID, on your avoid list",
+            "not on your medication list"
+          ]
+        }
+      },
+      "trajectory_passed": true
+    },
+    {
+      "id": "traj_4_allergen_catch",
+      "description": "Turn package from rear panel to granola bar ingredients and catch nut allergen",
+      "coaching_cue": "Turn the package around to show the ingredients panel.",
+      "question": "Does this contain nuts?",
+      "stage_a": {
+        "pushed_fixtures": [
+          "back_of_box.jpg"
+        ],
+        "ring_length": 1,
+        "ring_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666894235
+          }
+        ],
+        "picked_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666894235
+          }
+        ],
+        "expected_level": "unsure",
+        "predicted_level": "unsure",
+        "abstained": true,
+        "strength_value": null,
+        "strength_confidence": 0.0,
+        "confident_wrong_dose": false,
+        "model": "gemini-3.8-flash",
+        "frames_verified": 1,
+        "latency_ms": 5455.0,
+        "verdict": {
+          "level": "unsure",
+          "headline": "Can't read the label yet",
+          "speech": "I can't read the label yet. Turn the box around to show the printed text.",
+          "read": {
+            "kind": "unreadable",
+            "product": {
+              "value": null,
+              "confidence": 0
+            },
+            "ingredient": {
+              "value": null,
+              "confidence": 0
+            },
+            "strength": {
+              "value": null,
+              "confidence": 0
+            },
+            "dosing": {
+              "value": null,
+              "confidence": 0
+            },
+            "expiry": {
+              "value": null,
+              "confidence": 0
+            },
+            "allergens": {
+              "value": null,
+              "confidence": 0
+            },
+            "barcode": {
+              "value": "6432100012345",
+              "confidence": 0.99
+            },
+            "readability": 0.2,
+            "guidance": "Turn the box around to show the printed text."
+          },
+          "reasons": [
+            "label not readable"
+          ]
+        }
+      },
+      "stage_b": {
+        "pushed_fixtures": [
+          "hazelnut_bar.jpg"
+        ],
+        "ring_length": 2,
+        "mixed_ring_preserved": true,
+        "ring_frames": [
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666894235
+          },
+          {
+            "fixture": "hazelnut_bar.jpg",
+            "sharpness": 0.291428,
+            "bytes": 60162,
+            "source": "glasses",
+            "ts": 1794666899690
+          }
+        ],
+        "picked_frames": [
+          {
+            "fixture": "hazelnut_bar.jpg",
+            "sharpness": 0.291428,
+            "bytes": 60162,
+            "source": "glasses",
+            "ts": 1794666899690
+          },
+          {
+            "fixture": "back_of_box.jpg",
+            "sharpness": 0.27384,
+            "bytes": 56531,
+            "source": "glasses",
+            "ts": 1794666894235
+          }
+        ],
+        "sharp_post_coaching_selected_first": true,
+        "expected_level": "warning",
+        "predicted_level": "warning",
+        "verdict_match": true,
+        "reason_check_ok": true,
+        "strength_readable": false,
+        "expected_strength": null,
+        "strength_value": null,
+        "strength_confidence": 0.0,
+        "strength_correct": null,
+        "confident_wrong_dose": false,
+        "model": "gemini-3.8-flash",
+        "frames_verified": 2,
+        "latency_ms": 2902.0,
+        "verdict": {
+          "level": "warning",
+          "headline": "Warning: contains peanut",
+          "speech": "Warning: Granola Oat Bar contains peanut and hazelnut. Your profile lists an allergy to peanut and tree nuts.",
+          "read": {
+            "kind": "food",
+            "product": {
+              "value": "Granola Oat Bar",
+              "confidence": 0.7
+            },
+            "ingredient": {
+              "value": "granola oat bar",
+              "confidence": 0.7
+            },
+            "strength": {
+              "value": null,
+              "confidence": 0
+            },
+            "dosing": {
+              "value": null,
+              "confidence": 0
+            },
+            "expiry": {
+              "value": "2027-09-14",
+              "confidence": 0.7
+            },
+            "allergens": {
+              "value": [
+                "oats",
+                "gluten",
+                "hazelnut",
+                "peanut"
+              ],
+              "confidence": 0.7
+            },
+            "barcode": {
+              "value": "6432100012345",
+              "confidence": 0.7
+            },
+            "readability": 0.6,
+            "guidance": "The frames show two different products."
+          },
+          "reasons": [
+            "contains peanut (allergy: peanut)",
+            "contains hazelnut (allergy: tree nuts)"
+          ]
+        }
+      },
+      "trajectory_passed": true
+    }
+  ]
+}
