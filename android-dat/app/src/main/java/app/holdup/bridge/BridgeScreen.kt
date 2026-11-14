@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -124,6 +125,18 @@ fun BridgeScreen(
         }
     }
 
+    val streamingActiveDescription = stringResource(R.string.cd_streaming_active)
+    val serverUrlInputDescription = stringResource(R.string.cd_server_url_input)
+    val sessionCodeInputDescription = stringResource(R.string.cd_session_code_input)
+    val saveEndpointDescription = stringResource(R.string.cd_save_endpoint)
+    val forgetServerDescription = stringResource(R.string.cd_forget_server)
+    val connectGlassesDescription = stringResource(R.string.cd_connect_glasses)
+    val startStreamingDescription = stringResource(R.string.cd_start_streaming)
+    val stopStreamingDescription = stringResource(R.string.cd_stop_streaming)
+    val disconnectGlassesDescription = stringResource(R.string.cd_disconnect_glasses)
+    val updateFirmwareDescription = stringResource(R.string.cd_update_firmware)
+    val updateGlassesAppDescription = stringResource(R.string.cd_update_glasses_app)
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background
@@ -158,8 +171,7 @@ fun BridgeScreen(
                         .fillMaxWidth()
                         .semantics(mergeDescendants = true) {
                             liveRegion = LiveRegionMode.Polite
-                            contentDescription =
-                                "Privacy notice: Glasses camera is streaming and the front hardware capture LED is illuminated. Frames stream at roughly 1 frame per second into server RAM only and are never stored on disk."
+                            contentDescription = streamingActiveDescription
                         },
                     shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = LedBannerBg),
@@ -222,8 +234,9 @@ fun BridgeScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 56.dp)
                             .semantics {
-                                contentDescription = "Server URL input field"
+                                contentDescription = serverUrlInputDescription
                             }
                     )
 
@@ -242,10 +255,39 @@ fun BridgeScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 56.dp)
                             .semantics {
-                                contentDescription = "Session Code input field, leave blank to follow latest active session"
+                                contentDescription = sessionCodeInputDescription
                             }
                     )
+
+                    Button(
+                        onClick = {
+                            val cleanServer = serverInput.trim().trimEnd('/')
+                            val cleanSession = sessionInput.trim()
+                            serverInput = cleanServer
+                            sessionInput = cleanSession
+                            onUpdateEndpoint(cleanServer, cleanSession)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .semantics {
+                                contentDescription = saveEndpointDescription
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
+                    ) {
+                        Text(
+                            text = "Save Endpoint",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
 
                     OutlinedButton(
                         onClick = {
@@ -257,7 +299,7 @@ fun BridgeScreen(
                             .fillMaxWidth()
                             .heightIn(min = 56.dp)
                             .semantics {
-                                contentDescription = "Forget Saved Server and clear stored endpoint preferences"
+                                contentDescription = forgetServerDescription
                             },
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
@@ -295,7 +337,7 @@ fun BridgeScreen(
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                         .semantics {
-                            contentDescription = "Connect Glasses in Meta AI Developer Mode"
+                            contentDescription = connectGlassesDescription
                         },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -318,7 +360,7 @@ fun BridgeScreen(
                             .fillMaxWidth()
                             .heightIn(min = 56.dp)
                             .semantics {
-                                contentDescription = "Stop Streaming and turn off glasses capture LED"
+                                contentDescription = stopStreamingDescription
                             },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -343,7 +385,7 @@ fun BridgeScreen(
                             .fillMaxWidth()
                             .heightIn(min = 56.dp)
                             .semantics {
-                                contentDescription = "Start Streaming first-person camera frames from glasses"
+                                contentDescription = startStreamingDescription
                             },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -366,7 +408,7 @@ fun BridgeScreen(
                         .fillMaxWidth()
                         .heightIn(min = 56.dp)
                         .semantics {
-                            contentDescription = "Disconnect glasses DAT session"
+                            contentDescription = disconnectGlassesDescription
                         },
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
@@ -402,7 +444,7 @@ fun BridgeScreen(
                             .weight(1f)
                             .heightIn(min = 56.dp)
                             .semantics {
-                                contentDescription = "Update Glasses Firmware in Meta AI app"
+                                contentDescription = updateFirmwareDescription
                             },
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
@@ -425,7 +467,7 @@ fun BridgeScreen(
                             .weight(1f)
                             .heightIn(min = 56.dp)
                             .semantics {
-                                contentDescription = "Update Glasses DAT App in Meta AI app"
+                                contentDescription = updateGlassesAppDescription
                             },
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
@@ -487,6 +529,13 @@ private fun StatusCard(uiState: BridgeUiState) {
         else -> "None"
     }
     val activeError = uiState.lastError?.takeIf { it.isNotBlank() }
+    val glassesStatusDescription = stringResource(
+        R.string.cd_glasses_status,
+        deviceNameValue,
+        connectionWornValue,
+        batteryValue,
+        streamValue
+    )
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -505,6 +554,33 @@ private fun StatusCard(uiState: BridgeUiState) {
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.semantics { heading() }
             )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics(mergeDescendants = true) {
+                        liveRegion = LiveRegionMode.Polite
+                        contentDescription = glassesStatusDescription
+                    },
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = if (uiState.streaming || (uiState.connected && uiState.worn)) {
+                        LedBannerBorder
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    }
+                )
+            ) {
+                Text(
+                    text = "$deviceNameValue | $connectionWornValue | Battery $batteryValue | $streamValue",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                )
+            }
 
             StatusRow(label = "Registration", value = registrationValue)
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
@@ -552,12 +628,13 @@ private fun StatusCard(uiState: BridgeUiState) {
             HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
 
             if (activeError != null) {
+                val errorAlertDescription = stringResource(R.string.cd_error_alert, activeError)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .semantics(mergeDescendants = true) {
-                            liveRegion = LiveRegionMode.Polite
-                            contentDescription = "Last Error: $activeError"
+                            liveRegion = LiveRegionMode.Assertive
+                            contentDescription = errorAlertDescription
                         },
                     shape = RoundedCornerShape(10.dp),
                     colors = CardDefaults.cardColors(containerColor = ErrorBg),
@@ -594,11 +671,12 @@ private fun StatusRow(
     monospace: Boolean = false,
     valueColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
+    val rowDescription = stringResource(R.string.cd_status_row, label, value)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {
-                contentDescription = "$label: $value"
+                contentDescription = rowDescription
             },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
