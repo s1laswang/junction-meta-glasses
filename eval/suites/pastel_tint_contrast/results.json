@@ -1,0 +1,688 @@
+{
+ "suite": "pastel_tint_contrast",
+ "generated_at": "2026-11-14T18:41:42.581104+00:00",
+ "eval_now_iso": "2026-11-14T12:00:00+02:00",
+ "model": "gemini-3.8-flash",
+ "thinking_level": "low",
+ "prompt_source": "shared/verify_prompt.md+shared/label_schema.json",
+ "prompt_sha256_12": "814770315c42",
+ "safety_module": "server/src/safety.ts",
+ "profile": {
+  "meds": [
+   {
+    "id": "amlodipine",
+    "name": "Amlodipin",
+    "ingredient": "amlodipine",
+    "strength": "5 mg",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "metformin",
+    "name": "Metformin",
+    "ingredient": "metformin",
+    "strength": "500 mg",
+    "schedule": [
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id": "atorvastatin",
+    "name": "Atorvastatin",
+    "ingredient": "atorvastatin",
+    "strength": "20 mg",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "paracetamol",
+    "name": "Panadol",
+    "ingredient": "paracetamol",
+    "strength": "500 mg",
+    "schedule": [
+     "evening"
+    ]
+   }
+  ],
+  "allergies": [
+   "tree nuts",
+   "peanut"
+  ],
+  "avoid": [
+   "NSAIDs"
+  ],
+  "doseLog": [],
+  "lang": "en"
+ },
+ "summary": {
+  "n_cases": 12,
+  "verdict_matches": 12,
+  "verdict_accuracy": 1.0,
+  "verdict_accuracy_ci95": [
+   0.7575,
+   1.0
+  ],
+  "confident_wrong_count": 0,
+  "confident_wrong_rate": 0.0,
+  "confident_wrong_ci95": [
+   0.0,
+   0.2425
+  ],
+  "false_match_count": 0,
+  "unsafe_reassurance_count": 0,
+  "abstain_or_unsure_count": 6,
+  "latency_p50_ms": 4100.1,
+  "latency_p95_ms": 6994.1,
+  "moderate_pastel_accuracy": 1.0,
+  "washout_abstention_rate": 1.0,
+  "mean_moderate_wcag_contrast": 4.1787,
+  "mean_washout_wcag_contrast": 1.05
+ },
+ "cases": [
+  {
+   "id": "pt_01",
+   "category": "pastel_moderate",
+   "lens_tint": "warm_tungsten_2700k",
+   "wcag_contrast": 3.65,
+   "description": "Pastel mint Nordic Amlodipin 5 mg carton under 2700K tungsten cast",
+   "question": "Is this my evening pill?",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3636.7,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": "5 mg",
+     "confidence": 0.98
+    },
+    "dosing": {
+     "value": "1 tablet in the evening",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-09",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "matches amlodipine",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id": "pt_02",
+   "category": "pastel_moderate",
+   "lens_tint": "amber_511nm_filter",
+   "wcag_contrast": 4.3499,
+   "description": "Pastel blush Burana 400 mg carton through amber 511nm filter lens",
+   "question": "Can I take this for pain?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3163.9,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Burana",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "ibuprofen",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "400 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet as needed for pain",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "ibuprofen is an NSAID, on your avoid list",
+    "not on your medication list"
+   ]
+  },
+  {
+   "id": "pt_03",
+   "category": "pastel_moderate",
+   "lens_tint": "transitions_brown",
+   "wcag_contrast": 4.2068,
+   "description": "Pastel cream Metformin 500 mg expired carton through brown lens tint",
+   "question": "Is this my Metformin?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4673.7,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Metformin",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "metformin",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "500 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet twice daily",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2025-02",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.1
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "expired 2025-02"
+   ]
+  },
+  {
+   "id": "pt_04",
+   "category": "pastel_moderate",
+   "lens_tint": "yellow_450nm_filter",
+   "wcag_contrast": 4.4267,
+   "description": "Pastel lavender Amlodipin 10 mg wrong-strength box through yellow filter",
+   "question": "Is this my evening pill?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3555.5,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": "10 mg",
+     "confidence": 0.98
+    },
+    "dosing": {
+     "value": "1 tablet once daily",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "strength 10 mg differs from your 5 mg"
+   ]
+  },
+  {
+   "id": "pt_05",
+   "category": "pastel_moderate",
+   "lens_tint": "amber_511nm_filter",
+   "wcag_contrast": 4.721,
+   "description": "Pastel peach Hazelnut and Almond Wafers carton through amber filter lens",
+   "question": "Does this contain tree nuts or peanuts?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3101.7,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "Hazelnut & Almond Wafers",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "wafers",
+     "confidence": 0.95
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": "2027-10-20",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": [
+      "hazelnut",
+      "almond",
+      "wheat",
+      "milk"
+     ],
+     "confidence": 0.98
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "contains hazelnut (allergy: tree nuts)"
+   ]
+  },
+  {
+   "id": "pt_06",
+   "category": "pastel_moderate",
+   "lens_tint": "transitions_grey",
+   "wcag_contrast": 3.7176,
+   "description": "Pastel sage Nordic Oat Drink carton through grey photochromic lens",
+   "question": "Is this safe with my nut allergies?",
+   "expected_level": "info",
+   "predicted_level": "info",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4563.5,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "Nordic Pastel Oat Drink",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "oat drink",
+     "confidence": 0.95
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": "2027-12-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": [
+      "gluten",
+      "oats"
+     ],
+     "confidence": 0.98
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "no listed allergen matches your profile"
+   ]
+  },
+  {
+   "id": "pt_07",
+   "category": "grey_on_silver_washout",
+   "lens_tint": "warm_tungsten_2700k",
+   "wcag_contrast": 1.0568,
+   "description": "Washed-out grey-on-silver foil strength digits on Amlodipin under 2700K cast",
+   "question": "Is this my evening pill?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 7087.3,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.1
+    },
+    "dosing": {
+     "value": "Take in the evening",
+     "confidence": 0.99
+    },
+    "expiry": {
+     "value": "2027-09",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "pt_08",
+   "category": "grey_on_silver_washout",
+   "lens_tint": "transitions_brown",
+   "wcag_contrast": 1.0661,
+   "description": "Washed-out grey-on-silver metallic strength strip on Metformin generic box",
+   "question": "Is this my Metformin?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2943.1,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Metformin",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "metformin",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": "Take with meals",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.85,
+    "guidance": "Strength is covered or missing, check another side."
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "pt_09",
+   "category": "yellow_amber_filter_washout",
+   "lens_tint": "yellow_450nm_filter",
+   "wcag_contrast": 1.0274,
+   "description": "Pale yellow strength badge on cream Panadol collapsed by yellow 450nm filter",
+   "question": "Can I take this Panadol?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3438.1,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Panadol",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "paracetamol",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": "2028-02",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.65,
+    "guidance": "Turn the box to show dosing and strength."
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "pt_10",
+   "category": "yellow_amber_filter_washout",
+   "lens_tint": "amber_511nm_filter",
+   "wcag_contrast": 1.0383,
+   "description": "Pale amber strength print on ivory Atorvastatin washed out by amber filter",
+   "question": "Is this my evening cholesterol pill?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 5478.9,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Atorvastatin",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "atorvastatin",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.1
+    },
+    "dosing": {
+     "value": "1 tablet in the evening",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.1
+    },
+    "readability": 0.85,
+    "guidance": "Turn the box to check the strength."
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "pt_11",
+   "category": "tungsten_tint_washout",
+   "lens_tint": "transitions_grey_heavy",
+   "wcag_contrast": 1.0599,
+   "description": "Pastel lilac Amlodipin strength washed out under dark grey lens and 2700K glare",
+   "question": "Is this my evening pill?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4660.4,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.1
+    },
+    "dosing": {
+     "value": "Once daily",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.85,
+    "guidance": "Turn the box to check the pharmacy label for timing."
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "pt_12",
+   "category": "grey_on_silver_washout",
+   "lens_tint": "yellow_450nm_filter",
+   "wcag_contrast": 1.0515,
+   "description": "Nordic sky-pastel Metformin with grey-on-silver foil digits under yellow filter",
+   "question": "Is this my Metformin?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 6917.8,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Metformin",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "metformin",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": "2027-12",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  }
+ ]
+}
