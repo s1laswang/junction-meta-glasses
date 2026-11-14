@@ -1,179 +1,95 @@
 {
-  "model": "gemini-3.8-flash-tts",
-  "generated": "2026-11-14T19:45:26.079Z",
+  "model": "eleven_flash_v2_5",
+  "generated": "2026-11-14T20:09:43.984Z",
   "phrases": {
     "en": {
       "offline": {
-        "file": "/phrases/en/offline.wav",
+        "file": "/phrases/en/offline.mp3",
         "text": "You're offline. I can still recognise your saved medicines by barcode, but I can't read new labels."
       },
       "back_online": {
-        "file": "/phrases/en/back_online.wav",
+        "file": "/phrases/en/back_online.mp3",
         "text": "Back online. The live assistant is reconnecting."
       },
       "not_sure": {
-        "file": "/phrases/en/not_sure.wav",
+        "file": "/phrases/en/not_sure.mp3",
         "text": "I'm not sure. I won't guess a dose. Turn the box slowly, or ask a pharmacist."
       },
       "unknown_offline": {
-        "file": "/phrases/en/unknown_offline.wav",
+        "file": "/phrases/en/unknown_offline.mp3",
         "text": "I don't know this box offline. It isn't one of your saved medicines."
       },
       "already_taken": {
-        "file": "/phrases/en/already_taken.wav",
+        "file": "/phrases/en/already_taken.mp3",
         "text": "You already took this today. Don't take another unless your plan says so."
       },
       "glasses_off": {
-        "file": "/phrases/en/glasses_off.wav",
+        "file": "/phrases/en/glasses_off.mp3",
         "text": "Glasses taken off. Switched to the phone camera."
       },
       "camera_off": {
-        "file": "/phrases/en/camera_off.wav",
+        "file": "/phrases/en/camera_off.mp3",
         "text": "Camera off."
-      },
-      "cue_closer": {
-        "file": "/phrases/en/cue_closer.wav",
-        "text": "A bit closer."
-      },
-      "cue_further": {
-        "file": "/phrases/en/cue_further.wav",
-        "text": "Move it slightly further back."
-      },
-      "cue_rotate": {
-        "file": "/phrases/en/cue_rotate.wav",
-        "text": "Turn the box slowly."
-      },
-      "cue_tilt": {
-        "file": "/phrases/en/cue_tilt.wav",
-        "text": "Turn the box to the other side."
-      },
-      "cue_more_light": {
-        "file": "/phrases/en/cue_more_light.wav",
-        "text": "Move into brighter light."
-      },
-      "cue_steady": {
-        "file": "/phrases/en/cue_steady.wav",
-        "text": "Hold still."
-      },
-      "cue_reading": {
-        "file": "/phrases/en/cue_reading.wav",
-        "text": "Got it, reading the label."
       }
     },
     "fi": {
       "offline": {
-        "file": "/phrases/fi/offline.wav",
+        "file": "/phrases/fi/offline.mp3",
         "text": "Olet offline-tilassa. Tunnistan yhä tallennetut lääkkeesi viivakoodista, mutta en pysty lukemaan uusia etikettejä."
       },
       "back_online": {
-        "file": "/phrases/fi/back_online.wav",
+        "file": "/phrases/fi/back_online.mp3",
         "text": "Yhteys palasi. Avustaja yhdistää uudelleen."
       },
       "not_sure": {
-        "file": "/phrases/fi/not_sure.wav",
+        "file": "/phrases/fi/not_sure.mp3",
         "text": "En ole varma, enkä arvaa annosta. Käännä pakkausta hitaasti tai kysy apteekista."
       },
       "unknown_offline": {
-        "file": "/phrases/fi/unknown_offline.wav",
+        "file": "/phrases/fi/unknown_offline.mp3",
         "text": "En tunnista tätä pakkausta offline-tilassa. Se ei ole tallennettu lääkkeesi."
       },
       "already_taken": {
-        "file": "/phrases/fi/already_taken.wav",
+        "file": "/phrases/fi/already_taken.mp3",
         "text": "Olet jo ottanut tämän tänään. Älä ota toista, ellei hoito-ohjeesi niin sano."
       },
       "glasses_off": {
-        "file": "/phrases/fi/glasses_off.wav",
+        "file": "/phrases/fi/glasses_off.mp3",
         "text": "Lasit otettu pois. Vaihdettu puhelimen kameraan."
       },
       "camera_off": {
-        "file": "/phrases/fi/camera_off.wav",
+        "file": "/phrases/fi/camera_off.mp3",
         "text": "Kamera pois päältä."
-      },
-      "cue_closer": {
-        "file": "/phrases/fi/cue_closer.wav",
-        "text": "Hieman lähemmäs."
-      },
-      "cue_further": {
-        "file": "/phrases/fi/cue_further.wav",
-        "text": "Siirrä hieman kauemmas."
-      },
-      "cue_rotate": {
-        "file": "/phrases/fi/cue_rotate.wav",
-        "text": "Käännä pakkausta hitaasti."
-      },
-      "cue_tilt": {
-        "file": "/phrases/fi/cue_tilt.wav",
-        "text": "Käännä pakkaus toisin päin."
-      },
-      "cue_more_light": {
-        "file": "/phrases/fi/cue_more_light.wav",
-        "text": "Siirry parempaan valoon."
-      },
-      "cue_steady": {
-        "file": "/phrases/fi/cue_steady.wav",
-        "text": "Pidä paikallaan."
-      },
-      "cue_reading": {
-        "file": "/phrases/fi/cue_reading.wav",
-        "text": "Selvä, luen etikettiä."
       }
     },
     "sv": {
       "offline": {
-        "file": "/phrases/sv/offline.wav",
+        "file": "/phrases/sv/offline.mp3",
         "text": "Du är offline. Jag känner fortfarande igen dina sparade läkemedel via streckkoden, men jag kan inte läsa nya etiketter."
       },
       "back_online": {
-        "file": "/phrases/sv/back_online.wav",
+        "file": "/phrases/sv/back_online.mp3",
         "text": "Uppkopplad igen. Assistenten ansluter på nytt."
       },
       "not_sure": {
-        "file": "/phrases/sv/not_sure.wav",
+        "file": "/phrases/sv/not_sure.mp3",
         "text": "Jag är inte säker, och jag gissar inte en dos. Vrid förpackningen långsamt, eller fråga på apoteket."
       },
       "unknown_offline": {
-        "file": "/phrases/sv/unknown_offline.wav",
+        "file": "/phrases/sv/unknown_offline.mp3",
         "text": "Jag känner inte igen den här förpackningen offline. Den är inte ett av dina sparade läkemedel."
       },
       "already_taken": {
-        "file": "/phrases/sv/already_taken.wav",
+        "file": "/phrases/sv/already_taken.mp3",
         "text": "Du har redan tagit den här i dag. Ta inte en till om inte din plan säger det."
       },
       "glasses_off": {
-        "file": "/phrases/sv/glasses_off.wav",
+        "file": "/phrases/sv/glasses_off.mp3",
         "text": "Glasögonen är av. Bytte till telefonens kamera."
       },
       "camera_off": {
-        "file": "/phrases/sv/camera_off.wav",
+        "file": "/phrases/sv/camera_off.mp3",
         "text": "Kameran är av."
-      },
-      "cue_closer": {
-        "file": "/phrases/sv/cue_closer.wav",
-        "text": "Lite närmare."
-      },
-      "cue_further": {
-        "file": "/phrases/sv/cue_further.wav",
-        "text": "Flytta den lite längre bort."
-      },
-      "cue_rotate": {
-        "file": "/phrases/sv/cue_rotate.wav",
-        "text": "Vrid förpackningen långsamt."
-      },
-      "cue_tilt": {
-        "file": "/phrases/sv/cue_tilt.wav",
-        "text": "Vänd förpackningen till andra sidan."
-      },
-      "cue_more_light": {
-        "file": "/phrases/sv/cue_more_light.wav",
-        "text": "Håll den i bättre ljus."
-      },
-      "cue_steady": {
-        "file": "/phrases/sv/cue_steady.wav",
-        "text": "Håll stilla."
-      },
-      "cue_reading": {
-        "file": "/phrases/sv/cue_reading.wav",
-        "text": "Jag ser den, läser etiketten."
       }
     }
   }

@@ -1,18 +1,21 @@
 // HoldUp service worker: caches the app shell so the app (and its offline barcode mode) loads without a network.
 // Never caches API calls, sockets, frames or anything user-specific.
-const CACHE = "holdup-shell-v2";
+const CACHE = "holdup-shell-v2"; // v2: + pre-rendered ElevenLabs phrases (/phrases/)
 const SHELL = ["/", "/index.html", "/hud/", "/manifest.webmanifest", "/pcm-capture-worklet.js", "/icons/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png"];
 const NEVER = /^\/(api|live|hud-ws|ingest)(\/|$|\?)/;
 
 async function precache() {
   const cache = await caches.open(CACHE);
   await Promise.all(SHELL.map((u) => cache.add(new Request(u, { cache: "reload" })).catch(() => {})));
+  // pull in the hashed JS/CSS/font assets referenced by the HTML entry points
+  // offline voice: pre-rendered phrases (server/scripts/prerender-phrases.ts); absent manifest = browser voice only
   try {
     const m = await (await fetch("/phrases/manifest.json", { cache: "reload" })).json();
     const files = Object.values(m.phrases ?? {}).flatMap((byId) => Object.values(byId).map((p) => p.file));
     await Promise.all(["/phrases/manifest.json", ...files].map((u) => cache.add(u).catch(() => {})));
-  } catch {}
-  // pull in the hashed JS/CSS/font assets referenced by the HTML entry points
+  } catch {
+    /* no phrases rendered */
+  }
   for (const page of ["/", "/hud/"]) {
     try {
       const html = await (await fetch(page, { cache: "reload" })).text();

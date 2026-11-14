@@ -451,7 +451,7 @@ test("food kind verdicts with and without allergies, avoid list, and expiry", ()
   assert.ok(foodUnreadableAllergens.reasons.includes("allergen panel not readable"));
 
   const foodSafeWithAllergies = checkLabel(
-    makeRead({ kind: "food", product: f("Oat drink"), allergens: f(["oats"], 0.9), expiry: f("2026-12-10", 0.9) }),
+    makeRead({ kind: "food", product: f("Oat drink"), allergens: f(["oats"], 0.96), expiry: f("2026-12-10", 0.9) }),
     allergyProfile,
     NOW,
   );

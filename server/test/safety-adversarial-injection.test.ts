@@ -224,7 +224,7 @@ test("food allergens empty array at confidence 0.599 with non-empty allergies re
     makeRead({
       kind: "food",
       product: f("Oat biscuits", 0.95),
-      allergens: { value: [], confidence: 0.6 },
+      allergens: { value: [], confidence: 0.95 },
       readability: 0.95,
     }),
     baseProfile,

@@ -13,14 +13,23 @@ import { audioRoute, classifyError, explain, getCamera, getMic, type PermState }
 import { IS_MOCK, mockCtl, mockHudChannel } from "./mock.ts";
 import { loadProfile, loadSettings, logDose, newMedId, saveProfile, saveSettings, sessionCode } from "./storage.ts";
 import { AuthError } from "./key.ts";
-import { cuePhraseId, sayPhrase, verdictPhraseId } from "./phrases.ts";
+import { sayPhrase } from "./phrases.ts";
 import { findByBarcode, findByGtin, matchVerdict, offlineUnknownBarcode, offlineUnknownCode } from "./verdicts.ts";
 
 export type Mode = "live" | "snapshot" | "offline";
 
+/** Pre-rendered ElevenLabs clip when one is cached; otherwise speechSynthesis of the current line.
+ *  With no ELEVENLABS_API_KEY and no clips, this is the same as speak(fallback). */
 function speakPhrase(id: string, fallback: string, opts?: { interrupt?: boolean }) {
   if (!loadSettings().voice) return;
   void sayPhrase(id, loadProfile().lang, (t) => speak(t, opts), fallback);
+}
+
+function phraseIdFor(v: Verdict, via: Mode | null): string | null {
+  if (/already took/i.test(v.speech) || v.headline.includes("already taken today")) return "already_taken";
+  if (via === "offline" && (v.headline === "Not one of your saved barcodes" || v.headline === "Pack code not on your list")) return "unknown_offline";
+  if (v.level === "unsure") return "not_sure";
+  return null;
 }
 export type Caption = { id: number; role: "user" | "assistant" | "system"; text: string; final: boolean };
 export type Banner = { tone: "info" | "warn" | "bad" | "good"; title: string; detail?: string; action?: "retry" | "settings" | "snapshot" } | null;
@@ -442,11 +451,6 @@ export class Checker {
         haptic.coach(m.cue);
         // with spoken answers off, the screen reader is the only voice: read the cue
         if (!loadSettings().voice) announce(m.text);
-        else if (this.s.mode !== "live" || IS_MOCK) {
-          const cid = cuePhraseId(m.cue, m.text);
-          if (cid) speakPhrase(cid, m.text);
-          else speak(m.text);
-        }
         this.armAutoStop();
         break;
       case "verdict":
@@ -596,7 +600,7 @@ export class Checker {
     announce(`${levelWord(v.level)}. ${v.headline}. ${v.speech}`, "assertive");
     // Gemini speaks verdicts itself in live mode; elsewhere the phone reads them out
     if (via !== "live" || IS_MOCK) {
-      const id = verdictPhraseId(v, via);
+      const id = phraseIdFor(v, via);
       if (id) speakPhrase(id, v.speech, { interrupt: false });
       else speak(v.speech, { interrupt: false });
     }
@@ -619,7 +623,7 @@ export class Checker {
     if (this.s.mode === "live" && this.live?.isOpen && !IS_MOCK) {
       this.live.send({ type: "event", name: "repeat" });
     } else if (v) {
-      const id = verdictPhraseId(v, this.s.verdictVia);
+      const id = phraseIdFor(v, this.s.verdictVia);
       if (id) speakPhrase(id, v.speech);
       else speak(v.speech);
     }

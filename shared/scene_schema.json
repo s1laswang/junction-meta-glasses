@@ -1,0 +1,20 @@
+{
+  "$comment": "JSON Schema for a scene read ('Which one?'). Each item's `read` is a LabelRead: its schema is shared/label_schema.json, inlined at runtime by server/src/find.ts (eval/ can do the same). System prompt = shared/find_prompt.md + shared/verify_prompt.md.",
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "properties": {
+          "box_2d": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 1000 }, "minItems": 4, "maxItems": 4 },
+          "read": { "$ref": "label_schema.json" },
+          "answers_target": { "type": "boolean" }
+        },
+        "required": ["box_2d", "read"]
+      }
+    }
+  },
+  "required": ["items"]
+}
