@@ -1,0 +1,89 @@
+{
+  "suite": "insulin_inhaler_high_alert",
+  "generated_at": "2026-11-14T19:49:35.563275+00:00",
+  "eval_now_iso": "2026-11-14T16:00:00+02:00",
+  "model": "gemini-3.8-flash",
+  "thinking_level": "low",
+  "concurrency": 3,
+  "prompt_source": "shared/verify_prompt.md+shared/label_schema.json",
+  "prompt_sha256_12": "814770315c42",
+  "safety_module": "server/src/safety.ts",
+  "profile": {
+    "meds": [
+      {
+        "id": "glargine",
+        "name": "Lantus",
+        "ingredient": "glargine",
+        "strength": "100 IU/ml",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "budesonide",
+        "name": "Pulmicort",
+        "ingredient": "budesonide",
+        "strength": "200 mcg",
+        "schedule": [
+          "morning",
+          "evening"
+        ]
+      },
+      {
+        "id": "salbutamol",
+        "name": "Ventoline",
+        "ingredient": "salbutamol",
+        "strength": "100 mcg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "penicillin"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "summary": {
+    "n_cases": 12,
+    "verdict_matches": 12,
+    "verdict_accuracy": 1.0,
+    "verdict_accuracy_ci95": [
+      0.7575,
+      1.0
+    ],
+    "confident_wrong_count": 0,
+    "confident_wrong_rate": 0.0,
+    "confident_wrong_ci95": [
+      0.0,
+      0.2425
+    ],
+    "false_match_count": 0,
+    "unsafe_reassurance_count": 0,
+    "abstain_or_unsure_count": 3,
+    "api_error_count": 0,
+    "timeout_count": 0,
+    "latency_p50_ms": 4098.4,
+    "latency_p95_ms": 5694.6,
+    "sharp_high_alert_accuracy": 1.0,
+    "degraded_abstention_rate": 1.0
+  },
+  "cases": [
+    {"id":"ih_01","category":"matching_basal_pen_iu","description":"Sharp Lantus SoloStar insulin glargine 100 IU/ml pen matching evening basal profile","question":"Is this my evening basal insulin pen?","expected_level":"match","predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":4304.6,"read":{"kind":"medication","product":{"value":"LANTUS SoloStar","confidence":0.99},"ingredient":{"value":"insulin glargine","confidence":0.99},"strength":{"value":"100 IU/ml","confidence":0.99},"dosing":{"value":null,"confidence":0},"expiry":{"value":"2027-11","confidence":0.99},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.99},"reasons":["matches glargine","taken today: 0/1"]},
+    {"id":"ih_02","category":"nordic_ky_iu_equivalence","description":"Sharp Finnish Abasaglar insulin glargine 100 KY/ml carton equivalent to 100 IU/ml profile","question":"Is this my evening insulin?","expected_level":"match","predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3848.2,"read":{"kind":"medication","product":{"value":"ABASAGLAR KwikPen","confidence":0.99},"ingredient":{"value":"insulin glargine","confidence":0.99},"strength":{"value":"100 KY/ml","confidence":0.98},"dosing":{"value":"1 pistos iltaisin ihon alle","confidence":0.99},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.95},"reasons":["matches glargine","taken today: 0/1"]},
+    {"id":"ih_03","category":"concentrated_u300_pen","description":"Concentrated Toujeo SoloStar insulin glargine 300 IU/ml U-300 pen against 100 IU/ml profile","question":"Is this my evening basal insulin pen?","expected_level":"warning","predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3963.5,"read":{"kind":"medication","product":{"value":"TOUJEO SoloStar","confidence":0.99},"ingredient":{"value":"insulin glargine","confidence":0.99},"strength":{"value":"300 IU/ml","confidence":0.99},"dosing":{"value":null,"confidence":0.1},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.1},"barcode":{"value":null,"confidence":0},"readability":0.95},"reasons":["strength 300 IU/ml differs from your 100 IU/ml"]},
+    {"id":"ih_04","category":"rapid_vs_basal_lookalike","description":"Rapid-acting NovoRapid FlexPen insulin aspart 100 IU/ml look-alike held instead of basal glargine","question":"Is this my evening basal insulin pen?","expected_level":"warning","predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":4233.3,"read":{"kind":"medication","product":{"value":"NovoRapid FlexPen","confidence":0.98},"ingredient":{"value":"insulin aspart","confidence":0.98},"strength":{"value":"100 IU/ml","confidence":0.98},"dosing":{"value":null,"confidence":0},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.95},"reasons":["not on your medication list"]},
+    {"id":"ih_05","category":"matching_dpi_mikrog_mcg","description":"Sharp Pulmicort Turbuhaler budesonide 200 mikrog dry-powder inhaler matching 200 mcg profile","question":"Is this my maintenance steroid inhaler?","expected_level":"match","predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2957.3,"read":{"kind":"medication","product":{"value":"PULMICORT Turbuhaler","confidence":0.99},"ingredient":{"value":"budesonide","confidence":0.99},"strength":{"value":"200 mikrog","confidence":0.98},"dosing":{"value":"1 inhalaatio aamuin illoin","confidence":0.98},"expiry":{"value":"2027-08","confidence":0.98},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.95},"reasons":["matches budesonide","taken today: 0/2"]},
+    {"id":"ih_06","category":"matching_mdi_salbutamol","description":"Sharp Ventoline Evohaler salbutamol 100 mikrog metered inhaler matching 100 mcg profile","question":"Is this my morning Ventoline rescue inhaler?","expected_level":"match","predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2722.5,"read":{"kind":"medication","product":{"value":"VENTOLINE Evohaler","confidence":0.98},"ingredient":{"value":"salbutamol","confidence":0.98},"strength":{"value":"100 mikrog","confidence":0.98},"dosing":{"value":null,"confidence":0},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.95},"reasons":["matches salbutamol","taken today: 0/1"]},
+    {"id":"ih_07","category":"wrong_strength_inhaler","description":"Wrong-strength Pulmicort Turbuhaler budesonide 400 mikrog inhaler against 200 mcg profile","question":"Is this my maintenance steroid inhaler?","expected_level":"warning","predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3317.3,"read":{"kind":"medication","product":{"value":"PULMICORT Turbuhaler","confidence":0.99},"ingredient":{"value":"budesonide","confidence":0.99},"strength":{"value":"400 mikrog","confidence":0.99},"dosing":{"value":"1 inhalaatio aamuin illoin","confidence":0.98},"expiry":{"value":"2027-08","confidence":0.99},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.95},"reasons":["strength 400 mikrog differs from your 200 mcg"]},
+    {"id":"ih_08","category":"expired_insulin_carton","description":"Expired Lantus SoloStar insulin glargine 100 IU/ml carton with EXP 2025-05","question":"Can I use this Lantus insulin pen carton tonight?","expected_level":"warning","predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3040.4,"read":{"kind":"medication","product":{"value":"LANTUS SoloStar","confidence":0.99},"ingredient":{"value":"insulin glargine","confidence":0.99},"strength":{"value":"100 IU/ml","confidence":0.99},"dosing":{"value":"1 injection in the evening","confidence":0.98},"expiry":{"value":"2025-05","confidence":0.98},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.95},"reasons":["expired 2025-05"]},
+    {"id":"ih_09","category":"already_taken_basal_insulin","description":"Valid Lantus SoloStar 100 IU/ml carton when today's evening glargine dose is already logged","question":"Did I already take my evening basal insulin?","expected_level":"warning","predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":4837.6,"read":{"kind":"medication","product":{"value":"LANTUS SoloStar","confidence":0.99},"ingredient":{"value":"insulin glargine","confidence":0.99},"strength":{"value":"100 IU/ml","confidence":0.99},"dosing":{"value":"1 injection in the evening","confidence":0.98},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":1},"reasons":["matches glargine","taken today: 1/1"],"profile":{"meds":[{"id":"glargine","name":"Lantus","ingredient":"glargine","strength":"100 IU/ml","schedule":["evening"]},{"id":"budesonide","name":"Pulmicort","ingredient":"budesonide","strength":"200 mcg","schedule":["morning","evening"]},{"id":"salbutamol","name":"Ventoline","ingredient":"salbutamol","strength":"100 mcg","schedule":["morning"]}],"allergies":["penicillin"],"avoid":["NSAIDs"],"doseLog":[{"medId":"glargine","ts":1794662100000}],"lang":"en"}},
+    {"id":"ih_10","category":"thumb_occluded_pen_concentration","description":"Insulin glargine pen barrel with thumb covering concentration digits before IU/ml","question":"Is this my 100 IU/ml evening insulin pen?","expected_level":"unsure","predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5737.4,"read":{"kind":"medication","product":{"value":"LANTUS SoloStar","confidence":0.98},"ingredient":{"value":"insulin glargine","confidence":0.85},"strength":{"value":null,"confidence":0.2},"dosing":{"value":null,"confidence":0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.5,"guidance":"Move your thumb away from the strength number."},"reasons":["strength not readable"]},
+    {"id":"ih_11","category":"glare_inhaler_microgram_badge","description":"Pulmicort Turbuhaler with bright specular glare washing out the microgram badge","question":"Is this my 200 mcg steroid inhaler?","expected_level":"unsure","predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5522.4,"read":{"kind":"medication","product":{"value":"PULMICORT Turbuhaler","confidence":0.98},"ingredient":{"value":"budesonide","confidence":0.98},"strength":{"value":null,"confidence":0.2},"dosing":{"value":"1 inhalaatio aamuin illoin","confidence":0.95},"expiry":{"value":"2027-08","confidence":0.95},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0.55,"guidance":"Tilt it away from the light to stop the glare."},"reasons":["strength not readable"]},
+    {"id":"ih_12","category":"heavy_motion_blur","description":"Handheld metered inhaler with heavy directional motion blur smearing all text and dose digits","question":"Which inhaler am I holding right now?","expected_level":"unsure","predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5659.6,"read":{"kind":"unreadable","product":{"value":null,"confidence":0},"ingredient":{"value":null,"confidence":0},"strength":{"value":null,"confidence":0},"dosing":{"value":null,"confidence":0},"expiry":{"value":null,"confidence":0},"allergens":{"value":null,"confidence":0},"barcode":{"value":null,"confidence":0},"readability":0,"guidance":"Hold still to let the focus settle."},"reasons":["label not readable"]}
+  ]
+}
