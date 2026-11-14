@@ -8,7 +8,7 @@ Shared preamble for every session:
 > - never print or commit keys (.env);
 > - main freezes Sun 06:00.
 
-## 1. Server: finish the 4 features (branch feat/server)
+## 1. Server: DONE (merged Sat ~20:30, smoke 13/13, 44 tests). Remaining nice-to-haves: speculative pre-read for scene mode (5–7 s today), and a proposal-timeout message to the phone
 The web side is done and on main: scene UI, DataMatrix client, add-med sheet, sonar. The server side is in progress on feat/server. Finish:
 - **A. `find_item`** (scene mode): `server/src/find.ts`, `shared/find_prompt.md`, `shared/scene_schema.json`.
 - **D. DataMatrix:** `server/src/gs1.ts`, the same parse as `web/src/lib/gs1.ts`; plus the crossCheck in safety.ts.

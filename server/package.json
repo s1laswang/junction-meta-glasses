@@ -8,13 +8,15 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "hw:probe": "tsx scripts/hw-probe.ts"
   },
   "dependencies": {
     "@google/genai": "^3.3.0",
     "dotenv": "^18.0.10",
     "express": "^5.3.0",
-    "ws": "^8.23.0"
+    "ws": "^8.23.0",
+    "zxing-wasm": "^3.1.6"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

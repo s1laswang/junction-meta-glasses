@@ -1,0 +1,53 @@
+{
+  "suite": "multilingual_eu",
+  "model": "gemini-3.8-flash",
+  "thinking_level": "low",
+  "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+  "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+  "eval_now_iso": "2026-11-14T20:00:00Z",
+  "languages_tested": [
+    "fi",
+    "sv",
+    "de",
+    "fr",
+    "es",
+    "en"
+  ],
+  "n": 12,
+  "errors": 0,
+  "timeouts": 0,
+  "pass_count": 12,
+  "pass_rate": 1.0,
+  "pass_ci95_wilson": [
+    0.7575,
+    1.0
+  ],
+  "confident_wrong_dose_count": 0,
+  "confident_wrong_dose_rate": 0.0,
+  "confident_wrong_dose_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "false_safe_allergen_count": 0,
+  "false_safe_allergen_rate": 0.0,
+  "rule_of_three_95_upper": 0.25,
+  "latency_s": {
+    "p50": 5.021,
+    "p95": 9.651,
+    "mean": 5.585
+  },
+  "cases": [
+    {"id":"ml_01","language":"fi","kind":"medication","scenario":"fi_amlodipiini_5mg_evening_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":5.281,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPIN ORION","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.99},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["matches aml","taken today: 0/1"]},
+    {"id":"ml_02","language":"sv","kind":"medication","scenario":"sv_metforminhydroklorid_500mg_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"500 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.879,"error":null,"read":{"kind":"medication","product":{"value":"METFORMIN ACTAVIS","confidence":0.99},"ingredient":{"value":"metformin","confidence":0.99},"strength":{"value":"500 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-12","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["matches met","taken today: 0/2"]},
+    {"id":"ml_03","language":"fi","kind":"medication","scenario":"fi_burana_ibuprofeeni_nsaid_avoid_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"400 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":6.767,"error":null,"read":{"kind":"medication","product":{"value":"BURANA","confidence":0.99},"ingredient":{"value":"ibuprofen","confidence":0.99},"strength":{"value":"400 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.3},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"barcode":{"value":null,"confidence":0.3},"readability":0.95},"reasons":["ibuprofen is an NSAID, on your avoid list","not on your medication list"]},
+    {"id":"ml_04","language":"de","kind":"medication","scenario":"de_amlodipin_5mg_verwendbar_bis_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":9.885,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPIN STADA","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.99},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.3},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["matches aml","taken today: 0/1"]},
+    {"id":"ml_05","language":"fr","kind":"medication","scenario":"fr_amlodipine_10mg_2x_strength_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"10 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":9.46,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPINE BIOGARAN","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"10 mg","confidence":0.98},"dosing":{"value":null,"confidence":0.3},"expiry":{"value":"2027-08","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"barcode":{"value":null,"confidence":0.3},"readability":0.95},"reasons":["strength 10 mg differs from your 5 mg"]},
+    {"id":"ml_06","language":"es","kind":"medication","scenario":"es_paracetamol_500mg_cad_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"500 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":5.163,"error":null,"read":{"kind":"medication","product":{"value":"PARACETAMOL KERN PHARMA","confidence":0.98},"ingredient":{"value":"paracetamol","confidence":0.98},"strength":{"value":"500 mg","confidence":0.98},"dosing":{"value":null,"confidence":0.2},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.2},"barcode":{"value":null,"confidence":0.2},"readability":0.95},"reasons":["matches par","taken today: 0/1"]},
+    {"id":"ml_07","language":"fi","kind":"food","scenario":"fi_food_maapahkina_peanut_allergy_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.99,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.299,"error":null,"read":{"kind":"food","product":{"value":"Suklainen myslipatukka","confidence":0.99},"ingredient":{"value":"myslipatukka","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":["peanut","oat"],"confidence":0.99},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["contains peanut (allergy: peanut)"]},
+    {"id":"ml_08","language":"sv","kind":"food","scenario":"sv_food_hasselnotter_treenut_allergy_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.514,"error":null,"read":{"kind":"food","product":{"value":"Svenska Delikatesser Nötsmörskräm","confidence":0.98},"ingredient":{"value":"Bredbar kräm med kakao","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":["hazelnut"],"confidence":0.99},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["contains hazelnut (allergy: tree nuts)"]},
+    {"id":"ml_09","language":"fi","kind":"food","scenario":"fi_food_kaurajuoma_nut_free_panel_info","expected_level":"info","actual_level":"info","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.699,"error":null,"read":{"kind":"food","product":{"value":"POHJAN KAURA Kaurajuoma","confidence":0.98},"ingredient":{"value":"oat drink","confidence":0.98},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":["gluten","oat"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["no listed allergen matches your profile"]},
+    {"id":"ml_10","language":"sv","kind":"food","scenario":"sv_food_havredryck_nut_free_panel_info","expected_level":"info","actual_level":"info","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.98,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.646,"error":null,"read":{"kind":"food","product":{"value":"Havredryck","confidence":0.98},"ingredient":{"value":"oat drink","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":["gluten","oats"],"confidence":0.95},"barcode":{"value":null,"confidence":0.0},"readability":0.98},"reasons":["no listed allergen matches your profile"]},
+    {"id":"ml_11","language":"en","kind":"medication","scenario":"eu_trilingual_thumb_occluded_strength_abstention","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.1,"name_conf":0.98,"readability":0.6,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":6.576,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPIN / AMLODIPINE","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":null,"confidence":0.1},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.6,"guidance":"Move your thumb away from the text."},"reasons":["strength not readable"]},
+    {"id":"ml_12","language":"fr","kind":"food","scenario":"fr_front_biscuit_carton_no_allergen_panel_abstention","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.95,"readability":0.6,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.854,"error":null,"read":{"kind":"food","product":{"value":"Maison Delacroix Biscuits Fins Artisanaux","confidence":0.95},"ingredient":{"value":"biscuits","confidence":0.8},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.6,"guidance":"Turn it around, the label is on the back."},"reasons":["allergen panel not readable"]}
+  ]
+}

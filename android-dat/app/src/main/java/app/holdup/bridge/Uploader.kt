@@ -5,7 +5,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.util.concurrent.atomic.AtomicBoolean
-import org.json.JSONObject
 
 /** What we report to `POST /ingest/state` (contract in docs/TEAM.md). */
 data class GlassesState(
@@ -15,12 +14,7 @@ data class GlassesState(
     val streaming: Boolean,
 ) {
   fun toJson(): String =
-      JSONObject()
-          .put("connected", connected)
-          .put("worn", worn ?: JSONObject.NULL)
-          .put("battery", battery ?: JSONObject.NULL)
-          .put("streaming", streaming)
-          .toString()
+      "{\"connected\":$connected,\"worn\":${worn ?: "null"},\"battery\":${battery ?: "null"},\"streaming\":$streaming}"
 }
 
 sealed interface PostResult {

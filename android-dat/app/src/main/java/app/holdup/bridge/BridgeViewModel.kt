@@ -81,6 +81,25 @@ data class UiState(
     get() = sessionState == DeviceSessionState.STARTED
   val streaming: Boolean
     get() = streamState == StreamState.STREAMING
+
+  internal fun toGlassesState(): GlassesState =
+      GlassesState(
+          connected = linkState == LinkState.CONNECTED && deviceName != null,
+          worn =
+              when (donState) {
+                DonState.DONNED -> true
+                DonState.DOFFED -> false
+                else -> null
+              },
+          battery = battery,
+          streaming = streaming,
+      )
+
+  internal fun resolveTarget(): Pair<String, String>? {
+    val server = Uploader.normalizeServer(serverUrl)
+    val code = sessionCode.trim()
+    return if (server.isEmpty()) null else Pair(server, code)
+  }
 }
 
 /**
@@ -99,6 +118,26 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
     private const val MAX_BACKOFF_MS = 8_000L
     private const val JPEG_QUALITY = 80
     private const val STATE_HEARTBEAT_MS = 10_000L
+
+    internal fun normalizeBatteryLevel(rawLevel: Int): Int? = rawLevel.takeIf { it > 0 }
+
+    internal fun reconnectDelayMs(attempt: Int): Long =
+        min(15_000L, 2_000L shl min(attempt.coerceAtLeast(0), 3))
+
+    internal fun streamRetryDelayMs(attempt: Int): Long =
+        min(10_000L, 1_500L shl min(attempt.coerceAtLeast(0), 3))
+
+    internal fun frameIntervalMs(netFailures: Int): Long =
+        if (netFailures <= 0) FRAME_INTERVAL_MS
+        else min(MAX_BACKOFF_MS, FRAME_INTERVAL_MS shl min(netFailures, 3))
+
+    internal fun frameHttpHint(code: Int): String =
+        when (code) {
+          404 -> " (server has no /ingest/frame? check URL/branch)"
+          400, 410 -> " (unknown session code?)"
+          502, 503, 530 -> " (tunnel up but server down?)"
+          else -> ""
+        }
   }
 
   private val app = application
@@ -233,7 +272,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
       it.copy(
           deviceName = d.name.ifEmpty { "Glasses" },
           linkState = d.linkState,
-          battery = d.batteryLevel.takeIf { level -> level > 0 },
+          battery = normalizeBatteryLevel(d.batteryLevel),
           charging = d.chargingState == ChargingState.CHARGING,
           donState = d.donState,
           thermal = d.thermalLevel,
@@ -358,7 +397,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
 
   private fun scheduleReconnect() {
     if (!_ui.value.wantConnected || reconnectJob?.isActive == true) return
-    val delayMs = min(15_000L, 2_000L shl min(reconnectAttempt, 3))
+    val delayMs = reconnectDelayMs(reconnectAttempt)
     reconnectAttempt++
     status("Glasses not reachable. Retrying in ${delayMs / 1000}s…")
     reconnectJob =
@@ -502,7 +541,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
 
   private fun scheduleStreamRetry() {
     if (!_ui.value.wantStreaming || streamRetryJob?.isActive == true) return
-    val delayMs = min(10_000L, 1_500L shl min(streamRetryAttempt, 3))
+    val delayMs = streamRetryDelayMs(streamRetryAttempt)
     streamRetryAttempt++
     status("Stream stopped. Retrying in ${delayMs / 1000}s…")
     streamRetryJob =
@@ -533,9 +572,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
   private fun onFrame(frame: VideoFrame) {
     if (frame.isCompressed) return
     val now = SystemClock.elapsedRealtime()
-    val interval =
-        if (netFailures == 0) FRAME_INTERVAL_MS
-        else min(MAX_BACKOFF_MS, FRAME_INTERVAL_MS shl min(netFailures, 3))
+    val interval = frameIntervalMs(netFailures)
     if (now - lastFrameSentAt < interval) return // rate limit, not a drop
     val (server, code) = target() ?: return
     if (!uploader.tryBeginFrame()) {
@@ -581,13 +618,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
           }
           is PostResult.HttpError -> {
             netFailures++
-            val hint =
-                when (res.code) {
-                  404 -> " (server has no /ingest/frame? check URL/branch)"
-                  400, 410 -> " (unknown session code?)"
-                  502, 503, 530 -> " (tunnel up but server down?)"
-                  else -> ""
-                }
+            val hint = frameHttpHint(res.code)
             _ui.update { it.copy(netOk = false, frameHttp = "HTTP ${res.code}") }
             setError("Server rejected frame: HTTP ${res.code}$hint")
           }
@@ -605,20 +636,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
 
   // ---------------------------------------------------------------- state → server
 
-  private fun currentGlassesState(): GlassesState {
-    val u = _ui.value
-    return GlassesState(
-        connected = u.linkState == LinkState.CONNECTED && u.deviceName != null,
-        worn =
-            when (u.donState) {
-              DonState.DONNED -> true
-              DonState.DOFFED -> false
-              else -> null
-            },
-        battery = u.battery,
-        streaming = u.streaming,
-    )
-  }
+  private fun currentGlassesState(): GlassesState = _ui.value.toGlassesState()
 
   private fun pushState(force: Boolean = false) {
     val st = currentGlassesState()
@@ -640,12 +658,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
     }
   }
 
-  private fun target(): Pair<String, String>? {
-    val server = Uploader.normalizeServer(_ui.value.serverUrl)
-    // Session code is optional (server defaults to the latest live session; TEAM.md, Sat 15:10).
-    val code = _ui.value.sessionCode.trim()
-    return if (server.isEmpty()) null else Pair(server, code)
-  }
+  private fun target(): Pair<String, String>? = _ui.value.resolveTarget()
 
   // ---------------------------------------------------------------- status helpers
 

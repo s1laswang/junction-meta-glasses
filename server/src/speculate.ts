@@ -12,7 +12,8 @@ export const SPEC = {
   minGapMs: Number(process.env.SPEC_MIN_GAP_MS ?? 2000), // min time between speculative calls (cost cap on the shared key)
   minSharpness: 0.15,   // don't spend calls on frames with nothing in view
   minReadability: 0.6,
-  sceneDelta: 0.12,     // relative JPEG size change that counts as "scene changed"
+  sceneDelta: 0.06,     // relative JPEG size change that counts as "scene changed" (was 0.12: two similar white boxes stayed under it)
+  motionDrop: 0.2,      // a sharpness drop this large means motion (e.g. swapping boxes): also counts as a scene change
 };
 
 type Cached = { read: LabelRead; model: string | null; frameTs: number; sharpness: number; bytes: number; at: number };
@@ -24,18 +25,27 @@ export class Speculator {
   private timer?: NodeJS.Timeout;
   private lastStart = 0;
   private sceneChangedAfterCache = false;
+  /** frame time of the last detected scene change; reads of frames older than this are never served */
+  private lastChangeTs = 0;
   hits = 0; misses = 0;
 
-  constructor(private ring: FrameRing, private isActive: () => boolean) {}
+  /** called whenever a background read lands (readiness sonar) */
+  onRead?: () => void;
+  constructor(private ring: FrameRing, private isActive: () => boolean, private reader: typeof readLabel = readLabel) {}
+  /** Latest speculative read (any age), for the readiness sonar. */
+  latest() { return this.cache; }
 
   clear() { this.cache = undefined; this.inflight = undefined; clearTimeout(this.timer); }
 
   /** Call on every new frame (phone or glasses). */
   onFrame(f: Frame) {
-    if (!this.isActive() || f.sharpness < SPEC.minSharpness) return;
+    if (!this.isActive()) return;
     const ref = this.cache;
-    const changed = !ref || Math.abs(f.bytes - ref.bytes) / Math.max(1, ref.bytes) > SPEC.sceneDelta;
-    if (ref && changed) this.sceneChangedAfterCache = true;
+    // Motion (a blurry frame after a sharp one) or a size change means the item may have been swapped.
+    const motion = !!ref && f.sharpness < ref.sharpness - SPEC.motionDrop;
+    const changed = !ref || motion || Math.abs(f.bytes - ref.bytes) / Math.max(1, ref.bytes) > SPEC.sceneDelta;
+    if (ref && changed) { this.sceneChangedAfterCache = true; this.lastChangeTs = Math.max(this.lastChangeTs, f.ts); }
+    if (f.sharpness < SPEC.minSharpness) return;
     const sharper = !ref || f.sharpness > ref.sharpness + 0.05;
     const weak = !!ref && (ref.read.kind === "unreadable" || ref.read.readability < SPEC.minReadability);
     if (!(changed || sharper || weak)) return;
@@ -46,16 +56,18 @@ export class Speculator {
 
   private kick() {
     if (this.inflight || !this.isActive()) return; // one at a time; the next frame will re-arm
-    const frames = this.ring.pick(2);
+    const frames = this.ring.pick(2).filter((x) => x.ts >= this.lastChangeTs);
     if (!frames.length) return;
     this.lastStart = Date.now();
     const frameTs = Math.max(...frames.map((x) => x.ts));
     const best = frames[0];
-    const promise = readLabel(frames.map((x) => x.data), undefined, "verify_spec")
+    const promise = this.reader(frames.map((x) => x.data), undefined, "verify_spec")
       .then((r): Cached | undefined => {
         if (!r.model) return undefined; // reader failed: keep the old cache
         const c: Cached = { read: r.read, model: r.model, frameTs, sharpness: best.sharpness, bytes: best.bytes, at: Date.now() };
-        if (!this.cache || frameTs >= this.cache.frameTs) { this.cache = c; this.sceneChangedAfterCache = false; }
+        // only a read of frames taken after the last scene change may become the cache
+        if ((!this.cache || frameTs >= this.cache.frameTs) && frameTs >= this.lastChangeTs) { this.cache = c; this.sceneChangedAfterCache = false; }
+        this.onRead?.();
         return c;
       })
       .catch(() => undefined)
@@ -65,8 +77,9 @@ export class Speculator {
 
   private usable(c: Cached | undefined, now = Date.now()): c is Cached {
     if (!c || c.read.kind === "unreadable" || c.read.readability < SPEC.minReadability) return false;
-    const age = now - c.frameTs;
-    return age < SPEC.freshMs || (!this.sceneChangedAfterCache && age < SPEC.stableMs);
+    // Box-swap safety: after any scene change the cache is never served, however young it is.
+    if (this.sceneChangedAfterCache || c.frameTs < this.lastChangeTs) return false;
+    return now - c.frameTs < SPEC.stableMs;
   }
 
   /**
@@ -81,7 +94,7 @@ export class Speculator {
       return { read: this.cache.read, model: this.cache.model, source: "cache" };
     }
     const inf = this.inflight;
-    if (inf && t - inf.frameTs < SPEC.stableMs) {
+    if (inf && t - inf.frameTs < SPEC.stableMs && inf.frameTs >= this.lastChangeTs) {
       const c = await Promise.race([inf.promise, new Promise<undefined>((r) => setTimeout(() => r(undefined), maxWaitMs))]);
       if (c && c.read.kind !== "unreadable") {
         this.hits++;

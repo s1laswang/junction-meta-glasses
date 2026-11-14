@@ -6,14 +6,17 @@ import {
   Behavior, FunctionResponseScheduling, Modality, Type,
   type FunctionCall, type FunctionDeclaration, type LiveServerMessage, type Session,
 } from "@google/genai";
-import type { CoachCue, ServerMsg } from "../../shared/types.ts";
+import type { CoachCue, LabelRead, Med, ServerMsg, VerdictLevel } from "../../shared/types.ts";
 import { env, SERVER_DIR } from "./env.ts";
 import { ai, backoffMs } from "./gemini.ts";
 import type { Hub, LiveLike } from "./hub.ts";
 import { ledger } from "./ledger.ts";
 import { errSummary, log, shortId } from "./log.ts";
-import { readLabel } from "./verify.ts";
-import { checkLabel } from "./safety.ts";
+import { readLabel, toProfile } from "./verify.ts";
+import { findItems } from "./find.ts";
+import { MATCH_NAME_MIN_CONF, STRENGTH_MIN_CONF, checkLabel, fmtStrength, ingredientsOf, sameStrength, spokenIngredient } from "./safety.ts";
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const BASE_PROMPT = fs.readFileSync(path.join(SERVER_DIR, "src", "prompts", "live.md"), "utf8");
 const CUES: CoachCue[] = ["rotate_left", "rotate_right", "closer", "farther", "more_light", "hold_still", "other_side", "ok"];
@@ -45,10 +48,53 @@ export const TOOLS: FunctionDeclaration[] = [
   },
 ];
 
+// Flag-gated tools and prompt sections. With every flag off, tools and prompt are exactly the M1 ones.
+const FIND_ITEM: FunctionDeclaration = {
+  name: "find_item",
+  description: "Look at SEVERAL packages in view (on a table, shelf or in a drawer) and say which one is which, checked against the user's own list. Use for 'which one is my evening pill?', 'which box has no nuts?', or when more than one package is in view. Returns a `speech` to say word for word.",
+  parameters: { type: Type.OBJECT, properties: { target: { type: Type.STRING, description: "What the user is looking for, e.g. 'my evening pill', 'the one without nuts'. Omit to just describe them." } } },
+};
+const ADD_MEDICATION: FunctionDeclaration = {
+  name: "add_medication",
+  description: "Propose adding the medicine the user is holding (just confirmed by verify_label with a clear name and strength) to their medication list, with the times they take it. The phone asks the user to confirm; nothing is saved until they do.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      schedule: { type: Type.ARRAY, items: { type: Type.STRING }, description: "When they take it, e.g. ['morning'], ['evening'], ['08:00','20:00'], ['as needed']" },
+      name: { type: Type.STRING, description: "Optional name the user calls it" },
+    },
+    required: ["schedule"],
+  },
+};
+const promptFile = (f: string) => fs.readFileSync(path.join(SERVER_DIR, "src", "prompts", f), "utf8");
+const SCENE_PROMPT = promptFile("live_scene.md");
+const ADDMED_PROMPT = promptFile("live_addmed.md");
+
+export function toolsFor(features: Set<string>): FunctionDeclaration[] {
+  return [...TOOLS, ...(features.has("scene") ? [FIND_ITEM] : []), ...(features.has("addmed") ? [ADD_MEDICATION] : [])];
+}
+
+// Fixed, human-written verdict openers. The safety-critical word (right one / warning / not sure) is never
+// produced by model translation. In FI/SV, only the details after the opener are translated by Live.
+export const VERDICT_LEAD: Record<string, Record<VerdictLevel, string>> = {
+  fi: { match: "Oikea pakkaus.", warning: "Varoitus.", unsure: "En ole varma.", info: "Tieto." },
+  sv: { match: "Rätt förpackning.", warning: "Varning.", unsure: "Jag är inte säker.", info: "Information." },
+};
+export function leadFor(lang: string, level: VerdictLevel): { lead?: string } {
+  const l = VERDICT_LEAD[(lang || "en").slice(0, 2)];
+  return l ? { lead: l[level] } : {};
+}
+export function speakInstruction(lang: string, tail: string): string {
+  return VERDICT_LEAD[(lang || "en").slice(0, 2)]
+    ? `First say \`lead\` exactly as written, then say \`speech\` translated faithfully into the user's language (keep names, numbers and dates exactly), then stop. ${tail}`
+    : `Say \`speech\` word for word, then stop. ${tail}`;
+}
+
 function systemInstruction(hub: Hub, lang: string): string {
   const p = hub.profile;
   const meds = p.meds.map((m) => `- medId "${m.id}": ${m.name}${m.ingredient && m.ingredient !== m.name ? ` (${m.ingredient})` : ""}, taken ${m.schedule.join(", ") || "as needed"}`).join("\n");
-  return `${BASE_PROMPT}
+  const extra = (hub.has("scene") ? `\n${SCENE_PROMPT}` : "") + (hub.has("addmed") ? `\n${ADDMED_PROMPT}` : "");
+  return `${BASE_PROMPT}${extra}
 ## This user
 - Language: ${LANGS[lang] ?? lang}. Speak ${LANGS[lang] ?? lang}.
 - Their medicines (names only; strengths and safety are checked by verify_label):
@@ -122,7 +168,7 @@ export class LiveProxy implements LiveLike {
             config: {
               responseModalities: [Modality.AUDIO],
               systemInstruction: systemInstruction(this.hub, this.opts.lang),
-              tools: [{ functionDeclarations: TOOLS }],
+              tools: [{ functionDeclarations: toolsFor(this.hub.features) }],
               inputAudioTranscription: {},
               outputAudioTranscription: {},
               sessionResumption: this.handle ? { handle: this.handle } : {},
@@ -139,7 +185,7 @@ export class LiveProxy implements LiveLike {
           if (this.stopped) { this.gen++; s.close(); return; }
           this.session = s; this.openGen = gen; this.model = model; this.modelsUsed.add(model); this.openedAt = Date.now();
           log("live.open", { session: shortId(this.hub.id), model, ms: Date.now() - t, resumed: !!this.handle });
-          this.send({ type: "ready", model, session: this.hub.id });
+          this.send({ type: "ready", model, session: this.hub.id, features: [...this.hub.features] });
           this.send({ type: "status", live: "open", detail: model });
           return;
         } catch (e) {
@@ -275,18 +321,46 @@ export class LiveProxy implements LiveLike {
           }
           if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
           if (this.stopped) return;
-          const v = checkLabel(read, this.hub.profile);
+          const v = checkLabel(read, this.hub.profile, new Date(), this.hub.freshCode());
           if (!model) { v.level = "unsure"; v.reasons.push("reader unavailable"); }
           this.send({ type: "verdict", verdict: v });
           this.respond(fc, {
             level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
             guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
-            instruction: "Say `speech` word for word (translate faithfully if needed), then stop. No disclaimer, add nothing.",
+            ...leadFor(this.opts.lang, v.level),
+            instruction: speakInstruction(this.opts.lang, "No disclaimer, add nothing."),
           });
-          log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t });
+          log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t, dm: !!v.crossCheck });
+          this.lastItemRead = { read, at: Date.now(), gtin: this.hub.freshCode()?.gtin };
         } finally {
           this.send({ type: "checking", phase: "end" });
         }
+      } else if (fc.name === "find_item" && this.hub.has("scene")) {
+        const target = typeof args.target === "string" ? args.target : undefined;
+        const frames = this.hub.ring.pick(2, 4000);
+        if (!frames.length) {
+          this.respond(fc, { level: "unsure", speech: "I can't see the table yet. Point your head at the items." });
+          return;
+        }
+        this.send({ type: "checking", phase: "start" });
+        try {
+          const r = await findItems(frames.map((f) => f.data), this.hub.profile, target, "find_live");
+          if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
+          if (this.stopped) return;
+          const v = r.verdict;
+          this.send({ type: "verdict", verdict: v });
+          this.respond(fc, {
+            mode: "scene", level: v.level, speech: v.speech,
+            items: (v.items ?? []).map((i) => ({ position: i.position, level: i.level, headline: i.headline })),
+            ...leadFor(this.opts.lang, v.level),
+            instruction: speakInstruction(this.opts.lang, "If they pick one up, call verify_label."),
+          });
+          log("live.find_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_items: v.items?.length ?? 0 });
+        } finally {
+          this.send({ type: "checking", phase: "end" });
+        }
+      } else if (fc.name === "add_medication" && this.hub.has("addmed")) {
+        this.respond(fc, this.proposeMed(args));
       } else {
         this.respond(fc, { error: `unknown tool ${fc.name}` });
       }
@@ -296,6 +370,66 @@ export class LiveProxy implements LiveLike {
     } finally {
       if (fc.name !== "show_cue") this.toolLat.push((Date.now() - t) / 1000);
     }
+  }
+
+  // ---------- hold up to add (flag addmed) ----------
+  private lastItemRead?: { read: LabelRead; at: number; gtin?: string };
+  private proposals = new Map<string, { med: Med; timer: NodeJS.Timeout }>();
+
+  /** Build a Med from the last confident held-item read + the spoken schedule and ask the phone to confirm. */
+  private proposeMed(args: Record<string, unknown>): Record<string, unknown> {
+    const lr = this.lastItemRead;
+    const read = lr && Date.now() - lr.at < 3 * 60_000 ? lr.read : undefined;
+    const nameConf = read ? Math.max(read.ingredient.value ? read.ingredient.confidence : 0, read.product.value ? read.product.confidence : 0) : 0;
+    if (!read || read.kind !== "medication" || nameConf < MATCH_NAME_MIN_CONF || !read.strength.value || read.strength.confidence < STRENGTH_MIN_CONF) {
+      return { ok: false, reason: "need_clear_read", instruction: "Call verify_label first and coach until the name and strength are read clearly. Do not add anything yet." };
+    }
+    const schedule = (Array.isArray(args.schedule) ? args.schedule : []).filter((s): s is string => typeof s === "string" && !!s.trim()).map((s) => s.trim().slice(0, 40)).slice(0, 8);
+    if (!schedule.length) return { ok: false, reason: "need_schedule", instruction: "Ask the user when they take it, then call add_medication again." };
+    const ingredient = read.ingredient.value && read.ingredient.confidence >= MATCH_NAME_MIN_CONF ? spokenIngredient(read.ingredient.value.toLowerCase()) : "";
+    const noStrength = (s: string) => s.replace(/\d+(?:[.,]\d+)?\s*(mg|g|mcg|µg|ml|iu)\b.*$/i, "").trim();
+    const product = read.product.value && read.product.confidence >= MATCH_NAME_MIN_CONF ? noStrength(read.product.value) : "";
+    const name = (typeof args.name === "string" && noStrength(args.name).slice(0, 60)) || product || cap(ingredient);
+    const strength = fmtStrength(read.strength.value.replace(/(\d),(\d)/g, "$1.$2"));
+    const dup = this.hub.profile.meds.find((m) => (ingredient && ingredientsOf(m.ingredient, m.name).has(ingredient)) && sameStrength(m.strength, strength));
+    if (dup) return { ok: false, reason: "already_on_list", speech: `${cap(spokenIngredient(dup.ingredient) || dup.name)} ${dup.strength} is already on your list.` };
+    const med: Med = {
+      id: `${(ingredient || name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "med"}-${Math.random().toString(36).slice(2, 6)}`,
+      name, ingredient: ingredient || name.toLowerCase(), strength, schedule,
+      ...(lr?.gtin ? { gtin: lr.gtin } : {}),
+    };
+    const proposalId = crypto.randomUUID();
+    const phrase = (s: string) => /^\d{1,2}[:.]\d{2}$/.test(s) ? `at ${s}` : /^(morning|afternoon|evening)$/i.test(s) ? `in the ${s.toLowerCase()}`
+      : /^(night|bedtime|noon|midday)$/i.test(s) ? `at ${s.toLowerCase()}` : s;
+    const ws = schedule.map(phrase);
+    const when = ws.length === 1 ? ws[0] : `${ws.slice(0, -1).join(", ")} and ${ws.at(-1)}`;
+    const speech = `Add ${name} ${strength}, taken ${when}, to your list? Please confirm on your phone.`;
+    const timer = setTimeout(() => {
+      if (!this.proposals.delete(proposalId) || this.stopped) return;
+      this.text(`(No confirmation came from the phone within a minute, so ${name} was not saved. Tell the user in a few words.)`);
+    }, 60_000);
+    timer.unref?.();
+    this.proposals.set(proposalId, { med, timer });
+    this.send({ type: "profile_add", proposalId, med, speech });
+    log("live.profile_add", { session: shortId(this.hub.id), has_gtin: !!med.gtin });
+    return { ok: true, status: "waiting_for_user_confirmation_on_phone", speech: "Please confirm on your phone.",
+      instruction: "Say briefly that they should confirm on their phone. Nothing is saved yet; you'll be told when they confirm or decline." };
+  }
+
+  /** The phone's answer to profile_add. Only an explicit accept adds the med to the session profile. */
+  resolveProposal(proposalId: string, accepted: boolean, edited?: unknown) {
+    const p = this.proposals.get(proposalId);
+    if (!p) return;
+    clearTimeout(p.timer);
+    this.proposals.delete(proposalId);
+    if (!accepted) { this.text(`(The user declined: ${p.med.name} was not added. Acknowledge in a few words.)`); return; }
+    const med = edited ? toProfile({ meds: [edited] }).meds[0] ?? p.med : p.med;
+    if (!med.gtin && p.med.gtin) med.gtin = p.med.gtin;
+    const list = this.hub.profile.meds;
+    const i = list.findIndex((m) => m.id === med.id);
+    if (i >= 0) list[i] = med; else list.push(med);
+    log("live.profile_add_accepted", { session: shortId(this.hub.id) });
+    this.text(`(Saved on the phone: ${med.name} ${med.strength}, taken ${med.schedule.join(", ")}, is now on the user's list. Confirm in a few words.)`);
   }
 
   private logDose(medId: string) {

@@ -42,6 +42,10 @@ const timeline: string[] = [];
 let tQuestion = 0, tFirstAudio = 0, tVerdict = 0, verdict: any, model = "", audioBytes = 0, finalAssistant = "";
 let afterVerdictFinal = false;
 let frameTimer: NodeJS.Timeout | undefined, tChecking = 0, firstWords = "";
+// phase 2 ("Which one?" scene mode): three boxes on a table, left to right paracetamol / ibuprofen / amlodipine
+const threeJpeg = fs.readFileSync(path.join(SERVER_DIR, "fixtures", "three_boxes.jpg")).toString("base64");
+const doScene = process.env.SMOKE_SCENE !== "0";
+let currentJpeg = jpeg, readyFeatures: string[] = [], sceneVerdict: any, tScene = 0, tSceneVerdict = 0, sceneSpoken = false, sceneSaid = "";
 
 const done = new Promise<void>((resolve) => {
   ws.on("open", () => {
@@ -53,8 +57,9 @@ const done = new Promise<void>((resolve) => {
     if (m.type !== "audio" && !(m.type === "transcript" && !m.final)) timeline.push(`${ms()}ms ${m.type}${"live" in m ? ":" + m.live : ""}${m.type === "coach" ? ":" + m.cue : ""}${m.type === "transcript" ? ":" + m.role : ""}`);
     if (m.type === "ready") {
       model = m.model;
+      readyFeatures = m.features ?? [];
       // ~1 fps camera, like the phone; the question comes after the item has been in view for a moment
-      const sendFrame = () => ws.readyState === 1 && ws.send(JSON.stringify({ type: "frame", data: jpeg, w: 768, h: 768, sharpness: 0.8 + Math.random() * 0.1, ts: Date.now() }));
+      const sendFrame = () => ws.readyState === 1 && ws.send(JSON.stringify({ type: "frame", data: currentJpeg, w: 768, h: 768, sharpness: 0.8 + Math.random() * 0.1, ts: Date.now() }));
       sendFrame();
       frameTimer = setInterval(sendFrame, 1000);
       setTimeout(() => {
@@ -66,17 +71,28 @@ const done = new Promise<void>((resolve) => {
     if (m.type === "checking" && m.phase === "start" && !tChecking) tChecking = Date.now();
     if (m.type === "transcript" && m.role === "assistant" && !firstWords && tQuestion) firstWords = m.text;
     if (m.type === "audio") { audioBytes += m.data.length * 0.75; if (!tFirstAudio && tQuestion) tFirstAudio = Date.now(); }
-    if (m.type === "verdict") { verdict = m.verdict; tVerdict = Date.now(); }
+    if (m.type === "verdict") {
+      if (m.verdict.mode === "scene") { sceneVerdict = m.verdict; tSceneVerdict = Date.now(); }
+      else if (!afterVerdictFinal) { verdict = m.verdict; tVerdict = Date.now(); }
+    }
     if (m.type === "transcript" && m.role === "assistant" && m.final) {
-      finalAssistant = m.text;
-      // done once the model has actually spoken the verdict (not just an ack like "Let me look.")
-      const key = (verdict?.speech ?? "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 14);
-      if (verdict && key && m.text.toLowerCase().replace(/[^a-z0-9]/g, "").includes(key)) { afterVerdictFinal = true; resolve(); }
+      const said = m.text.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const keyOf = (v: any) => (v?.speech ?? "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 14);
+      if (!afterVerdictFinal) {
+        finalAssistant = m.text;
+        // phase 1 done once the model has actually spoken the verdict (not just an ack like "Let me look.")
+        if (verdict && keyOf(verdict) && said.includes(keyOf(verdict))) {
+          afterVerdictFinal = true;
+          if (!doScene || !readyFeatures.includes("scene")) return resolve();
+          currentJpeg = threeJpeg; // put the box down; three boxes on the table now
+          setTimeout(() => { tScene = Date.now(); ws.send(JSON.stringify({ type: "text", text: "Now there are three boxes on the table. Which one is my evening pill?" })); }, 2500);
+        }
+      } else if (sceneVerdict && keyOf(sceneVerdict) && said.includes(keyOf(sceneVerdict))) { sceneSpoken = true; sceneSaid = m.text; resolve(); }
     }
     if (m.type === "error") console.log("error msg:", m.code, m.message);
   });
   ws.on("close", () => resolve());
-  setTimeout(resolve, 45_000);
+  setTimeout(resolve, 80_000);
 });
 await done;
 clearInterval(frameTimer);
@@ -97,6 +113,13 @@ console.log(JSON.stringify({ metric: "smoke", model, first_audio_ms: tFirstAudio
 if (verdict) console.log("verdict:", JSON.stringify({ level: verdict.level, headline: verdict.headline, speech: verdict.speech, matchedMedId: verdict.matchedMedId, strength: verdict.read.strength, reasons: verdict.reasons }));
 console.log("assistant said (final):", finalAssistant);
 console.log("== /hud-ws (no session) ==\n types:", JSON.stringify(hudTypes));
+console.log("features:", JSON.stringify(readyFeatures), "readiness msgs:", counts.readiness ?? 0);
+if (sceneVerdict) {
+  console.log("== scene ==", `question -> scene verdict ${tSceneVerdict - tScene} ms`, JSON.stringify({ level: sceneVerdict.level, headline: sceneVerdict.headline, speech: sceneVerdict.speech }));
+  for (const i of sceneVerdict.items ?? []) console.log("  ", i.position, i.level, i.headline);
+  console.log("assistant said (scene):", sceneSaid);
+}
+const sceneShape = (sceneVerdict?.items ?? []).map((i: any) => `${i.position}:${i.level}:${/amlodipine/i.test(i.headline) ? "aml" : /ibuprofen/i.test(i.headline) ? "ibu" : /paracetamol/i.test(i.headline) ? "par" : "?"}`).join(",");
 
 // snapshot path
 const tv = Date.now();
@@ -110,7 +133,12 @@ const checks = {
   ready: !!model, checking: (counts.checking ?? 0) >= 2, audio: audioBytes > 0, transcripts: (counts.transcript ?? 0) > 0, verdict: !!verdict,
   spokeAfterVerdict: afterVerdictFinal, pong: (counts.pong ?? 0) > 0,
   hudVerdict: hudTypes.includes("verdict"), hudDevice: hudTypes.includes("device"), snapshotVerdict: vr.ok && !!vj.level,
-};
+} as Record<string, boolean>;
+if (doScene && readyFeatures.includes("scene")) {
+  checks.sceneVerdict = sceneShape === "left:match:par,center:warning:ibu,right:match:aml" && sceneVerdict.level === "match" && /on the right/.test(sceneVerdict.speech);
+  checks.sceneSpoken = sceneSpoken;
+}
+if (readyFeatures.includes("sonar")) checks.readiness = (counts.readiness ?? 0) > 0;
 for (const [k, v] of Object.entries(checks)) { console.log(`${v ? "PASS" : "FAIL"} ${k}`); if (!v) fail = true; }
 ws.close(); hud.close(); server.close();
 process.exit(fail ? 1 : 0);
