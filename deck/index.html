@@ -146,7 +146,7 @@
               <div class="proof-strip-4">
                 <div class="proof-pill">
                   <span class="proof-pill-val text-emerald-luma" data-eval-field="confident_wrong_dose_count">0</span>
-                  <span class="proof-pill-lbl">Confident-wrong dose reads across 53 suite cases + 16 calibration reads</span>
+                  <span class="proof-pill-lbl">Confident-wrong dose reads across 113 label/stress cases + 16 calibration reads</span>
                 </div>
                 <div class="proof-pill">
                   <span class="proof-pill-val text-cyan" data-eval-field="live_first_audio_ms">582 ms</span>
@@ -157,8 +157,8 @@
                   <span class="proof-pill-lbl">Cloud cost per 12s guided check (91.8% lower 3-yr TCO vs EUR 4,150 OrCam)</span>
                 </div>
                 <div class="proof-pill">
-                  <span class="proof-pill-val text-white" data-eval-field="unit_tests_passing">394 / 394</span>
-                  <span class="proof-pill-lbl">Automated server + web accessibility, safety, and resilience tests passing</span>
+                  <span class="proof-pill-val text-white" data-eval-field="unit_tests_passing">404 / 404</span>
+                  <span class="proof-pill-lbl">Automated server, web, accessibility, safety, and eval compiler tests passing</span>
                 </div>
               </div>
             </div>
@@ -941,13 +941,13 @@
                   <span class="eyebrow-tag">Empirical Safety Benchmark · Committed Artifacts in eval/ JSON Suites</span>
                 </div>
                 <div class="top-pill-row">
-                  <span class="meta-chip meta-chip-emerald" data-eval-field="suite_sync_status">HOLDUP_EVAL_DATA synced: 98.1% verdict accuracy across 53 verified cases + 16-frame calibration sweep (9/9 suites)</span>
+                  <span class="meta-chip meta-chip-emerald" data-eval-field="suite_sync_status">HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (60 / 60) stress (15 suites)</span>
                 </div>
               </div>
 
               <div class="slide-header">
                 <h2 class="slide-title">Measured Calibration &amp; Safety Proof</h2>
-                <p class="slide-subtitle">Zero fabricated numbers: live Gemini 3.8 Flash &amp; Live measurements across progressive optical degradation, 4 label suites, and LLM-as-a-Judge audits.</p>
+                <p class="slide-subtitle">Zero fabricated numbers: live Gemini 3.8 Flash &amp; Live measurements across optical degradation, 4 core + 6 stress suites, and safety judge audits.</p>
               </div>
 
               <div class="slide-body">
@@ -955,7 +955,7 @@
                   <div class="kpi-tile">
                     <span class="kpi-val text-emerald-luma" data-eval-field="confident_wrong_dose_count">0</span>
                     <span class="kpi-lbl">Confident-Wrong Doses</span>
-                    <span class="kpi-sub">0 across 16 cal + 53 suite + 36 model reads</span>
+                    <span class="kpi-sub">0 across 16 cal + 53 core + 60 stress reads</span>
                   </div>
                   <div class="kpi-tile">
                     <span class="kpi-val text-cyan" data-eval-field="ece">0.0138</span>
@@ -970,17 +970,17 @@
                   <div class="kpi-tile">
                     <span class="kpi-val text-amber" data-eval-field="calibration_abstention_pct">100%</span>
                     <span class="kpi-lbl">Occluded/Blur Abstain</span>
-                    <span class="kpi-sub">8/8 cal sweep (<span data-eval-field="occluded_abstention_pct">98.2%</span> 53-case suite)</span>
+                    <span class="kpi-sub">8/8 cal + stress (<span data-eval-field="occluded_abstention_pct">98.2%</span> 53-case core)</span>
                   </div>
                   <div class="kpi-tile">
                     <span class="kpi-val text-emerald-luma" data-eval-field="coaching_pass">8 / 8 (100%)</span>
                     <span class="kpi-lbl">Coaching &amp; Privacy Judge</span>
-                    <span class="kpi-sub">Score <span data-eval-field="coaching_score">5.00 / 5</span> · 5 safety dimensions</span>
+                    <span class="kpi-sub">Score <span data-eval-field="coaching_score">5.00 / 5</span> · <span data-eval-field="pii_leak_count">0</span> PII leaks</span>
                   </div>
                   <div class="kpi-tile">
-                    <span class="kpi-val text-cyan" data-eval-field="unit_tests_passing">394 / 394</span>
+                    <span class="kpi-val text-cyan" data-eval-field="unit_tests_passing">404 / 404</span>
                     <span class="kpi-lbl">Automated Unit Tests</span>
-                    <span class="kpi-sub">154 server + 240 web tests passing</span>
+                    <span class="kpi-sub">154 server + 240 web + 10 eval passing</span>
                   </div>
                 </div>
 
@@ -1036,7 +1036,7 @@
                   </div>
 
                   <div class="panel-card" style="justify-content: space-between;">
-                    <span class="card-kicker text-cyan">9 / 9 Evaluation Artifacts Verified</span>
+                    <span class="card-kicker text-cyan">15 / 15 Evaluation Artifacts Verified (9 Core + 6 Stress)</span>
                     <table class="compact-table">
                       <thead>
                         <tr>
@@ -1052,39 +1052,39 @@
                           <td><span class="mono text-emerald-luma">ECE 0.0138</span> · <span class="mono">0</span> wrong · <span class="mono" data-eval-field="calibration_p50_ms">3,425 ms</span></td>
                         </tr>
                         <tr>
-                          <td><strong class="text-white">4-Suite Label Eval</strong></td>
+                          <td><strong class="text-white">4 Core Label Suites</strong></td>
                           <td class="mono"><span data-eval-field="total_label_cases_evaluated">53</span> cases</td>
-                          <td><span class="mono text-emerald-luma" data-eval-field="overall_verdict_summary">98.1% (52 / 53)</span> · <span class="mono">100%</span> clean</td>
+                          <td><span class="mono text-emerald-luma" data-eval-field="overall_verdict_summary">98.1% (52 / 53)</span> · <span class="mono">2,5-&gt;2.5 mg</span></td>
                         </tr>
                         <tr>
-                          <td><strong class="text-white">Nordic + Demo Props</strong></td>
-                          <td class="mono">17 cases</td>
-                          <td><span class="mono text-emerald-luma">17 / 17 (100%)</span> · <span class="mono">2,5-&gt;2.5 mg</span></td>
+                          <td><strong class="text-white">6 Stress Suites</strong></td>
+                          <td class="mono"><span data-eval-field="extended_cases_evaluated">60</span> cases</td>
+                          <td><span class="mono text-emerald-luma" data-eval-field="extended_verdict_summary">100% (60 / 60)</span> · bottle/blur/LASA</td>
                         </tr>
                         <tr>
-                          <td><strong class="text-white">Batch 2 Allergens</strong></td>
-                          <td class="mono">18 cases</td>
-                          <td><span class="mono text-emerald-luma">18 / 18 (100%)</span> · <span class="mono" data-eval-field="false_safe_allergen_count">0</span> false-safe</td>
+                          <td><strong class="text-white">Allergens &amp; EU-6</strong></td>
+                          <td class="mono">30 cases</td>
+                          <td><span class="mono text-emerald-luma">100%</span> · <span class="mono" data-eval-field="false_safe_allergen_count">0</span> false-safe (FI/SV/DE/FR/ES/EN)</td>
                         </tr>
                         <tr>
                           <td><strong class="text-white">Coaching &amp; Privacy</strong></td>
-                          <td class="mono">8 turns</td>
-                          <td><span class="mono text-emerald-luma">8 / 8 (5.00/5)</span> · face <span class="mono">2,575 ms</span></td>
+                          <td class="mono">8 + 8</td>
+                          <td><span class="mono text-emerald-luma">8/8 (5.00/5)</span> · <span class="mono">0/8</span> PII/face leaks</td>
                         </tr>
                         <tr>
-                          <td><strong class="text-white">Live + 3-Model Probe</strong></td>
+                          <td><strong class="text-white">Live + 3-Model Chain</strong></td>
                           <td class="mono">3 + 36</td>
                           <td><span class="mono text-cyan" data-eval-field="live_models_online">3 / 3</span> Live (<span class="mono">582 ms</span>) · <span class="mono">36/36</span> Flash</td>
                         </tr>
                       </tbody>
                     </table>
-                    <p class="card-copy" style="font-size: 13px; color: var(--ink-muted);">Note: the single non-exact case in <span class="mono">results_batch1</span> (<span class="mono">b1_18</span>) predicted conservative <span class="mono">WARNING</span> vs <span class="mono">UNSURE</span> (<span class="mono">0</span> false <span class="mono">MATCH</span> events).</p>
+                    <p class="card-copy" style="font-size: 13px; color: var(--ink-muted);">Note: the single non-exact case across all 113 suite checks (<span class="mono">b1_18</span>) predicted conservative <span class="mono">WARNING</span> vs <span class="mono">UNSURE</span> (<span class="mono">0</span> false <span class="mono">MATCH</span> events).</p>
                   </div>
                 </div>
               </div>
             </div>
             <aside class="presenter-note" data-timing="3:05 - 3:25" data-cue="Point to the bimodal separation across the 0.80 gate">
-              Every metric on this slide comes from committed JSON artifacts in eval/. Across 16 progressive degradation reads, ECE is 0.0138, Brier is 0.0005, clean and mild-blur recall is 100 percent, and blurred or thumb-occluded abstention is 100 percent. Across all 53 label cases and 8 judge scenarios, confident-wrong dose count is zero, with 394 automated tests passing.
+              Every metric on this slide comes from 15 committed JSON artifacts in eval/. Across 16 progressive degradation reads, ECE is 0.0138, Brier is 0.0005, clean and mild-blur recall is 100 percent, and blurred or thumb-occluded abstention is 100 percent. Across 53 core cases, 60 optical, multilingual, and LASA stress cases, and 16 coaching and red-team privacy checks, confident-wrong dose count is zero, with 404 automated tests passing.
             </aside>
           </section>
 
@@ -1237,7 +1237,7 @@
                       <span class="pillar-pct">25%</span>
                     </div>
                     <h3 class="card-title">Full-Stack DAT + HUD + Calibrated AI</h3>
-                    <p class="card-copy">Android DAT <span class="mono">1.0.1</span> Kotlin bridge + WCAG AAA React 19 PWA + zero-code <span class="mono">/hud</span> Web App; <span class="mono">gemini-3.8-live</span> (<span class="mono">582 ms</span>) + <span class="mono">gemini-3.8-flash</span> (<span class="mono">ECE 0.0138</span>, <span class="mono">52/53</span> verdicts, <span class="mono">0</span> wrong doses); <span class="mono" data-eval-field="unit_tests_passing">394 / 394</span> tests.</p>
+                    <p class="card-copy">Android DAT <span class="mono">1.0.1</span> Kotlin bridge + WCAG AAA React 19 PWA + zero-code <span class="mono">/hud</span> Web App; <span class="mono">gemini-3.8-live</span> (<span class="mono">582 ms</span>) + <span class="mono">gemini-3.8-flash</span> (<span class="mono">ECE 0.0138</span>, <span class="mono">112/113</span> suite verdicts, <span class="mono">0</span> wrong doses); <span class="mono" data-eval-field="unit_tests_passing">404 / 404</span> tests.</p>
                   </div>
 
                   <div class="panel-card panel-card-amber">
