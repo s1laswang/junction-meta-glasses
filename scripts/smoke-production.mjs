@@ -94,7 +94,10 @@ async function runSmoke() {
     ({ startServer } = await loadServerEntrypoint(REPO_ROOT));
   } catch (err) {
     const code = err && typeof err === "object" && "code" in err ? err.code : "";
-    if (code === "ERR_UNKNOWN_FILE_EXTENSION" && process.env.HOLDUP_SMOKE_REEXEC !== "1") {
+    if (
+      (code === "ERR_UNKNOWN_FILE_EXTENSION" || code === "ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX") &&
+      process.env.HOLDUP_SMOKE_REEXEC !== "1"
+    ) {
       const res = spawnSync(process.execPath, ["--import", "tsx", SCRIPT_PATH], {
         cwd: REPO_ROOT,
         stdio: "inherit",
