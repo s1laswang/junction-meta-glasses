@@ -798,6 +798,7 @@ dialog.addsheet {
 .scene-box.match { --ic: var(--match); }
 .scene-box.warning { --ic: var(--warning); border-style: double; border-width: 6px; }
 .scene-box.unsure { --ic: var(--unsure); border-style: dashed; }
+.scene-box.info { --ic: var(--muted); }
 .scene-box span {
   position: absolute;
   top: -2px;
@@ -1207,6 +1208,13 @@ body.hud-body #root {
   border-color: var(--lvl);
 }
 .verdict-card.stale {
+  opacity: 0.55;
+  border-style: dashed;
+}
+.scene-card {
+  border-color: var(--lvl);
+}
+.scene-card.stale {
   opacity: 0.55;
   border-style: dashed;
 }
