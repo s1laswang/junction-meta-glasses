@@ -84,7 +84,7 @@ The words in quotes are spoken. **[Brackets]** are actions. Every step has a fal
 
 Fallbacks, in order:
 1. **The glasses camera isn't streaming** (no frames on the bridge, or the panel shows "Waiting for the glasses bridge"): **Momin010** taps **Phone camera** in the camera-source switch. Silas holds the phone at chest height (or it hangs on a lanyard) and keeps the glasses on as the headset. Say: "Today the phone is the eye, and the glasses are the ears and mouth."
-2. **Live is down** (mode chip shows **Snapshot**, or a "Snapshot mode" banner): Silas holds the box steady and presses **Check label** (or Space). The phone reads the verdict out with the browser voice. Say: "When Gemini Live is unavailable, it drops to snapshot mode. It's less chatty, but it gives the same verdict from the same safety rules."
+2. **Live is down** (mode chip shows **Snapshot**, or a "Snapshot mode" banner): if the source is **Glasses camera**, Momin010 first taps **Phone camera**. Snapshot mode and offline barcode mode only use the phone's own frames (see QA.md). Then Silas holds the box steady and presses **Check label** (or Space). The phone reads the verdict out with the browser voice. Say: "When Gemini Live is unavailable, it drops to snapshot mode. It's less chatty, but it gives the same verdict from the same safety rules."
 3. **No coaching cue** (the box is readable straight away): fine. Say: "It saw the label straight away. Usually it coaches you round."
 4. **It answers "Not sure"**: that is the product working. Say: "It isn't sure, so it won't guess. Let me turn it." Turn the box front-on, closer, and ask again.
 
@@ -105,7 +105,7 @@ Fallbacks, in order:
 ### 2:10–2:35 · Resilience (slide 9 next)
 **Silas**: "Now the network dies."
 
-**Momin010** [turns on **airplane mode** on the phone; Bluetooth stays on, per the checklist].
+**Momin010** [switches the camera source to **Phone camera** (offline barcode reads the phone camera only), then turns on **airplane mode** on the phone; Bluetooth stays on, per the checklist].
 
 **Expected:** an alert earcon and the spoken line "You're offline. I can still recognise your saved medicines by barcode, but I can't read new labels." The chip says **Offline**.
 

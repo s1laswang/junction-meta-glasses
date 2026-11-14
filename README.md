@@ -2,10 +2,11 @@
 
 Hands-free label assistant for blind and low-vision people on **Meta AI glasses**, powered by **Gemini Live**.
 Hold up a medicine box or a food package. HoldUp coaches you by voice until the label is readable ("turn it left… closer… got it"). It then reads the label with per-field confidence and checks it against *your* medication list and allergies, which are stored on your phone only. You get one of three answers:
-✅ *"Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today."*
-⚠️ *"Ibuprofen isn't on your list, and you should avoid NSAIDs."*
-❓ *"I can't read the strength confidently, turn the box."*
-**It never guesses a dose.**
+- ✅ *"Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today."*
+- ⚠️ *"This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs."*
+- ❓ *"It looks like Metformin, but I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist."*
+
+**It never guesses a dose.** Who it's for: the ~55,000 Finns with a visual impairment (most of them 65+) and older adults with fading sight who juggle look-alike boxes ([sources](docs/RESEARCH.md)).
 
 Junction 2026 · Meta "AI Glasses for Everyone, Everyday" · Google DeepMind "Best Use of Gemini API".
 
@@ -28,7 +29,7 @@ Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w se
 | Ray-Ban Display HUD Web App (600×600 additive display, Neural Band input) | `web/src/screens/Hud.tsx`, `/hud/` | ✅ done |
 | Device Access Toolkit Android bridge (glasses camera → `/ingest/frame`) | `android-dat/` | ✅ code done, ⏳ first compile on the hardware lead's Android Studio |
 | Eval: synthetic labels (Gemini image) → accuracy, confident-wrong rate, calibration | `eval/` (`bash eval/pipeline.sh …`) | ⏳ pipeline built, full run pending |
-| Deck, demo script, privacy one-pager | `deck/`, `docs/` | ⏳ in progress |
+| Deck, demo script, privacy one-pager, research, QA | `deck/`, `docs/` | ✅ drafts done, ⏳ eval numbers and the backup video still to add |
 
 **Contract:** [shared/types.ts](shared/types.ts) and [docs/TEAM.md](docs/TEAM.md) (WebSocket and HTTP messages). Only the CEO changes it.
 **Verify prompt and schema** are shared by the server and the eval: `shared/verify_prompt.md` and `shared/label_schema.json`.
@@ -41,7 +42,53 @@ Work on branches, never on `main`. Open small PRs. Don't change `shared/types.ts
 4. **Review PRs** for the safety rules (`server/src/safety.ts`), with new unit tests in `server/test/`.
 5. **Compile check** of `android-dat/` (Gradle, DAT 1.0.1 from Maven Central). Report the errors; don't redesign it.
 
+## How to demo
+- **No hardware, no key:** `npm run dev`, then open http://localhost:5173/?mock=1. A scripted in-browser server speaks the real message contract (coach → checking → verdict). Type "is this my evening pill", "ibuprofen" or "nuts". Open http://localhost:5173/hud/?mock=1 in a second tab to watch the Display HUD follow along. The device panel has demo controls (drop the connection, slow network, Gemini down, offline, glasses on, off or disconnected, low battery).
+- **Real, on a phone:** `npm start` + `npm run tunnel`, open the tunnel URL on the phone, agree to the consent cards, then **Start check**, hold up a box and ask. Profile → "Load demo profile" gives 3 medicines, nut allergies and "avoid NSAIDs".
+- **On the glasses:** follow [docs/HARDWARE_NOTES.md](docs/HARDWARE_NOTES.md) (DAT bridge and Display Web App at `https://<host>/hud/`). The stage script, with a fallback for every step, is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
+
+## Architecture
+```
+Ray-Ban Meta ──camera (DAT)──► android-dat bridge ──JPEG ≤1 fps──► /ingest/frame ─┐
+Ray-Ban Meta ──Bluetooth mic/speaker──► phone PWA ──WSS /live: PCM16 + frames──────┤
+                                                                                   ▼
+                                 server (Node/TS, one origin; the API key stays here)
+                                 ├─ Gemini Live proxy: voice, coaching, tools (verify_label, show_cue, log_dose)
+                                 ├─ verify_label → Gemini Flash, JSON schema, per-field confidence (+ speculative cache)
+                                 ├─ safety.ts: deterministic rules vs the profile (no model, unit-tested)
+                                 └─ /hud-ws ──► Ray-Ban Display HUD Web App (/hud/, Neural Band)
+Fallbacks: snapshot mode (POST /api/verify) · offline barcode match · phone camera when the glasses are off
+```
+
+## How we use Gemini
+| Where | Model (fallbacks in `server/src/env.ts`) | What it does |
+|---|---|---|
+| Conversation and coaching | Live API `gemini-3.8-live` | Bidirectional audio + video, native audio voice, transcripts, barge-in, session resumption, **mid-session tool calls**. It is forbidden to state a name, dose, expiry or allergen from its own view and must call `verify_label`. |
+| Reading the label | `gemini-3.8-flash` | `responseJsonSchema` with `{value, confidence}` per field, null when not legible (`shared/verify_prompt.md`, `shared/label_schema.json`). Runs **speculatively** while the user is still asking: first audio in 0.8–3.3 s, down from 5.8 s. |
+| Spoken fallback | `gemini-3.8-flash-tts` | `/api/tts` (optional; the browser voice is the default). |
+| Building the eval set | `gemini-3.8-flash`, `gemini-3.1-flash-image` | Gemini as a workforce: label specs → first-person renders → legibility check → degradations → scoring (`eval/`, results in `docs/EVAL.md`). |
+| Metering | — | Every call writes one metadata-only line to `server/logs/ledger.jsonl`; `GET /api/stats` gives p50/p95 latency, first-audio time, tool latency and tokens per feature. |
+
+## Privacy in one paragraph
+The camera runs only during a check that you start, shows CAMERA ON, and stops after 45 s without a label. Frames and audio go to the Gemini API and live only in server memory (the last 8 frames, dropped when the session ends). Nothing with content is written to disk, and logs are redacted. Your medicine list, allergies and dose log stay in the phone's localStorage, and one button deletes them. Details and known limits: [docs/PRIVACY.md](docs/PRIVACY.md).
+
+## Repo map
+| Path | What |
+|---|---|
+| `server/src/` | `index.ts` (HTTP + WS routes), `live.ts` (Gemini Live proxy and tools), `verify.ts` (label reader, frame ring), `speculate.ts`, `safety.ts`, `hub.ts` (sessions, HUD fan-out), `ledger.ts`, `log.ts` (redaction), `prompts/live.md` |
+| `server/test/`, `server/scripts/` | safety unit tests; smoke and robustness scripts against real Gemini |
+| `web/src/` | PWA: `lib/checker.ts` (session controller: camera, mic, modes, fallbacks), `screens/` (Onboarding, Live, Profile, Privacy, Hud), `lib/mock.ts` (`?mock=1`) |
+| `shared/` | the contract (`types.ts`), verify prompt and label schema shared by the server and the eval |
+| `android-dat/` | Kotlin Device Access Toolkit bridge: glasses camera → `/ingest/frame`, state → `/ingest/state` |
+| `eval/` | Gemini-workforce dataset generator and the eval harness (`pipeline.sh`) |
+| `deck/index.html` | pitch deck: open it in a browser (arrow keys); print to PDF for a 16:9 handout |
+| `docs/` | PLAN, TEAM, HARDWARE_NOTES, HUD_SPEC, DEMO_SCRIPT, PRIVACY, RESEARCH, QA, EVAL |
+
 ## Docs
 - [docs/PLAN.md](docs/PLAN.md): idea, architecture, demo script, hardware plan, timeline, questions for Silas
 - [docs/TEAM.md](docs/TEAM.md): roles, interfaces, milestones
 - [docs/HARDWARE_NOTES.md](docs/HARDWARE_NOTES.md) and [docs/HUD_SPEC.md](docs/HUD_SPEC.md): glasses setup, DAT bridge, Display Web App
+- [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): the 3-minute stage script with fallbacks and a pre-demo checklist
+- [docs/PRIVACY.md](docs/PRIVACY.md): data flow, storage, retention, consent, bystanders, deletion
+- [docs/RESEARCH.md](docs/RESEARCH.md): problem statistics with sources
+- [docs/QA.md](docs/QA.md): bug bash results, open and fixed
