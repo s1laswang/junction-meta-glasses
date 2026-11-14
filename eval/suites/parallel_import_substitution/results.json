@@ -1,0 +1,104 @@
+{
+  "suite": "parallel_import_substitution",
+  "model": "gemini-3.8-flash",
+  "thinking_level": "low",
+  "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+  "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+  "eval_now_iso": "2026-11-14T20:00:00Z",
+  "languages_tested": [
+    "fi",
+    "sv",
+    "en"
+  ],
+  "profile": {
+    "meds": [
+      {
+        "id": "norvasc",
+        "name": "Norvasc",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "glucophage",
+        "name": "Glucophage",
+        "ingredient": "metformin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ]
+      },
+      {
+        "id": "panadol",
+        "name": "Panadol",
+        "ingredient": "paracetamol",
+        "strength": "500 mg",
+        "schedule": [
+          "as needed"
+        ]
+      },
+      {
+        "id": "emconcor",
+        "name": "Emconcor",
+        "ingredient": "bisoprolol",
+        "strength": "2.5 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "n": 12,
+  "errors": 0,
+  "timeouts": 0,
+  "pass_count": 12,
+  "pass_rate": 1.0,
+  "pass_ci95_wilson": [
+    0.7575,
+    1.0
+  ],
+  "confident_wrong_dose_count": 0,
+  "confident_wrong_dose_rate": 0.0,
+  "confident_wrong_dose_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "false_safe_allergen_count": 0,
+  "false_safe_allergen_rate": 0.0,
+  "false_safe_allergen_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "rule_of_three_95_upper": 0.25,
+  "latency_s": {
+    "p50": 3.693,
+    "p95": 4.725,
+    "mean": 3.724
+  },
+  "cases": [
+    {"id":"pi_01","language":"fi","kind":"medication","scenario":"fi_generic_amlodipin_krka_5mg_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":2.912,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPIN KRKA","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.99},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.1},"expiry":{"value":"2027-10","confidence":0.99},"allergens":{"value":null,"confidence":0.1},"barcode":{"value":null,"confidence":0.1},"readability":0.95},"reasons":["matches norvasc","taken today: 0/1"]},
+    {"id":"pi_02","language":"fi","kind":"medication","scenario":"eu_parallel_import_orifarm_norvasc_5mg_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.096,"error":null,"read":{"kind":"medication","product":{"value":"NORVASC","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.3},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"barcode":{"value":null,"confidence":0.3},"readability":0.95},"reasons":["matches norvasc","taken today: 0/1"]},
+    {"id":"pi_03","language":"sv","kind":"medication","scenario":"sv_generic_metformin_sandoz_500mg_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"500 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.509,"error":null,"read":{"kind":"medication","product":{"value":"METFORMIN SANDOZ","confidence":0.98},"ingredient":{"value":"metformin hydrochloride","confidence":0.95},"strength":{"value":"500 mg","confidence":0.98},"dosing":{"value":null,"confidence":0.1},"expiry":{"value":"2027-12","confidence":0.95},"allergens":{"value":null,"confidence":0.2},"barcode":{"value":null,"confidence":0.1},"readability":0.95},"reasons":["matches glucophage","taken today: 0/2"]},
+    {"id":"pi_04","language":"fi","kind":"medication","scenario":"fi_comma_decimal_bisoprolol_ratiopharm_2_5mg_match","expected_level":"match","actual_level":"match","passed":true,"strength_read":"2.5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.141,"error":null,"read":{"kind":"medication","product":{"value":"BISOPROLOL RATIOPHARM","confidence":0.99},"ingredient":{"value":"bisoprolol","confidence":0.99},"strength":{"value":"2.5 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.1},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["matches emconcor","taken today: 0/1"]},
+    {"id":"pi_05","language":"en","kind":"medication","scenario":"generic_amlodipine_accord_10mg_strength_mismatch_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"10 mg","strength_conf":0.99,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.131,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPINE ACCORD","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"10 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["strength 10 mg differs from your 5 mg"]},
+    {"id":"pi_06","language":"fi","kind":"medication","scenario":"parallel_import_bisoprolol_teva_5mg_2x_strength_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.225,"error":null,"read":{"kind":"medication","product":{"value":"BISOPROLOL TEVA","confidence":0.99},"ingredient":{"value":"bisoprolol","confidence":0.99},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["strength 5 mg differs from your 2.5 mg"]},
+    {"id":"pi_07","language":"fi","kind":"medication","scenario":"painkiller_lookalike_pronaxen_500mg_nsaid_avoid_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"500 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.461,"error":null,"read":{"kind":"medication","product":{"value":"PRONAXEN","confidence":0.99},"ingredient":{"value":"naproxen","confidence":0.99},"strength":{"value":"500 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["naproxen is an NSAID, on your avoid list","not on your medication list"]},
+    {"id":"pi_08","language":"fi","kind":"medication","scenario":"unlisted_cardiovascular_ramipril_hexal_5mg_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"5 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":2.886,"error":null,"read":{"kind":"medication","product":{"value":"RAMIPRIL HEXAL","confidence":0.99},"ingredient":{"value":"ramipril","confidence":0.99},"strength":{"value":"5 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-09","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["not on your medication list"]},
+    {"id":"pi_09","language":"fi","kind":"medication","scenario":"pre_substitution_travel_pouch_norvasc_5mg_expired_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":"5 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.553,"error":null,"read":{"kind":"medication","product":{"value":"NORVASC","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"5 mg","confidence":0.98},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2025-04","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["expired 2025-04"]},
+    {"id":"pi_10","language":"fi","kind":"medication","scenario":"misaligned_oversticker_covering_strength_amlodipin_orifarm_unsure","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.65,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.951,"error":null,"read":{"kind":"medication","product":{"value":"AMLODIPIN ORIFARM","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":null,"confidence":0.0},"dosing":{"value":"Annostus reseptin mukaan.","confidence":0.95},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.65,"guidance":"Turn the box to show the other sides for strength."},"reasons":["strength not readable"]},
+    {"id":"pi_11","language":"fi","kind":"medication","scenario":"torn_oversticker_blank_residue_over_name_and_strength_unsure","expected_level":"unsure","actual_level":"unsure","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.0,"readability":0.1,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":4.99,"error":null,"read":{"kind":"medication","product":{"value":null,"confidence":0.0},"ingredient":{"value":null,"confidence":0.0},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.1,"guidance":"Turn the box to show another side."},"reasons":["label not readable"]},
+    {"id":"pi_12","language":"fi","kind":"food","scenario":"pharmacy_checkout_proteiinipatukka_maapahkina_allergy_warning","expected_level":"warning","actual_level":"warning","passed":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.95,"confident_wrong_dose":false,"false_safe_allergen":false,"latency_s":3.833,"error":null,"read":{"kind":"food","product":{"value":"Apteekki Proteiinipatukka","confidence":0.98},"ingredient":{"value":"protein bar","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":["peanut","oat"],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.95},"reasons":["contains peanut (allergy: peanut)"]}
+  ]
+}
