@@ -8,29 +8,24 @@ import { Modality } from "@google/genai";
 import type { ClientMsg, DeviceState } from "../../shared/types.ts";
 import { env, REPO_ROOT } from "./env.ts";
 import { ai, unaryGate } from "./gemini.ts";
-import { addHud, getHub, getOrCreateHub, hasHud, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
+import { addHud, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
 import { ledger, stats } from "./ledger.ts";
+import { requireKey, wsKeyOk } from "./auth.ts";
 import { LiveProxy } from "./live.ts";
 import { errSummary, log, shortId } from "./log.ts";
 import { jpegSharpness, toProfile, verify } from "./verify.ts";
 
 const MAX_WS_MSG = 4 * 1024 * 1024;
 
-export function createApp(opts?: { repoRoot?: string }) {
-  const root = opts?.repoRoot ?? REPO_ROOT;
+export function createApp() {
   const app = express();
   app.disable("x-powered-by");
-  app.use((_req, res, next) => {
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("Referrer-Policy", "no-referrer");
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
-    next();
-  });
-  app.use("/api", (_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
+  // optional access key (HOLDUP_KEY); /api/health and static files stay public
+  app.use(["/api", "/ingest"], requireKey);
 
+  // ---------- health (Gemini reachability cached 30 s) ----------
   let healthCache: { at: number; ok: boolean } | undefined;
   app.get("/api/health", async (_req, res) => {
-    res.setHeader("Cache-Control", "no-store");
     if (!healthCache || Date.now() - healthCache.at > 30_000) {
       let ok = false;
       try {
@@ -47,68 +42,36 @@ export function createApp(opts?: { repoRoot?: string }) {
     });
   });
 
-  app.get("/api/stats", (_req, res) => { res.setHeader("Cache-Control", "no-store"); res.json(stats()); });
+  app.get("/api/stats", (_req, res) => { res.json(stats()); });
 
-  const evalSummaryFile = path.join(root, "eval", "combined_summary.json");
-  let evalCache: { at: number; summary: Record<string, unknown> } | undefined;
-  app.get("/api/eval-summary", (_req, res) => {
-    res.setHeader("Cache-Control", "no-store");
-    const now = Date.now();
-    if (evalCache && now - evalCache.at <= 10_000) {
-      res.json({ ok: true, summary: evalCache.summary });
+  // ---------- snapshot verify ----------
+  app.post("/api/verify", express.json({ limit: "12mb" }), async (req, res) => {
+    const frames = Array.isArray(req.body?.frames) ? (req.body.frames as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 100) : [];
+    const hub = typeof req.body?.session === "string" && req.body.session ? getHub(req.body.session) : undefined;
+    let picked: string[];
+    let src: string;
+    if (frames.length) {
+      // without client sharpness, prefer the largest JPEGs (more detail) among the last 3
+      picked = frames.slice(-3).map((f, i) => ({ f, i, s: f.length })).sort((a, b) => b.s - a.s).slice(0, 2).map((x) => x.f);
+      src = "body";
+    } else if (hub) {
+      // snapshot mode with the glasses camera: use the session's ring buffer (2 sharpest recent frames)
+      picked = hub.ring.pick(2).map((f) => f.data);
+      src = "ring";
+      if (!picked.length) { res.status(409).json({ type: "error", code: "no_frames", message: "no recent frames for this session", recoverable: true }); return; }
+    } else {
+      res.status(400).json({ type: "error", code: "bad_input", message: "frames[] (base64 JPEG) or an active session required", recoverable: true });
       return;
     }
-    try {
-      if (!fs.existsSync(evalSummaryFile)) {
-        evalCache = undefined;
-        res.json({ ok: false, summary: null });
-        return;
-      }
-      const parsed: unknown = JSON.parse(fs.readFileSync(evalSummaryFile, "utf8"));
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        evalCache = undefined;
-        res.json({ ok: false, summary: null });
-        return;
-      }
-      const rec = parsed as Record<string, any>;
-      const inv = rec.safety_invariants && typeof rec.safety_invariants === "object" ? rec.safety_invariants : {};
-      const existingHm = rec.headline_metrics && typeof rec.headline_metrics === "object" && !Array.isArray(rec.headline_metrics) ? rec.headline_metrics : {};
-      const summary: Record<string, unknown> = {
-        ...rec,
-        headline_metrics: {
-          ...(typeof inv.strength_min_conf === "number" ? { never_guess_strength_min_conf: inv.strength_min_conf } : {}),
-          overall_verdict_accuracy: rec.overall_verdict_accuracy ?? null,
-          total_confident_wrong_dose_count: rec.total_confident_wrong_dose_count ?? null,
-          occluded_abstention_rate: rec.occluded_abstention_rate ?? null,
-          total_label_cases_evaluated: rec.total_label_cases_evaluated ?? 0,
-          ...existingHm,
-        },
-      };
-      evalCache = { at: now, summary };
-      res.json({ ok: true, summary });
-    } catch (e) {
-      evalCache = undefined;
-      log("eval_summary.read_failed", { err: errSummary(e) });
-      res.json({ ok: false, summary: null });
-    }
-  });
-
-  app.post("/api/verify", express.json({ limit: "12mb" }), async (req, res) => {
-    res.setHeader("Cache-Control", "no-store");
-    const frames = Array.isArray(req.body?.frames) ? (req.body.frames as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 100) : [];
-    if (!frames.length) { res.status(400).json({ type: "error", code: "bad_input", message: "frames[] (base64 JPEG) required", recoverable: true }); return; }
-    const sessionParam = typeof req.body?.session === "string" ? req.body.session : undefined;
-    const picked = frames.slice(-3).map((f, i) => ({ f, i, s: jpegSharpness(Buffer.from(f, "base64")) || f.length * 1e-9 })).sort((a, b) => b.s - a.s).slice(0, 2).map((x) => x.f);
+    const profile = req.body?.profile ? toProfile(req.body.profile) : hub?.profile ?? toProfile(undefined);
     const t = Date.now();
-    const r = await verify(picked, toProfile(req.body?.profile), typeof req.body?.question === "string" ? req.body.question : undefined);
-    const hub = resolveHub(sessionParam);
-    if (hub) hub.emit({ type: "verdict", verdict: r.verdict }, { clients: false });
-    log("api.verify", { level: r.verdict.level, model: r.model ?? "none", ms: Date.now() - t, n_frames: picked.length });
+    const r = await verify(picked, profile, typeof req.body?.question === "string" ? req.body.question : undefined);
+    log("api.verify", { level: r.verdict.level, model: r.model ?? "none", ms: Date.now() - t, n_frames: picked.length, src });
     res.json(r.verdict);
   });
 
+  // ---------- TTS (optional; browser speechSynthesis is the fallback) ----------
   app.post("/api/tts", express.json({ limit: "64kb" }), async (req, res) => {
-    res.setHeader("Cache-Control", "no-store");
     const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 600) : "";
     if (!text) { res.status(400).json({ type: "error", code: "bad_input", message: "text required", recoverable: true }); return; }
     for (const model of env.ttsModels) {
@@ -134,52 +97,55 @@ export function createApp(opts?: { repoRoot?: string }) {
     res.status(503).json({ type: "error", code: "gemini_unavailable", message: "TTS unavailable, use speechSynthesis", recoverable: true });
   });
 
+  // ---------- glasses bridge ingest (session optional: defaults to the latest live session) ----------
   app.post("/ingest/frame", express.raw({ type: ["image/jpeg", "application/octet-stream"], limit: "6mb" }), (req, res) => {
     const buf = req.body as Buffer;
     if (!Buffer.isBuffer(buf) || buf.length < 100) { res.status(400).json({ type: "error", code: "bad_input", message: "image/jpeg body required", recoverable: true }); return; }
     const hub = resolveHub(req.query.session as string | undefined);
-    if (hub) {
+    if (hub && hub.source === "glasses") {
       const data = buf.toString("base64");
       const sharpness = Number(req.query.sharpness) || jpegSharpness(buf);
-      hub.ring.push({ data, sharpness, ts: Date.now(), bytes: buf.length, source: "glasses" });
+      hub.addFrame({ data, sharpness, ts: Date.now(), bytes: buf.length, source: "glasses" });
       (hub.live as LiveProxy | undefined)?.frame(data);
-    }
+    } // no session, or the phone chose its own camera: frame dropped (never stored)
     res.status(204).end();
   });
   app.post("/ingest/state", express.json({ limit: "16kb" }), (req, res) => {
     const b = req.body ?? {};
-    const device: DeviceState = {
-      connected: !!b.connected, worn: !!b.worn, streaming: !!b.streaming,
-      battery: typeof b.battery === "number" ? b.battery : null, source: "glasses",
-    };
+    // null/missing = unknown: never coerce `worn` to false (that would fire a false "glasses taken off" fallback)
+    const device = {
+      connected: !!b.connected,
+      worn: typeof b.worn === "boolean" ? b.worn : null,
+      streaming: !!b.streaming,
+      battery: typeof b.battery === "number" && Number.isFinite(b.battery) ? b.battery : null,
+      source: "glasses",
+    } as unknown as DeviceState; // contract proposal: DeviceState.worn: boolean | null
     setDevice(device, req.query.session as string | undefined);
     res.status(204).end();
   });
 
-  app.use("/deck", express.static(path.join(root, "deck"), { index: "index.html", maxAge: "1h" }));
-  const propsHtml = path.join(root, "docs", "printable-props.html");
-  app.get("/printable-props.html", (_req, res, next) => {
-    if (!fs.existsSync(propsHtml)) { next(); return; }
-    res.sendFile(propsHtml);
-  });
-  const handoutHtml = path.join(root, "docs", "judge-handout.html");
-  app.get("/judge-handout.html", (_req, res, next) => {
-    if (!fs.existsSync(handoutHtml)) { next(); return; }
-    res.sendFile(handoutHtml);
-  });
-  const posterHtml = path.join(root, "docs", "architecture-poster.html");
-  app.get("/architecture-poster.html", (_req, res, next) => {
-    if (!fs.existsSync(posterHtml)) { next(); return; }
-    res.sendFile(posterHtml);
-  });
-
-  const dist = path.join(root, "web", "dist");
-  app.use(express.static(dist, { index: "index.html", maxAge: "1h", dotfiles: "allow" }));
-  app.use((req, res, next) => {
-    if (req.method !== "GET" || /^\/(api|ingest|live|hud-ws|deck)\b/.test(req.path) || /\.html$/i.test(req.path)) return next();
-    const indexHtml = path.join(dist, "index.html");
-    if (!fs.existsSync(indexHtml)) return next();
-    res.sendFile(indexHtml);
+  // ---------- production: serve the web build ----------
+  const dist = path.join(REPO_ROOT, "web", "dist");
+  if (fs.existsSync(dist)) {
+    // dotfiles: "allow" so /hud/.well-known/meta-wearables-manifest.json is served (docs/HUD_SPEC.md);
+    // /hud redirects to /hud/ (static's directory redirect), which serves dist/hud/index.html
+    app.use(express.static(dist, {
+      index: "index.html", dotfiles: "allow", maxAge: "1h",
+      setHeaders: (res, file) => { if (/\.(html|json)$/.test(file)) res.setHeader("Cache-Control", "no-cache"); },
+    }));
+    app.use((req, res, next) => {
+      if ((req.method !== "GET" && req.method !== "HEAD") || /^\/(api|ingest|live|hud-ws)\b/.test(req.path)) return next();
+      const hudIndex = path.join(dist, "hud", "index.html");
+      const isHud = req.path === "/hud" || req.path.startsWith("/hud/");
+      res.setHeader("Cache-Control", "no-cache");
+      // dotfiles "allow": the checkout itself may live under a dot-directory (e.g. .claude/worktrees)
+      res.sendFile(isHud && fs.existsSync(hudIndex) ? hudIndex : path.join(dist, "index.html"), { dotfiles: "allow" });
+    });
+  }
+  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const status = typeof err?.status === "number" ? err.status : 500;
+    log("http.error", { status, kind: String(err?.type ?? err?.name ?? "error").slice(0, 40) });
+    res.status(status).json({ type: "error", code: status === 413 ? "too_large" : status < 500 ? "bad_input" : "server_error", message: status < 500 ? "invalid request" : "server error", recoverable: true });
   });
   app.use((_req, res) => { res.status(404).json({ type: "error", code: "not_found", message: "not found", recoverable: false }); });
   return app;
@@ -193,11 +159,11 @@ function wav(pcm: Buffer, rate: number): Buffer {
   return Buffer.concat([h, pcm]);
 }
 
+// ---------- WebSockets ----------
 function onLive(ws: WebSocket, sessionParam: string | null) {
   const id = sessionParam && /^[\w-]{4,64}$/.test(sessionParam) ? sessionParam : crypto.randomUUID();
   const hub = getOrCreateHub(id);
   hub.clients.add(ws);
-  if (hub.device || hasHud(hub)) hub.replayClient(ws);
   log("ws.live.connect", { session: shortId(id) });
   const err = (code: string, message: string) => safeSend(ws, JSON.stringify({ type: "error", code, message, recoverable: true }));
 
@@ -215,6 +181,7 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
         hub.live = proxy;
         markLatest(hub);
         if (msg.source === "phone" || msg.source === "glasses") {
+          hub.source = msg.source;
           hub.emit({ type: "device", device: { ...(hub.device ?? { connected: msg.source === "glasses", worn: msg.source === "glasses", battery: null, streaming: false }), source: msg.source } }, { clients: false });
         }
         void proxy.start();
@@ -226,7 +193,7 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
       case "frame": {
         if (typeof msg.data !== "string" || msg.data.length < 100) return err("bad_input", "frame.data must be base64 JPEG");
         const sharp = typeof msg.sharpness === "number" ? Math.max(0, Math.min(1, msg.sharpness)) : jpegSharpness(Buffer.from(msg.data, "base64"));
-        hub.ring.push({ data: msg.data, sharpness: sharp, ts: Date.now(), bytes: Math.round(msg.data.length * 0.75), source: "phone" });
+        hub.addFrame({ data: msg.data, sharpness: sharp, ts: Date.now(), bytes: Math.round(msg.data.length * 0.75), source: "phone" });
         live?.frame(msg.data);
         return;
       }
@@ -242,6 +209,13 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
       case "ping":
         safeSend(ws, JSON.stringify({ type: "pong", t: msg.t }));
         return;
+      case "source":
+        if (msg.source === "phone" || msg.source === "glasses") {
+          hub.source = msg.source;
+          if (hub.device) hub.emit({ type: "device", device: { ...hub.device, source: msg.source } }, { clients: false });
+          log("ws.live.source", { session: shortId(id), source: msg.source });
+        }
+        return;
       default:
         err("bad_input", "unknown message type");
     }
@@ -251,10 +225,10 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
     log("ws.live.close", { session: shortId(id), remaining: hub.clients.size });
     if (hub.clients.size === 0) {
       hub.live?.stop("client disconnected");
-      hub.ring.clear();
+      hub.dropFrames(); // privacy: frames never outlive the session
     }
   });
-  ws.on("error", () => {});
+  ws.on("error", () => { /* close follows */ });
 }
 
 function onHud(ws: WebSocket, sessionParam: string | null) {
@@ -263,37 +237,39 @@ function onHud(ws: WebSocket, sessionParam: string | null) {
   ws.on("message", (raw) => {
     try {
       const m = JSON.parse(raw.toString());
-      if (m?.type !== "event") return;
+      if (m?.type !== "event" || !["log_dose", "repeat", "dismiss"].includes(m.name)) return;
       const hub = hudTarget(sessionParam);
       if (!hub) return;
-      const live = hub.live as LiveProxy | undefined;
-      if (live?.active && (m.name === "repeat" || m.name === "log_dose")) {
-        live.handleEvent(m.name);
-      } else if (m.name === "log_dose" && hub.lastVerdict?.matchedMedId) {
-        hub.profile.doseLog.push({ medId: hub.lastVerdict.matchedMedId, ts: Date.now() });
-        hub.emit({ type: "verdict", verdict: { ...hub.lastVerdict, takenToday: true } });
-      } else if (m.name === "repeat" && hub.lastVerdict) {
-        hub.emit({ type: "verdict", verdict: hub.lastVerdict });
-      }
-    } catch {}
+      // Contract (Sat 16:40): forward to the phone, which owns the dose log and decides what to do
+      // (it sends {type:"event"} back on /live for repeat / log_dose).
+      const s = JSON.stringify({ type: "hud_event", name: m.name });
+      for (const c of hub.clients) safeSend(c, s);
+      log("ws.hud.event", { session: shortId(hub.id), name: m.name });
+    } catch { /* ignore */ }
   });
-  ws.on("error", () => {});
+  ws.on("error", () => { /* */ });
 }
 
-export function startServer(port = env.port, opts?: { repoRoot?: string }): Promise<http.Server> {
-  const app = createApp(opts);
+export function startServer(port = env.port): Promise<http.Server> {
+  const app = createApp();
   const server = http.createServer(app);
   const wssLive = new WebSocketServer({ noServer: true, maxPayload: MAX_WS_MSG });
   const wssHud = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   server.on("upgrade", (req, socket, head) => {
     const url = new URL(req.url ?? "/", "http://x");
     const session = url.searchParams.get("session");
+    if ((url.pathname === "/live" || url.pathname === "/hud-ws") && !wsKeyOk(req, url)) {
+      // complete the handshake so the client sees a proper close code (4401) instead of a network error
+      const wss = url.pathname === "/live" ? wssLive : wssHud;
+      wss.handleUpgrade(req, socket, head, (ws) => ws.close(4401, "unauthorized"));
+      return;
+    }
     if (url.pathname === "/live") wssLive.handleUpgrade(req, socket, head, (ws) => onLive(ws, session));
     else if (url.pathname === "/hud-ws") wssHud.handleUpgrade(req, socket, head, (ws) => onHud(ws, session));
     else socket.destroy();
   });
   return new Promise((resolve) => server.listen(port, () => {
-    log("server.listening", { port: (server.address() as any)?.port ?? port, gemini_key: !!env.apiKey, live: env.liveModels[0], verify: env.verifyModels[0] });
+    log("server.listening", { port: (server.address() as any)?.port ?? port, gemini_key: !!env.apiKey, access_key: !!process.env.HOLDUP_KEY, live: env.liveModels[0], verify: env.verifyModels[0] });
     resolve(server);
   }));
 }

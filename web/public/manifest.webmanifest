@@ -1,40 +1,19 @@
 {
-  "name": "HoldUp: Hands-Free Label Assistant",
+  "name": "HoldUp",
   "short_name": "HoldUp",
-  "description": "Hands-free medication and allergen label assistant for blind and low-vision users on Meta AI glasses.",
+  "description": "Hold it up. Know it's the right one. A hands-free label assistant for blind and low-vision people.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0b0f17",
-  "theme_color": "#0b0f17",
-  "categories": ["accessibility", "health", "utilities"],
+  "orientation": "portrait",
+  "background_color": "#0b1018",
+  "theme_color": "#0b1018",
+  "categories": ["medical", "health", "accessibility"],
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Display HUD",
-      "short_name": "Display HUD",
-      "description": "Open the Meta Ray-Ban Display heads-up verdict view",
-      "url": "/hud",
-      "icons": [
-        {
-          "src": "/icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
-        }
-      ]
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
   ]
 }

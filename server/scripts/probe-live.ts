@@ -1,78 +1,22 @@
-import fs from "node:fs";
+// Probe which Live models accept an AUDIO session with our key. Prints timings + message kinds only.
+import { config } from "dotenv";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { Behavior, Modality, Type, type LiveServerMessage, type Session } from "@google/genai";
-import { env } from "../src/env.ts";
-import { ai } from "../src/gemini.ts";
-import { errSummary } from "../src/log.ts";
+import { GoogleGenAI, Modality } from "@google/genai";
 
-type ProbeResult = {
-  model: string;
-  ok: boolean;
-  connectMs: number | null;
-  firstAudioMs: number | null;
-  kinds: string[];
-  error?: string;
-};
+config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.env"), quiet: true });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { apiVersion: "v1beta" } });
+const models = process.argv.slice(2).length ? process.argv.slice(2) : ["gemini-3.8-live", "gemini-3.1-flash-live-preview", "gemini-2.5-flash-native-audio-latest"];
+const mode = process.env.PROBE_MODE ?? "realtime"; // realtime | client
 
-type ProbeReport = {
-  testedAt: string;
-  results: ProbeResult[];
-};
-
-function sanitizeErr(raw: unknown): string {
-  return errSummary(raw).replace(/[\u2014\u2013]/g, "-");
-}
-
-const argv = process.argv.slice(2);
-let outPath = "";
-let timeoutMs = Number(process.env.PROBE_TIMEOUT_MS ?? 15000);
-const modelArgs: string[] = [];
-
-for (let i = 0; i < argv.length; i++) {
-  const arg = argv[i];
-  if (arg === "--out" && argv[i + 1]) {
-    outPath = argv[++i];
-  } else if (arg.startsWith("--out=")) {
-    outPath = arg.slice("--out=".length);
-  } else if (arg === "--timeout" && argv[i + 1]) {
-    const parsed = Number(argv[++i]);
-    if (Number.isFinite(parsed) && parsed > 0) timeoutMs = parsed;
-  } else if (arg.startsWith("--timeout=")) {
-    const parsed = Number(arg.slice("--timeout=".length));
-    if (Number.isFinite(parsed) && parsed > 0) timeoutMs = parsed;
-  } else if (!arg.startsWith("-")) {
-    modelArgs.push(arg);
-  }
-}
-
-const models = modelArgs.length ? modelArgs : env.liveModels;
-const mode = process.env.PROBE_MODE ?? "realtime";
-
-async function probe(model: string): Promise<ProbeResult> {
+async function probe(model: string) {
   const t0 = Date.now();
   const kinds: string[] = [];
-  let connectMs: number | null = null;
-  let firstAudioMs: number | null = null;
-  let tSend = 0;
-  let wsErr = "";
-  let closing = false;
-  let timedOut = false;
-  let session: Session | null = null;
-  let finishTurn!: () => void;
-  const turnFinished = new Promise<void>((resolve) => {
-    finishTurn = resolve;
-  });
-
-  let timer: NodeJS.Timeout | undefined;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      timedOut = true;
-      reject(new Error(`probe timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
-  });
-
+  let firstAudio = 0;
+  let done!: () => void;
+  const finished = new Promise<void>((r) => (done = r));
   try {
-    const connectPromise = ai.live.connect({
+    const s = await ai.live.connect({
       model,
       config: {
         responseModalities: [Modality.AUDIO],
@@ -81,121 +25,29 @@ async function probe(model: string): Promise<ProbeResult> {
         sessionResumption: {},
         contextWindowCompression: { slidingWindow: {} },
         systemInstruction: "You are terse. Answer in one short sentence.",
-        tools: [
-          {
-            functionDeclarations: [
-              {
-                name: "show_cue",
-                description: "show a cue",
-                behavior: Behavior.NON_BLOCKING,
-                parameters: {
-                  type: Type.OBJECT,
-                  properties: { text: { type: Type.STRING } },
-                },
-              },
-            ],
-          },
-        ],
+        tools: [{ functionDeclarations: [{ name: "show_cue", description: "show a cue", behavior: "NON_BLOCKING" as any, parameters: { type: "OBJECT" as any, properties: { text: { type: "STRING" as any } } } }] }],
       },
       callbacks: {
-        onmessage: (m: LiveServerMessage) => {
-          const record = m as unknown as Record<string, unknown>;
-          const k = Object.keys(record).filter((x) => record[x] !== undefined);
-          if (m.serverContent) {
-            const sc = m.serverContent as unknown as Record<string, unknown>;
-            k.push(...Object.keys(sc).filter((x) => sc[x] !== undefined).map((x) => `sc.${x}`));
-          }
-          if (m.serverContent?.modelTurn?.parts?.some((p) => p.inlineData) && firstAudioMs === null) {
-            firstAudioMs = Date.now() - (tSend || t0);
-          }
-          if (k.length) kinds.push(k.join("+"));
-          if (m.serverContent?.turnComplete) finishTurn();
+        onmessage: (m) => {
+          const k = Object.keys(m).filter((x) => (m as any)[x] !== undefined);
+          if (m.serverContent) k.push(...Object.keys(m.serverContent).map((x) => "sc." + x));
+          if (m.serverContent?.modelTurn?.parts?.some((p) => p.inlineData) && !firstAudio) firstAudio = Date.now() - t0;
+          kinds.push(k.join("+"));
+          if (m.serverContent?.turnComplete) done();
         },
-        onerror: (e: unknown) => {
-          const msg = (e as { message?: unknown })?.message ?? e;
-          if (!wsErr) wsErr = sanitizeErr(msg);
-          finishTurn();
-        },
-        onclose: (e: { code?: number; reason?: string }) => {
-          if (!closing && firstAudioMs === null && !wsErr) {
-            const reason = String(e?.reason ?? "").trim();
-            wsErr = sanitizeErr(reason ? `closed ${e?.code ?? 0}: ${reason}` : `closed ${e?.code ?? 0}`);
-          }
-          finishTurn();
-        },
+        onerror: (e) => { console.log(model, "onerror", (e as any).message); done(); },
+        onclose: (e) => { console.log(model, "onclose", e.code, e.reason); done(); },
       },
     });
-    connectPromise.then(
-      (s) => {
-        if (timedOut || closing) {
-          try { s.close(); } catch {}
-        }
-      },
-      () => {},
-    );
-
-    session = await Promise.race([connectPromise, timeoutPromise]);
-    connectMs = Date.now() - t0;
-    tSend = Date.now();
-    if (mode === "client") {
-      session.sendClientContent({
-        turns: [{ role: "user", parts: [{ text: "Say hello in five words." }] }],
-        turnComplete: true,
-      });
-    } else {
-      session.sendRealtimeInput({ text: "Say hello in five words." });
-    }
-    await Promise.race([turnFinished, timeoutPromise]);
-    const ok = firstAudioMs !== null;
-    const uniqueKinds = [...new Set(kinds)];
-    if (!ok) {
-      return {
-        model,
-        ok: false,
-        connectMs,
-        firstAudioMs: null,
-        kinds: uniqueKinds,
-        error: wsErr || "no audio received before turn ended",
-      };
-    }
-    return {
-      model,
-      ok: true,
-      connectMs,
-      firstAudioMs,
-      kinds: uniqueKinds,
-    };
-  } catch (e: unknown) {
-    return {
-      model,
-      ok: false,
-      connectMs,
-      firstAudioMs,
-      kinds: [...new Set(kinds)],
-      error: sanitizeErr(e),
-    };
-  } finally {
-    if (timer) clearTimeout(timer);
-    closing = true;
-    try { session?.close(); } catch {}
+    const tConn = Date.now() - t0;
+    if (mode === "client") s.sendClientContent({ turns: [{ role: "user", parts: [{ text: "Say hello in five words." }] }], turnComplete: true });
+    else s.sendRealtimeInput({ text: "Say hello in five words." });
+    await Promise.race([finished, new Promise((r) => setTimeout(r, 15000))]);
+    s.close();
+    console.log(JSON.stringify({ model, ok: firstAudio > 0, connectMs: tConn, firstAudioMs: firstAudio, kinds: [...new Set(kinds)] }));
+  } catch (e: any) {
+    console.log(JSON.stringify({ model, ok: false, error: String(e?.message ?? e).slice(0, 300) }));
   }
 }
-
-const results: ProbeResult[] = [];
-for (const m of models) {
-  results.push(await probe(m));
-}
-
-const report: ProbeReport = {
-  testedAt: new Date().toISOString(),
-  results,
-};
-
-const serialized = JSON.stringify(report, null, 2);
-if (outPath) {
-  const dest = path.resolve(process.cwd(), outPath);
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.writeFileSync(dest, `${serialized}\n`, "utf8");
-}
-console.log(serialized);
+for (const m of models) await probe(m);
 process.exit(0);
