@@ -1,0 +1,115 @@
+{
+  "suite": "otc_hidden_duplicates",
+  "model": "gemini-3.8-flash",
+  "thinking_level": "low",
+  "generated_at": "2026-11-14T19:08:10.085168+00:00",
+  "eval_now_iso": "2026-11-14T18:00:00+02:00",
+  "prompt_source": "shared/verify_prompt.md+shared/label_schema.json",
+  "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+  "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+  "prompt_sha256_12": "814770315c42",
+  "safety_module": "server/src/safety.ts",
+  "n": 12,
+  "errors": 0,
+  "timeouts": 0,
+  "pass_count": 12,
+  "pass_rate": 1.0,
+  "pass_ci95_wilson": [
+    0.7575,
+    1.0
+  ],
+  "confident_wrong_dose_count": 0,
+  "confident_wrong_dose_rate": 0.0,
+  "confident_wrong_dose_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "rule_of_three_95_upper": 0.25,
+  "profile": {
+    "lang": "en",
+    "meds": [
+      {
+        "id": "paracetamol",
+        "name": "Paracetamol",
+        "ingredient": "paracetamol",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ],
+        "barcode": "6416542011059",
+        "gtin": "06416542011059",
+        "notes": "Joint pain, max 2 doses daily"
+      },
+      {
+        "id": "cetirizine",
+        "name": "Heinix",
+        "ingredient": "cetirizine",
+        "strength": "10 mg",
+        "schedule": [
+          "evening"
+        ],
+        "barcode": "6416542039268",
+        "gtin": "06416542039268",
+        "notes": "Evening allergy tablet"
+      },
+      {
+        "id": "amlodipine",
+        "name": "Amlodipine",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ],
+        "barcode": "6416542002149",
+        "gtin": "06416542002149",
+        "notes": "Blood pressure"
+      }
+    ],
+    "allergies": [
+      "tree nuts",
+      "peanut"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": []
+  },
+  "summary": {
+    "n_cases": 12,
+    "errors": 0,
+    "timeouts": 0,
+    "verdict_matches": 12,
+    "verdict_accuracy": 1.0,
+    "verdict_accuracy_ci95": [
+      0.7575,
+      1.0
+    ],
+    "confident_wrong_count": 0,
+    "confident_wrong_dose_count": 0,
+    "confident_wrong_rate": 0.0,
+    "confident_wrong_ci95": [
+      0.0,
+      0.2425
+    ],
+    "false_match_count": 0,
+    "unsafe_reassurance_count": 0,
+    "abstain_or_unsure_count": 3,
+    "latency_p50_ms": 3351.1,
+    "latency_p95_ms": 4854.3
+  },
+  "cases": [
+    {"id":"otc_01","scenario":"paracetamol_orion_500mg_zero_doses_match","category":"otc_scheduled_match","description":"Plain Paracetamol Orion 500 mg tablet matches profile with 0 doses logged","question":"Read this label.","dose_log":[],"expected_level":"match","actual_level":"match","predicted_level":"match","passed":true,"verdict_ok":true,"strength_read":"500 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.168,"latency_ms":3167.5,"error":null,"reasons":["matches paracetamol","taken today: 0/2"],"read":{"kind":"medication","product":{"value":"Paracetamol Orion","confidence":0.98},"ingredient":{"value":"paracetamol","confidence":0.98},"strength":{"value":"500 mg","confidence":0.98},"dosing":{"value":"1 tablet morning and evening","confidence":0.95},"expiry":{"value":"2028-03","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"otc_02","scenario":"panadol_hot_500mg_sachet_quota_exhausted_warning","category":"hidden_duplicate_quota","description":"Panadol Hot 500 mg warm-drink sachet triggers duplicate warning when paracetamol daily quota is exhausted","question":"Read this label.","dose_log":[{"medId":"paracetamol","ts":1794639600000},{"medId":"paracetamol","ts":1794659400000}],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"500 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":4.191,"latency_ms":4190.6,"error":null,"reasons":["matches paracetamol","taken today: 2/2"],"read":{"kind":"medication","product":{"value":"Panadol Hot","confidence":0.99},"ingredient":{"value":"paracetamol","confidence":0.99},"strength":{"value":"500 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"otc_03","scenario":"finrexin_aspirin_caffeine_sachet_nsaid_warning","category":"hidden_nsaid_sachet","description":"Finrexin cold sachet (acetylsalicylic acid + caffeine) triggers NSAID avoid warning","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"500 mg + 30 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.676,"latency_ms":3676.1,"error":null,"reasons":["aspirin is an NSAID, on your avoid list","not on your medication list"],"read":{"kind":"medication","product":{"value":"Finrexin","confidence":0.98},"ingredient":{"value":"acetylsalicylic acid, caffeine","confidence":0.98},"strength":{"value":"500 mg + 30 mg","confidence":0.98},"dosing":{"value":null,"confidence":0.2},"expiry":{"value":"2027-12","confidence":0.98},"allergens":{"value":null,"confidence":0.2},"barcode":{"value":null,"confidence":0.1},"readability":0.95}},
+    {"id":"otc_04","scenario":"ibumax_400mg_ibuprofen_nsaid_warning","category":"otc_nsaid_pack","description":"Ibumax 400 mg (ibuprofen) generic OTC pack triggers NSAID avoid warning","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"400 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.351,"latency_ms":3351.1,"error":null,"reasons":["ibuprofen is an NSAID, on your avoid list","not on your medication list"],"read":{"kind":"medication","product":{"value":"Ibumax","confidence":0.99},"ingredient":{"value":"ibuprofen","confidence":0.99},"strength":{"value":"400 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2028-02","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"otc_05","scenario":"ketorin_25mg_ketoprofen_nsaid_warning","category":"otc_nsaid_pack","description":"Ketorin 25 mg (ketoprofen) OTC pack triggers NSAID avoid warning","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"25 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":2.985,"latency_ms":2984.8,"error":null,"reasons":["ketoprofen is an NSAID, on your avoid list","not on your medication list"],"read":{"kind":"medication","product":{"value":"Ketorin","confidence":0.99},"ingredient":{"value":"ketoprofen","confidence":0.99},"strength":{"value":"25 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2028-01","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"otc_06","scenario":"panadol_forte_1000mg_double_strength_warning","category":"double_strength_otc","description":"Panadol Forte 1000 mg (1 g) double-strength OTC tablet warns against 500 mg profile","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"1000 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":4.145,"latency_ms":4145.4,"error":null,"reasons":["strength 1000 mg differs from your 500 mg"],"read":{"kind":"medication","product":{"value":"Panadol Forte","confidence":0.99},"ingredient":{"value":"paracetamol","confidence":0.99},"strength":{"value":"1000 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2028-04","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"otc_07","scenario":"heinix_cetirizine_10mg_evening_allergy_match","category":"otc_scheduled_match","description":"Heinix (cetirizine) 10 mg evening allergy tablet matches scheduled profile","question":"Read this label.","dose_log":[],"expected_level":"match","actual_level":"match","predicted_level":"match","passed":true,"verdict_ok":true,"strength_read":"10 mg","strength_conf":0.98,"name_conf":0.98,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":4.854,"latency_ms":4854.3,"error":null,"reasons":["matches cetirizine","taken today: 0/1"],"read":{"kind":"medication","product":{"value":"Heinix","confidence":0.98},"ingredient":{"value":"cetirizine","confidence":0.98},"strength":{"value":"10 mg","confidence":0.98},"dosing":{"value":"1 tablet in the evening","confidence":0.95},"expiry":{"value":"2028-05","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"otc_08","scenario":"expired_panadol_hot_500mg_sachet_warning","category":"expired_otc_sachet","description":"Expired Panadol Hot 500 mg paracetamol sachet (EXP 2025-02) triggers expiry warning","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"500 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":2.864,"latency_ms":2864.1,"error":null,"reasons":["expired 2025-02"],"read":{"kind":"medication","product":{"value":"Panadol Hot","confidence":0.99},"ingredient":{"value":"paracetamol","confidence":0.99},"strength":{"value":"500 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2025-02","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"otc_09","scenario":"safe_honey_lemon_vitc_throat_pastille_food_info","category":"safe_throat_pastille_food","description":"Safe caffeine-free honey-lemon vitamin C throat pastille food pack returns info","question":"Read this label.","dose_log":[],"expected_level":"info","actual_level":"info","predicted_level":"info","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.98,"confident_wrong":false,"false_match":false,"latency_s":2.947,"latency_ms":2947.4,"error":null,"reasons":["no listed allergen matches your profile"],"read":{"kind":"food","product":{"value":"Honey & Lemon Pastilles","confidence":0.98},"ingredient":{"value":"pastilles","confidence":0.95},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":[],"confidence":0.98},"barcode":{"value":null,"confidence":0.0},"readability":0.98}},
+    {"id":"otc_10","scenario":"torn_cold_sachet_missing_paracetamol_strength_unsure","category":"torn_sachet_abstention","description":"Torn cold-sachet corner missing paracetamol mg strength abstains to unsure","question":"Read this label.","dose_log":[],"expected_level":"unsure","actual_level":"unsure","predicted_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.55,"confident_wrong":false,"false_match":false,"latency_s":2.832,"latency_ms":2832.3,"error":null,"reasons":["strength not readable"],"read":{"kind":"medication","product":{"value":"Panadol Hot","confidence":0.98},"ingredient":{"value":null,"confidence":0.3},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.55,"guidance":"Part of the package is torn off or missing."}},
+    {"id":"otc_11","scenario":"thumb_occluded_ingredient_and_strength_otc_box_unsure","category":"thumb_occluded_abstention","description":"Thumb-occluded active ingredient and strength on OTC pain relief box abstains to unsure","question":"Read this label.","dose_log":[],"expected_level":"unsure","actual_level":"unsure","predicted_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.99,"readability":0.6,"confident_wrong":false,"false_match":false,"latency_s":3.58,"latency_ms":3580.1,"error":null,"reasons":["strength not readable"],"read":{"kind":"medication","product":{"value":"Para-Tabs","confidence":0.99},"ingredient":{"value":null,"confidence":0.0},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2028-01","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.6,"guidance":"Move your finger to uncover the text."}},
+    {"id":"otc_12","scenario":"steam_blurred_kettle_hot_sachet_strength_illegible_unsure","category":"steam_blurred_abstention","description":"Steam-blurred kettle-side hot-drink sachet with illegible strength abstains to unsure","question":"Read this label.","dose_log":[],"expected_level":"unsure","actual_level":"unsure","predicted_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.8,"readability":0.3,"confident_wrong":false,"false_match":false,"latency_s":5.488,"latency_ms":5487.8,"error":null,"reasons":["identity not confident (name 0.80, readability 0.30)"],"read":{"kind":"medication","product":{"value":"Panadol Hot","confidence":0.8},"ingredient":{"value":null,"confidence":0.2},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":null,"confidence":0.0},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.3,"guidance":"Tilt it away from the light to reduce glare."}}
+  ]
+}

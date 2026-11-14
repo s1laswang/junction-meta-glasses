@@ -2,9 +2,11 @@
 // and the last verdict/coach/device for late HUDs. `session` is optional on /hud-ws and /ingest/*: those then
 // follow the most recently started live session.
 import type { WebSocket } from "ws";
-import type { DeviceState, Profile, ServerMsg, Verdict } from "../../shared/types.ts";
+import type { DeviceState, Gs1Code, Profile, ServerMsg, Verdict } from "../../shared/types.ts";
 import { FrameRing, emptyProfile, type Frame } from "./verify.ts";
 import { Speculator } from "./speculate.ts";
+import { DmThrottle } from "./dm.ts";
+import type { Feature } from "./env.ts";
 import { log, shortId } from "./log.ts";
 
 export interface LiveLike {
@@ -30,7 +32,45 @@ export class Hub {
   source: "phone" | "glasses" = "phone";
   resume?: { handle: string; model: string; at: number };
   touchedAt = Date.now();
-  constructor(readonly id: string) {}
+  /** Feature flags for this session: server FEATURES intersected with start.features. Empty until start. */
+  features = new Set<Feature>();
+  /** Last GS1 DataMatrix seen for the current item (phone-decoded or server-decoded glasses frame). Never logged. */
+  lastCode?: { code: Gs1Code; ts: number };
+  dm = new DmThrottle();
+  private readiness = { value: -1, sentAt: 0, sharp: 0 };
+  constructor(readonly id: string) {
+    this.spec.onRead = () => this.updateReadiness();
+  }
+
+  has(f: Feature) { return this.features.has(f); }
+  setCode(code: Gs1Code) { this.lastCode = { code, ts: Date.now() }; }
+  /** A code is attributed to the current item only while it is fresh (10 s). */
+  freshCode(maxAgeMs = 10_000): Gs1Code | undefined {
+    return this.has("datamatrix") && this.lastCode && Date.now() - this.lastCode.ts < maxAgeMs ? this.lastCode.code : undefined;
+  }
+
+  /**
+   * Readiness sonar (flag `sonar`): blend of the latest frame sharpness and the latest speculative read's
+   * readability (decayed after 3 s). Sent at most 4/s and only on a change > 0.05. No Gemini calls.
+   */
+  updateReadiness(sharp?: number) {
+    if (!this.has("sonar") || !this.live?.active) return;
+    if (typeof sharp === "number") this.readiness.sharp = Math.max(0, Math.min(1, sharp));
+    const s = this.readiness.sharp;
+    const lr = this.spec.latest();
+    let v = 0.6 * s; // sharpness alone can't say "ready": that needs a read
+    if (lr) {
+      const age = Date.now() - lr.frameTs;
+      const decay = age <= 3000 ? 1 : Math.max(0, 1 - (age - 3000) / 5000);
+      const r = lr.read.kind === "unreadable" ? 0 : lr.read.readability;
+      v = Math.max(v, 0.35 * s + 0.65 * r * decay);
+    }
+    v = Math.round(Math.max(0, Math.min(1, v)) * 100) / 100;
+    const now = Date.now();
+    if (Math.abs(v - this.readiness.value) <= 0.05 || now - this.readiness.sentAt < 250) return;
+    this.readiness.value = v; this.readiness.sentAt = now;
+    this.emit({ type: "readiness", value: v }, { hud: false });
+  }
 
   /** Send to the phone client(s) and, for HUD-relevant types, to HUDs (own + floating ones if this is the latest). */
   emit(msg: ServerMsg, opts: { clients?: boolean; hud?: boolean } = {}) {
@@ -50,9 +90,10 @@ export class Hub {
   addFrame(f: Frame) {
     this.ring.push(f);
     this.spec.onFrame(f);
+    this.updateReadiness(f.sharpness);
   }
   /** Privacy: drop frames and cached reads. */
-  dropFrames() { this.ring.clear(); this.spec.clear(); }
+  dropFrames() { this.ring.clear(); this.spec.clear(); this.lastCode = undefined; }
   /** Tell the phone(s) whether a HUD is attached to this session. */
   hudChanged() {
     const s = JSON.stringify({ type: "hud", connected: hudsFor(this).length > 0 });

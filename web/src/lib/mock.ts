@@ -105,7 +105,11 @@ export class MockSocket {
       if (fail) {
         this.readyState = 3;
         this.onerror?.(new Event("error"));
-        this.onclose?.(new CloseEvent("close", { code: 1006, reason: "Server unreachable (mock)" }));
+        const closeEv =
+          typeof CloseEvent !== "undefined"
+            ? new CloseEvent("close", { code: 1006, reason: "Server unreachable (mock)" })
+            : (Object.assign(new Event("close"), { code: 1006, reason: "Server unreachable (mock)", wasClean: false }) as CloseEvent);
+        this.onclose?.(closeEv);
         mockCtl.sockets.delete(this);
         return;
       }
