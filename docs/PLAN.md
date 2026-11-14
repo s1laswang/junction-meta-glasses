@@ -54,7 +54,7 @@ The overall winner comes from peer review (top 5), then a 7-person grand jury, s
 **Technical execution (25)**
 - [ ] Runs **live on real Meta glasses** (DAT camera bridge plus Display HUD), with a backup video
 - [ ] The Android bridge APK is built (freighter) and installed. The HUD is loaded as a Display Web App
-- [ ] Gemini Live with tool calls, schema extraction with per-field confidence, speculative verify; latency p50/p95 on a slide
+- [x] Gemini Live with tool calls, schema extraction with per-field confidence, speculative verify; question-to-first-audio latency p50 2.1 s / p95 3.4 s (n=26, docs/evidence/smoke-runs.md) on Slide 7
 - [ ] **Eval:** confident-wrong rate, unsafe reassurance, calibration, real photos, Gemini vs Gemma comparison
 - [ ] Shown live: permissions, errors, connectivity loss (Wi-Fi off), device state (glasses off → phone camera), performance trade-offs (adaptive fps)
 - [ ] Tests green on main (unit tests, smoke, robust); one-command README
@@ -127,7 +127,7 @@ HoldUp is a hands-free label assistant powered by Gemini Live.
 | Camera or mic permission denied | Plain-language explanation, a "how to enable" step and a text or snapshot mode that needs only the camera |
 | Live WebSocket drops | Auto-reconnect with backoff; meanwhile switch to **Snapshot mode** (HTTP verify per frame, browser TTS) |
 | Offline completely | **Offline mode**: barcode match (BarcodeDetector) against the user's own saved medications works without network, and it says clearly that it can't read new labels |
-| Slow network | Adaptive frame rate and JPEG quality, so live latency stays under 1.5 s |
+| Slow network | Adaptive frame rate and JPEG quality follow measured RTT (1 -> 0.5 -> 0.33 fps) and skip backed-up frames |
 | Glasses disconnect, battery low or doffed (DAT state) | Announces it and falls back to the phone camera without losing the session |
 | Gemini error or quota | Retry, then a fallback model chain (`gemini-3.8-live` → `gemini-3.1-flash-live-preview` → `gemini-2.5-flash-native-audio-latest`) |
 
