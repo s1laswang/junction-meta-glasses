@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T14:43:28.624423+00:00",
+  "generated_at": "2026-11-14T15:07:24.742679+00:00",
   "safety_invariants": {
     "strength_min_conf": 0.8,
     "name_min_conf": 0.6,
@@ -35,6 +35,47 @@
     "pii_or_bystander_leak_count": 0,
     "false_safe_allergen_count": 0
   },
+  "wave6_suites_present": [
+    "multiframe_recovery_results",
+    "allergen_adversarial_results",
+    "expiry_formats_results",
+    "e2e_websocket_live",
+    "hud_latency_bandwidth",
+    "tts_multilingual_audio"
+  ],
+  "wave6_summary": {
+    "suites_count": 6,
+    "label_and_fusion_cases_evaluated": 29,
+    "label_and_fusion_verdict_matches": 29,
+    "label_and_fusion_verdict_accuracy": 1.0,
+    "confident_wrong_dose_count": 0,
+    "false_safe_allergen_count": 0,
+    "multiframe_paired_verdict_accuracy": 1.0,
+    "multiframe_single_abstention_rate": 1.0,
+    "expired_catch_recall": 1.0,
+    "e2e_verify_to_hud_p50_ms": 2738.8,
+    "e2e_live_first_event_ms": 1175.3,
+    "loopback_ingest_frame_p50_ms": 1.17,
+    "loopback_hud_replay_p50_ms": 1.78,
+    "ring_max_observed_len": 8,
+    "tts_valid_wav_count": 6,
+    "tts_n_utterances": 6,
+    "tts_latency_p50_ms": 3910.9
+  },
+  "optional_suites_present": [
+    "curved_blister_results",
+    "coaching_trajectories",
+    "lighting_motion_results",
+    "multilingual_labels_results",
+    "bystander_privacy_results",
+    "polypharmacy_confusion_results",
+    "multiframe_recovery_results",
+    "allergen_adversarial_results",
+    "expiry_formats_results",
+    "e2e_websocket_live",
+    "hud_latency_bandwidth",
+    "tts_multilingual_audio"
+  ],
   "label_suites_present": [
     "results_batch1",
     "results_batch2",
@@ -2017,6 +2058,522 @@
       "double_dose_catches": 2,
       "lasa_strength_catches": 3,
       "drug_class_catches": 2
+    },
+    "multiframe_recovery_results": {
+      "suite_id": "multiframe_recovery_results",
+      "generated_at": "2026-11-14T14:59:48.111985+00:00",
+      "model": "gemini-3.8-flash",
+      "n_pairs": 6,
+      "total_calls": 12,
+      "n_cases": 6,
+      "verdict_matches": 6,
+      "verdict_accuracy": 1.0,
+      "single_frame_abstentions": 6,
+      "single_frame_safe_abstention_rate": 1.0,
+      "paired_frame_matches": 6,
+      "paired_frame_verdict_accuracy": 1.0,
+      "confident_wrong_dose_count": 0,
+      "false_safe_allergen_count": null,
+      "single_latency_p50_ms": 3540.5,
+      "paired_latency_p50_ms": 3519.0,
+      "latency_ms": {
+        "p50": 3519.0,
+        "p95": 4282.0,
+        "mean": 3650.7
+      },
+      "tokens_in": 36454.0,
+      "tokens_out": 1670.0,
+      "pairs": [
+        {
+          "id": "mf_01",
+          "single_level": "unsure",
+          "single_abstained": true,
+          "single_latency_ms": 3292.0,
+          "paired_expected_level": "match",
+          "paired_level": "match",
+          "paired_match": true,
+          "paired_latency_ms": 3367.0,
+          "confident_wrong_dose": false
+        },
+        {
+          "id": "mf_02",
+          "single_level": "unsure",
+          "single_abstained": true,
+          "single_latency_ms": 4039.0,
+          "paired_expected_level": "warning",
+          "paired_level": "warning",
+          "paired_match": true,
+          "paired_latency_ms": 3616.0,
+          "confident_wrong_dose": false
+        },
+        {
+          "id": "mf_03",
+          "single_level": "unsure",
+          "single_abstained": true,
+          "single_latency_ms": 3479.0,
+          "paired_expected_level": "warning",
+          "paired_level": "warning",
+          "paired_match": true,
+          "paired_latency_ms": 4240.0,
+          "confident_wrong_dose": false
+        },
+        {
+          "id": "mf_04",
+          "single_level": "unsure",
+          "single_abstained": true,
+          "single_latency_ms": 3212.0,
+          "paired_expected_level": "warning",
+          "paired_level": "warning",
+          "paired_match": true,
+          "paired_latency_ms": 2839.0,
+          "confident_wrong_dose": false
+        },
+        {
+          "id": "mf_05",
+          "single_level": "unsure",
+          "single_abstained": true,
+          "single_latency_ms": 4404.0,
+          "paired_expected_level": "info",
+          "paired_level": "info",
+          "paired_match": true,
+          "paired_latency_ms": 4296.0,
+          "confident_wrong_dose": false
+        },
+        {
+          "id": "mf_06",
+          "single_level": "unsure",
+          "single_abstained": true,
+          "single_latency_ms": 3602.0,
+          "paired_expected_level": "warning",
+          "paired_level": "warning",
+          "paired_match": true,
+          "paired_latency_ms": 3422.0,
+          "confident_wrong_dose": false
+        }
+      ]
+    },
+    "allergen_adversarial_results": {
+      "suite_id": "allergen_adversarial_results",
+      "generated_at": "2026-11-14T14:51:57.933287+00:00",
+      "model": "gemini-3.8-flash",
+      "n_cases": 10,
+      "verdict_matches": 10,
+      "verdict_accuracy": 1.0,
+      "confident_wrong_dose_count": 0,
+      "clean_field_accuracy": 1.0,
+      "occluded_abstention_rate": 1.0,
+      "allergen_recall": 1.0,
+      "false_safe_allergen_count": 0,
+      "comma_decimal_matched": null,
+      "latency_ms": {
+        "p50": 3545.8,
+        "p95": 4286.0,
+        "mean": 3597.9
+      },
+      "tokens_in": 24850.0,
+      "tokens_out": 1215.0,
+      "rows": [
+        {
+          "id": "aa_01",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3988.7
+        },
+        {
+          "id": "aa_02",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3538.9
+        },
+        {
+          "id": "aa_03",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 2805.0
+        },
+        {
+          "id": "aa_04",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 4095.2
+        },
+        {
+          "id": "aa_05",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3489.9
+        },
+        {
+          "id": "aa_06",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3151.4
+        },
+        {
+          "id": "aa_07",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3552.7
+        },
+        {
+          "id": "aa_08",
+          "expected_level": "info",
+          "predicted_level": "info",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 2998.9
+        },
+        {
+          "id": "aa_09",
+          "expected_level": "info",
+          "predicted_level": "info",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3916.5
+        },
+        {
+          "id": "aa_10",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 4442.2
+        }
+      ]
+    },
+    "expiry_formats_results": {
+      "suite_id": "expiry_formats_results",
+      "generated_at": "2026-11-14T14:54:05.415623+00:00",
+      "model": "gemini-3.8-flash",
+      "n_cases": 10,
+      "verdict_matches": 10,
+      "verdict_accuracy": 1.0,
+      "confident_wrong_dose_count": 0,
+      "clean_field_accuracy": 1.0,
+      "occluded_abstention_rate": null,
+      "allergen_recall": null,
+      "false_safe_allergen_count": null,
+      "comma_decimal_matched": null,
+      "latency_ms": {
+        "p50": 3367.2,
+        "p95": 3981.0,
+        "mean": 3349.2
+      },
+      "tokens_in": 24850.0,
+      "tokens_out": 1611.0,
+      "rows": [
+        {
+          "id": "ex_01",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3361.9,
+          "expiry_value": "2025-03"
+        },
+        {
+          "id": "ex_02",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3423.8,
+          "expiry_value": "2025-02"
+        },
+        {
+          "id": "ex_03",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3177.0,
+          "expiry_value": "2024-12"
+        },
+        {
+          "id": "ex_04",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 4275.8,
+          "expiry_value": "2025-05"
+        },
+        {
+          "id": "ex_05",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3244.4,
+          "expiry_value": "2025-01"
+        },
+        {
+          "id": "ex_06",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3620.6,
+          "expiry_value": "2026-11-13"
+        },
+        {
+          "id": "ex_07",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 2548.9,
+          "expiry_value": "2026-10"
+        },
+        {
+          "id": "ex_08",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 2889.6,
+          "expiry_value": "2026-11"
+        },
+        {
+          "id": "ex_09",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3372.4,
+          "expiry_value": "2027-09"
+        },
+        {
+          "id": "ex_10",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3577.7,
+          "expiry_value": "2026-03-14"
+        }
+      ],
+      "expired_catch_recall": 1.0,
+      "expiry_iso_normalization_accuracy": 1.0
+    },
+    "e2e_websocket_live": {
+      "suite_id": "e2e_websocket_live",
+      "generated_at": "2026-11-14T14:58:23.914062+00:00",
+      "model": "gemini-3.8-live + gemini-3.8-flash",
+      "n_cases": 3,
+      "n_verify_checks": 3,
+      "verdict_matches": 3,
+      "verdict_accuracy": 1.0,
+      "hud_received_all_verdicts": true,
+      "state_broadcast_ms": 3.01,
+      "ingest_frame_ms": 3.07,
+      "verify_to_hud_p50_ms": 2738.8,
+      "verify_to_hud_p95_ms": 6235.7,
+      "live_ws_open_ms": 431.7,
+      "live_first_event_ms": 1175.3,
+      "confident_wrong_dose_count": 0,
+      "false_safe_allergen_count": null,
+      "latency_ms": {
+        "p50": 2738.8,
+        "p95": 6235.7,
+        "mean": 3959.2
+      },
+      "rows": [
+        {
+          "id": "amlodipine.jpg",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "hud_received": true,
+          "confident_wrong_dose": false,
+          "latency_ms": 2738.8
+        },
+        {
+          "id": "ibuprofen.jpg",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "hud_received": true,
+          "confident_wrong_dose": false,
+          "latency_ms": 6624.3
+        },
+        {
+          "id": "blurry_amlodipine.jpg",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "hud_received": true,
+          "confident_wrong_dose": false,
+          "latency_ms": 2514.7
+        }
+      ]
+    },
+    "hud_latency_bandwidth": {
+      "suite_id": "hud_latency_bandwidth",
+      "generated_at": "2026-11-14T14:54:49.291410+00:00",
+      "model": "node-24-loopback",
+      "n_cases": 250,
+      "verdict_matches": null,
+      "verdict_accuracy": null,
+      "confident_wrong_dose_count": null,
+      "false_safe_allergen_count": null,
+      "ingest_frame_requests": 100,
+      "ingest_frame_p50_ms": 1.17,
+      "ingest_frame_p95_ms": 5.27,
+      "ingest_frame_p99_ms": 9.62,
+      "ring_max_observed_len": 8,
+      "state_fanout_requests": 100,
+      "state_fanout_p50_ms": 1.29,
+      "state_fanout_p95_ms": 5.0,
+      "state_fanout_p99_ms": 5.26,
+      "hud_late_joins": 50,
+      "hud_replay_p50_ms": 1.78,
+      "hud_replay_p95_ms": 3.95,
+      "hud_verdict_wire_bytes": 674,
+      "api_stats_p50_ms": 0.96,
+      "api_eval_summary_p50_ms": 1.33,
+      "latency_ms": {
+        "p50": 1.17,
+        "p95": 5.27,
+        "mean": null
+      }
+    },
+    "tts_multilingual_audio": {
+      "suite_id": "tts_multilingual_audio",
+      "generated_at": "2026-11-14T14:55:27.638209+00:00",
+      "model": "gemini-3.8-flash-tts",
+      "n_utterances": 6,
+      "n_cases": 6,
+      "verdict_matches": null,
+      "verdict_accuracy": null,
+      "confident_wrong_dose_count": null,
+      "false_safe_allergen_count": null,
+      "http_200_count": 6,
+      "valid_wav_count": 6,
+      "valid_wav_rate": 1.0,
+      "languages_tested": [
+        "en",
+        "fi",
+        "sv"
+      ],
+      "sample_rate_hz": 24000,
+      "mean_audio_duration_s": 10.35,
+      "mean_wav_bytes": 496712.0,
+      "latency_ms": {
+        "p50": 3910.9,
+        "p95": 4345.2,
+        "mean": 3879.4
+      },
+      "rows": [
+        {
+          "id": "tts_01_en_match_evening_pill",
+          "lang": "en",
+          "http_status": 200,
+          "valid_wav": true,
+          "duration_s": 8.56,
+          "wav_bytes": 410952,
+          "latency_ms": 3846.8
+        },
+        {
+          "id": "tts_02_en_warning_nsaid",
+          "lang": "en",
+          "http_status": 200,
+          "valid_wav": true,
+          "duration_s": 10.48,
+          "wav_bytes": 503112,
+          "latency_ms": 3617.2
+        },
+        {
+          "id": "tts_03_en_unsure_strength_occluded",
+          "lang": "en",
+          "http_status": 200,
+          "valid_wav": true,
+          "duration_s": 11.08,
+          "wav_bytes": 531912,
+          "latency_ms": 3975.1
+        },
+        {
+          "id": "tts_04_en_warning_hazelnut_allergen",
+          "lang": "en",
+          "http_status": 200,
+          "valid_wav": true,
+          "duration_s": 12.6,
+          "wav_bytes": 604872,
+          "latency_ms": 4293.1
+        },
+        {
+          "id": "tts_05_fi_match_evening_pill",
+          "lang": "fi",
+          "http_status": 200,
+          "valid_wav": true,
+          "duration_s": 10.92,
+          "wav_bytes": 524232,
+          "latency_ms": 4362.6
+        },
+        {
+          "id": "tts_06_sv_match_evening_pill",
+          "lang": "sv",
+          "http_status": 200,
+          "valid_wav": true,
+          "duration_s": 8.44,
+          "wav_bytes": 405192,
+          "latency_ms": 3181.6
+        }
+      ]
     }
   }
 }
