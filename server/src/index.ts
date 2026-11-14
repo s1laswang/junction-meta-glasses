@@ -308,6 +308,7 @@ function onHud(ws: WebSocket, sessionParam: string | null) {
       // (it sends {type:"event"} back on /live for repeat / log_dose).
       const s = JSON.stringify({ type: "hud_event", name: m.name });
       for (const c of hub.clients) safeSend(c, s);
+      hub.toStages(s); // the projector replica mirrors the HUD (e.g. clears on Dismiss)
       log("ws.hud.event", { session: shortId(hub.id), name: m.name });
     } catch { /* ignore */ }
   });

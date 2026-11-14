@@ -96,6 +96,7 @@ test("the stage is read-only: its events never reach the phone, a HUD's still do
   hud.ws.send(JSON.stringify({ type: "event", name: "repeat" }));
   await tick();
   assert.deepEqual(phone.msgs.filter((m) => m.type === "hud_event"), [{ type: "hud_event", name: "repeat" }]);
+  assert.deepEqual(stage.msgs.filter((m) => m.type === "hud_event"), [{ type: "hud_event", name: "repeat" }], "the stage mirrors HUD button events");
 });
 
 test("metrics follow frames (fps, size) and are only re-sent on change", async () => {

@@ -5,6 +5,7 @@ import { synthPcmChunks } from "./audio.ts";
 import { matchVerdict, mockFoodNuts, mockScene, mockUnsureStrength, mockWarningIbuprofen, withCrossCheck } from "./verdicts.ts";
 import { parseGs1, sameGtin } from "./gs1.ts";
 import { demoProfile } from "./storage.ts";
+import { STAGE_MSG_TYPES, type StageMetrics } from "./stage.ts";
 
 const params = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
 export const IS_MOCK = params.get("mock") === "1";
@@ -32,6 +33,9 @@ let scenarioIndex = 0;
 /** Mirror to a HUD tab in the same browser (/hud?mock=1), like the server's HUD fan-out. */
 export const MOCK_HUD_CHANNEL = "holdup-hud-mock";
 let hudChannel: BroadcastChannel | null = null;
+/** Mirror to a /stage?mock=1 tab, like /hud-ws?role=stage: captions, checking, readiness and metrics too. */
+export const MOCK_STAGE_CHANNEL = "holdup-stage-mock";
+let stageChannel: BroadcastChannel | null = null;
 export function mockHudChannel() {
   try {
     hudChannel?.close();
@@ -39,10 +43,41 @@ export function mockHudChannel() {
   } catch {
     hudChannel = null;
   }
+  try {
+    stageChannel?.close();
+    stageChannel = new BroadcastChannel(MOCK_STAGE_CHANNEL);
+    (stageChannel as unknown as { unref?: () => void }).unref?.(); // Node (tests): never keep the process alive
+  } catch {
+    stageChannel = null;
+  }
   return hudChannel;
 }
 function toHud(m: ServerMsg) {
   if (m.type === "verdict" || m.type === "coach" || m.type === "status" || m.type === "device") hudChannel?.postMessage(m);
+  if (STAGE_MSG_TYPES.has(m.type)) stageChannel?.postMessage(m);
+}
+/** Mock "under the hood" numbers for the stage (the real server measures these). */
+const stageStats = { hits: 0, misses: 0, firstAudio: [] as number[] };
+function toStageMetrics(m: Partial<StageMetrics>, features: FeatureFlag[]) {
+  if (!stageChannel) return;
+  const sorted = [...stageStats.firstAudio].sort((a, b) => a - b);
+  const msg: StageMetrics = {
+    type: "metrics",
+    model: "mock-gemini-live",
+    firstAudioS: stageStats.firstAudio.at(-1) ?? null,
+    firstAudioP50S: sorted[Math.floor(sorted.length / 2)] ?? null,
+    turns: stageStats.firstAudio.length,
+    verify: null,
+    cache: { hits: stageStats.hits, misses: stageStats.misses },
+    features,
+    phone: true,
+    hud: true,
+    source: mockCtl.device.source,
+    fps: mockCtl.slow ? 0.5 : 1,
+    frameKb: mockCtl.slow ? 22.1 : 41.7,
+    ...m,
+  };
+  stageChannel.postMessage(msg);
 }
 
 export class MockSocket {
@@ -109,6 +144,7 @@ export class MockSocket {
           return;
         }
         this.emit({ type: "status", live: "open", detail: "Mock server: scripted demo" });
+        toStageMetrics({}, this.features);
         if (mockCtl.device.connected) this.emit({ type: "device", device: mockCtl.device });
         this.later(900, () => this.emit({ type: "transcript", role: "assistant", text: "Hi, I'm watching. Hold the box up in front of you.", final: true }));
         // the scripted demo starts by itself unless the user types/asks something first
@@ -200,6 +236,11 @@ export class MockSocket {
           }
           this.lastVerdict = v;
           this.emit({ type: "verdict", verdict: v });
+          // mock numbers: the scene read is a fresh call, held items mostly hit the speculative cache
+          const hit = v.mode !== "scene" && idx !== 2;
+          if (v.mode !== "scene") stageStats[hit ? "hits" : "misses"]++;
+          stageStats.firstAudio.push(Math.round((0.8 + Math.random() * 0.7) * 10) / 10);
+          toStageMetrics({ verify: { ms: hit ? Math.round(Math.random() * 80) : 2400 + Math.round(Math.random() * 900), source: v.mode === "scene" ? "scene" : hit ? "cache" : "fresh", level: v.level } }, this.features);
           this.say(v.speech);
           this.running = false;
         },

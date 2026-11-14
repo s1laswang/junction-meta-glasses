@@ -126,6 +126,8 @@ export class Hub {
     // the stage gets its types even when the HUD is skipped (readiness is phone + stage only)
     if (STAGE_TYPES.has(msg.type)) for (const st of stagesFor(this)) safeSend(st, s);
   }
+  /** Raw send to this session's stage sockets (e.g. the HUD's own button events, so the replica mirrors Dismiss). */
+  toStages(s: string) { for (const st of stagesFor(this)) safeSend(st, s); }
   /** Projector numbers for this session (no content). */
   metrics(now = Date.now()): StageMetrics {
     const st = this.live?.stats?.();
