@@ -11,7 +11,9 @@ import { createLiveAudioBridge } from "./audio/player.ts";
 import { cancelSpeech, speakFallback } from "./audio/tts.ts";
 import { estimateJpegByteSharpness } from "./camera/fixtureLoader.ts";
 import { AppHeader, type AppTab } from "./components/AppHeader.tsx";
+import { BrailleStickerGuardCard } from "./components/BrailleStickerGuardCard.tsx";
 import { CaregiverAlertCard } from "./components/CaregiverAlertCard.tsx";
+import { CognitiveRoutineCard } from "./components/CognitiveRoutineCard.tsx";
 import { ConfidenceBreakdownCard } from "./components/ConfidenceBreakdownCard.tsx";
 import { ConsentOnboarding } from "./components/ConsentOnboarding.tsx";
 import { ConversationBar } from "./components/ConversationBar.tsx";
@@ -30,6 +32,7 @@ import { LanguageVoiceSupportCard } from "./components/LanguageVoiceSupportCard.
 import { OfflineReadinessCard } from "./components/OfflineReadinessCard.tsx";
 import { PermissionBanner } from "./components/PermissionBanner.tsx";
 import { PharmacyImportModal } from "./components/PharmacyImportModal.tsx";
+import { PilotOnboardingCard } from "./components/PilotOnboardingCard.tsx";
 import { PrivacyFlowCard } from "./components/PrivacyFlowCard.tsx";
 import { ProfileManager } from "./components/ProfileManager.tsx";
 import { SafetyRuleExplainerCard } from "./components/SafetyRuleExplainerCard.tsx";
@@ -40,6 +43,7 @@ import { VerdictCard } from "./components/VerdictCard.tsx";
 import { ViewfinderStage } from "./components/ViewfinderStage.tsx";
 import { VoiceActivityPill } from "./components/VoiceActivityPill.tsx";
 import { VoiceCommandCheatSheetCard } from "./components/VoiceCommandCheatSheetCard.tsx";
+import { WhyGlassesComparisonCard } from "./components/WhyGlassesComparisonCard.tsx";
 import { HudApp } from "./hud/HudApp.tsx";
 import { HudPreviewFrame } from "./hud/HudPreviewFrame.tsx";
 import { buildBridgeDeepLink, buildHudUrl } from "./pairing/links.ts";
@@ -579,6 +583,7 @@ function HoldUpPwaShell({
             permissions={ctrl.snapshot.permissions}
             currentSource={effectiveSource}
             lastError={ctrl.snapshot.lastError}
+            lang={effectiveLang}
             onUseSnapshotMode={() => {
               ctrl.stopCheck();
               void ctrl.snapshotVerify();
@@ -726,6 +731,20 @@ function HoldUpPwaShell({
                     ctrl.logDose(medId);
                   }}
                 />
+
+                <CognitiveRoutineCard
+                  profile={effectiveProfile}
+                  cameraActive={ctrl.snapshot.cameraActive}
+                  lastVerdict={effectiveVerdict}
+                  lang={effectiveLang}
+                  onStartCheck={() => {
+                    void ctrl.startCheck();
+                  }}
+                  onLogDose={(medId) => {
+                    ctrl.logDose(medId);
+                  }}
+                  onRepeatVerdict={ctrl.repeatLastVerdict}
+                />
               </div>
             </div>
           ) : null}
@@ -804,6 +823,19 @@ function HoldUpPwaShell({
                   }
                 }}
               />
+
+              <BrailleStickerGuardCard
+                lang={effectiveLang}
+                onOpenPharmacyQr={handleOpenPharmacyImport}
+                onSpeakGuidance={(text) => {
+                  if (!ctrl.muted) {
+                    void speakFallback(text, {
+                      lang: effectiveLang,
+                      preferServerTts: false
+                    });
+                  }
+                }}
+              />
             </div>
           ) : null}
 
@@ -867,6 +899,21 @@ function HoldUpPwaShell({
                   ctrl.triggerHudEvent(name);
                 }}
               />
+
+              <PilotOnboardingCard
+                consentAccepted={ctrl.consent.accepted}
+                device={ctrl.snapshot.device}
+                cameraPerm={ctrl.snapshot.permissions.camera}
+                profile={effectiveProfile}
+                lang={effectiveLang}
+                onOpenConsent={ctrl.openPrivacyModal}
+                onOpenPharmacyQr={handleOpenPharmacyImport}
+                onStartDemoTour={() => {
+                  setActiveTab("check");
+                }}
+              />
+
+              <WhyGlassesComparisonCard lang={effectiveLang} />
             </div>
           ) : null}
         </div>

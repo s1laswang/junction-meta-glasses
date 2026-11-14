@@ -275,12 +275,14 @@ test("App renders ConfidenceBreakdownCard between VerdictCard and HudPreviewFram
   const scheduleCardIdx = passedHtml.indexOf("schedule-checklist-card");
   const hudPreviewIdx = passedHtml.indexOf('id="hpf-heading"');
   const caregiverIdx = passedHtml.indexOf("caregiver-share-actions");
+  const cognitiveRoutineIdx = passedHtml.indexOf("cognitive-routine-steps");
 
   assert.ok(verdictCardIdx > 0);
   assert.ok(confidenceCardIdx > verdictCardIdx);
   assert.ok(scheduleCardIdx > confidenceCardIdx);
   assert.ok(hudPreviewIdx > scheduleCardIdx);
   assert.ok(caregiverIdx > hudPreviewIdx);
+  assert.ok(cognitiveRoutineIdx > caregiverIdx);
   assert.equal(passedHtml.includes(EM_DASH), false);
   assert.equal(passedHtml.includes(EN_DASH), false);
 
@@ -392,6 +394,7 @@ test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimeli
   const caregiverProfileIdx = html.indexOf("caregiver-share-actions");
   const emergencyMedIdx = html.indexOf("emergency-med-card");
   const languageVoiceIdx = html.indexOf("language-voice-support-card");
+  const brailleGuardIdx = html.indexOf("braille-sticker-guard-card");
   assert.ok(scheduleProfileIdx > 0);
   assert.ok(doseTimelineIdx > scheduleProfileIdx);
   assert.ok(safetyExplainerIdx > doseTimelineIdx);
@@ -399,6 +402,8 @@ test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, DoseTimeli
   assert.ok(caregiverProfileIdx > profileManagerIdx);
   assert.ok(emergencyMedIdx > caregiverProfileIdx);
   assert.ok(languageVoiceIdx > emergencyMedIdx);
+  assert.ok(brailleGuardIdx > languageVoiceIdx);
+  assert.ok(html.includes('id="braille-sticker-guard-heading"'));
 
   for (const med of DEMO_PROFILE.meds) {
     assert.ok(html.includes(med.name), `Expected medication ${med.name} in profile tab`);
@@ -595,6 +600,10 @@ test("App with initialUrl=?tab=device renders HardwareTelemetryCard, OfflineRead
   assert.ok(html.includes("ECE 0.0138"));
   assert.ok(html.includes("Zero Server Image Retention"));
   assert.ok(html.includes("hpf-root"));
+  assert.ok(html.includes("pilot-onboarding-card"));
+  assert.ok(html.includes('id="pilot-onboarding-card-heading"'));
+  assert.ok(html.includes("why-glasses-comparison-card"));
+  assert.ok(html.includes('id="why-glasses-comparison-heading"'));
   assert.equal(html.includes(EM_DASH), false);
   assert.equal(html.includes(EN_DASH), false);
 
