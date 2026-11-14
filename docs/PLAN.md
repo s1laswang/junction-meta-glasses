@@ -115,6 +115,13 @@ The judges get a robust demo even if the hardware misbehaves, and the full glass
 | **Sun 06:30–08:30** | Momin010 (glasses), Chintufp (filming), Silas (presenter) | **Test slot 2, final rehearsal**: 3 full demo runs on the hardware, and record a backup demo video. |
 | Sun after judging | Momin010 | Return all hardware to the booth. |
 
+**Read before the pickup: [HARDWARE_NOTES.md](HARDWARE_NOTES.md).**
+- No GitHub token or Developer Center registration is needed (DAT 1.0.1 is on Maven Central; in developer mode the app ID is 0).
+- Needs the Meta AI app V292 or later and glasses firmware V128 or later. **Reboot the glasses after the update**, or the camera stays dead.
+- Only one third-party app can be registered in developer mode.
+- The Display Web App is added in the Meta AI app under Apps → Web Apps → Connect Web App and needs an HTTPS URL. Web Apps are limited by region and age, so ask Amanda Le whether Finland is enabled and set a birthday on the account.
+- The Web App URL must stay the same between sessions. The HUD and the bridge therefore attach to the **latest active session** by default, with no code to enter, and we need a stable host (see question 2).
+
 **Fallback if there's no hardware or DAT is blocked:** the phone camera plus glasses as a Bluetooth headset, which still gives hands-free audio, plus the phone on a neck lanyard or chest clip. The bridge code and the HUD page are shown separately.
 
 ## 7. Timeline

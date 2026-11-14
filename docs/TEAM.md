@@ -57,6 +57,8 @@ Server → client:
 - `POST /ingest/frame?session=<id>` (glasses bridge) body `image/jpeg` → 204. The frame is injected into that live session.
 - `POST /ingest/state?session=<id>` body `{ connected, worn, battery, streaming }` → 204, forwarded to the phone as `{type:"device", ...}` and to the HUD.
 
+**Session default (CEO decision, Sat 15:10):** on `/hud-ws`, `/ingest/frame` and `/ingest/state`, the `session` parameter is **optional**. When it's missing, the server attaches to the **most recently started live session** (single-wearer demo), so the Display Web App URL (`https://<host>/hud`) and the bridge never need a code re-entered. The server buffers the last verdict and device state and replays them to a HUD that connects late.
+
 ### WebSocket `/hud-ws?session=<id>` (server → Display HUD)
 Pushes `{ type: "verdict"|"coach"|"status"|"device", ... }`, the same shapes as above. The HUD sends `{ type:"event", name:"repeat"|"log_dose"|"dismiss" }`.
 
