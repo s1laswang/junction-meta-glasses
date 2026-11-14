@@ -16,6 +16,26 @@ _Resolved:_ eval runs on the laptop at low priority (Silas, Sat ~19:00). Results
 
 ---
 
+## 0. Push to 10 (Sat 19:00 to Sun 06:00, decided with Silas)
+Self-score at 18:45: **7.3/10** (Creativity 8, Technical execution 6.5, Real-world value 6.5, UX/trust 8). To win we need proof plus signature moments. Full plan: four levers.
+1. **Prove it.**
+   - glasses camera end to end in test slot 1;
+   - the Android bridge **compiled on freighter** (Slurm);
+   - eval v1 (synthetic) and v2 (**30 real Finnish photos**, Ivar);
+   - a measured **Gemini vs Gemma vs Flash** comparison;
+   - **real low-vision users** (Chintufp + Ivar: Näkövammaisten liitto / Iiris, attendees; kit in `docs/USER_TEST_KIT.md`).
+2. **Signature features** (flags `scene, datamatrix, addmed, sonar`; cut from the live demo if not solid by 03:00):
+   - **"Which one?" scene mode**: three boxes on the table get *"your evening pill is the one on the right; the middle one is ibuprofen"*;
+   - **Hold up to add**: build your med list by voice, one box at a time;
+   - **Readiness sonar**: a tone that rises as the label becomes readable.
+3. **Trust breakthrough, EU FMD DataMatrix cross-check.** Every EU prescription pack carries a GS1 DataMatrix (GTIN, expiry, batch, serial). The AI read must **agree with the pack's own machine code** before we say yes, and offline we match it exactly.
+4. **Use everything.**
+   - The **FR8 fleet** contributes narrow PRs against this main (our main is the submission). freighter does the Android build and eval scale-out.
+   - Gemini is the workforce for the eval, the judge, the model comparison and deck visuals.
+   - Meta mentors review the demo.
+
+Hosting: **one locked cloudflared tunnel** on the demo laptop from Sun 06:00. Contract: `shared/types.ts` (Sat 19:00 additions).
+
 ## 1. Problem and audience
 
 **Audience.** Blind and low-vision people. There are about 2.2 billion people with vision impairment worldwide, about 55,000 in Finland (NKL/THL register), about 45,000 of them aged 65 or over. The second audience is older adults with declining sight who manage several medications.
