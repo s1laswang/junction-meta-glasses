@@ -10,16 +10,24 @@ export const DEFAULT_REPO_ROOT = path.resolve(SCRIPT_DIR, "..");
 const SLASH = String.fromCharCode(47);
 const DOUBLE_SLASH = SLASH + SLASH;
 const EM_DASH = String.fromCharCode(0x2014);
+const HTML_COMMENT_OPEN = "<" + "!--";
 const CO_AUTHORED_TOKEN = ["Co", "Authored", "By"].join("-");
 const CO_AUTHORED_RE = new RegExp(CO_AUTHORED_TOKEN, "i");
 const API_KEY_RE = new RegExp("AIza" + "[0-9A-Za-z_-]{20,}");
 const DATA_IMAGE_B64_RE = new RegExp("^data:image" + SLASH + "[a-z0-9.+-]+;base64,", "i");
+const EXTERNAL_HTTP_RE = new RegExp("https?:" + DOUBLE_SLASH, "i");
 const URI_SCHEME_RE = new RegExp("^[a-zA-Z][a-zA-Z0-9+.-]*:");
 
 export const MAX_EVAL_STRING_LENGTH = 4096;
 export const MIN_DECK_SLIDES = 12;
 export const MIN_FIXTURE_BYTES = 10 * 1024;
 export const MAX_FIXTURE_BYTES = 200 * 1024;
+export const STANDALONE_HTML_ARTIFACTS = Object.freeze([
+  "deck/index.html",
+  "docs/judge-handout.html",
+  "docs/printable-props.html",
+  "docs/architecture-poster.html",
+]);
 export const EXPECTED_DEMO_FIXTURES = Object.freeze([
   "amlodipine.jpg",
   "back_of_box.jpg",
@@ -32,6 +40,14 @@ export const EXPECTED_DEMO_FIXTURES = Object.freeze([
 
 function toPosixPath(p) {
   return p.split(path.sep).join(SLASH);
+}
+
+function lineNumberAt(text, index) {
+  let line = 1;
+  for (let i = 0; i < index && i < text.length; i++) {
+    if (text.charCodeAt(i) === 10) line++;
+  }
+  return line;
 }
 
 function stripInlineCode(line) {
@@ -581,8 +597,61 @@ export function verifyTrackedHygiene(rootDir, options = {}) {
   };
 }
 
+export function verifyStandaloneHtml(rootDir) {
+  const errors = [];
+  const checkedFiles = [];
+
+  for (const relPath of STANDALONE_HTML_ARTIFACTS) {
+    const fullPath = path.join(rootDir, ...relPath.split(SLASH));
+    if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+      continue;
+    }
+
+    checkedFiles.push(relPath);
+    const html = fs.readFileSync(fullPath, "utf8");
+
+    const commentIdx = html.indexOf(HTML_COMMENT_OPEN);
+    if (commentIdx !== -1) {
+      errors.push(`${relPath}:${lineNumberAt(html, commentIdx)} contains forbidden HTML comment`);
+    }
+
+    const emDashIdx = html.indexOf(EM_DASH);
+    if (emDashIdx !== -1) {
+      errors.push(`${relPath}:${lineNumberAt(html, emDashIdx)} contains forbidden em-dash character`);
+    }
+
+    const maskedHtml = html
+      .replace(/(<script\b(?:"[^"]*"|'[^']*'|[^>"'])*>)([\s\S]*?)(<\/script>)/gi, (_, open, body, close) => {
+        return open + body.replace(/[^\n]/g, " ") + close;
+      })
+      .replace(/(<style\b(?:"[^"]*"|'[^']*'|[^>"'])*>)([\s\S]*?)(<\/style>)/gi, (_, open, body, close) => {
+        return open + body.replace(/[^\n]/g, " ") + close;
+      });
+
+    const assetTagRe = /<(script|link|img)\b((?:"[^"]*"|'[^']*'|[^>"'])*)>/gi;
+    let match;
+    while ((match = assetTagRe.exec(maskedHtml)) !== null) {
+      const tagName = match[1].toLowerCase();
+      const attrs = match[2] ?? "";
+      if (EXTERNAL_HTTP_RE.test(attrs)) {
+        errors.push(
+          `${relPath}:${lineNumberAt(maskedHtml, match.index)} contains forbidden external <${tagName}> URL`,
+        );
+      }
+    }
+  }
+
+  return {
+    ok: errors.length === 0,
+    checkedCount: checkedFiles.length,
+    checkedFiles,
+    errors,
+  };
+}
+
 export function verifySubmission(rootDir = DEFAULT_REPO_ROOT, options = {}) {
   const links = verifyMarkdownLinks(rootDir);
+  const standaloneHtml = verifyStandaloneHtml(rootDir);
   const evalHygiene = verifyEvalHygiene(rootDir);
   const fixtures = verifyDemoFixtures(rootDir);
   const trackedHygiene = verifyTrackedHygiene(rootDir, options);
@@ -590,6 +659,7 @@ export function verifySubmission(rootDir = DEFAULT_REPO_ROOT, options = {}) {
   const notices = [...links.notices];
   const errors = [
     ...links.errors,
+    ...standaloneHtml.errors,
     ...evalHygiene.errors,
     ...fixtures.errors,
     ...trackedHygiene.errors,
@@ -600,6 +670,7 @@ export function verifySubmission(rootDir = DEFAULT_REPO_ROOT, options = {}) {
     notices,
     errors,
     links,
+    standaloneHtml,
     evalHygiene,
     fixtures,
     trackedHygiene,
@@ -644,6 +715,6 @@ if (isExecutedDirectly()) {
     ? `deck=${report.links.deckSlideCount} slides`
     : "deck=pending-merge";
   console.log(
-    `PASS submission integrity (${Date.now() - t0} ms): ${report.links.checkedFiles} docs (${report.links.checkedLinks} relative links, ${deckDetail}), ${report.evalHygiene.jsonFileCount} eval JSONs, ${report.fixtures.fixtureCount} JPEG fixtures, ${report.trackedHygiene.scannedCount} tracked files clean`,
+    `PASS submission integrity (${Date.now() - t0} ms): ${report.links.checkedFiles} docs (${report.links.checkedLinks} relative links, ${deckDetail}), ${report.standaloneHtml.checkedCount} standalone HTML files, ${report.evalHygiene.jsonFileCount} eval JSONs, ${report.fixtures.fixtureCount} JPEG fixtures, ${report.trackedHygiene.scannedCount} tracked files clean`,
   );
 }
