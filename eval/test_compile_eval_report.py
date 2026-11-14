@@ -17,12 +17,16 @@ from eval.compile_eval_report import (
     DEFAULT_EVAL_DIR,
     EXTENDED_ARTIFACT_SPECS,
     EXTENDED_SUITE_IDS,
+    OPTIONAL_SUITE_IDS,
+    WAVE6_ARTIFACT_SPECS,
+    WAVE6_SUITE_IDS,
     compile_summary,
     main,
     render_markdown,
 )
 
-H3 = chr(35) * 3
+HASH_CHAR = chr(35)
+H3 = HASH_CHAR * 3
 EM_DASH = chr(0x2014)
 
 
@@ -218,6 +222,193 @@ def _synthetic_extended_payloads() -> dict[str, dict[str, Any]]:
     }
 
 
+def _synthetic_wave6_payloads() -> dict[str, dict[str, Any]]:
+    return {
+        "multiframe_recovery_results.json": {
+            "generated_at": "2026-11-14T15:20:00+00:00",
+            "model": "gemini-3.8-flash",
+            "summary": {
+                "n_pairs": 6,
+                "total_calls": 12,
+                "single_frame_safe_abstention_rate": 1.0,
+                "paired_frame_verdict_accuracy": 1.0,
+                "confident_wrong_dose_count": 0,
+                "single_latency_p50_ms": 3340.0,
+                "paired_latency_p50_ms": 3620.0,
+                "latency_p95_ms": 4710.0,
+                "tokens_in": 44730,
+                "tokens_out": 1980,
+            },
+            "items": [
+                {
+                    "id": f"mf_{idx:02d}",
+                    "single": {"level": "unsure", "abstained": True, "latency_ms": 3300.0 + idx * 12.0},
+                    "paired": {
+                        "expected_level": "match" if idx == 1 else ("info" if idx == 5 else "warning"),
+                        "level": "match" if idx == 1 else ("info" if idx == 5 else "warning"),
+                        "verdict_match": True,
+                        "latency_ms": 3580.0 + idx * 15.0,
+                    },
+                    "confident_wrong_dose": False,
+                }
+                for idx in range(1, 7)
+            ],
+        },
+        "allergen_adversarial_results.json": {
+            "generated_at": "2026-11-14T15:22:00+00:00",
+            "model": "gemini-3.8-flash",
+            "summary": {
+                "n_items": 10,
+                "verdict_matches": 10,
+                "verdict_accuracy": 1.0,
+                "allergen_recall": 1.0,
+                "false_safe_allergen_count": 0,
+                "confident_wrong_dose_count": 0,
+                "latency_p50_ms": 3465.0,
+                "latency_p95_ms": 4590.0,
+                "tokens_in": 24850,
+                "tokens_out": 1410,
+            },
+            "items": [
+                {
+                    "id": f"aa_{idx:02d}",
+                    "expected_level": "unsure" if idx == 10 else ("info" if idx in (8, 9) else "warning"),
+                    "predicted_level": "unsure" if idx == 10 else ("info" if idx in (8, 9) else "warning"),
+                    "verdict_match": True,
+                    "false_safe_allergen": False,
+                    "confident_wrong_dose": False,
+                    "latency_ms": 3410.0 + idx * 14.0,
+                }
+                for idx in range(1, 11)
+            ],
+        },
+        "expiry_formats_results.json": {
+            "generated_at": "2026-11-14T15:24:00+00:00",
+            "model": "gemini-3.8-flash",
+            "summary": {
+                "n_items": 10,
+                "verdict_matches": 10,
+                "verdict_accuracy": 1.0,
+                "expired_catch_recall": 1.0,
+                "expiry_iso_normalization_accuracy": 1.0,
+                "confident_wrong_dose_count": 0,
+                "latency_p50_ms": 3490.0,
+                "latency_p95_ms": 4620.0,
+                "tokens_in": 24850,
+                "tokens_out": 1390,
+            },
+            "items": [
+                {
+                    "id": f"ex_{idx:02d}",
+                    "expected_level": "match" if idx in (8, 9) else "warning",
+                    "predicted_level": "match" if idx in (8, 9) else "warning",
+                    "verdict_match": True,
+                    "expiry_value": "2026-11" if idx == 8 else ("2027-09" if idx == 9 else "2025-03"),
+                    "strength_value": "5 mg",
+                    "strength_confidence": 0.98,
+                    "confident_wrong_dose": False,
+                    "latency_ms": 3430.0 + idx * 16.0,
+                }
+                for idx in range(1, 11)
+            ],
+        },
+        "e2e_websocket_live.json": {
+            "generated_at": "2026-11-14T15:26:00+00:00",
+            "summary": {
+                "live_model": "gemini-3.8-live",
+                "verify_model": "gemini-3.8-flash",
+                "ingest_state_broadcast_ms": 1.65,
+                "ingest_frame_ms": 2.1,
+                "n_verify_checks": 3,
+                "verdict_matches": 3,
+                "verdict_accuracy": 1.0,
+                "hud_received_all_verdicts": True,
+                "e2e_verify_to_hud_p50_ms": 3540.0,
+                "e2e_verify_to_hud_p95_ms": 4210.0,
+                "live_ws_open_ms": 420.5,
+                "live_first_event_ms": 685.0,
+                "confident_wrong_dose_count": 0,
+            },
+            "items": [
+                {
+                    "fixture": "amlodipine.jpg",
+                    "expected_level": "match",
+                    "predicted_level": "match",
+                    "verdict_match": True,
+                    "hud_received": True,
+                    "confident_wrong_dose": False,
+                    "e2e_latency_ms": 3510.0,
+                },
+                {
+                    "fixture": "ibuprofen.jpg",
+                    "expected_level": "warning",
+                    "predicted_level": "warning",
+                    "verdict_match": True,
+                    "hud_received": True,
+                    "confident_wrong_dose": False,
+                    "e2e_latency_ms": 3540.0,
+                },
+                {
+                    "fixture": "blurry_amlodipine.jpg",
+                    "expected_level": "unsure",
+                    "predicted_level": "unsure",
+                    "verdict_match": True,
+                    "hud_received": True,
+                    "confident_wrong_dose": False,
+                    "e2e_latency_ms": 4240.0,
+                },
+            ],
+        },
+        "hud_latency_bandwidth.json": {
+            "generated_at": "2026-11-14T15:28:00+00:00",
+            "summary": {
+                "ingest_frame_count": 100,
+                "ingest_frame_p50_ms": 1.42,
+                "ingest_frame_p95_ms": 2.95,
+                "ingest_frame_p99_ms": 4.1,
+                "ring_max_observed_len": 8,
+                "ingest_state_count": 100,
+                "ingest_state_fanout_p50_ms": 1.18,
+                "ingest_state_fanout_p95_ms": 2.4,
+                "ingest_state_fanout_p99_ms": 3.3,
+                "hud_late_join_count": 50,
+                "hud_replay_p50_ms": 2.05,
+                "hud_replay_p95_ms": 3.85,
+                "hud_verdict_wire_bytes": 418,
+                "api_stats_p50_ms": 0.92,
+                "api_eval_summary_p50_ms": 1.35,
+            },
+        },
+        "tts_multilingual_audio.json": {
+            "generated_at": "2026-11-14T15:30:00+00:00",
+            "summary": {
+                "n_utterances": 6,
+                "http_200_count": 6,
+                "valid_wav_count": 6,
+                "languages_tested": ["en", "fi", "sv"],
+                "sample_rate_hz": 24000,
+                "latency_p50_ms": 895.0,
+                "latency_p95_ms": 1245.0,
+                "mean_audio_duration_s": 3.45,
+                "mean_wav_bytes": 165644,
+            },
+            "items": [
+                {
+                    "id": f"tts_{idx:02d}",
+                    "lang": "en" if idx <= 4 else ("fi" if idx == 5 else "sv"),
+                    "http_status": 200,
+                    "valid_wav": True,
+                    "sample_rate_hz": 24000,
+                    "duration_s": 3.2 + idx * 0.08,
+                    "wav_bytes": 153644 + idx * 3840,
+                    "latency_ms": 860.0 + idx * 25.0,
+                }
+                for idx in range(1, 7)
+            ],
+        },
+    }
+
+
 class CompileEvalReportTest(unittest.TestCase):
     def test_current_repo_data_compiles_cleanly(self) -> None:
         compiled = compile_summary(DEFAULT_EVAL_DIR)
@@ -225,6 +416,8 @@ class CompileEvalReportTest(unittest.TestCase):
 
         self.assertEqual(len(ARTIFACT_SPECS), 9)
         self.assertEqual(len(EXTENDED_ARTIFACT_SPECS), 6)
+        self.assertEqual(len(WAVE6_ARTIFACT_SPECS), 6)
+        self.assertEqual(len(OPTIONAL_SUITE_IDS), 12)
         self.assertEqual(compiled["suites_present"], [s["id"] for s in ARTIFACT_SPECS])
         self.assertEqual(compiled["suites_missing"], [])
         self.assertEqual(compiled["total_label_cases_evaluated"], 53)
@@ -232,11 +425,17 @@ class CompileEvalReportTest(unittest.TestCase):
         self.assertEqual(compiled["total_false_safe_allergen_count"], 0)
         self.assertIsInstance(compiled["extended_suites_present"], list)
         self.assertTrue(set(compiled["extended_suites_present"]).issubset(set(EXTENDED_SUITE_IDS)))
+        self.assertIsInstance(compiled["wave6_suites_present"], list)
+        self.assertTrue(set(compiled["wave6_suites_present"]).issubset(set(WAVE6_SUITE_IDS)))
+        self.assertEqual(
+            compiled["optional_suites_present"],
+            [*compiled["extended_suites_present"], *compiled["wave6_suites_present"]],
+        )
         self.assertNotIn("Pending merge", md)
         self.assertNotIn(EM_DASH, json.dumps(compiled, ensure_ascii=False))
         self.assertNotIn(EM_DASH, md)
 
-    def test_core_only_temp_dir_omits_extended_table_and_missing_warnings(self) -> None:
+    def test_core_only_temp_dir_omits_extended_and_wave6_tables_and_missing_warnings(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_dir = pathlib.Path(tmp)
             _copy_core_suites(tmp_dir)
@@ -247,10 +446,15 @@ class CompileEvalReportTest(unittest.TestCase):
             self.assertEqual(compiled["suites_present"], [s["id"] for s in ARTIFACT_SPECS])
             self.assertEqual(compiled["suites_missing"], [])
             self.assertEqual(compiled["extended_suites_present"], [])
+            self.assertEqual(compiled["wave6_suites_present"], [])
+            self.assertEqual(compiled["optional_suites_present"], [])
             self.assertEqual(compiled["extended_summary"]["suites_count"], 0)
             self.assertEqual(compiled["extended_summary"]["total_cases_evaluated"], 0)
             self.assertEqual(compiled["extended_summary"]["confident_wrong_dose_count"], 0)
+            self.assertEqual(compiled["wave6_summary"]["suites_count"], 0)
+            self.assertEqual(compiled["wave6_summary"]["confident_wrong_dose_count"], 0)
             self.assertNotIn("Extended Optical, Multilingual & Privacy Stress Suites", md)
+            self.assertNotIn("Wave-6 Multi-Frame Fusion, Adversarial Safety, Systems & TTS Benchmarks", md)
             self.assertNotIn("Pending merge", md)
             self.assertNotIn("0 (pending)", md)
             self.assertNotIn("missing", md.lower())
@@ -412,6 +616,247 @@ class CompileEvalReportTest(unittest.TestCase):
             self.assertEqual(arts["multilingual_labels_results"]["false_safe_allergen_count"], 0)
             self.assertEqual(arts["bystander_privacy_results"]["pii_or_bystander_leak_count"], 0)
             self.assertEqual(arts["bystander_privacy_results"]["privacy_pass_rate"], 1.0)
+
+    def test_all_six_wave6_suites_discovered_and_rendered_via_cli(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = pathlib.Path(tmp)
+            eval_dir = tmp_dir / "eval"
+            eval_dir.mkdir(parents=True, exist_ok=True)
+            _copy_core_suites(eval_dir)
+
+            for fname, payload in _synthetic_extended_payloads().items():
+                (eval_dir / fname).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            w6_payloads = _synthetic_wave6_payloads()
+            self.assertEqual(len(w6_payloads), 6)
+            for fname, payload in w6_payloads.items():
+                (eval_dir / fname).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+            out_json = tmp_dir / "out" / "combined_summary.json"
+            out_md = tmp_dir / "out" / "EVAL.md"
+            stdout_buf = io.StringIO()
+            with contextlib.redirect_stdout(stdout_buf):
+                rc = main(["--eval-dir", str(eval_dir), "--out-json", str(out_json), "--out-md", str(out_md)])
+            self.assertEqual(rc, 0)
+            cli_out = stdout_buf.getvalue()
+            self.assertIn("+ 6 extended", cli_out)
+            self.assertIn("+ 6 wave6", cli_out)
+
+            compiled = json.loads(out_json.read_text(encoding="utf-8"))
+            md = out_md.read_text(encoding="utf-8")
+
+            self.assertEqual(compiled["suites_missing"], [])
+            self.assertEqual(compiled["extended_suites_present"], EXTENDED_SUITE_IDS)
+            self.assertEqual(compiled["wave6_suites_present"], WAVE6_SUITE_IDS)
+            self.assertEqual(compiled["optional_suites_present"], [*EXTENDED_SUITE_IDS, *WAVE6_SUITE_IDS])
+
+            w6_sum = compiled["wave6_summary"]
+            self.assertEqual(w6_sum["suites_count"], 6)
+            self.assertEqual(w6_sum["label_and_fusion_cases_evaluated"], 29)
+            self.assertEqual(w6_sum["label_and_fusion_verdict_matches"], 29)
+            self.assertEqual(w6_sum["label_and_fusion_verdict_accuracy"], 1.0)
+            self.assertEqual(w6_sum["confident_wrong_dose_count"], 0)
+            self.assertEqual(w6_sum["false_safe_allergen_count"], 0)
+            self.assertEqual(w6_sum["multiframe_paired_verdict_accuracy"], 1.0)
+            self.assertEqual(w6_sum["multiframe_single_abstention_rate"], 1.0)
+            self.assertEqual(w6_sum["expired_catch_recall"], 1.0)
+            self.assertEqual(w6_sum["e2e_verify_to_hud_p50_ms"], 3540.0)
+            self.assertEqual(w6_sum["e2e_live_first_event_ms"], 685.0)
+            self.assertEqual(w6_sum["loopback_ingest_frame_p50_ms"], 1.42)
+            self.assertEqual(w6_sum["loopback_hud_replay_p50_ms"], 2.05)
+            self.assertEqual(w6_sum["ring_max_observed_len"], 8)
+            self.assertEqual(w6_sum["tts_valid_wav_count"], 6)
+            self.assertEqual(w6_sum["tts_n_utterances"], 6)
+            self.assertEqual(w6_sum["tts_latency_p50_ms"], 895.0)
+            self.assertEqual(compiled["total_confident_wrong_dose_count"], 0)
+            self.assertEqual(compiled["total_false_safe_allergen_count"], 0)
+
+            arts = compiled["artifacts"]
+            self.assertEqual(arts["multiframe_recovery_results"]["n_pairs"], 6)
+            self.assertEqual(arts["multiframe_recovery_results"]["total_calls"], 12)
+            self.assertEqual(arts["allergen_adversarial_results"]["allergen_recall"], 1.0)
+            self.assertEqual(arts["allergen_adversarial_results"]["false_safe_allergen_count"], 0)
+            self.assertEqual(arts["expiry_formats_results"]["expired_catch_recall"], 1.0)
+            self.assertEqual(arts["expiry_formats_results"]["expiry_iso_normalization_accuracy"], 1.0)
+            self.assertTrue(arts["e2e_websocket_live"]["hud_received_all_verdicts"])
+            self.assertEqual(arts["hud_latency_bandwidth"]["ring_max_observed_len"], 8)
+            self.assertEqual(arts["tts_multilingual_audio"]["languages_tested"], ["en", "fi", "sv"])
+            self.assertEqual(arts["tts_multilingual_audio"]["valid_wav_count"], 6)
+
+            self.assertIn(f"{H3} Wave-6 Multi-Frame Fusion, Adversarial Safety, Systems & TTS Benchmarks", md)
+            for spec in WAVE6_ARTIFACT_SPECS:
+                self.assertIn(f"`eval/{spec['filename']}`", md)
+                self.assertIn(spec["repro_cmd"], md)
+            self.assertIn("Single-frame safe abstention 100.0%", md)
+            self.assertIn("Expired catch recall 100.0%", md)
+            self.assertIn("FrameRing max len 8", md)
+            self.assertIn("6/6 valid WAV (100.0%)", md)
+            self.assertNotIn("Pending merge", md)
+            self.assertNotIn(EM_DASH, out_json.read_text(encoding="utf-8"))
+            self.assertNotIn(EM_DASH, md)
+
+    def test_partial_wave6_suites_rolls_up_safety_counts_and_scrubs_em_dash(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = pathlib.Path(tmp)
+            _copy_core_suites(tmp_dir)
+
+            w6 = _synthetic_wave6_payloads()
+            mf = w6["multiframe_recovery_results.json"]
+            mf["model"] = f"gemini-3.8-flash{EM_DASH}fusion"
+            mf["summary"]["confident_wrong_dose_count"] = 2
+            aa = w6["allergen_adversarial_results.json"]
+            aa["summary"]["false_safe_allergen_count"] = 1
+            hlb = w6["hud_latency_bandwidth.json"]
+
+            (tmp_dir / "multiframe_recovery_results.json").write_text(json.dumps(mf), encoding="utf-8")
+            (tmp_dir / "allergen_adversarial_results.json").write_text(json.dumps(aa), encoding="utf-8")
+            (tmp_dir / "hud_latency_bandwidth.json").write_text(json.dumps(hlb), encoding="utf-8")
+
+            compiled = compile_summary(tmp_dir)
+            md = render_markdown(compiled)
+
+            self.assertEqual(compiled["suites_missing"], [])
+            self.assertEqual(compiled["extended_suites_present"], [])
+            self.assertEqual(
+                compiled["wave6_suites_present"],
+                ["multiframe_recovery_results", "allergen_adversarial_results", "hud_latency_bandwidth"],
+            )
+            self.assertEqual(compiled["wave6_summary"]["suites_count"], 3)
+            self.assertEqual(compiled["total_confident_wrong_dose_count"], 2)
+            self.assertEqual(compiled["total_false_safe_allergen_count"], 1)
+
+            self.assertIn(f"{H3} Wave-6 Multi-Frame Fusion, Adversarial Safety, Systems & TTS Benchmarks", md)
+            self.assertNotIn(f"{H3} Extended Optical, Multilingual & Privacy Stress Suites", md)
+            self.assertIn("`eval/multiframe_recovery_results.json`", md)
+            self.assertIn("`eval/allergen_adversarial_results.json`", md)
+            self.assertIn("`eval/hud_latency_bandwidth.json`", md)
+            self.assertNotIn("`eval/tts_multilingual_audio.json`", md)
+            self.assertNotIn("Pending merge", md)
+            self.assertNotIn("missing", md.lower())
+            self.assertNotIn(EM_DASH, json.dumps(compiled, ensure_ascii=False))
+            self.assertNotIn(EM_DASH, md)
+
+    def test_wave6_item_and_nested_fallback_derivations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = pathlib.Path(tmp)
+            _copy_core_suites(tmp_dir)
+
+            mf_minimal = {
+                "summary": {},
+                "pairs": [
+                    {
+                        "id": "p1",
+                        "single_level": "unsure",
+                        "single_latency_ms": 3120.0,
+                        "expected_level": "match",
+                        "paired_level": "match",
+                        "paired_latency_ms": 3480.0,
+                    },
+                    {
+                        "id": "p2",
+                        "single_level": "unsure",
+                        "single_latency_ms": 3180.0,
+                        "expected_level": "warning",
+                        "paired_level": "warning",
+                        "paired_latency_ms": 3540.0,
+                    },
+                ],
+            }
+            aa_minimal = {
+                "summary": {},
+                "items": [
+                    {"id": "a1", "expected_level": "warning", "predicted_level": "warning", "false_safe_allergen": False, "latency_ms": 3210.0},
+                    {"id": "a2", "expected_level": "info", "predicted_level": "info", "false_safe_allergen": False, "latency_ms": 3290.0},
+                ],
+            }
+            ex_minimal = {
+                "summary": {},
+                "items": [
+                    {
+                        "id": "e1",
+                        "is_expired": True,
+                        "expected_level": "warning",
+                        "predicted_level": "warning",
+                        "iso_normalized_ok": True,
+                        "read": {"expiry": {"value": "2025-02", "confidence": 0.96}},
+                        "latency_ms": 3300.0,
+                    },
+                    {
+                        "id": "e2",
+                        "is_expired": False,
+                        "expected_level": "match",
+                        "predicted_level": "match",
+                        "iso_normalized_ok": True,
+                        "read": {"expiry": {"value": "2027-09", "confidence": 0.98}},
+                        "latency_ms": 3360.0,
+                    },
+                ],
+            }
+            e2e_minimal = {
+                "state_broadcast": {"hud_ws_ms": 1.9},
+                "live_ws": {"connect_ms": 405.0, "first_event_ms": 670.0},
+                "verify_checks": [
+                    {"fixture": "amlodipine.jpg", "expected_level": "match", "predicted_level": "match", "hud_received": True, "verify_to_hud_ms": 3490.0},
+                    {"fixture": "ibuprofen.jpg", "expected_level": "warning", "predicted_level": "warning", "hud_received": True, "verify_to_hud_ms": 3610.0},
+                ],
+            }
+            hud_minimal = {
+                "ingest_frame": {"count": 100, "p50_ms": 1.5, "p95_ms": 2.8, "p99_ms": 3.9, "ring_max_observed_len": 8},
+                "state_fanout": {"count": 100, "p50_ms": 1.1, "p95_ms": 2.2, "p99_ms": 3.0},
+                "hud_ws_replay": {"count": 50, "p50_ms": 1.95, "p95_ms": 3.4, "verdict_wire_bytes": 402},
+            }
+            tts_minimal = {
+                "summary": {},
+                "utterances": [
+                    {"id": "u1", "lang": "en", "http_status": 200, "valid_wav": True, "sample_rate_hz": 24000, "duration_s": 3.2, "wav_bytes": 153644, "latency_ms": 880.0},
+                    {"id": "u2", "lang": "fi", "http_status": 200, "valid_wav": True, "sample_rate_hz": 24000, "duration_s": 3.6, "wav_bytes": 172844, "latency_ms": 940.0},
+                ],
+            }
+
+            (tmp_dir / "multiframe_recovery_results.json").write_text(json.dumps(mf_minimal), encoding="utf-8")
+            (tmp_dir / "allergen_adversarial_results.json").write_text(json.dumps(aa_minimal), encoding="utf-8")
+            (tmp_dir / "expiry_formats_results.json").write_text(json.dumps(ex_minimal), encoding="utf-8")
+            (tmp_dir / "e2e_websocket_live.json").write_text(json.dumps(e2e_minimal), encoding="utf-8")
+            (tmp_dir / "hud_latency_bandwidth.json").write_text(json.dumps(hud_minimal), encoding="utf-8")
+            (tmp_dir / "tts_multilingual_audio.json").write_text(json.dumps(tts_minimal), encoding="utf-8")
+
+            compiled = compile_summary(tmp_dir)
+            arts = compiled["artifacts"]
+
+            self.assertEqual(arts["multiframe_recovery_results"]["n_pairs"], 2)
+            self.assertEqual(arts["multiframe_recovery_results"]["total_calls"], 4)
+            self.assertEqual(arts["multiframe_recovery_results"]["single_frame_safe_abstention_rate"], 1.0)
+            self.assertEqual(arts["multiframe_recovery_results"]["paired_frame_verdict_accuracy"], 1.0)
+
+            self.assertEqual(arts["allergen_adversarial_results"]["allergen_recall"], 1.0)
+            self.assertEqual(arts["allergen_adversarial_results"]["false_safe_allergen_count"], 0)
+
+            self.assertEqual(arts["expiry_formats_results"]["expired_catch_recall"], 1.0)
+            self.assertEqual(arts["expiry_formats_results"]["expiry_iso_normalization_accuracy"], 1.0)
+            self.assertEqual(arts["expiry_formats_results"]["rows"][0]["expiry_value"], "2025-02")
+
+            self.assertEqual(arts["e2e_websocket_live"]["state_broadcast_ms"], 1.9)
+            self.assertEqual(arts["e2e_websocket_live"]["live_ws_open_ms"], 405.0)
+            self.assertEqual(arts["e2e_websocket_live"]["live_first_event_ms"], 670.0)
+            self.assertTrue(arts["e2e_websocket_live"]["hud_received_all_verdicts"])
+            self.assertEqual(arts["e2e_websocket_live"]["verdict_accuracy"], 1.0)
+
+            self.assertEqual(arts["hud_latency_bandwidth"]["ingest_frame_p50_ms"], 1.5)
+            self.assertEqual(arts["hud_latency_bandwidth"]["hud_replay_p50_ms"], 1.95)
+            self.assertEqual(arts["hud_latency_bandwidth"]["ring_max_observed_len"], 8)
+            self.assertEqual(arts["hud_latency_bandwidth"]["hud_verdict_wire_bytes"], 402)
+
+            self.assertEqual(arts["tts_multilingual_audio"]["n_utterances"], 2)
+            self.assertEqual(arts["tts_multilingual_audio"]["valid_wav_count"], 2)
+            self.assertEqual(arts["tts_multilingual_audio"]["languages_tested"], ["en", "fi"])
+            self.assertEqual(arts["tts_multilingual_audio"]["sample_rate_hz"], 24000)
+
+    def test_python_sources_contain_zero_hash_comments_and_zero_em_dashes(self) -> None:
+        for rel in ("eval/compile_eval_report.py", "eval/test_compile_eval_report.py"):
+            src_text = (REPO_ROOT / rel).read_text(encoding="utf-8")
+            self.assertNotIn(EM_DASH, src_text, rel)
+            for idx, ln in enumerate(src_text.splitlines(), start=1):
+                self.assertFalse(ln.strip().startswith(HASH_CHAR), f"{rel}:{idx}")
+                self.assertNotIn(HASH_CHAR, ln, f"{rel}:{idx}")
 
 
 if __name__ == "__main__":

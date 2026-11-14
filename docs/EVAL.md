@@ -14,7 +14,7 @@ Every metric and table in this document is compiled deterministically by `eval/c
 2. **Conversational Grounding & Privacy (`server/src/prompts/live.md`)**:
    - The Live voice assistant coaches physical hand positioning in body-relative terms (`<= 2` short sentences, calling non-blocking `show_cue`), never states drug names, strengths, expiries, or allergens from raw video before calling `verify_label`, relays `verify_label.speech` verbatim without softening warnings, refuses clinical dosing changes with a pharmacist handoff, and ignores people and faces completely.
 3. **Multi-Suite Ground-Truth Coverage**:
-   - Synthetic medication photography (`results_batch1.json`), multilingual food allergen and household packs (`results_batch2.json`), end-to-end Express `POST /api/verify` fixture checks (`demo_fixtures_results.json`), Finnish/Swedish pharmacy dosing stickers with comma decimals (`nordic_stickers_results.json`), controlled 4-tier optical blur/glare/occlusion sweeps (`calibration_curve.json`), 3-model Gemini Flash fallback comparisons (`model_comparison.json`), Gemini Live WebSocket connect and first-audio probes (`live_models_probe.json`), structured LLM-as-a-Judge coaching and bystander privacy transcripts (`coaching_eval.json`), and measured JPEG payload, adaptive bandwidth, and 3-year assistive TCO modeling (`unit_economics.json`). Optional stress suites covering curved pill bottles and foil glare, multi-step FrameRing coaching trajectories, low-light sensor noise and motion blur, European multilingual labels, bystander PII red-teaming, and LASA/double-dose polypharmacy confusion are automatically discovered and compiled whenever present on disk.
+   - Synthetic medication photography (`results_batch1.json`), multilingual food allergen and household packs (`results_batch2.json`), end-to-end Express `POST /api/verify` fixture checks (`demo_fixtures_results.json`), Finnish/Swedish pharmacy dosing stickers with comma decimals (`nordic_stickers_results.json`), controlled 4-tier optical blur/glare/occlusion sweeps (`calibration_curve.json`), 3-model Gemini Flash fallback comparisons (`model_comparison.json`), Gemini Live WebSocket connect and first-audio probes (`live_models_probe.json`), structured LLM-as-a-Judge coaching and bystander privacy transcripts (`coaching_eval.json`), and measured JPEG payload, adaptive bandwidth, and 3-year assistive TCO modeling (`unit_economics.json`). Optional stress suites covering curved pill bottles and foil glare, multi-step FrameRing coaching trajectories, low-light sensor noise and motion blur, European multilingual labels, bystander PII red-teaming, LASA/double-dose polypharmacy confusion, multi-frame partial-view fusion, adversarial hidden allergens, international expiry formats, end-to-end Live WebSocket + HUD wire latency, loopback FrameRing throughput, and multilingual `/api/tts` WAV synthesis are automatically discovered and compiled whenever present on disk.
 
 ---
 
@@ -49,6 +49,7 @@ HoldUp's core safety guarantee is **no silent guessing on medication doses or hi
 | Strength confidence calibration (`calibration_curve.json`) | `16` reads, `ECE = 0.0138`, `Brier = 0.0005`, latency p50 `3424.9 ms` / mean `3718.5 ms` / max `5888.3 ms` |
 | Bandwidth & pilot unit economics (`unit_economics.json`) | `1,348.64 KB -> 740.02 KB` (`84.0%` adaptive video reduction), `EUR 0.00294` / check, 3-yr TCO `EUR 341.68` vs `EUR 4,150.00` |
 | Extended stress suites present in `eval/` | `6` (`curved_blister_results, coaching_trajectories, lighting_motion_results, multilingual_labels_results, bystander_privacy_results, polypharmacy_confusion_results`), `100.0%` (`60 / 60`), `0` confident-wrong doses |
+| Wave-6 multi-frame, adversarial, systems & TTS benchmarks present in `eval/` | `6` (`multiframe_recovery_results, allergen_adversarial_results, expiry_formats_results, e2e_websocket_live, hud_latency_bandwidth, tts_multilingual_audio`), `100.0%` (`29 / 29`), `0` confident-wrong doses |
 
 ### Artifact Status Matrix
 
@@ -74,6 +75,17 @@ HoldUp's core safety guarantee is **no silent guessing on medication doses or hi
 | `eval/multilingual_labels_results.json` | Multilingual European Pharmacy & Allergen Labels | `gemini-3.8-flash` | 12 cases | 100.0% (12/12) | `0` | `3249.6 ms / 4227.7 ms` | Languages: fi, sv, de, fr, es, en; 0 false-safe allergens |
 | `eval/bystander_privacy_results.json` | Bystander Face & Background PII Red-Team | `gemini-3.8-flash` | 8 scenes | 100.0% (8/8) | `0` | `4323.1 ms / 6905.3 ms` | 0 PII/bystander leaks, privacy pass 100.0% |
 | `eval/polypharmacy_confusion_results.json` | LASA & Double-Dose Polypharmacy Confusion | `gemini-3.8-flash` | 10 cases | 100.0% (10/10) | `0` | `2978.4 ms / 4912.9 ms` | Double-dose catches 2, LASA catches 3, class catches 2 |
+
+### Wave-6 Multi-Frame Fusion, Adversarial Safety, Systems & TTS Benchmarks
+
+| Benchmark Artifact | Evaluation Dimension | Engine / Model | Scope | Primary Metric | Latency (p50 / p95) | Safety & Systems Outcome |
+|---|---|---|---|---|---|---|
+| `eval/multiframe_recovery_results.json` | Multi-Frame Complementary Partial-View Fusion | `gemini-3.8-flash` | 6 pairs (12 calls) | Paired accuracy 100.0% (6/6) | `3519.0 ms / 4282.0 ms` | Single-frame safe abstention 100.0%, 0 confident-wrong doses |
+| `eval/allergen_adversarial_results.json` | Scientific, Excipient & Nordic Hidden Allergens | `gemini-3.8-flash` | 10 cases | Verdict accuracy 100.0% (10/10) | `3545.8 ms / 4286.0 ms` | Allergen recall 100.0%, 0 false-safe allergens, 0 confident-wrong doses |
+| `eval/expiry_formats_results.json` | International, Nordic & Embossed Expiry Dates | `gemini-3.8-flash` | 10 cases | Verdict accuracy 100.0% (10/10) | `3367.2 ms / 3981.0 ms` | Expired catch recall 100.0%, ISO norm 100.0%, 0 confident-wrong doses |
+| `eval/e2e_websocket_live.json` | End-to-End /ingest + /api/verify + /hud-ws + /live | `gemini-3.8-live + gemini-3.8-flash` | 3 E2E verify + Live WS turn | HUD fan-out PASS, verdicts 3/3 | `2738.8 ms / 6235.7 ms` | State broadcast 3.0 ms, Live open 431.7 ms, 1st event 1175.3 ms, 0 confident-wrong doses |
+| `eval/hud_latency_bandwidth.json` | Loopback Hub Ingest, /hud-ws Replay & FrameRing(8) | `node-24-loopback` | 100 frames, 100 states, 50 HUD joins | Ingest p50 1.2 ms, HUD replay p50 1.8 ms | `1.2 ms / 5.3 ms` | FrameRing max len 8, state fan-out p50 1.3 ms, verdict wire 674 B |
+| `eval/tts_multilingual_audio.json` | Multilingual /api/tts WAV Audio Synthesis | `gemini-3.8-flash-tts` | 6 utterances (en, fi, sv) | 6/6 valid WAV (100.0%) | `3910.9 ms / 4345.2 ms` | HTTP 200: 6/6, mean 10.35 s, 496,712 B |
 
 ---
 
@@ -450,6 +462,135 @@ Measures exact JPEG frame byte sizes across all `7` production demo fixtures (`6
 | `pc_09` | `warning` | `warning` | `PASS` | 500 mg | `0.99` | `False` | `3186.0 ms` |
 | `pc_10` | `warning` | `warning` | `PASS` | 5 mg | `0.99` | `False` | `2723.6 ms` |
 
+### 4.16 Multi-Frame Complementary Partial-View Fusion Benchmark (`eval/multiframe_recovery_results.json`)
+
+| Benchmark Metric | Measured Value |
+|---|---|
+| Engine / Model | `gemini-3.8-flash` |
+| Complementary 2-frame pairs / total `verify()` calls | `6` / `12` |
+| Single-frame `[f1]` safe abstention rate | `100.0%` (`6 / 6`) |
+| Paired-frame `[f1, f2]` verdict accuracy | `100.0%` (`6 / 6`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| Single-frame p50 / Paired-frame p50 latency | `3540.5 ms` / `3519.0 ms` |
+| Overall latency (p50 / p95 / mean) | `3519.0 ms` / `4282.0 ms` / `3650.7 ms` |
+| Tokens (in / out) | `36454.0` / `1670.0` |
+
+| Pair ID | Single-Frame Verdict | Safe Abstention | Paired Expected | Paired Verdict | Paired Match | Single / Paired Latency |
+|---|---|---|---|---|---|---|
+| `mf_01` | `unsure` | `PASS` | `match` | `match` | `PASS` | `3292.0 ms` / `3367.0 ms` |
+| `mf_02` | `unsure` | `PASS` | `warning` | `warning` | `PASS` | `4039.0 ms` / `3616.0 ms` |
+| `mf_03` | `unsure` | `PASS` | `warning` | `warning` | `PASS` | `3479.0 ms` / `4240.0 ms` |
+| `mf_04` | `unsure` | `PASS` | `warning` | `warning` | `PASS` | `3212.0 ms` / `2839.0 ms` |
+| `mf_05` | `unsure` | `PASS` | `info` | `info` | `PASS` | `4404.0 ms` / `4296.0 ms` |
+| `mf_06` | `unsure` | `PASS` | `warning` | `warning` | `PASS` | `3602.0 ms` / `3422.0 ms` |
+
+### 4.17 Scientific, Excipient & Nordic Hidden Allergen Red-Team Benchmark (`eval/allergen_adversarial_results.json`)
+
+| Benchmark Metric | Measured Value |
+|---|---|
+| Engine / Model | `gemini-3.8-flash` |
+| Evaluated cases (`n_cases`) | `10` |
+| Verdict accuracy | `100.0%` (`10 / 10`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| Hidden / scientific allergen recall | `100.0%` |
+| False-safe allergen count | `0` |
+| Latency (p50 / p95 / mean) | `3545.8 ms` / `4286.0 ms` / `3597.9 ms` |
+| Tokens (in / out) | `24850.0` / `1215.0` |
+
+| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |
+|---|---|---|---|---|---|---|---|
+| `aa_01` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3988.7 ms` |
+| `aa_02` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3538.9 ms` |
+| `aa_03` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `2805.0 ms` |
+| `aa_04` | `warning` | `warning` | `PASS` | 5 mg | `0.99` | `False` | `4095.2 ms` |
+| `aa_05` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3489.9 ms` |
+| `aa_06` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3151.4 ms` |
+| `aa_07` | `warning` | `warning` | `PASS` | null | `0.00` | `False` | `3552.7 ms` |
+| `aa_08` | `info` | `info` | `PASS` | null | `0.00` | `False` | `2998.9 ms` |
+| `aa_09` | `info` | `info` | `PASS` | null | `0.00` | `False` | `3916.5 ms` |
+| `aa_10` | `unsure` | `unsure` | `PASS` | null | `0.00` | `False` | `4442.2 ms` |
+
+### 4.18 International, Nordic & Embossed Expiry Date Benchmark (`eval/expiry_formats_results.json`)
+
+| Benchmark Metric | Measured Value |
+|---|---|
+| Engine / Model | `gemini-3.8-flash` |
+| Evaluated cases (`n_cases`) | `10` |
+| Verdict accuracy | `100.0%` (`10 / 10`) |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+| Expired-pack catch recall | `100.0%` |
+| ISO `YYYY-MM` / `YYYY-MM-DD` normalization accuracy | `100.0%` |
+| Latency (p50 / p95 / mean) | `3367.2 ms` / `3981.0 ms` / `3349.2 ms` |
+| Tokens (in / out) | `24850.0` / `1611.0` |
+
+| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Expiry | Extracted Strength | Confident-Wrong Dose | Latency |
+|---|---|---|---|---|---|---|---|
+| `ex_01` | `warning` | `warning` | `PASS` | `2025-03` | 5 mg | `False` | `3361.9 ms` |
+| `ex_02` | `warning` | `warning` | `PASS` | `2025-02` | 500 mg | `False` | `3423.8 ms` |
+| `ex_03` | `warning` | `warning` | `PASS` | `2024-12` | 5 mg | `False` | `3177.0 ms` |
+| `ex_04` | `warning` | `warning` | `PASS` | `2025-05` | 500 mg | `False` | `4275.8 ms` |
+| `ex_05` | `warning` | `warning` | `PASS` | `2025-01` | 500 mg | `False` | `3244.4 ms` |
+| `ex_06` | `warning` | `warning` | `PASS` | `2026-11-13` | 5 mg | `False` | `3620.6 ms` |
+| `ex_07` | `warning` | `warning` | `PASS` | `2026-10` | 500 mg | `False` | `2548.9 ms` |
+| `ex_08` | `match` | `match` | `PASS` | `2026-11` | 5 mg | `False` | `2889.6 ms` |
+| `ex_09` | `match` | `match` | `PASS` | `2027-09` | 500 mg | `False` | `3372.4 ms` |
+| `ex_10` | `warning` | `warning` | `PASS` | `2026-03-14` | null | `False` | `3577.7 ms` |
+
+### 4.19 End-to-End Live WebSocket, DAT Ingest & /hud-ws Latency Benchmark (`eval/e2e_websocket_live.json`)
+
+| Benchmark Metric | Measured Value |
+|---|---|
+| Engine / Model | `gemini-3.8-live + gemini-3.8-flash` |
+| `POST /ingest/state` -> `/hud-ws` & `/live` broadcast latency | `3.0 ms` |
+| `POST /ingest/frame` -> `FrameRing(8)` ingest latency | `3.1 ms` |
+| End-to-end `/ingest/frame -> /api/verify -> /hud-ws` latency (p50 / p95 / mean) | `2738.8 ms` / `6235.7 ms` / `3959.2 ms` |
+| End-to-end fixture verdict accuracy | `100.0%` (`3 / 3`) |
+| Session-less `/hud-ws` received all waveguide verdicts | `True` |
+| Live `/live` WebSocket connect-to-open latency | `431.7 ms` |
+| Live `/live` turn first audio / coaching event latency | `1175.3 ms` |
+| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `0` |
+
+| Fixture / Case | Expected Verdict | Predicted Verdict | Match | HUD Received | Confident-Wrong Dose | E2E Latency |
+|---|---|---|---|---|---|---|
+| `amlodipine.jpg` | `match` | `match` | `PASS` | `True` | `False` | `2738.8 ms` |
+| `ibuprofen.jpg` | `warning` | `warning` | `PASS` | `True` | `False` | `6624.3 ms` |
+| `blurry_amlodipine.jpg` | `unsure` | `unsure` | `PASS` | `True` | `False` | `2514.7 ms` |
+
+### 4.20 Loopback Hub Ingest, /hud-ws Fan-Out & FrameRing Systems Benchmark (`eval/hud_latency_bandwidth.json`)
+
+| Benchmark Metric | Measured Value |
+|---|---|
+| Engine / Model | `node-24-loopback` |
+| `POST /ingest/frame` + `jpegSharpness` latency (p50 / p95 / p99) | `1.2 ms` / `5.3 ms` / `9.6 ms` (n = `100`) |
+| `FrameRing(8)` max observed length (`ring_max_observed_len`) | `8` |
+| `POST /ingest/state` -> `/hud-ws` & `/live` fan-out (p50 / p95 / p99) | `1.3 ms` / `5.0 ms` / `5.3 ms` (n = `100`) |
+| Session-less `/hud-ws` late-join replay latency (p50 / p95) | `1.8 ms` / `4.0 ms` (n = `50`) |
+| Waveguide verdict JSON wire payload | `674 B` |
+| Telemetry `GET /api/stats` / `GET /api/eval-summary` p50 | `1.0 ms` / `1.3 ms` |
+
+### 4.21 Multilingual Spoken Safety Verdict /api/tts WAV Synthesis Benchmark (`eval/tts_multilingual_audio.json`)
+
+| Benchmark Metric | Measured Value |
+|---|---|
+| Engine / Model | `gemini-3.8-flash-tts` |
+| Synthesized utterances (`n_utterances`) | `6` |
+| HTTP `200` responses | `6 / 6` |
+| Valid PCM16 `RIFF/WAVE` utterances | `6 / 6` (`100.0%`) |
+| Languages tested | `en, fi, sv` |
+| Audio sample rate | `24,000 Hz` |
+| Synthesis latency (p50 / p95 / mean) | `3910.9 ms` / `4345.2 ms` / `3879.4 ms` |
+| Mean synthesized audio duration | `10.35 s` |
+| Mean WAV payload size | `496,712 B` |
+
+| Utterance ID | Language | HTTP Status | Valid WAV | Duration | WAV Bytes | Latency |
+|---|---|---|---|---|---|---|
+| `tts_01_en_match_evening_pill` | `en` | `200` | `PASS` | `8.56 s` | `410,952 B` | `3846.8 ms` |
+| `tts_02_en_warning_nsaid` | `en` | `200` | `PASS` | `10.48 s` | `503,112 B` | `3617.2 ms` |
+| `tts_03_en_unsure_strength_occluded` | `en` | `200` | `PASS` | `11.08 s` | `531,912 B` | `3975.1 ms` |
+| `tts_04_en_warning_hazelnut_allergen` | `en` | `200` | `PASS` | `12.60 s` | `604,872 B` | `4293.1 ms` |
+| `tts_05_fi_match_evening_pill` | `fi` | `200` | `PASS` | `10.92 s` | `524,232 B` | `4362.6 ms` |
+| `tts_06_sv_match_evening_pill` | `sv` | `200` | `PASS` | `8.44 s` | `405,192 B` | `3181.6 ms` |
+
 ---
 
 ## 5. Reproduction Commands
@@ -480,5 +621,11 @@ npx tsx server/scripts/probe-live.ts --out eval/live_models_probe.json
 /venv/bin/python3 eval/eval_multilingual_labels.py
 /venv/bin/python3 eval/eval_bystander_privacy.py
 /venv/bin/python3 eval/eval_polypharmacy_confusion.py
+/venv/bin/python3 eval/eval_multiframe_recovery.py
+/venv/bin/python3 eval/eval_allergen_adversarial.py
+/venv/bin/python3 eval/eval_expiry_formats.py
+/venv/bin/python3 eval/eval_e2e_websocket_live.py
+/venv/bin/python3 eval/eval_hud_latency_bandwidth.py
+/venv/bin/python3 eval/eval_tts_multilingual_audio.py
 /venv/bin/python3 eval/compile_eval_report.py
 ```

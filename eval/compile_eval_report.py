@@ -161,11 +161,71 @@ EXTENDED_ARTIFACT_SPECS = [
 
 EXTENDED_SUITE_IDS = [spec["id"] for spec in EXTENDED_ARTIFACT_SPECS]
 
+WAVE6_ARTIFACT_SPECS = [
+    {
+        "id": "multiframe_recovery_results",
+        "filename": "multiframe_recovery_results.json",
+        "title": "Multi-Frame Complementary Partial-View Fusion Benchmark",
+        "dimension": "Multi-Frame Complementary Partial-View Fusion",
+        "category": "multiframe_fusion",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_multiframe_recovery.py",
+    },
+    {
+        "id": "allergen_adversarial_results",
+        "filename": "allergen_adversarial_results.json",
+        "title": "Scientific, Excipient & Nordic Hidden Allergen Red-Team Benchmark",
+        "dimension": "Scientific, Excipient & Nordic Hidden Allergens",
+        "category": "allergen_redteam",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_allergen_adversarial.py",
+    },
+    {
+        "id": "expiry_formats_results",
+        "filename": "expiry_formats_results.json",
+        "title": "International, Nordic & Embossed Expiry Date Benchmark",
+        "dimension": "International, Nordic & Embossed Expiry Dates",
+        "category": "expiry_stress",
+        "primary_model": "gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_expiry_formats.py",
+    },
+    {
+        "id": "e2e_websocket_live",
+        "filename": "e2e_websocket_live.json",
+        "title": "End-to-End Live WebSocket, DAT Ingest & /hud-ws Latency Benchmark",
+        "dimension": "End-to-End /ingest + /api/verify + /hud-ws + /live",
+        "category": "e2e_systems",
+        "primary_model": "gemini-3.8-live + gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/eval_e2e_websocket_live.py",
+    },
+    {
+        "id": "hud_latency_bandwidth",
+        "filename": "hud_latency_bandwidth.json",
+        "title": "Loopback Hub Ingest, /hud-ws Fan-Out & FrameRing Systems Benchmark",
+        "dimension": "Loopback Hub Ingest, /hud-ws Replay & FrameRing(8)",
+        "category": "loopback_systems",
+        "primary_model": "node-24-loopback",
+        "repro_cmd": "/venv/bin/python3 eval/eval_hud_latency_bandwidth.py",
+    },
+    {
+        "id": "tts_multilingual_audio",
+        "filename": "tts_multilingual_audio.json",
+        "title": "Multilingual Spoken Safety Verdict /api/tts WAV Synthesis Benchmark",
+        "dimension": "Multilingual /api/tts WAV Audio Synthesis",
+        "category": "tts_audio",
+        "primary_model": "gemini-tts (/api/tts)",
+        "repro_cmd": "/venv/bin/python3 eval/eval_tts_multilingual_audio.py",
+    },
+]
+
+WAVE6_SUITE_IDS = [spec["id"] for spec in WAVE6_ARTIFACT_SPECS]
+OPTIONAL_SUITE_IDS = [*EXTENDED_SUITE_IDS, *WAVE6_SUITE_IDS]
+
 
 def clean_text(val: Any) -> str:
     if val is None:
         return ""
-    s = str(val).replace("\u2014", " - ").replace("\u2013", "-")
+    s = str(val).replace(chr(0x2014), " - ").replace(chr(0x2013), "-")
     return " ".join(s.split())
 
 
@@ -218,10 +278,40 @@ def percentile(vals: list[float], q: float) -> float | None:
 
 
 def extract_items(data: dict[str, Any]) -> list[dict[str, Any]]:
-    for key in ("items", "fixtures", "cases", "results", "scenarios", "trajectories"):
+    for key in (
+        "items",
+        "pairs",
+        "utterances",
+        "ingest_frame_verify_hud_trials",
+        "verify_trials",
+        "fixtures",
+        "cases",
+        "results",
+        "scenarios",
+        "trajectories",
+        "verify_checks",
+        "verify_results",
+        "checks",
+    ):
         val = data.get(key)
         if isinstance(val, list) and all(isinstance(x, dict) for x in val):
             return val
+    summary = data.get("summary")
+    if isinstance(summary, dict):
+        for key in (
+            "items",
+            "pairs",
+            "utterances",
+            "ingest_frame_verify_hud_trials",
+            "verify_trials",
+            "fixtures",
+            "verify_checks",
+            "verify_results",
+            "checks",
+        ):
+            val = summary.get(key)
+            if isinstance(val, list) and all(isinstance(x, dict) for x in val):
+                return val
     return []
 
 
@@ -1122,6 +1212,820 @@ def normalize_extended_suite(suite_id: str, data: dict[str, Any]) -> dict[str, A
     return base
 
 
+def _first_dict(containers: list[dict[str, Any]], keys: list[str]) -> dict[str, Any]:
+    for c in containers:
+        for k in keys:
+            val = c.get(k)
+            if isinstance(val, dict):
+                return val
+    return {}
+
+
+def normalize_multiframe_recovery(data: dict[str, Any]) -> dict[str, Any]:
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    pairs_raw = extract_items(data)
+
+    n_pairs = to_int(first_val(summary, ["n_pairs", "total_pairs"]))
+    if n_pairs is None:
+        n_pairs = len(pairs_raw) if pairs_raw else (to_int(first_val(summary, ["n_items", "n_cases", "total", "count"])) or 0)
+
+    total_calls = to_int(first_val(summary, ["total_calls", "total_verify_calls", "n_verify_calls", "verify_calls", "n_calls"]))
+    if total_calls is None:
+        total_calls = n_pairs * 2 if n_pairs > 0 else 0
+
+    single_bools: list[bool] = []
+    paired_bools: list[bool] = []
+    single_lats: list[float] = []
+    paired_lats: list[float] = []
+    item_cwds: list[bool] = []
+    rows: list[dict[str, Any]] = []
+
+    for idx, it in enumerate(pairs_raw, start=1):
+        pair_id = clean_text(first_val(it, ["id", "pair_id", "case_id", "name"]) or f"mf_{idx:02d}")
+        single_obj = next(
+            (it[k] for k in ("single", "single_frame", "frame1_only", "frame_1", "stage_1", "step_1", "before") if isinstance(it.get(k), dict)),
+            {},
+        )
+        paired_obj = next(
+            (it[k] for k in ("paired", "paired_frames", "multi_frame", "two_frame", "frames_1_2", "stage_2", "step_2", "after") if isinstance(it.get(k), dict)),
+            {},
+        )
+
+        s_level = item_verdict_level(single_obj) or first_val(
+            it, ["single_level", "predicted_single_level", "single_predicted_level", "single_verdict", "frame1_level"]
+        )
+        s_abstained: bool | None = None
+        for b_key in ("abstained", "safe_abstention", "safe_abstained", "verdict_match"):
+            if isinstance(single_obj.get(b_key), bool):
+                s_abstained = single_obj[b_key]
+                break
+        if s_abstained is None:
+            for b_key in ("single_abstained", "single_safe_abstained", "single_safe_abstention", "single_safe"):
+                if isinstance(it.get(b_key), bool):
+                    s_abstained = it[b_key]
+                    break
+        if s_abstained is None and isinstance(s_level, str):
+            s_abstained = s_level == "unsure"
+        if s_abstained is not None:
+            single_bools.append(s_abstained)
+
+        p_exp = item_expected_level(paired_obj) or first_val(
+            it, ["paired_expected_level", "expected_paired_level", "expected_level", "target_level"]
+        )
+        p_level = item_verdict_level(paired_obj) or first_val(
+            it, ["paired_level", "predicted_paired_level", "paired_predicted_level", "predicted_level", "multi_frame_level"]
+        )
+        p_match = item_is_verdict_match(paired_obj)
+        if p_match is None:
+            for b_key in ("paired_match", "paired_verdict_match", "verdict_match"):
+                if isinstance(it.get(b_key), bool):
+                    p_match = it[b_key]
+                    break
+        if p_match is None and isinstance(p_level, str) and isinstance(p_exp, str):
+            p_match = p_level == p_exp
+        if p_match is not None:
+            paired_bools.append(p_match)
+
+        s_lat = to_num(first_val(single_obj, ["latency_ms", "latencyMs", "elapsed_ms", "ms"]))
+        if s_lat is None:
+            s_lat = to_num(first_val(it, ["single_latency_ms", "single_frame_latency_ms", "frame1_latency_ms"]))
+        p_lat = to_num(first_val(paired_obj, ["latency_ms", "latencyMs", "elapsed_ms", "ms"]))
+        if p_lat is None:
+            p_lat = to_num(first_val(it, ["paired_latency_ms", "paired_frame_latency_ms", "multi_frame_latency_ms", "latency_ms"]))
+        if s_lat is not None:
+            single_lats.append(s_lat)
+        if p_lat is not None:
+            paired_lats.append(p_lat)
+
+        cwd_flag = (
+            bool(it.get("confident_wrong_dose", False))
+            or bool(single_obj.get("confident_wrong_dose", False))
+            or bool(paired_obj.get("confident_wrong_dose", False))
+        )
+        if "confident_wrong_dose" in it or "confident_wrong_dose" in single_obj or "confident_wrong_dose" in paired_obj:
+            item_cwds.append(cwd_flag)
+
+        rows.append(
+            {
+                "id": pair_id,
+                "single_level": clean_text(s_level) if s_level is not None else None,
+                "single_abstained": s_abstained,
+                "single_latency_ms": round(s_lat, 1) if s_lat is not None else None,
+                "paired_expected_level": clean_text(p_exp) if p_exp is not None else None,
+                "paired_level": clean_text(p_level) if p_level is not None else None,
+                "paired_match": p_match,
+                "paired_latency_ms": round(p_lat, 1) if p_lat is not None else None,
+                "confident_wrong_dose": cwd_flag,
+            }
+        )
+
+    single_rate = to_rate(
+        first_val(
+            summary,
+            [
+                "single_frame_safe_abstention_rate",
+                "single_frame_abstention_rate",
+                "single_abstention_rate",
+                "stage_1_abstention_rate",
+            ],
+        )
+    )
+    if single_rate is None and single_bools:
+        single_rate = round(sum(1 for x in single_bools if x) / len(single_bools), 4)
+
+    paired_acc = to_rate(
+        first_val(
+            summary,
+            [
+                "paired_frame_verdict_accuracy",
+                "paired_verdict_accuracy",
+                "multi_frame_verdict_accuracy",
+                "two_frame_verdict_accuracy",
+                "verdict_accuracy",
+            ],
+        )
+    )
+    if paired_acc is None and paired_bools:
+        paired_acc = round(sum(1 for x in paired_bools if x) / len(paired_bools), 4)
+
+    single_abst = to_int(first_val(summary, ["single_frame_abstentions", "single_abstentions", "single_safe_count"]))
+    if single_abst is None and single_rate is not None and n_pairs > 0:
+        single_abst = int(round(single_rate * n_pairs))
+
+    paired_matches = to_int(
+        first_val(
+            summary,
+            [
+                "paired_frame_matches",
+                "paired_frame_verdict_matches",
+                "paired_verdict_matches",
+                "paired_matches",
+                "verdict_matches",
+            ],
+        )
+    )
+    if paired_matches is None and paired_acc is not None and n_pairs > 0:
+        paired_matches = int(round(paired_acc * n_pairs))
+
+    single_lat_p50 = to_num(first_val(summary, ["single_latency_p50_ms", "single_frame_latency_p50_ms", "frame1_latency_p50_ms"]))
+    if single_lat_p50 is None and single_lats:
+        single_lat_p50 = percentile(single_lats, 0.50)
+
+    paired_lat_p50 = to_num(first_val(summary, ["paired_latency_p50_ms", "paired_frame_latency_p50_ms", "multi_frame_latency_p50_ms", "latency_p50_ms"]))
+    if paired_lat_p50 is None and paired_lats:
+        paired_lat_p50 = percentile(paired_lats, 0.50)
+
+    all_lats = [*single_lats, *paired_lats]
+    lat = extract_latency(summary, pairs_raw)
+    if lat["p50"] is None:
+        if paired_lat_p50 is not None:
+            lat["p50"] = round(paired_lat_p50, 1)
+        elif all_lats:
+            lat["p50"] = percentile(all_lats, 0.50)
+        elif single_lat_p50 is not None:
+            lat["p50"] = round(single_lat_p50, 1)
+    if lat["p95"] is None:
+        p95_cand = to_num(first_val(summary, ["paired_latency_p95_ms", "single_latency_p95_ms"]))
+        if p95_cand is not None:
+            lat["p95"] = round(p95_cand, 1)
+        elif all_lats:
+            lat["p95"] = percentile(all_lats, 0.95)
+    if lat["mean"] is None and all_lats:
+        lat["mean"] = round(statistics.mean(all_lats), 1)
+
+    cwd = to_int(first_val(summary, ["confident_wrong_dose_count", "confident_wrong_doses"]))
+    if cwd is None:
+        cwd = sum(1 for x in item_cwds if x) if item_cwds else 0
+
+    verdict_matches = paired_matches
+    n_cases = n_pairs
+    verdict_acc = paired_acc
+
+    model = clean_text(first_val(summary, ["model", "verify_model"]) or data.get("model") or "gemini-3.8-flash")
+    tokens_in = to_num(first_val(summary, ["tokens_in", "mean_tokens_in", "total_tokens_in", "input_tokens"]))
+    tokens_out = to_num(first_val(summary, ["tokens_out", "mean_tokens_out", "total_tokens_out", "output_tokens"]))
+
+    return {
+        "suite_id": "multiframe_recovery_results",
+        "generated_at": clean_text(data.get("generated_at") or data.get("testedAt") or ""),
+        "model": model,
+        "n_pairs": n_pairs,
+        "total_calls": total_calls,
+        "n_cases": n_cases,
+        "verdict_matches": verdict_matches,
+        "verdict_accuracy": verdict_acc,
+        "single_frame_abstentions": single_abst,
+        "single_frame_safe_abstention_rate": single_rate,
+        "paired_frame_matches": paired_matches,
+        "paired_frame_verdict_accuracy": paired_acc,
+        "confident_wrong_dose_count": cwd,
+        "false_safe_allergen_count": None,
+        "single_latency_p50_ms": round(single_lat_p50, 1) if single_lat_p50 is not None else None,
+        "paired_latency_p50_ms": round(paired_lat_p50, 1) if paired_lat_p50 is not None else None,
+        "latency_ms": lat,
+        "tokens_in": round(tokens_in, 1) if tokens_in is not None else None,
+        "tokens_out": round(tokens_out, 1) if tokens_out is not None else None,
+        "pairs": rows,
+    }
+
+
+def normalize_e2e_websocket_live(data: dict[str, Any]) -> dict[str, Any]:
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    containers = [summary, data] if summary is not data else [summary]
+    state_obj = _first_dict(containers, ["ingest_state", "state_broadcast", "device_state", "state_fanout"])
+    verify_obj = _first_dict(containers, ["verify_pipeline", "verify_e2e", "e2e_verify", "verify"])
+    live_obj = _first_dict(containers, ["live_session", "live_ws", "live_turn", "live_websocket", "live"])
+    items = extract_items(data)
+
+    state_ms = to_num(
+        first_val(
+            summary,
+            [
+                "ingest_state_to_hud_ws_p50_ms",
+                "ingest_state_broadcast_ms",
+                "ingest_state_to_hud_ms",
+                "ingest_state_to_ws_ms",
+                "ingest_state_to_live_ws_p50_ms",
+                "state_broadcast_ms",
+                "ingest_state_fanout_ms",
+                "ingest_state_latency_ms",
+                "ingest_state_p50_ms",
+                "ingest_state_http_p50_ms",
+                "device_broadcast_ms",
+            ],
+        )
+    )
+    if state_ms is None:
+        state_ms = to_num(first_val(state_obj, ["hud_ws_ms", "broadcast_ms", "max_ms", "p50_ms", "latency_ms", "elapsed_ms", "ms"]))
+
+    ingest_frame_ms = to_num(
+        first_val(
+            summary,
+            [
+                "ingest_frame_to_ring_p50_ms",
+                "ingest_frame_ms",
+                "ingest_frame_p50_ms",
+                "ingest_frame_latency_ms",
+                "frame_ingest_ms",
+            ],
+        )
+    )
+    if ingest_frame_ms is None:
+        ingest_frame_ms = to_num(first_val(verify_obj, ["ingest_frame_ms", "ingest_frame_p50_ms"]))
+
+    rows: list[dict[str, Any]] = []
+    item_lats: list[float] = []
+    item_matches: list[bool] = []
+    item_hud_rx: list[bool] = []
+    item_cwds: list[bool] = []
+    for idx, it in enumerate(items, start=1):
+        row_id = clean_text(first_val(it, ["fixture", "id", "case_id", "file", "name"]) or f"e2e_{idx:02d}")
+        exp_lvl = item_expected_level(it)
+        pred_lvl = item_verdict_level(it)
+        vm = item_is_verdict_match(it)
+        if vm is not None:
+            item_matches.append(vm)
+        hud_ok = first_val(it, ["hud_received", "hud_received_verdict", "hud_verdict_received", "hud_ok", "received_on_hud"])
+        if isinstance(hud_ok, bool):
+            item_hud_rx.append(hud_ok)
+        lat_v = to_num(
+            first_val(
+                it,
+                [
+                    "e2e_frame_to_hud_verdict_ms",
+                    "e2e_latency_ms",
+                    "e2e_ms",
+                    "ingest_to_hud_ms",
+                    "verify_to_hud_ws_ms",
+                    "verify_to_hud_ms",
+                    "total_ms",
+                    "latency_ms",
+                    "elapsed_ms",
+                    "ms",
+                ],
+            )
+        )
+        if lat_v is not None:
+            item_lats.append(lat_v)
+        cwd_f = bool(it.get("confident_wrong_dose", False))
+        if "confident_wrong_dose" in it:
+            item_cwds.append(cwd_f)
+        rows.append(
+            {
+                "id": row_id,
+                "expected_level": exp_lvl,
+                "predicted_level": pred_lvl,
+                "verdict_match": vm,
+                "hud_received": hud_ok if isinstance(hud_ok, bool) else None,
+                "confident_wrong_dose": cwd_f,
+                "latency_ms": round(lat_v, 1) if lat_v is not None else None,
+            }
+        )
+
+    v_p50 = to_num(
+        first_val(
+            summary,
+            [
+                "e2e_frame_to_hud_verdict_p50_ms",
+                "e2e_verify_to_hud_p50_ms",
+                "ingest_to_verify_to_hud_p50_ms",
+                "ingest_frame_to_hud_p50_ms",
+                "verify_to_hud_ws_p50_ms",
+                "verify_to_hud_p50_ms",
+                "verify_e2e_p50_ms",
+                "verify_latency_p50_ms",
+                "e2e_p50_ms",
+                "latency_p50_ms",
+                "p50_ms",
+            ],
+        )
+    )
+    if v_p50 is None:
+        v_p50 = to_num(first_val(verify_obj, ["p50_ms", "p50", "median_ms", "latency_p50_ms"]))
+    if v_p50 is None and item_lats:
+        v_p50 = percentile(item_lats, 0.50)
+
+    v_p95 = to_num(
+        first_val(
+            summary,
+            [
+                "e2e_frame_to_hud_verdict_p95_ms",
+                "e2e_verify_to_hud_p95_ms",
+                "ingest_to_verify_to_hud_p95_ms",
+                "verify_to_hud_ws_p95_ms",
+                "verify_to_hud_p95_ms",
+                "verify_e2e_p95_ms",
+                "verify_latency_p95_ms",
+                "e2e_p95_ms",
+                "latency_p95_ms",
+                "p95_ms",
+                "e2e_verify_to_hud_max_ms",
+                "verify_to_hud_max_ms",
+            ],
+        )
+    )
+    if v_p95 is None:
+        v_p95 = to_num(first_val(verify_obj, ["p95_ms", "p95", "max_ms", "max"]))
+    if v_p95 is None and item_lats:
+        v_p95 = percentile(item_lats, 0.95)
+
+    v_mean = to_num(
+        first_val(
+            summary,
+            [
+                "e2e_frame_to_hud_verdict_mean_ms",
+                "e2e_verify_to_hud_mean_ms",
+                "verify_to_hud_ws_mean_ms",
+                "verify_to_hud_mean_ms",
+                "latency_mean_ms",
+                "mean_ms",
+            ],
+        )
+    )
+    if v_mean is None:
+        v_mean = to_num(first_val(verify_obj, ["mean_ms", "mean"]))
+    if v_mean is None and item_lats:
+        v_mean = round(statistics.mean(item_lats), 1)
+
+    n_checks = to_int(
+        first_val(
+            summary,
+            ["n_verify_checks", "n_verify_trials", "n_fixtures", "verify_count", "n_verify", "n_items", "total_fixtures"],
+        )
+    )
+    if n_checks is None:
+        n_checks = len(rows)
+
+    v_matches = to_int(
+        first_val(summary, ["verdict_matches", "verify_verdict_matches", "verify_matches", "verdict_correct", "fixtures_passed"])
+    )
+    if v_matches is None and item_matches and len(item_matches) == n_checks and n_checks > 0:
+        v_matches = sum(1 for x in item_matches if x)
+    v_acc = to_rate(first_val(summary, ["verdict_accuracy", "verify_verdict_accuracy", "verify_accuracy"]))
+    if v_acc is None and v_matches is not None and n_checks > 0:
+        v_acc = round(v_matches / n_checks, 4)
+    if v_matches is None and v_acc is not None and n_checks > 0:
+        v_matches = int(round(v_acc * n_checks))
+
+    hud_all = first_val(summary, ["hud_received_all_verdicts", "hud_received_all_3", "hud_all_verdicts_received", "hud_fanout_ok"])
+    if not isinstance(hud_all, bool):
+        hud_all = first_val(data, ["hud_received_all_verdicts", "hud_received_all_3"])
+    if not isinstance(hud_all, bool):
+        hud_all = all(item_hud_rx) if item_hud_rx else None
+
+    live_open_ms = to_num(
+        first_val(
+            summary,
+            [
+                "live_startup_to_status_open_ms",
+                "live_ws_open_ms",
+                "live_open_ms",
+                "live_ws_connect_ms",
+                "live_connect_ms",
+                "live_status_open_ms",
+                "live_startup_to_ready_ms",
+                "ws_open_ms",
+                "connect_to_open_ms",
+            ],
+        )
+    )
+    if live_open_ms is None:
+        live_open_ms = to_num(first_val(live_obj, ["open_ms", "connect_ms", "status_open_ms", "ws_open_ms", "connect_to_open_ms"]))
+
+    live_first_ms = to_num(
+        first_val(
+            summary,
+            [
+                "live_turn_first_event_ms",
+                "live_turn_first_audio_chunk_ms",
+                "live_turn_first_coach_event_ms",
+                "live_first_audio_or_coaching_ms",
+                "live_first_event_ms",
+                "live_first_audio_ms",
+                "live_turn_first_chunk_ms",
+                "live_first_chunk_ms",
+                "first_audio_or_coaching_ms",
+                "first_audio_ms",
+                "first_event_ms",
+            ],
+        )
+    )
+    if live_first_ms is None:
+        live_first_ms = to_num(
+            first_val(
+                live_obj,
+                [
+                    "first_audio_or_coaching_ms",
+                    "first_event_ms",
+                    "first_audio_ms",
+                    "first_chunk_ms",
+                    "first_response_ms",
+                    "turn_first_event_ms",
+                ],
+            )
+        )
+
+    cwd = to_int(first_val(summary, ["confident_wrong_dose_count", "confident_wrong_doses"]))
+    if cwd is None:
+        cwd = to_int(first_val(data, ["confident_wrong_dose_count", "confident_wrong_doses"]))
+    if cwd is None:
+        cwd = sum(1 for x in item_cwds if x) if item_cwds else 0
+
+    live_m = first_val(summary, ["live_model"]) or first_val(live_obj, ["model", "live_model"])
+    ver_m = first_val(summary, ["verify_model"]) or first_val(verify_obj, ["model", "verify_model"])
+    if live_m and ver_m:
+        model_str = f"{clean_text(live_m)} + {clean_text(ver_m)}"
+    else:
+        model_str = clean_text(first_val(summary, ["model"]) or data.get("model") or "gemini-3.8-live + gemini-3.8-flash")
+
+    return {
+        "suite_id": "e2e_websocket_live",
+        "generated_at": clean_text(data.get("generated_at") or data.get("testedAt") or ""),
+        "model": model_str,
+        "n_cases": n_checks,
+        "n_verify_checks": n_checks,
+        "verdict_matches": v_matches,
+        "verdict_accuracy": v_acc,
+        "hud_received_all_verdicts": hud_all,
+        "state_broadcast_ms": round(state_ms, 2) if state_ms is not None else None,
+        "ingest_frame_ms": round(ingest_frame_ms, 2) if ingest_frame_ms is not None else None,
+        "verify_to_hud_p50_ms": round(v_p50, 1) if v_p50 is not None else None,
+        "verify_to_hud_p95_ms": round(v_p95, 1) if v_p95 is not None else None,
+        "live_ws_open_ms": round(live_open_ms, 1) if live_open_ms is not None else None,
+        "live_first_event_ms": round(live_first_ms, 1) if live_first_ms is not None else None,
+        "confident_wrong_dose_count": cwd,
+        "false_safe_allergen_count": None,
+        "latency_ms": {
+            "p50": round(v_p50, 1) if v_p50 is not None else None,
+            "p95": round(v_p95, 1) if v_p95 is not None else None,
+            "mean": round(v_mean, 1) if v_mean is not None else None,
+        },
+        "rows": rows,
+    }
+
+
+def normalize_hud_latency_bandwidth(data: dict[str, Any]) -> dict[str, Any]:
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    containers = [summary, data] if summary is not data else [summary]
+
+    ingest_obj = _first_dict(containers, ["ingest_frame", "frame_ingest", "ingest"])
+    state_obj = _first_dict(containers, ["ingest_state", "state_fanout", "state_broadcast"])
+    replay_obj = _first_dict(containers, ["hud_ws_replay", "hud_replay", "hud_late_join", "late_join", "replay"])
+    telem_obj = _first_dict(containers, ["telemetry", "api_telemetry", "stats_and_eval_summary"])
+    wire_obj = _first_dict(containers, ["wire_payload", "payload_bytes", "waveguide_wire", "hud_payload"])
+
+    ing_n = to_int(first_val(summary, ["ingest_frame_count", "ingest_frame_n", "n_ingest_frames", "frame_requests", "ingest_requests"]))
+    if ing_n is None:
+        ing_n = to_int(first_val(ingest_obj, ["count", "n", "requests", "iterations"]))
+
+    ing_p50 = to_num(first_val(summary, ["ingest_frame_p50_ms", "ingest_p50_ms", "frame_ingest_p50_ms"]))
+    if ing_p50 is None:
+        ing_p50 = to_num(first_val(ingest_obj, ["p50_ms", "p50", "median_ms", "median"]))
+    ing_p95 = to_num(first_val(summary, ["ingest_frame_p95_ms", "ingest_p95_ms", "frame_ingest_p95_ms"]))
+    if ing_p95 is None:
+        ing_p95 = to_num(first_val(ingest_obj, ["p95_ms", "p95"]))
+    ing_p99 = to_num(first_val(summary, ["ingest_frame_p99_ms", "ingest_p99_ms", "frame_ingest_p99_ms"]))
+    if ing_p99 is None:
+        ing_p99 = to_num(first_val(ingest_obj, ["p99_ms", "p99", "max_ms", "max"]))
+
+    ring_max = to_int(first_val(summary, ["ring_max_observed_len", "max_ring_len", "frame_ring_max_len", "ring_max_len"]))
+    if ring_max is None:
+        ring_max = to_int(first_val(ingest_obj, ["ring_max_observed_len", "max_ring_len", "ring_len"]))
+
+    st_n = to_int(first_val(summary, ["ingest_state_count", "ingest_state_fanout_n", "state_fanout_count", "n_state_updates", "state_requests"]))
+    if st_n is None:
+        st_n = to_int(first_val(state_obj, ["count", "n", "requests", "iterations"]))
+    st_p50 = to_num(first_val(summary, ["ingest_state_fanout_p50_ms", "state_fanout_p50_ms", "ingest_state_p50_ms", "state_broadcast_p50_ms"]))
+    if st_p50 is None:
+        st_p50 = to_num(first_val(state_obj, ["p50_ms", "p50", "median_ms", "median"]))
+    st_p95 = to_num(first_val(summary, ["ingest_state_fanout_p95_ms", "state_fanout_p95_ms", "ingest_state_p95_ms", "state_broadcast_p95_ms"]))
+    if st_p95 is None:
+        st_p95 = to_num(first_val(state_obj, ["p95_ms", "p95"]))
+    st_p99 = to_num(first_val(summary, ["ingest_state_fanout_p99_ms", "state_fanout_p99_ms", "ingest_state_p99_ms", "state_broadcast_p99_ms"]))
+    if st_p99 is None:
+        st_p99 = to_num(first_val(state_obj, ["p99_ms", "p99", "max_ms", "max"]))
+
+    rep_n = to_int(first_val(summary, ["hud_late_join_count", "hud_late_join_n", "hud_replay_count", "n_hud_joins", "late_join_count", "hud_ws_joins"]))
+    if rep_n is None:
+        rep_n = to_int(first_val(replay_obj, ["count", "n", "joins", "connections", "iterations"]))
+    rep_p50 = to_num(
+        first_val(
+            summary,
+            [
+                "hud_late_join_replay_p50_ms",
+                "hud_replay_p50_ms",
+                "hud_ws_replay_p50_ms",
+                "hud_late_join_p50_ms",
+                "late_join_replay_p50_ms",
+                "hud_connect_replay_p50_ms",
+                "replay_p50_ms",
+            ],
+        )
+    )
+    if rep_p50 is None:
+        rep_p50 = to_num(first_val(replay_obj, ["p50_ms", "p50", "median_ms", "median"]))
+    rep_p95 = to_num(
+        first_val(
+            summary,
+            [
+                "hud_late_join_replay_p95_ms",
+                "hud_replay_p95_ms",
+                "hud_ws_replay_p95_ms",
+                "hud_late_join_p95_ms",
+                "late_join_replay_p95_ms",
+                "hud_connect_replay_p95_ms",
+                "replay_p95_ms",
+            ],
+        )
+    )
+    if rep_p95 is None:
+        rep_p95 = to_num(first_val(replay_obj, ["p95_ms", "p95", "max_ms", "max"]))
+
+    verdict_bytes = to_int(
+        first_val(
+            summary,
+            [
+                "hud_verdict_wire_bytes",
+                "verdict_wire_bytes",
+                "waveguide_verdict_bytes",
+                "hud_verdict_bytes",
+                "verdict_json_bytes",
+                "hud_verdict_json_bytes",
+            ],
+        )
+    )
+    if verdict_bytes is None:
+        verdict_bytes = to_int(
+            first_val(replay_obj, ["verdict_wire_bytes", "hud_verdict_wire_bytes", "verdict_bytes", "verdict_json_bytes"])
+            or first_val(wire_obj, ["verdict_wire_bytes", "hud_verdict_wire_bytes", "verdict_bytes", "bytes"])
+        )
+
+    stats_p50 = to_num(first_val(summary, ["api_stats_p50_ms", "stats_p50_ms"]))
+    if stats_p50 is None:
+        stats_p50 = to_num(first_val(telem_obj, ["stats_p50_ms", "api_stats_p50_ms", "p50_ms", "p50"]))
+    eval_sum_p50 = to_num(first_val(summary, ["api_eval_summary_p50_ms", "eval_summary_p50_ms"]))
+    if eval_sum_p50 is None:
+        eval_sum_p50 = to_num(first_val(telem_obj, ["eval_summary_p50_ms", "api_eval_summary_p50_ms"]))
+
+    model = clean_text(first_val(summary, ["model", "runtime"]) or data.get("model") or "node-24-loopback")
+
+    return {
+        "suite_id": "hud_latency_bandwidth",
+        "generated_at": clean_text(data.get("generated_at") or data.get("testedAt") or ""),
+        "model": model,
+        "n_cases": (ing_n or 0) + (st_n or 0) + (rep_n or 0),
+        "verdict_matches": None,
+        "verdict_accuracy": None,
+        "confident_wrong_dose_count": None,
+        "false_safe_allergen_count": None,
+        "ingest_frame_requests": ing_n,
+        "ingest_frame_p50_ms": round(ing_p50, 2) if ing_p50 is not None else None,
+        "ingest_frame_p95_ms": round(ing_p95, 2) if ing_p95 is not None else None,
+        "ingest_frame_p99_ms": round(ing_p99, 2) if ing_p99 is not None else None,
+        "ring_max_observed_len": ring_max,
+        "state_fanout_requests": st_n,
+        "state_fanout_p50_ms": round(st_p50, 2) if st_p50 is not None else None,
+        "state_fanout_p95_ms": round(st_p95, 2) if st_p95 is not None else None,
+        "state_fanout_p99_ms": round(st_p99, 2) if st_p99 is not None else None,
+        "hud_late_joins": rep_n,
+        "hud_replay_p50_ms": round(rep_p50, 2) if rep_p50 is not None else None,
+        "hud_replay_p95_ms": round(rep_p95, 2) if rep_p95 is not None else None,
+        "hud_verdict_wire_bytes": verdict_bytes,
+        "api_stats_p50_ms": round(stats_p50, 2) if stats_p50 is not None else None,
+        "api_eval_summary_p50_ms": round(eval_sum_p50, 2) if eval_sum_p50 is not None else None,
+        "latency_ms": {
+            "p50": round(ing_p50, 2) if ing_p50 is not None else None,
+            "p95": round(ing_p95, 2) if ing_p95 is not None else None,
+            "mean": None,
+        },
+    }
+
+
+def normalize_tts_multilingual_audio(data: dict[str, Any]) -> dict[str, Any]:
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    items = extract_items(data)
+
+    n_utt = to_int(first_val(summary, ["n_utterances", "total_utterances", "n_items", "count", "total"]))
+    if n_utt is None:
+        n_utt = len(items)
+
+    rows: list[dict[str, Any]] = []
+    http_oks: list[bool] = []
+    wav_oks: list[bool] = []
+    durations: list[float] = []
+    byte_sizes: list[float] = []
+    sample_rates: list[int] = []
+    item_langs: list[str] = []
+
+    for idx, it in enumerate(items, start=1):
+        utt_id = clean_text(first_val(it, ["id", "utterance_id", "case_id", "name"]) or f"tts_{idx:02d}")
+        lang = clean_text(first_val(it, ["lang", "language", "locale"]))
+        if lang and lang not in item_langs:
+            item_langs.append(lang)
+        status_code = to_int(first_val(it, ["http_status", "status_code", "status"]))
+        h_ok = it.get("http_200") if isinstance(it.get("http_200"), bool) else (status_code == 200 if status_code is not None else None)
+        if h_ok is not None:
+            http_oks.append(h_ok)
+        w_ok = first_val(it, ["valid_wav", "wav_valid", "riff_valid", "passed"])
+        if isinstance(w_ok, bool):
+            wav_oks.append(w_ok)
+        dur = to_num(first_val(it, ["duration_s", "audio_duration_s", "seconds"]))
+        if dur is not None:
+            durations.append(dur)
+        b_len = to_int(first_val(it, ["wav_bytes", "byte_length", "bytes", "audio_bytes"]))
+        if b_len is not None:
+            byte_sizes.append(float(b_len))
+        sr = to_int(first_val(it, ["sample_rate_hz", "sample_rate"]))
+        if sr is not None:
+            sample_rates.append(sr)
+        lat_v = to_num(first_val(it, ["latency_ms", "latencyMs", "elapsed_ms", "ms"]))
+        rows.append(
+            {
+                "id": utt_id,
+                "lang": lang or None,
+                "http_status": status_code if status_code is not None else (200 if h_ok else None),
+                "valid_wav": w_ok if isinstance(w_ok, bool) else None,
+                "duration_s": round(dur, 2) if dur is not None else None,
+                "wav_bytes": b_len,
+                "latency_ms": round(lat_v, 1) if lat_v is not None else None,
+            }
+        )
+
+    http_200 = to_int(first_val(summary, ["http_200_count", "status_200_count", "ok_count"]))
+    if http_200 is None and http_oks:
+        http_200 = sum(1 for x in http_oks if x)
+
+    valid_wav = to_int(first_val(summary, ["valid_wav_count", "wav_valid_count", "passed_count"]))
+    if valid_wav is None and wav_oks:
+        valid_wav = sum(1 for x in wav_oks if x)
+
+    valid_rate = to_rate(first_val(summary, ["valid_wav_rate", "pass_rate"]))
+    if valid_rate is None and valid_wav is not None and n_utt > 0:
+        valid_rate = round(valid_wav / n_utt, 4)
+
+    langs_raw = first_val(summary, ["languages_tested", "languages", "locales"])
+    if langs_raw is None:
+        langs_raw = first_val(data, ["languages_tested", "languages", "locales"])
+    langs = [clean_text(x) for x in langs_raw if clean_text(x)] if isinstance(langs_raw, list) else []
+    if not langs:
+        langs = item_langs
+
+    mean_dur = to_num(first_val(summary, ["mean_audio_duration_s", "audio_duration_mean_s", "mean_duration_s"]))
+    if mean_dur is None and durations:
+        mean_dur = round(statistics.mean(durations), 2)
+
+    mean_bytes = to_num(first_val(summary, ["mean_wav_bytes", "wav_bytes_mean", "mean_bytes"]))
+    if mean_bytes is None and byte_sizes:
+        mean_bytes = round(statistics.mean(byte_sizes), 1)
+
+    sr_hz = to_int(first_val(summary, ["sample_rate_hz", "sample_rate"]))
+    if sr_hz is None and sample_rates:
+        sr_hz = sample_rates[0]
+
+    lat = extract_latency(summary, items)
+    synth_models = summary.get("synthesized_by_models") if isinstance(summary.get("synthesized_by_models"), list) else []
+    synth_model_str = ", ".join(clean_text(x) for x in synth_models if clean_text(x))
+    model = clean_text(
+        first_val(summary, ["model", "tts_model"]) or data.get("model") or synth_model_str or "gemini-tts (/api/tts)"
+    )
+
+    return {
+        "suite_id": "tts_multilingual_audio",
+        "generated_at": clean_text(data.get("generated_at") or data.get("testedAt") or ""),
+        "model": model,
+        "n_utterances": n_utt,
+        "n_cases": n_utt,
+        "verdict_matches": None,
+        "verdict_accuracy": None,
+        "confident_wrong_dose_count": None,
+        "false_safe_allergen_count": None,
+        "http_200_count": http_200,
+        "valid_wav_count": valid_wav,
+        "valid_wav_rate": valid_rate,
+        "languages_tested": langs,
+        "sample_rate_hz": sr_hz,
+        "mean_audio_duration_s": round(mean_dur, 2) if mean_dur is not None else None,
+        "mean_wav_bytes": round(mean_bytes, 1) if mean_bytes is not None else None,
+        "latency_ms": lat,
+        "rows": rows,
+    }
+
+
+def normalize_wave6_suite(suite_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    if suite_id == "multiframe_recovery_results":
+        return normalize_multiframe_recovery(data)
+    if suite_id == "e2e_websocket_live":
+        return normalize_e2e_websocket_live(data)
+    if suite_id == "hud_latency_bandwidth":
+        return normalize_hud_latency_bandwidth(data)
+    if suite_id == "tts_multilingual_audio":
+        return normalize_tts_multilingual_audio(data)
+
+    base = normalize_label_suite(suite_id, data)
+    summary = data.get("summary") if isinstance(data.get("summary"), dict) else data
+    items = extract_items(data)
+
+    if suite_id == "allergen_adversarial_results":
+        if base["false_safe_allergen_count"] is None:
+            item_fsa = [bool(it.get("false_safe_allergen")) for it in items if "false_safe_allergen" in it]
+            if item_fsa:
+                base["false_safe_allergen_count"] = sum(1 for x in item_fsa if x)
+        if base["allergen_recall"] is None:
+            base["allergen_recall"] = to_rate(
+                first_val(summary, ["allergen_positive_recall", "hidden_allergen_recall", "positive_recall"])
+            )
+        if base["allergen_recall"] is None and items:
+            pos_bools = [
+                bool(m)
+                for it in items
+                if item_expected_level(it) == "warning" and (m := item_is_verdict_match(it)) is not None
+            ]
+            if pos_bools:
+                base["allergen_recall"] = round(sum(1 for x in pos_bools if x) / len(pos_bools), 4)
+    elif suite_id == "expiry_formats_results":
+        exp_rec = to_rate(
+            first_val(summary, ["expired_catch_recall", "expired_recall", "expiry_catch_recall", "expired_detection_recall"])
+        )
+        if exp_rec is None and items:
+            exp_bools = [
+                bool(m)
+                for it in items
+                if (it.get("is_expired") is True or it.get("expected_expired") is True or item_expected_level(it) == "warning")
+                and (m := item_is_verdict_match(it)) is not None
+            ]
+            if exp_bools:
+                exp_rec = round(sum(1 for x in exp_bools if x) / len(exp_bools), 4)
+        iso_acc = to_rate(
+            first_val(
+                summary,
+                [
+                    "expiry_iso_normalization_accuracy",
+                    "iso_normalization_accuracy",
+                    "expiry_normalization_accuracy",
+                    "expiry_field_accuracy",
+                ],
+            )
+        )
+        if iso_acc is None and items:
+            iso_bools: list[bool] = []
+            for it in items:
+                for b_key in ("iso_normalized_ok", "expiry_iso_ok", "expiry_match", "expiry_correct"):
+                    if isinstance(it.get(b_key), bool):
+                        iso_bools.append(it[b_key])
+                        break
+            if iso_bools:
+                iso_acc = round(sum(1 for x in iso_bools if x) / len(iso_bools), 4)
+        base["expired_catch_recall"] = exp_rec
+        base["expiry_iso_normalization_accuracy"] = iso_acc
+        for row, it in zip(base["rows"], items):
+            read_obj = it.get("read") if isinstance(it.get("read"), dict) else {}
+            exp_field = read_obj.get("expiry") if isinstance(read_obj.get("expiry"), dict) else {}
+            exp_val = exp_field.get("value") if "value" in exp_field else first_val(it, ["expiry_value", "predicted_expiry", "extracted_expiry"])
+            row["expiry_value"] = clean_text(exp_val) if exp_val is not None else None
+
+    return base
+
+
 def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
     suites_present: list[str] = []
     suites_missing: list[str] = []
@@ -1157,6 +2061,18 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         raw = json.loads(path.read_text(encoding="utf-8"))
         extended_suites_present.append(sid)
         artifacts[sid] = normalize_extended_suite(sid, raw)
+
+    wave6_suites_present: list[str] = []
+    for spec in WAVE6_ARTIFACT_SPECS:
+        sid = spec["id"]
+        path = eval_dir / spec["filename"]
+        if not path.exists():
+            continue
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        wave6_suites_present.append(sid)
+        artifacts[sid] = normalize_wave6_suite(sid, raw)
+
+    optional_suites_present = [*extended_suites_present, *wave6_suites_present]
 
     label_suites_present = [sid for sid in LABEL_SUITE_IDS if sid in artifacts]
     total_label_cases = sum(artifacts[sid]["n_cases"] for sid in label_suites_present)
@@ -1201,6 +2117,88 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         "false_safe_allergen_count": ext_false_safe_allergen,
     }
 
+    w6_verdict_sids = [
+        sid
+        for sid in ("multiframe_recovery_results", "allergen_adversarial_results", "expiry_formats_results", "e2e_websocket_live")
+        if sid in artifacts
+    ]
+    w6_verdict_num = 0
+    w6_verdict_den = 0
+    for sid in w6_verdict_sids:
+        suite = artifacts[sid]
+        if suite.get("verdict_matches") is not None and (suite.get("n_cases") or 0) > 0:
+            w6_verdict_num += suite["verdict_matches"]
+            w6_verdict_den += suite["n_cases"]
+    w6_verdict_acc = round(w6_verdict_num / w6_verdict_den, 4) if w6_verdict_den > 0 else None
+    wave6_cwd = sum(artifacts[sid].get("confident_wrong_dose_count") or 0 for sid in wave6_suites_present)
+    wave6_summary = {
+        "suites_count": len(wave6_suites_present),
+        "label_and_fusion_cases_evaluated": w6_verdict_den,
+        "label_and_fusion_verdict_matches": w6_verdict_num,
+        "label_and_fusion_verdict_accuracy": w6_verdict_acc,
+        "confident_wrong_dose_count": wave6_cwd,
+        "false_safe_allergen_count": (
+            artifacts["allergen_adversarial_results"]["false_safe_allergen_count"]
+            if "allergen_adversarial_results" in artifacts
+            else None
+        ),
+        "multiframe_paired_verdict_accuracy": (
+            artifacts["multiframe_recovery_results"]["paired_frame_verdict_accuracy"]
+            if "multiframe_recovery_results" in artifacts
+            else None
+        ),
+        "multiframe_single_abstention_rate": (
+            artifacts["multiframe_recovery_results"]["single_frame_safe_abstention_rate"]
+            if "multiframe_recovery_results" in artifacts
+            else None
+        ),
+        "expired_catch_recall": (
+            artifacts["expiry_formats_results"]["expired_catch_recall"]
+            if "expiry_formats_results" in artifacts
+            else None
+        ),
+        "e2e_verify_to_hud_p50_ms": (
+            artifacts["e2e_websocket_live"]["verify_to_hud_p50_ms"]
+            if "e2e_websocket_live" in artifacts
+            else None
+        ),
+        "e2e_live_first_event_ms": (
+            artifacts["e2e_websocket_live"]["live_first_event_ms"]
+            if "e2e_websocket_live" in artifacts
+            else None
+        ),
+        "loopback_ingest_frame_p50_ms": (
+            artifacts["hud_latency_bandwidth"]["ingest_frame_p50_ms"]
+            if "hud_latency_bandwidth" in artifacts
+            else None
+        ),
+        "loopback_hud_replay_p50_ms": (
+            artifacts["hud_latency_bandwidth"]["hud_replay_p50_ms"]
+            if "hud_latency_bandwidth" in artifacts
+            else None
+        ),
+        "ring_max_observed_len": (
+            artifacts["hud_latency_bandwidth"]["ring_max_observed_len"]
+            if "hud_latency_bandwidth" in artifacts
+            else None
+        ),
+        "tts_valid_wav_count": (
+            artifacts["tts_multilingual_audio"]["valid_wav_count"]
+            if "tts_multilingual_audio" in artifacts
+            else None
+        ),
+        "tts_n_utterances": (
+            artifacts["tts_multilingual_audio"]["n_utterances"]
+            if "tts_multilingual_audio" in artifacts
+            else None
+        ),
+        "tts_latency_p50_ms": (
+            artifacts["tts_multilingual_audio"]["latency_ms"]["p50"]
+            if "tts_multilingual_audio" in artifacts
+            else None
+        ),
+    }
+
     total_cwd = sum(artifacts[sid]["confident_wrong_dose_count"] or 0 for sid in label_suites_present)
     if "calibration_curve" in artifacts and artifacts["calibration_curve"]["confident_wrong_dose_at_080"] is not None:
         total_cwd += artifacts["calibration_curve"]["confident_wrong_dose_at_080"]
@@ -1211,7 +2209,7 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         )
         if primary_mc and primary_mc["confident_wrong_dose_count"] is not None:
             total_cwd += primary_mc["confident_wrong_dose_count"]
-    total_cwd += ext_cwd
+    total_cwd += ext_cwd + wave6_cwd
 
     clean_accs = [
         artifacts[sid]["clean_field_accuracy"]
@@ -1268,7 +2266,7 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
 
     allergen_counts = [
         artifacts[sid]["false_safe_allergen_count"]
-        for sid in [*label_suites_present, *extended_suites_present]
+        for sid in [*label_suites_present, *extended_suites_present, *wave6_suites_present]
         if artifacts[sid].get("false_safe_allergen_count") is not None
     ]
     false_safe_allergen = sum(allergen_counts) if allergen_counts else None
@@ -1432,6 +2430,9 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         "suites_missing": suites_missing,
         "extended_suites_present": extended_suites_present,
         "extended_summary": extended_summary,
+        "wave6_suites_present": wave6_suites_present,
+        "wave6_summary": wave6_summary,
+        "optional_suites_present": optional_suites_present,
         "label_suites_present": label_suites_present,
         "total_label_cases_evaluated": total_label_cases,
         "total_verdict_matches": verdict_num,
@@ -1553,12 +2554,114 @@ def extended_table_cells(sid: str, a: dict[str, Any]) -> tuple[str, str, str, st
     return (scope_str, acc_str, cwd_str, lat_str, outcome_str)
 
 
+def wave6_table_cells(sid: str, a: dict[str, Any]) -> tuple[str, str, str, str]:
+    lat_str = f"{fmt_ms(a['latency_ms']['p50'])} / {fmt_ms(a['latency_ms']['p95'])}"
+    if sid == "multiframe_recovery_results":
+        scope_str = f"{a['n_pairs']} pairs ({a['total_calls']} calls)"
+        metric_str = (
+            f"Paired accuracy {fmt_pct(a.get('paired_frame_verdict_accuracy'))} "
+            f"({fmt_num(a.get('paired_frame_matches'), 0)}/{a['n_pairs']})"
+        )
+        outcome_str = (
+            f"Single-frame safe abstention {fmt_pct(a.get('single_frame_safe_abstention_rate'))}, "
+            f"{fmt_num(a.get('confident_wrong_dose_count'), 0)} confident-wrong doses"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    if sid == "allergen_adversarial_results":
+        scope_str = f"{a['n_cases']} cases"
+        metric_str = (
+            f"Verdict accuracy {fmt_pct(a.get('verdict_accuracy'))} ({a['verdict_matches']}/{a['n_cases']})"
+            if a.get("verdict_matches") is not None
+            else fmt_pct(a.get("verdict_accuracy"))
+        )
+        outcome_str = (
+            f"Allergen recall {fmt_pct(a.get('allergen_recall'))}, "
+            f"{fmt_num(a.get('false_safe_allergen_count'), 0)} false-safe allergens, "
+            f"{fmt_num(a.get('confident_wrong_dose_count'), 0)} confident-wrong doses"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    if sid == "expiry_formats_results":
+        scope_str = f"{a['n_cases']} cases"
+        metric_str = (
+            f"Verdict accuracy {fmt_pct(a.get('verdict_accuracy'))} ({a['verdict_matches']}/{a['n_cases']})"
+            if a.get("verdict_matches") is not None
+            else fmt_pct(a.get("verdict_accuracy"))
+        )
+        iso_part = (
+            f", ISO norm {fmt_pct(a.get('expiry_iso_normalization_accuracy'))}"
+            if a.get("expiry_iso_normalization_accuracy") is not None
+            else ""
+        )
+        outcome_str = (
+            f"Expired catch recall {fmt_pct(a.get('expired_catch_recall'))}{iso_part}, "
+            f"{fmt_num(a.get('confident_wrong_dose_count'), 0)} confident-wrong doses"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    if sid == "e2e_websocket_live":
+        n_v = a.get("n_verify_checks") or 0
+        scope_str = f"{n_v} E2E verify + Live WS turn" if n_v > 0 else "E2E HTTP + WS pipeline"
+        hud_ok = a.get("hud_received_all_verdicts")
+        hud_badge = "PASS" if hud_ok is True else ("FAIL" if hud_ok is False else "n/a")
+        metric_str = (
+            f"HUD fan-out {hud_badge}, verdicts {a['verdict_matches']}/{n_v}"
+            if a.get("verdict_matches") is not None and n_v > 0
+            else f"HUD fan-out {hud_badge}"
+        )
+        outcome_str = (
+            f"State broadcast {fmt_ms(a.get('state_broadcast_ms'))}, "
+            f"Live open {fmt_ms(a.get('live_ws_open_ms'))}, "
+            f"1st event {fmt_ms(a.get('live_first_event_ms'))}, "
+            f"{fmt_num(a.get('confident_wrong_dose_count'), 0)} confident-wrong doses"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    if sid == "hud_latency_bandwidth":
+        ing_n = a.get("ingest_frame_requests")
+        st_n = a.get("state_fanout_requests")
+        rep_n = a.get("hud_late_joins")
+        parts: list[str] = []
+        if ing_n is not None:
+            parts.append(f"{ing_n} frames")
+        if st_n is not None:
+            parts.append(f"{st_n} states")
+        if rep_n is not None:
+            parts.append(f"{rep_n} HUD joins")
+        scope_str = ", ".join(parts) if parts else "Loopback sockets"
+        metric_str = (
+            f"Ingest p50 {fmt_ms(a.get('ingest_frame_p50_ms'))}, "
+            f"HUD replay p50 {fmt_ms(a.get('hud_replay_p50_ms'))}"
+        )
+        wire_part = (
+            f", verdict wire {fmt_comma(a.get('hud_verdict_wire_bytes'), 0)} B"
+            if a.get("hud_verdict_wire_bytes") is not None
+            else ""
+        )
+        outcome_str = (
+            f"FrameRing max len {fmt_num(a.get('ring_max_observed_len'), 0)}, "
+            f"state fan-out p50 {fmt_ms(a.get('state_fanout_p50_ms'))}{wire_part}"
+        )
+        return (scope_str, metric_str, lat_str, outcome_str)
+    if sid == "tts_multilingual_audio":
+        langs_txt = ", ".join(a.get("languages_tested") or []) or "n/a"
+        scope_str = f"{a['n_utterances']} utterances ({langs_txt})"
+        metric_str = (
+            f"{fmt_num(a.get('valid_wav_count'), 0)}/{a['n_utterances']} valid WAV "
+            f"({fmt_pct(a.get('valid_wav_rate'))})"
+        )
+        dur_part = f", mean {fmt_num(a.get('mean_audio_duration_s'), 2)} s" if a.get("mean_audio_duration_s") is not None else ""
+        bytes_part = f", {fmt_comma(a.get('mean_wav_bytes'), 0)} B" if a.get("mean_wav_bytes") is not None else ""
+        outcome_str = f"HTTP 200: {fmt_num(a.get('http_200_count'), 0)}/{a['n_utterances']}{dur_part}{bytes_part}"
+        return (scope_str, metric_str, lat_str, outcome_str)
+    return ("present", "Loaded", lat_str, "Loaded")
+
+
 def render_markdown(compiled: dict[str, Any]) -> str:
     lines: list[str] = []
     artifacts = compiled["artifacts"]
     suites_present = compiled["suites_present"]
     extended_suites_present = compiled.get("extended_suites_present", [])
     extended_summary = compiled.get("extended_summary")
+    wave6_suites_present = compiled.get("wave6_suites_present", [])
+    wave6_summary = compiled.get("wave6_summary")
     label_suites = compiled["label_suites_present"]
     total_cases = compiled["total_label_cases_evaluated"]
     verdict_acc = compiled["overall_verdict_accuracy"]
@@ -1609,8 +2712,10 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         "structured LLM-as-a-Judge coaching and bystander privacy transcripts (`coaching_eval.json`), and measured "
         "JPEG payload, adaptive bandwidth, and 3-year assistive TCO modeling (`unit_economics.json`). Optional "
         "stress suites covering curved pill bottles and foil glare, multi-step FrameRing coaching trajectories, "
-        "low-light sensor noise and motion blur, European multilingual labels, bystander PII red-teaming, and "
-        "LASA/double-dose polypharmacy confusion are automatically discovered and compiled whenever present on disk."
+        "low-light sensor noise and motion blur, European multilingual labels, bystander PII red-teaming, "
+        "LASA/double-dose polypharmacy confusion, multi-frame partial-view fusion, adversarial hidden allergens, "
+        "international expiry formats, end-to-end Live WebSocket + HUD wire latency, loopback FrameRing throughput, "
+        "and multilingual `/api/tts` WAV synthesis are automatically discovered and compiled whenever present on disk."
     )
     lines.append("")
     lines.append("---")
@@ -1728,6 +2833,19 @@ def render_markdown(compiled: dict[str, Any]) -> str:
             f"`{len(extended_suites_present)}` (`{ext_joined}`), {ext_acc_txt}, "
             f"`{extended_summary['confident_wrong_dose_count']}` confident-wrong doses |"
         )
+    if wave6_suites_present and wave6_summary is not None:
+        w6_joined = ", ".join(wave6_suites_present)
+        w6_acc_part = (
+            f", `{fmt_pct(wave6_summary['label_and_fusion_verdict_accuracy'])}` "
+            f"(`{wave6_summary['label_and_fusion_verdict_matches']} / {wave6_summary['label_and_fusion_cases_evaluated']}`)"
+            if wave6_summary["label_and_fusion_verdict_accuracy"] is not None
+            else ""
+        )
+        lines.append(
+            f"| Wave-6 multi-frame, adversarial, systems & TTS benchmarks present in `eval/` | "
+            f"`{len(wave6_suites_present)}` (`{w6_joined}`){w6_acc_part}, "
+            f"`{wave6_summary['confident_wrong_dose_count']}` confident-wrong doses |"
+        )
     lines.append("")
 
     lines.append(f"{H3} Artifact Status Matrix")
@@ -1760,6 +2878,24 @@ def render_markdown(compiled: dict[str, Any]) -> str:
             lines.append(
                 f"| `eval/{spec['filename']}` | {md_cell(spec['dimension'])} | `{md_cell(artifacts[sid]['model'])}` | "
                 f"{md_cell(scope_str)} | {md_cell(acc_str)} | `{md_cell(cwd_str)}` | `{md_cell(lat_str)}` | {md_cell(outcome_str)} |"
+            )
+        lines.append("")
+
+    if wave6_suites_present:
+        lines.append(f"{H3} Wave-6 Multi-Frame Fusion, Adversarial Safety, Systems & TTS Benchmarks")
+        lines.append("")
+        lines.append(
+            "| Benchmark Artifact | Evaluation Dimension | Engine / Model | Scope | Primary Metric | Latency (p50 / p95) | Safety & Systems Outcome |"
+        )
+        lines.append("|---|---|---|---|---|---|---|")
+        for spec in WAVE6_ARTIFACT_SPECS:
+            sid = spec["id"]
+            if sid not in artifacts:
+                continue
+            scope_str, metric_str, lat_str, outcome_str = wave6_table_cells(sid, artifacts[sid])
+            lines.append(
+                f"| `eval/{spec['filename']}` | {md_cell(spec['dimension'])} | `{md_cell(artifacts[sid]['model'])}` | "
+                f"{md_cell(scope_str)} | {md_cell(metric_str)} | `{md_cell(lat_str)}` | {md_cell(outcome_str)} |"
             )
         lines.append("")
 
@@ -2169,6 +3305,200 @@ def render_markdown(compiled: dict[str, Any]) -> str:
                 )
             lines.append("")
 
+    for spec in WAVE6_ARTIFACT_SPECS:
+        sid = spec["id"]
+        if sid not in artifacts:
+            continue
+        section_num += 1
+        suite = artifacts[sid]
+        lines.append(f"{H3} 4.{section_num} {spec['title']} (`eval/{spec['filename']}`)")
+        lines.append("")
+        lines.append("| Benchmark Metric | Measured Value |")
+        lines.append("|---|---|")
+        lines.append(f"| Engine / Model | `{suite['model']}` |")
+        if sid == "multiframe_recovery_results":
+            lines.append(f"| Complementary 2-frame pairs / total `verify()` calls | `{suite['n_pairs']}` / `{suite['total_calls']}` |")
+            lines.append(
+                f"| Single-frame `[f1]` safe abstention rate | `{fmt_pct(suite['single_frame_safe_abstention_rate'])}` "
+                f"(`{fmt_num(suite['single_frame_abstentions'], 0)} / {suite['n_pairs']}`) |"
+            )
+            lines.append(
+                f"| Paired-frame `[f1, f2]` verdict accuracy | `{fmt_pct(suite['paired_frame_verdict_accuracy'])}` "
+                f"(`{fmt_num(suite['paired_frame_matches'], 0)} / {suite['n_pairs']}`) |"
+            )
+            lines.append(f"| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `{suite['confident_wrong_dose_count']}` |")
+            if suite.get("single_latency_p50_ms") is not None or suite.get("paired_latency_p50_ms") is not None:
+                lines.append(
+                    f"| Single-frame p50 / Paired-frame p50 latency | "
+                    f"`{fmt_ms(suite.get('single_latency_p50_ms'))}` / `{fmt_ms(suite.get('paired_latency_p50_ms'))}` |"
+                )
+            lines.append(
+                f"| Overall latency (p50 / p95 / mean) | "
+                f"`{fmt_ms(suite['latency_ms']['p50'])}` / `{fmt_ms(suite['latency_ms']['p95'])}` / `{fmt_ms(suite['latency_ms']['mean'])}` |"
+            )
+            if suite["tokens_in"] is not None or suite["tokens_out"] is not None:
+                lines.append(f"| Tokens (in / out) | `{fmt_num(suite['tokens_in'], 1)}` / `{fmt_num(suite['tokens_out'], 1)}` |")
+            lines.append("")
+            if suite["pairs"]:
+                lines.append("| Pair ID | Single-Frame Verdict | Safe Abstention | Paired Expected | Paired Verdict | Paired Match | Single / Paired Latency |")
+                lines.append("|---|---|---|---|---|---|---|")
+                for pr in suite["pairs"]:
+                    lines.append(
+                        f"| `{md_cell(pr['id'])}` | `{md_cell(pr['single_level'] or 'n/a')}` | "
+                        f"`{'PASS' if pr['single_abstained'] else ('FAIL' if pr['single_abstained'] is False else 'n/a')}` | "
+                        f"`{md_cell(pr['paired_expected_level'] or 'n/a')}` | `{md_cell(pr['paired_level'] or 'n/a')}` | "
+                        f"`{'PASS' if pr['paired_match'] else ('FAIL' if pr['paired_match'] is False else 'n/a')}` | "
+                        f"`{fmt_ms(pr['single_latency_ms'])}` / `{fmt_ms(pr['paired_latency_ms'])}` |"
+                    )
+                lines.append("")
+            continue
+
+        if sid == "e2e_websocket_live":
+            if suite.get("state_broadcast_ms") is not None:
+                lines.append(f"| `POST /ingest/state` -> `/hud-ws` & `/live` broadcast latency | `{fmt_ms(suite['state_broadcast_ms'])}` |")
+            if suite.get("ingest_frame_ms") is not None:
+                lines.append(f"| `POST /ingest/frame` -> `FrameRing(8)` ingest latency | `{fmt_ms(suite['ingest_frame_ms'])}` |")
+            lines.append(
+                f"| End-to-end `/ingest/frame -> /api/verify -> /hud-ws` latency (p50 / p95 / mean) | "
+                f"`{fmt_ms(suite['latency_ms']['p50'])}` / `{fmt_ms(suite['latency_ms']['p95'])}` / `{fmt_ms(suite['latency_ms']['mean'])}` |"
+            )
+            if suite.get("verdict_matches") is not None and (suite.get("n_verify_checks") or 0) > 0:
+                lines.append(
+                    f"| End-to-end fixture verdict accuracy | `{fmt_pct(suite['verdict_accuracy'])}` "
+                    f"(`{suite['verdict_matches']} / {suite['n_verify_checks']}`) |"
+                )
+            if suite.get("hud_received_all_verdicts") is not None:
+                lines.append(f"| Session-less `/hud-ws` received all waveguide verdicts | `{suite['hud_received_all_verdicts']}` |")
+            if suite.get("live_ws_open_ms") is not None:
+                lines.append(f"| Live `/live` WebSocket connect-to-open latency | `{fmt_ms(suite['live_ws_open_ms'])}` |")
+            if suite.get("live_first_event_ms") is not None:
+                lines.append(f"| Live `/live` turn first audio / coaching event latency | `{fmt_ms(suite['live_first_event_ms'])}` |")
+            lines.append(f"| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `{suite['confident_wrong_dose_count']}` |")
+            lines.append("")
+            if suite["rows"]:
+                lines.append("| Fixture / Case | Expected Verdict | Predicted Verdict | Match | HUD Received | Confident-Wrong Dose | E2E Latency |")
+                lines.append("|---|---|---|---|---|---|---|")
+                for r in suite["rows"]:
+                    lines.append(
+                        f"| `{md_cell(r['id'])}` | `{md_cell(r['expected_level'] or 'n/a')}` | "
+                        f"`{md_cell(r['predicted_level'] or 'n/a')}` | "
+                        f"`{'PASS' if r['verdict_match'] else ('FAIL' if r['verdict_match'] is False else 'n/a')}` | "
+                        f"`{r['hud_received'] if r['hud_received'] is not None else 'n/a'}` | "
+                        f"`{r['confident_wrong_dose']}` | `{fmt_ms(r['latency_ms'])}` |"
+                    )
+                lines.append("")
+            continue
+
+        if sid == "hud_latency_bandwidth":
+            lines.append(
+                f"| `POST /ingest/frame` + `jpegSharpness` latency (p50 / p95 / p99) | "
+                f"`{fmt_ms(suite['ingest_frame_p50_ms'])}` / `{fmt_ms(suite['ingest_frame_p95_ms'])}` / `{fmt_ms(suite['ingest_frame_p99_ms'])}` "
+                f"(n = `{fmt_num(suite['ingest_frame_requests'], 0)}`) |"
+            )
+            lines.append(f"| `FrameRing(8)` max observed length (`ring_max_observed_len`) | `{fmt_num(suite['ring_max_observed_len'], 0)}` |")
+            if suite.get("state_fanout_p50_ms") is not None:
+                lines.append(
+                    f"| `POST /ingest/state` -> `/hud-ws` & `/live` fan-out (p50 / p95 / p99) | "
+                    f"`{fmt_ms(suite['state_fanout_p50_ms'])}` / `{fmt_ms(suite['state_fanout_p95_ms'])}` / `{fmt_ms(suite['state_fanout_p99_ms'])}` "
+                    f"(n = `{fmt_num(suite['state_fanout_requests'], 0)}`) |"
+                )
+            lines.append(
+                f"| Session-less `/hud-ws` late-join replay latency (p50 / p95) | "
+                f"`{fmt_ms(suite['hud_replay_p50_ms'])}` / `{fmt_ms(suite['hud_replay_p95_ms'])}` "
+                f"(n = `{fmt_num(suite['hud_late_joins'], 0)}`) |"
+            )
+            if suite.get("hud_verdict_wire_bytes") is not None:
+                lines.append(f"| Waveguide verdict JSON wire payload | `{fmt_comma(suite['hud_verdict_wire_bytes'], 0)} B` |")
+            if suite.get("api_stats_p50_ms") is not None or suite.get("api_eval_summary_p50_ms") is not None:
+                lines.append(
+                    f"| Telemetry `GET /api/stats` / `GET /api/eval-summary` p50 | "
+                    f"`{fmt_ms(suite.get('api_stats_p50_ms'))}` / `{fmt_ms(suite.get('api_eval_summary_p50_ms'))}` |"
+                )
+            lines.append("")
+            continue
+
+        if sid == "tts_multilingual_audio":
+            lines.append(f"| Synthesized utterances (`n_utterances`) | `{suite['n_utterances']}` |")
+            lines.append(f"| HTTP `200` responses | `{fmt_num(suite['http_200_count'], 0)} / {suite['n_utterances']}` |")
+            lines.append(
+                f"| Valid PCM16 `RIFF/WAVE` utterances | `{fmt_num(suite['valid_wav_count'], 0)} / {suite['n_utterances']}` "
+                f"(`{fmt_pct(suite['valid_wav_rate'])}`) |"
+            )
+            if suite.get("languages_tested"):
+                lines.append(f"| Languages tested | `{', '.join(suite['languages_tested'])}` |")
+            if suite.get("sample_rate_hz") is not None:
+                lines.append(f"| Audio sample rate | `{fmt_comma(suite['sample_rate_hz'], 0)} Hz` |")
+            lines.append(
+                f"| Synthesis latency (p50 / p95 / mean) | "
+                f"`{fmt_ms(suite['latency_ms']['p50'])}` / `{fmt_ms(suite['latency_ms']['p95'])}` / `{fmt_ms(suite['latency_ms']['mean'])}` |"
+            )
+            if suite.get("mean_audio_duration_s") is not None:
+                lines.append(f"| Mean synthesized audio duration | `{fmt_num(suite['mean_audio_duration_s'], 2)} s` |")
+            if suite.get("mean_wav_bytes") is not None:
+                lines.append(f"| Mean WAV payload size | `{fmt_comma(suite['mean_wav_bytes'], 0)} B` |")
+            lines.append("")
+            if suite["rows"]:
+                lines.append("| Utterance ID | Language | HTTP Status | Valid WAV | Duration | WAV Bytes | Latency |")
+                lines.append("|---|---|---|---|---|---|---|")
+                for r in suite["rows"]:
+                    dur_s = f"{fmt_num(r['duration_s'], 2)} s" if r["duration_s"] is not None else "n/a"
+                    wb_s = f"{fmt_comma(r['wav_bytes'], 0)} B" if r["wav_bytes"] is not None else "n/a"
+                    lines.append(
+                        f"| `{md_cell(r['id'])}` | `{md_cell(r['lang'] or 'n/a')}` | "
+                        f"`{fmt_num(r['http_status'], 0)}` | "
+                        f"`{'PASS' if r['valid_wav'] else ('FAIL' if r['valid_wav'] is False else 'n/a')}` | "
+                        f"`{dur_s}` | `{wb_s}` | `{fmt_ms(r['latency_ms'])}` |"
+                    )
+                lines.append("")
+            continue
+
+        lines.append(f"| Evaluated cases (`n_cases`) | `{suite['n_cases']}` |")
+        lines.append(f"| Verdict accuracy | `{fmt_pct(suite['verdict_accuracy'])}` (`{suite['verdict_matches']} / {suite['n_cases']}`) |")
+        lines.append(f"| Confident-wrong dose count (`STRENGTH_MIN_CONF = 0.80`) | `{suite['confident_wrong_dose_count']}` |")
+        if sid == "allergen_adversarial_results":
+            if suite.get("allergen_recall") is not None:
+                lines.append(f"| Hidden / scientific allergen recall | `{fmt_pct(suite['allergen_recall'])}` |")
+            if suite.get("false_safe_allergen_count") is not None:
+                lines.append(f"| False-safe allergen count | `{suite['false_safe_allergen_count']}` |")
+        elif sid == "expiry_formats_results":
+            if suite.get("expired_catch_recall") is not None:
+                lines.append(f"| Expired-pack catch recall | `{fmt_pct(suite['expired_catch_recall'])}` |")
+            if suite.get("expiry_iso_normalization_accuracy") is not None:
+                lines.append(f"| ISO `YYYY-MM` / `YYYY-MM-DD` normalization accuracy | `{fmt_pct(suite['expiry_iso_normalization_accuracy'])}` |")
+        lines.append(
+            f"| Latency (p50 / p95 / mean) | "
+            f"`{fmt_ms(suite['latency_ms']['p50'])}` / `{fmt_ms(suite['latency_ms']['p95'])}` / `{fmt_ms(suite['latency_ms']['mean'])}` |"
+        )
+        if suite["tokens_in"] is not None or suite["tokens_out"] is not None:
+            lines.append(f"| Tokens (in / out) | `{fmt_num(suite['tokens_in'], 1)}` / `{fmt_num(suite['tokens_out'], 1)}` |")
+        lines.append("")
+        if suite["rows"]:
+            if sid == "expiry_formats_results":
+                lines.append("| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Expiry | Extracted Strength | Confident-Wrong Dose | Latency |")
+                lines.append("|---|---|---|---|---|---|---|---|")
+                for r in suite["rows"]:
+                    lines.append(
+                        f"| `{md_cell(r['id'])}` | `{md_cell(r['expected_level'] or 'n/a')}` | "
+                        f"`{md_cell(r['predicted_level'] or 'n/a')}` | "
+                        f"`{'PASS' if r['verdict_match'] else ('FAIL' if r['verdict_match'] is False else 'n/a')}` | "
+                        f"`{md_cell(r.get('expiry_value') or 'null')}` | "
+                        f"{md_cell(r['strength_value'] or 'null')} | "
+                        f"`{r['confident_wrong_dose']}` | `{fmt_ms(r['latency_ms'])}` |"
+                    )
+            else:
+                lines.append("| Case ID | Expected Verdict | Predicted Verdict | Match | Extracted Strength | Strength Conf | Confident-Wrong Dose | Latency |")
+                lines.append("|---|---|---|---|---|---|---|---|")
+                for r in suite["rows"]:
+                    lines.append(
+                        f"| `{md_cell(r['id'])}` | `{md_cell(r['expected_level'] or 'n/a')}` | "
+                        f"`{md_cell(r['predicted_level'] or 'n/a')}` | "
+                        f"`{'PASS' if r['verdict_match'] else ('FAIL' if r['verdict_match'] is False else 'n/a')}` | "
+                        f"{md_cell(r['strength_value'] or 'null')} | "
+                        f"`{fmt_num(r['strength_confidence'], 2)}` | "
+                        f"`{r['confident_wrong_dose']}` | `{fmt_ms(r['latency_ms'])}` |"
+                    )
+            lines.append("")
+
     if section_num == 0:
         lines.append("No JSON artifacts are currently present in `eval/`. Run the reproduction commands below to populate.")
         lines.append("")
@@ -2194,6 +3524,9 @@ def render_markdown(compiled: dict[str, Any]) -> str:
     for spec in ARTIFACT_SPECS:
         lines.append(spec["repro_cmd"])
     for spec in EXTENDED_ARTIFACT_SPECS:
+        if spec["id"] in artifacts:
+            lines.append(spec["repro_cmd"])
+    for spec in WAVE6_ARTIFACT_SPECS:
         if spec["id"] in artifacts:
             lines.append(spec["repro_cmd"])
     lines.append("/venv/bin/python3 eval/compile_eval_report.py")
@@ -2224,9 +3557,14 @@ def main(argv: list[str] | None = None) -> int:
         if compiled["extended_suites_present"]
         else ""
     )
+    w6_note = (
+        f" + {len(compiled['wave6_suites_present'])} wave6 ({compiled['wave6_suites_present']})"
+        if compiled["wave6_suites_present"]
+        else ""
+    )
     print(
         f"Compiled {len(compiled['suites_present'])}/{len(ARTIFACT_SPECS)} artifacts "
-        f"({compiled['suites_present']}){ext_note} -> {args.out_json} and {args.out_md}"
+        f"({compiled['suites_present']}){ext_note}{w6_note} -> {args.out_json} and {args.out_md}"
     )
     return 0
 
