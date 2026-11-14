@@ -361,10 +361,10 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <h3>Speculative verify</h3>
       <p class="small" style="color:var(--text)">While you are still asking, the server already reads the sharpest new frame (one call in flight, ≥ 2 s apart). The tool call is answered from that cache, or joins the read in flight.</p>
       <div class="bars" role="img" aria-labelledby="s7-chart-t">
-        <span id="s7-chart-t" class="sr-only">Latency from server logs. Question to first spoken audio: 5.8 seconds before speculative verify, 0.8 to 3.3 seconds now. One verify call: 2.7 to 3.7 seconds. Cache hit: under 5 milliseconds.</span>
+        <span id="s7-chart-t" class="sr-only">Latency from server logs. Question to first spoken audio: 5.8 seconds before speculative verify, 0.8 to 3.3 seconds now. One verify call: median 3.4 seconds, 95th percentile 5.6 seconds (1,740 eval calls). Cache hit: under 5 milliseconds.</span>
         <div class="bar"><div class="lab"><b>0.8–3.3 s</b>question → first audio, now</div><div class="track"><div class="seg range" style="left:13.3%; width:41.7%"></div></div></div>
         <div class="bar"><div class="lab"><b>5.8 s</b>before speculative verify</div><div class="track"><div class="seg old" style="left:0; width:96.7%"></div></div></div>
-        <div class="bar"><div class="lab"><b>2.7–3.7 s</b>one verify call (Flash)</div><div class="track"><div class="seg range" style="left:45%; width:16.7%"></div></div></div>
+        <div class="bar"><div class="lab"><b>3.4 s p50 · 5.6 s p95</b>one verify call (Flash, n=1,740)</div><div class="track"><div class="seg range" style="left:57%; width:36%"></div></div></div>
         <div class="bar"><div class="lab"><b>&lt; 5 ms</b>speculative cache hit</div><div class="track"><div class="seg range" style="left:0; width:4px"></div></div></div>
         <div class="axis" aria-hidden="true"><span></span><div class="ticks"><span style="left:0">0</span><span style="left:50%">3 s</span><span style="left:100%">6 s</span></div></div>
       </div>
@@ -373,13 +373,13 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <div class="card" style="padding:12px 20px">
     <p style="font-size:16.5px"><b class="accent">Why Gemini specifically:</b> one API gives us realtime audio+video with tool calls mid-conversation, schema-constrained vision with thinking control, native-audio voices, TTS, and image generation to build our own eval set. Every call is metered: <code>/api/stats</code> reports p50/p95 latency, first-audio time, tool latency and tokens per feature from a metadata-only ledger.</p>
   </div>
-  <div class="foot"><span class="src">Latency: server logs and /api/stats, Sat 14 Nov 2026, demo laptop over venue Wi-Fi. <span class="todo">TODO: refresh p50/p95 from /api/stats after rehearsal</span></span><span class="pg">7</span></div>
+  <div class="foot"><span class="src">Latency: server logs and /api/stats, Sat 14 Nov 2026, demo laptop over venue Wi-Fi; verify p50/p95 from the 1,740-call eval (docs/EVAL.md).</span><span class="pg">7</span></div>
 </section>
 
 <!-- 8 TRUST -->
 <section class="slide" aria-roledescription="slide" aria-labelledby="s8-h">
   <p class="eyebrow">Trust and safety</p>
-  <h2 id="s8-h">It never guesses a dose. It doesn't keep your pictures.</h2>
+  <h2 id="s8-h">No clear read, no dose. It doesn't keep your pictures.</h2>
   <div class="grid2">
     <div class="card">
       <h3>Honest answers</h3>
@@ -439,16 +439,16 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <li class="step"><span class="n">05 · Product</span><h3>Score</h3><p>The shipped prompt, schema and <code>safety.ts</code> run on every image and profile.</p></li>
   </ol>
   <div class="grid4">
-    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>images scored (synthetic) + <span class="todo">TODO</span> real photos</p></div>
-    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>confident-wrong strength reads (confidence ≥ 0.8)</p></div>
-    <div class="card stat"><p class="num">0<small>/216</small></p><p>unsafe reassurances. Rules layer only, not the model. Match recall 15/15.</p></div>
-    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>strength accuracy when readable · calibration ECE <span class="todo">TODO</span></p></div>
+    <div class="card stat"><p class="num">1,740</p><p>images scored: 172 Gemini-written labels → 210 renders (170 front, 40 back) → clean + 6 degradations × 3 severities. 0 API errors</p></div>
+    <div class="card stat"><p class="num">0<small>/754</small></p><p>confident-wrong strength reads (confidence ≥ 0.8). 95% upper bound 0.4%. Product names: 42/1,173 (3.6%) confident-wrong, mostly strength missing from the name</p></div>
+    <div class="card stat"><p class="num">1.0%</p><p>unsafe reassurances end to end (49/4,730; CI 0.8–1.4%): 32 expiry, 17 allergen. Allergen gate added (43→2 risky reads in replay); expiry is covered when the pack's DataMatrix decodes. Full re-run pending</p></div>
+    <div class="card stat"><p class="num">0%</p><p>wrong strength when readable (83% read, 17% abstained, n=926) · calibration ECE 0.022</p></div>
   </div>
   <div class="grid2">
-    <div class="card"><h3>Real photos as the cross-check</h3><p>30 labels photographed at head height by the team: Finnish pharmacy boxes, food allergen panels and deliberately hard cases (glare, curved bottles, tiny print). <span class="todo">TODO: real-photo results</span></p></div>
+    <div class="card"><h3>Next: real photos</h3><p>Synthetic labels are the start. Scoring the team's own photos of Finnish pharmacy boxes and food panels comes next, reported separately (not yet scored).</p></div>
     <div class="card"><h3>Honest caveat</h3><p>The legibility check uses the same model family as the reader, which may make synthetic ground truth easier. That is why the headline metric is <b>unsafe reassurance</b>, and why real photos are scored separately.</p></div>
   </div>
-  <div class="foot"><span class="src">In repo: docs/EVAL.md. 0/216 is the rules eval, not a model score. Image counts, confident-wrong reads, accuracy and ECE are still unmeasured.</span><span class="pg">10</span></div>
+  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json. gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">10</span></div>
 </section>
 
 <!-- 11 ADOPTION -->

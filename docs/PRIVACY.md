@@ -56,7 +56,7 @@ HoldUp is a hackathon prototype, not a medical device. It never stores pictures,
 
 ## 5. Third parties
 
-- **Google Gemini API** receives the frames, audio, typed questions and profile fragments listed above. Under Google's terms, the paid tier does not use prompts and responses to improve Google's products, while the unpaid tier may. <!-- TODO(CEO): confirm whether the GEMINI_API_KEY project has billing enabled (PLAN Q3), then state it here and on deck slide 8. Terms: https://ai.google.dev/gemini-api/terms -->**TODO: which tier the demo key uses.**
+- **Google Gemini API** receives the frames, audio, typed questions and profile fragments listed above. Under Google's terms, the paid tier does not use prompts and responses to improve Google's products, while the unpaid tier may. We have **not confirmed** that the hackathon key is on a paid project, so we make **no** "not used for training" claim for this prototype. A pilot would run on a paid, billing-enabled project with a data-processing agreement.
 - **Cloudflare** (quick tunnel, `npm run tunnel`) terminates TLS between the phone and the laptop for the demo. A production deployment would use its own TLS endpoint.
 - The **Meta AI app and Meta glasses firmware** handle pairing, the DAT camera stream and Bluetooth audio under Meta's own terms. HoldUp sends nothing to Meta.
 
@@ -66,3 +66,4 @@ HoldUp is a hackathon prototype, not a medical device. It never stores pictures,
 - The profile is kept in server memory for up to 10 minutes after the phone disconnects (so that a reconnect can resume). A pilot should drop it on disconnect, or encrypt it per session.
 - The ledger has no rotation.
 - Gemini data handling depends on the API tier (see section 5).
+- **Finnish and Swedish answers:** the verdict and its opener ("Oikea pakkaus." / "Varoitus." / "En ole varma.", and the Swedish equivalents) are fixed, human-written text chosen by the deterministic rules. The details after the opener (names, dates, reasons) are translated by Gemini Live, with names, numbers and dates kept exact. Native speakers haven't yet reviewed that translation.
