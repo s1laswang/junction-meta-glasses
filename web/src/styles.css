@@ -195,6 +195,15 @@ main {
   color: var(--muted);
 }
 
+/* Focus Not Obscured (WCAG 2.2 SC 2.4.11): keyboard focus and scrollIntoView keep controls above the
+   sticky bottom tab bar (66 px) and, on the Check screen, the sticky Start/Stop button (~140 px). */
+html:has(.tabs) {
+  scroll-padding-bottom: calc(66px + 16px + env(safe-area-inset-bottom));
+}
+html:has(.tabs):has(.bigbtn-wrap) {
+  scroll-padding-bottom: calc(66px + 140px + 16px + env(safe-area-inset-bottom));
+}
+
 /* ---------- tabs (bottom nav) ---------- */
 .tabs {
   position: sticky;

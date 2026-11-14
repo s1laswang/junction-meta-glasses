@@ -12,12 +12,17 @@ export function AddSheet({ med, speech, expiresAt, onAnswer }: { med: Med; speec
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const d = ref.current;
+    // React detaches the <dialog> before this effect's cleanup runs, so the browser can't restore focus on
+    // close(): remember where focus was and put it back ourselves (else keyboard users land on <body>)
+    const prev = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
     if (d && !d.open) d.showModal();
     addRef.current?.focus();
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => {
       clearInterval(t);
       d?.close();
+      if (prev?.isConnected) prev.focus();
+      else document.querySelector<HTMLElement>("#ask, h1[tabindex]")?.focus();
     };
   }, []);
   const left = Math.max(0, Math.round((expiresAt - now) / 1000));
