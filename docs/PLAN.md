@@ -65,6 +65,11 @@ It's flag `spotter`. Off means no behaviour change.
 
 These go in `GEMMA.md` (DeepMind "Best Use of Gemma") and are passed to the Arena CEO for VERDA.md.
 
+**Update Sun 00:20:** there's no A100 capacity on Verda (any Finnish region), and there's no HF_TOKEN for the gated PaliGemma 2. **New order:**
+1. **YOLOv8n first.** It trains on any GPU that appears: Verda if one frees up (counts for the Verda track), otherwise a freighter V100 via Slurm, with wheels and weights prefetched on the login node because the compute nodes have no internet. It's exported to ONNX and runs **on the phone** with onnxruntime-web. That makes it real-time, works offline and needs no serving GPU, which is our on-device/offline story for the Meta "connectivity" line.
+2. PaliGemma 2 (the Gemma entry) runs only if an A100 **and** Silas's HF_TOKEN (PaliGemma licence accepted) arrive by about 02:30.
+Verda access, when an instance appears: from FR8 ("fr8 relaunch gpu audit"), work only in /root/meta-glasses/, and log it in fr8/verda/README.md on justSilas-fr8.
+
 **Cut line:** if mAP or latency aren't good by 04:30, FieldSpotter appears only as "trained and evaluated" (numbers), not in the live demo.
 
 ## 0b. Scoring checklist (official rubric, JUDGING.md: 4 criteria × 25%)
