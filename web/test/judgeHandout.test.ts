@@ -11,6 +11,7 @@ type StrictAssert = {
 type FsModule = {
   existsSync(path: URL | string): boolean;
   readFileSync(path: URL | string, encoding: "utf8"): string;
+  readdirSync(path: URL | string): string[];
 };
 
 type VmModule = {
@@ -24,7 +25,7 @@ const nodeVmSpec: string = "node:vm";
 
 const { test } = (await import(nodeTestSpec)) as { test: TestFn };
 const assert: StrictAssert = ((await import(nodeAssertSpec)) as { default: StrictAssert }).default;
-const { existsSync, readFileSync } = (await import(nodeFsSpec)) as FsModule;
+const { existsSync, readFileSync, readdirSync } = (await import(nodeFsSpec)) as FsModule;
 const vm = (await import(nodeVmSpec)) as VmModule;
 
 const SLASH = String.fromCharCode(47);
@@ -190,6 +191,149 @@ type BystanderPrivacyArtifact = {
   };
 };
 
+type CombinedSummaryArtifact = {
+  total_label_cases_evaluated: number;
+  total_verdict_matches: number;
+  total_confident_wrong_dose_count: number;
+  total_false_safe_allergen_count: number;
+  extended_summary: {
+    total_cases_evaluated: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+  };
+};
+
+type MultiframeRecoveryArtifact = {
+  summary: {
+    total_calls: number;
+    confident_wrong_dose_count: number;
+  };
+};
+
+type CountOnlyLabelArtifact = {
+  summary: {
+    n_items: number;
+    confident_wrong_dose_count: number;
+  };
+};
+
+type Wave8OpticalArtifact = {
+  summary: {
+    n_items: number;
+    verdict_matches: number;
+    confident_wrong_dose_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type WsReconnectResilienceArtifact = {
+  summary: {
+    n_reconnect_cycles: number;
+    replay_reconnect_p50_ms: number;
+    n_hostile_payloads: number;
+    server_crash_count: number;
+  };
+  hud_flap_reconnect_benchmark: {
+    complete_4_msg_replays: number;
+  };
+  hostile_payload_storm_benchmark: {
+    graceful_rejections: number;
+  };
+};
+
+type SpokenVerdictClarityArtifact = {
+  summary: {
+    n_cases: number;
+    verdict_matches: number;
+    mean_clarity_score: number;
+    confident_wrong_dose_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type PharmacyStickerOverlayArtifact = {
+  summary: {
+    n_items: number;
+    n_readable_sticker: number;
+    n_occluded_sticker: number;
+    readable_sticker_accuracy: number;
+    occluded_sticker_abstention_rate: number;
+    verdict_matches: number;
+    verdict_accuracy: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type LiquidConcentrationsArtifact = {
+  summary: {
+    n_items: number;
+    n_concentration_matches: number;
+    concentration_match_accuracy: number;
+    n_warning_traps: number;
+    wrong_concentration_catch_rate: number;
+    n_occluded_items: number;
+    occluded_denominator_abstention_rate: number;
+    verdict_matches: number;
+    verdict_accuracy: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type WaterDropletPouchArtifact = {
+  summary: {
+    n_items: number;
+    n_readable_wet_pouch: number;
+    n_obliterated: number;
+    readable_wet_pouch_accuracy: number;
+    obliterated_abstention_rate: number;
+    verdict_matches: number;
+    verdict_accuracy: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type ProductionFootprintArtifact = {
+  summary: {
+    cold_start_p50_ms: number;
+    all_raw_js_chunks_under_500kb: boolean;
+    total_gzip_js_css_under_250kb: boolean;
+    n_concurrent_requests: number;
+    http_200_count: number;
+    http_200_success_rate: number;
+    throughput_rps: number;
+    server_crash_count: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+  };
+  bundle_assets: {
+    web_dist_totals: {
+      total_gzip_js_css_kb: number;
+    };
+  };
+};
+
+type CaregiverHandoffArtifact = {
+  summary: {
+    n_cases: number;
+    languages_tested: string[];
+    sms_uri_valid_rate: number;
+    mailto_uri_valid_rate: number;
+    uri_encoding_pass_rate: number;
+    caregiver_actionability_rate: number;
+    non_medical_boundary_pass_rate: number;
+    mean_clarity_score: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+    latency_p50_ms: number;
+  };
+};
+
 function formatDecimal1(value: number): string {
   return (Math.round((value + Number.EPSILON) * 10) / 10).toFixed(1);
 }
@@ -317,9 +461,17 @@ test("docs/judge-handout.html renders header, inline SVG glasses + 600x600 waveg
   assert.equal(checkCards.length, 6, "Expected exactly 6 resilience checklist cards");
 });
 
-test("docs/judge-handout.html benchmark figures match measured Wave-1 through Wave-7 eval JSON artifacts", () => {
+test("docs/judge-handout.html benchmark figures match measured Wave-1 through Wave-9 eval JSON artifacts", () => {
   const html = readFileSync(handoutUrl, "utf8");
 
+  const evalJsonFiles = readdirSync(new URL("../../eval", import.meta.url))
+    .filter((name) => name.endsWith(".json"))
+    .sort();
+  const evalSuiteFiles = evalJsonFiles.filter((name) => name !== "combined_summary.json");
+  assert.ok(evalJsonFiles.length >= 37, "Expected >= 37 committed eval JSON artifacts");
+  assert.ok(evalSuiteFiles.length >= 36, "Expected >= 36 committed evaluation suites");
+
+  const combined = readJsonArtifact<CombinedSummaryArtifact>("../../eval/combined_summary.json");
   const calibration = readJsonArtifact<CalibrationArtifact>("../../eval/calibration_curve.json");
   const modelComp = readJsonArtifact<ModelComparisonArtifact>("../../eval/model_comparison.json");
   const demoFixtures = readJsonArtifact<DemoFixturesArtifact>("../../eval/demo_fixtures_results.json");
@@ -329,12 +481,27 @@ test("docs/judge-handout.html benchmark figures match measured Wave-1 through Wa
   const unitEcon = readJsonArtifact<UnitEconomicsArtifact>("../../eval/unit_economics.json");
   const e2eLive = readJsonArtifact<E2eWebsocketLiveArtifact>("../../eval/e2e_websocket_live.json");
   const hudBench = readJsonArtifact<HudLatencyBandwidthArtifact>("../../eval/hud_latency_bandwidth.json");
+  const multiframe = readJsonArtifact<MultiframeRecoveryArtifact>("../../eval/multiframe_recovery_results.json");
+  const allergenAdv = readJsonArtifact<CountOnlyLabelArtifact>("../../eval/allergen_adversarial_results.json");
+  const expiryFmt = readJsonArtifact<CountOnlyLabelArtifact>("../../eval/expiry_formats_results.json");
   const orientation = readJsonArtifact<OrientationRobustnessArtifact>("../../eval/orientation_robustness_results.json");
   const promptInj = readJsonArtifact<PromptInjectionArtifact>("../../eval/prompt_injection_labels_results.json");
   const thermalWear = readJsonArtifact<ThermalFadeWearArtifact>("../../eval/thermal_fade_wear_results.json");
   const concurrent = readJsonArtifact<ConcurrentSessionsArtifact>("../../eval/concurrent_sessions_results.json");
   const multiCoaching = readJsonArtifact<MultilingualCoachingArtifact>("../../eval/multilingual_coaching_results.json");
   const bystander = readJsonArtifact<BystanderPrivacyArtifact>("../../eval/bystander_privacy_results.json");
+  const blisterCuts = readJsonArtifact<Wave8OpticalArtifact>("../../eval/blister_strip_cuts_results.json");
+  const twoBoxes = readJsonArtifact<Wave8OpticalArtifact>("../../eval/two_boxes_in_frame_results.json");
+  const cellophaneTremor = readJsonArtifact<Wave8OpticalArtifact>("../../eval/cellophane_tremor_results.json");
+  const wsReconnect = readJsonArtifact<WsReconnectResilienceArtifact>("../../eval/ws_reconnect_resilience.json");
+  const spokenClarity = readJsonArtifact<SpokenVerdictClarityArtifact>("../../eval/spoken_verdict_clarity_results.json");
+  const pharmacySticker = readJsonArtifact<PharmacyStickerOverlayArtifact>(
+    "../../eval/pharmacy_sticker_overlay_results.json"
+  );
+  const liquidConc = readJsonArtifact<LiquidConcentrationsArtifact>("../../eval/liquid_concentrations_results.json");
+  const waterDroplet = readJsonArtifact<WaterDropletPouchArtifact>("../../eval/water_droplet_pouch_results.json");
+  const prodFootprint = readJsonArtifact<ProductionFootprintArtifact>("../../eval/production_footprint.json");
+  const caregiverHandoff = readJsonArtifact<CaregiverHandoffArtifact>("../../eval/caregiver_handoff_results.json");
 
   assert.equal(calibration.summary.ece, 0.0138);
   assert.equal(calibration.summary.total_items, 16);
@@ -377,8 +544,10 @@ test("docs/judge-handout.html benchmark figures match measured Wave-1 through Wa
 
   const ingestFrameP50Ms = formatDecimal2(hudBench.summary.ingest_frame_p50_ms);
   const hudReplayP50Ms = formatDecimal2(hudBench.summary.hud_late_join_replay_p50_ms);
+  const flapReplayP50Ms = formatDecimal2(wsReconnect.summary.replay_reconnect_p50_ms);
   assert.equal(ingestFrameP50Ms, "1.17");
   assert.equal(hudReplayP50Ms, "1.78");
+  assert.equal(flapReplayP50Ms, "0.78");
   assert.equal(hudBench.summary.hud_verdict_wire_bytes, 674);
   assert.equal(hudBench.summary.ring_capacity, 8);
   assert.equal(hudBench.summary.ring_len_after_disconnect, 0);
@@ -417,19 +586,119 @@ test("docs/judge-handout.html benchmark figures match measured Wave-1 through Wa
   assert.equal(multiCoaching.summary.dose_hallucination_count, 0);
   assert.equal(multiCoaching.summary.bystander_leak_count, 0);
 
+  assert.equal(blisterCuts.summary.verdict_matches, 8);
+  assert.equal(blisterCuts.summary.confident_wrong_dose_count, 0);
+  assert.equal(twoBoxes.summary.verdict_matches, 8);
+  assert.equal(twoBoxes.summary.confident_wrong_dose_count, 0);
+  assert.equal(cellophaneTremor.summary.verdict_matches, 8);
+  assert.equal(cellophaneTremor.summary.confident_wrong_dose_count, 0);
+  assert.equal(wsReconnect.hud_flap_reconnect_benchmark.complete_4_msg_replays, 50);
+  assert.equal(wsReconnect.hostile_payload_storm_benchmark.graceful_rejections, 100);
+  assert.equal(wsReconnect.summary.server_crash_count, 0);
+  assert.equal(spokenClarity.summary.verdict_matches, 16);
+  assert.equal(spokenClarity.summary.mean_clarity_score, 5);
+  assert.equal(spokenClarity.summary.confident_wrong_dose_count, 0);
+
+  assert.equal(pharmacySticker.summary.verdict_matches, 8);
+  assert.equal(pharmacySticker.summary.n_items, 8);
+  assert.equal(pharmacySticker.summary.n_readable_sticker, 5);
+  assert.equal(pharmacySticker.summary.n_occluded_sticker, 3);
+  assert.equal(pharmacySticker.summary.readable_sticker_accuracy, 1.0);
+  assert.equal(pharmacySticker.summary.occluded_sticker_abstention_rate, 1.0);
+  assert.equal(pharmacySticker.summary.confident_wrong_dose_count, 0);
+  assert.equal(pharmacySticker.summary.false_safe_allergen_count, 0);
+
+  assert.equal(liquidConc.summary.verdict_matches, 8);
+  assert.equal(liquidConc.summary.n_items, 8);
+  assert.equal(liquidConc.summary.concentration_match_accuracy, 1.0);
+  assert.equal(liquidConc.summary.wrong_concentration_catch_rate, 1.0);
+  assert.equal(liquidConc.summary.occluded_denominator_abstention_rate, 1.0);
+  assert.equal(liquidConc.summary.confident_wrong_dose_count, 0);
+  assert.equal(liquidConc.summary.false_safe_allergen_count, 0);
+
+  assert.equal(waterDroplet.summary.verdict_matches, 8);
+  assert.equal(waterDroplet.summary.n_items, 8);
+  assert.equal(waterDroplet.summary.n_readable_wet_pouch, 5);
+  assert.equal(waterDroplet.summary.n_obliterated, 3);
+  assert.equal(waterDroplet.summary.readable_wet_pouch_accuracy, 1.0);
+  assert.equal(waterDroplet.summary.obliterated_abstention_rate, 1.0);
+  assert.equal(waterDroplet.summary.confident_wrong_dose_count, 0);
+  assert.equal(waterDroplet.summary.false_safe_allergen_count, 0);
+
+  const coldStartP50Ms = formatDecimal1(prodFootprint.summary.cold_start_p50_ms);
+  const gzipBundleKb = formatDecimal1(prodFootprint.bundle_assets.web_dist_totals.total_gzip_js_css_kb);
+  assert.equal(coldStartP50Ms, "767.2");
+  assert.equal(gzipBundleKb, "205.4");
+  assert.equal(prodFootprint.summary.all_raw_js_chunks_under_500kb, true);
+  assert.equal(prodFootprint.summary.total_gzip_js_css_under_250kb, true);
+  assert.equal(prodFootprint.summary.http_200_count, 200);
+  assert.equal(prodFootprint.summary.n_concurrent_requests, 200);
+  assert.equal(prodFootprint.summary.http_200_success_rate, 1.0);
+  assert.equal(prodFootprint.summary.throughput_rps, 631.94);
+  assert.equal(prodFootprint.summary.server_crash_count, 0);
+
+  assert.equal(caregiverHandoff.summary.n_cases, 12);
+  assert.deepEqual(caregiverHandoff.summary.languages_tested, ["en", "fi", "sv"]);
+  assert.equal(caregiverHandoff.summary.mean_clarity_score, 5);
+  assert.equal(caregiverHandoff.summary.sms_uri_valid_rate, 1.0);
+  assert.equal(caregiverHandoff.summary.mailto_uri_valid_rate, 1.0);
+  assert.equal(caregiverHandoff.summary.uri_encoding_pass_rate, 1.0);
+  assert.equal(caregiverHandoff.summary.caregiver_actionability_rate, 1.0);
+  assert.equal(caregiverHandoff.summary.non_medical_boundary_pass_rate, 1.0);
+  assert.equal(caregiverHandoff.summary.confident_wrong_dose_count, 0);
+  assert.equal(caregiverHandoff.summary.false_safe_allergen_count, 0);
+
+  assert.equal(combined.total_confident_wrong_dose_count, 0);
+  assert.equal(combined.total_false_safe_allergen_count, 0);
+  assert.equal(combined.extended_summary.confident_wrong_dose_count, 0);
+  assert.equal(combined.extended_summary.false_safe_allergen_count, 0);
+  assert.equal(multiframe.summary.confident_wrong_dose_count, 0);
+  assert.equal(allergenAdv.summary.confident_wrong_dose_count, 0);
+  assert.equal(expiryFmt.summary.confident_wrong_dose_count, 0);
+
+  const totalRealModelLabelReads =
+    combined.total_label_cases_evaluated +
+    calibration.summary.total_items +
+    modelComp.total_benchmark_calls +
+    combined.extended_summary.total_cases_evaluated +
+    multiframe.summary.total_calls +
+    allergenAdv.summary.n_items +
+    expiryFmt.summary.n_items +
+    3 +
+    orientation.summary.n_items +
+    promptInj.summary.n_items +
+    thermalWear.summary.n_items +
+    blisterCuts.summary.n_items +
+    twoBoxes.summary.n_items +
+    cellophaneTremor.summary.n_items +
+    pharmacySticker.summary.n_items +
+    liquidConc.summary.n_items +
+    waterDroplet.summary.n_items;
+  assert.equal(totalRealModelLabelReads, 276, "Expected 276 real-model label reads across all 25 label suites");
+
   const expectedSnippets = [
+    "36",
+    "37",
+    String(totalRealModelLabelReads),
+    "25",
+    "635",
+    "231",
+    "372",
+    "32",
     `ECE = ${calibration.summary.ece.toFixed(4)}`,
     `<code>${calibration.summary.total_items}</code>`,
     `<code>${modelComp.total_benchmark_calls}</code>`,
     `<code>${demoFixtures.summary.n_items}</code>`,
     `<code>${batch2.summary.n_items}</code>`,
     "0</code> confident-wrong dose reads",
+    "0</code> false-safe allergens",
     "gemini-3.8-live",
     `${livePrimary.firstAudioMs} ms`,
     `${liveReadyMs} ms`,
     `${glassToHudP50Ms} ms`,
     `${ingestFrameP50Ms} ms`,
     `${hudReplayP50Ms} ms`,
+    `${flapReplayP50Ms} ms`,
     `${hudBench.summary.hud_verdict_wire_bytes} B`,
     `${orientation.summary.verdict_matches}/${orientation.summary.n_items}`,
     "90/180/270 deg",
@@ -437,6 +706,28 @@ test("docs/judge-handout.html benchmark figures match measured Wave-1 through Wa
     `<code>${promptInj.summary.hijack_success_count}</code> hijacks`,
     `${thermalWear.summary.verdict_matches}/${thermalWear.summary.n_items}`,
     "faded thermal sticker &amp; wet-hand smudge",
+    "blister_strip_cuts_results.json",
+    "two_boxes_in_frame_results.json",
+    "cellophane_tremor_results.json",
+    "ws_reconnect_resilience.json",
+    "spoken_verdict_clarity_results.json",
+    "pharmacy_sticker_overlay_results.json",
+    `${formatDecimal1(pharmacySticker.summary.latency_p50_ms)} ms`,
+    "liquid_concentrations_results.json",
+    "mg/5 ml",
+    "mg/ml",
+    "IU/ml",
+    `${formatDecimal1(liquidConc.summary.latency_p50_ms)} ms`,
+    "water_droplet_pouch_results.json",
+    `${formatDecimal1(waterDroplet.summary.latency_p50_ms)} ms`,
+    "production_footprint.json",
+    `${coldStartP50Ms} ms`,
+    `${gzipBundleKb} kB`,
+    `${prodFootprint.summary.http_200_count}/${prodFootprint.summary.n_concurrent_requests}`,
+    `${prodFootprint.summary.throughput_rps.toFixed(2)} req/s`,
+    "caregiver_handoff_results.json",
+    `${caregiverHandoff.summary.n_cases}/${caregiverHandoff.summary.n_cases}`,
+    `${formatDecimal1(caregiverHandoff.summary.latency_p50_ms)} ms`,
     `<code>${concurrent.summary.n_concurrent_sessions}</code>`,
     `<code>${concurrent.summary.n_concurrent_websockets}</code>`,
     `<code>${concurrent.summary.cross_session_leak_count}</code> cross-session leaks`,
@@ -455,7 +746,7 @@ test("docs/judge-handout.html benchmark figures match measured Wave-1 through Wa
   }
 
   const metricTiles = html.match(/class="metric-tile"/g) ?? [];
-  assert.equal(metricTiles.length, 12, "Expected 12 Wave-1 through Wave-7 metric tiles in 2x6 grid");
+  assert.equal(metricTiles.length, 18, "Expected 18 Wave-1 through Wave-9 metric tiles in 3x6 grid");
 });
 
 test("docs/judge-handout.html inline toolbar script toggles light/dark preview and triggers window.print()", () => {

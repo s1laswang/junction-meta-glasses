@@ -251,6 +251,100 @@ type SpokenVerdictClarityArtifact = {
   };
 };
 
+type MultilingualCoachingArtifact = {
+  summary: {
+    n_turns: number;
+    languages_tested: string[];
+    all_checks_pass_rate: number;
+    dose_hallucination_count: number;
+    bystander_leak_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type PharmacyStickerOverlayArtifact = {
+  summary: {
+    n_items: number;
+    n_readable_sticker: number;
+    n_occluded_sticker: number;
+    readable_sticker_accuracy: number;
+    occluded_sticker_abstention_rate: number;
+    verdict_matches: number;
+    verdict_accuracy: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type LiquidConcentrationsArtifact = {
+  summary: {
+    n_items: number;
+    n_concentration_matches: number;
+    concentration_match_accuracy: number;
+    n_warning_traps: number;
+    wrong_concentration_catch_rate: number;
+    n_occluded_items: number;
+    occluded_denominator_abstention_rate: number;
+    verdict_matches: number;
+    verdict_accuracy: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type WaterDropletPouchArtifact = {
+  summary: {
+    n_items: number;
+    n_readable_wet_pouch: number;
+    n_obliterated: number;
+    readable_wet_pouch_accuracy: number;
+    obliterated_abstention_rate: number;
+    verdict_matches: number;
+    verdict_accuracy: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+    latency_p50_ms: number;
+  };
+};
+
+type ProductionFootprintArtifact = {
+  summary: {
+    cold_start_p50_ms: number;
+    all_raw_js_chunks_under_500kb: boolean;
+    total_gzip_js_css_under_250kb: boolean;
+    n_concurrent_requests: number;
+    http_200_count: number;
+    http_200_success_rate: number;
+    throughput_rps: number;
+    server_crash_count: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+  };
+  bundle_assets: {
+    web_dist_totals: {
+      total_gzip_js_css_kb: number;
+    };
+  };
+};
+
+type CaregiverHandoffArtifact = {
+  summary: {
+    n_cases: number;
+    languages_tested: string[];
+    sms_uri_valid_rate: number;
+    mailto_uri_valid_rate: number;
+    uri_encoding_pass_rate: number;
+    caregiver_actionability_rate: number;
+    non_medical_boundary_pass_rate: number;
+    mean_clarity_score: number;
+    confident_wrong_dose_count: number;
+    false_safe_allergen_count: number;
+    latency_p50_ms: number;
+  };
+};
+
 function readJsonArtifact<T>(relativePath: string): T {
   const raw = readFileSync(new URL(relativePath, import.meta.url), "utf8");
   return JSON.parse(raw) as T;
@@ -364,15 +458,15 @@ test("docs/architecture-poster.html renders crisp inline SVG visualizing all 3 t
   }
 });
 
-test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 latency, calibration, optical, red-team, concurrency, reconnect, and spoken clarity metrics from committed eval JSON files", () => {
+test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-9 latency, calibration, optical, red-team, concurrency, reconnect, footprint, and caregiver metrics from committed eval JSON files", () => {
   const html = readFileSync(posterUrl, "utf8");
 
   const evalJsonFiles = readdirSync(new URL("../../eval", import.meta.url))
     .filter((name) => name.endsWith(".json"))
     .sort();
   const evalSuiteFiles = evalJsonFiles.filter((name) => name !== "combined_summary.json");
-  assert.ok(evalJsonFiles.length >= 32, "Expected >= 32 committed eval JSON artifacts");
-  assert.ok(evalSuiteFiles.length >= 31, "Expected >= 31 committed evaluation suites");
+  assert.ok(evalJsonFiles.length >= 37, "Expected >= 37 committed eval JSON artifacts");
+  assert.ok(evalSuiteFiles.length >= 36, "Expected >= 36 committed evaluation suites");
 
   const hudBench = readJsonArtifact<HudLatencyArtifact>("../../eval/hud_latency_bandwidth.json");
   const e2eLive = readJsonArtifact<E2eWebsocketLiveArtifact>("../../eval/e2e_websocket_live.json");
@@ -386,12 +480,21 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
   const orientation = readJsonArtifact<OrientationRobustnessArtifact>("../../eval/orientation_robustness_results.json");
   const promptInj = readJsonArtifact<PromptInjectionArtifact>("../../eval/prompt_injection_labels_results.json");
   const thermalWear = readJsonArtifact<ThermalFadeWearArtifact>("../../eval/thermal_fade_wear_results.json");
+  const multiCoaching = readJsonArtifact<MultilingualCoachingArtifact>("../../eval/multilingual_coaching_results.json");
   const blisterCuts = readJsonArtifact<BlisterStripCutsArtifact>("../../eval/blister_strip_cuts_results.json");
   const twoBoxes = readJsonArtifact<TwoBoxesInFrameArtifact>("../../eval/two_boxes_in_frame_results.json");
   const cellophaneTremor = readJsonArtifact<CellophaneTremorArtifact>("../../eval/cellophane_tremor_results.json");
   const concurrent = readJsonArtifact<ConcurrentSessionsArtifact>("../../eval/concurrent_sessions_results.json");
   const wsReconnect = readJsonArtifact<WsReconnectResilienceArtifact>("../../eval/ws_reconnect_resilience.json");
   const spokenClarity = readJsonArtifact<SpokenVerdictClarityArtifact>("../../eval/spoken_verdict_clarity_results.json");
+
+  const pharmacySticker = readJsonArtifact<PharmacyStickerOverlayArtifact>(
+    "../../eval/pharmacy_sticker_overlay_results.json"
+  );
+  const liquidConc = readJsonArtifact<LiquidConcentrationsArtifact>("../../eval/liquid_concentrations_results.json");
+  const waterDroplet = readJsonArtifact<WaterDropletPouchArtifact>("../../eval/water_droplet_pouch_results.json");
+  const prodFootprint = readJsonArtifact<ProductionFootprintArtifact>("../../eval/production_footprint.json");
+  const caregiverHandoff = readJsonArtifact<CaregiverHandoffArtifact>("../../eval/caregiver_handoff_results.json");
 
   assert.equal(combined.safety_invariants.strength_min_conf, 0.8);
   assert.equal(combined.total_confident_wrong_dose_count, 0);
@@ -409,6 +512,15 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
   assert.equal(twoBoxes.summary.confident_wrong_dose_count, 0);
   assert.equal(cellophaneTremor.summary.confident_wrong_dose_count, 0);
   assert.equal(spokenClarity.summary.confident_wrong_dose_count, 0);
+  assert.equal(pharmacySticker.summary.confident_wrong_dose_count, 0);
+  assert.equal(pharmacySticker.summary.false_safe_allergen_count, 0);
+  assert.equal(liquidConc.summary.confident_wrong_dose_count, 0);
+  assert.equal(liquidConc.summary.false_safe_allergen_count, 0);
+  assert.equal(waterDroplet.summary.confident_wrong_dose_count, 0);
+  assert.equal(waterDroplet.summary.false_safe_allergen_count, 0);
+  assert.equal(prodFootprint.summary.confident_wrong_dose_count, 0);
+  assert.equal(caregiverHandoff.summary.confident_wrong_dose_count, 0);
+  assert.equal(caregiverHandoff.summary.false_safe_allergen_count, 0);
 
   const totalRealModelLabelReads =
     combined.total_label_cases_evaluated +
@@ -424,8 +536,11 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
     thermalWear.summary.n_items +
     blisterCuts.summary.n_items +
     twoBoxes.summary.n_items +
-    cellophaneTremor.summary.n_items;
-  assert.equal(totalRealModelLabelReads, 252, "Expected 252 total real-model label reads across all label suites");
+    cellophaneTremor.summary.n_items +
+    pharmacySticker.summary.n_items +
+    liquidConc.summary.n_items +
+    waterDroplet.summary.n_items;
+  assert.equal(totalRealModelLabelReads, 276, "Expected 276 total real-model label reads across all 25 label suites");
 
   assert.equal(combined.extended_summary.pii_or_bystander_leak_count, 0);
   assert.equal(bystander.summary.pii_or_bystander_leak_count, 0);
@@ -449,6 +564,12 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
   assert.equal(thermalWear.summary.n_severe_wear, 4);
   assert.equal(thermalWear.summary.moderate_wear_accuracy, 1);
   assert.equal(thermalWear.summary.severe_wear_abstention_rate, 1);
+
+  assert.equal(multiCoaching.summary.n_turns, 9);
+  assert.deepEqual(multiCoaching.summary.languages_tested, ["en", "fi", "sv"]);
+  assert.equal(multiCoaching.summary.all_checks_pass_rate, 1);
+  assert.equal(multiCoaching.summary.dose_hallucination_count, 0);
+  assert.equal(multiCoaching.summary.bystander_leak_count, 0);
 
   assert.equal(blisterCuts.summary.verdict_matches, 8);
   assert.equal(blisterCuts.summary.n_items, 8);
@@ -495,6 +616,50 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
   assert.equal(spokenClarity.summary.speech_sentence_cap_pass_rate, 1);
   assert.equal(spokenClarity.summary.non_medical_boundary_pass_rate, 1);
 
+  assert.equal(pharmacySticker.summary.verdict_matches, 8);
+  assert.equal(pharmacySticker.summary.n_items, 8);
+  assert.equal(pharmacySticker.summary.n_readable_sticker, 5);
+  assert.equal(pharmacySticker.summary.n_occluded_sticker, 3);
+  assert.equal(pharmacySticker.summary.readable_sticker_accuracy, 1);
+  assert.equal(pharmacySticker.summary.occluded_sticker_abstention_rate, 1);
+
+  assert.equal(liquidConc.summary.verdict_matches, 8);
+  assert.equal(liquidConc.summary.n_items, 8);
+  assert.equal(liquidConc.summary.n_concentration_matches, 3);
+  assert.equal(liquidConc.summary.concentration_match_accuracy, 1);
+  assert.equal(liquidConc.summary.n_warning_traps, 3);
+  assert.equal(liquidConc.summary.wrong_concentration_catch_rate, 1);
+  assert.equal(liquidConc.summary.n_occluded_items, 2);
+  assert.equal(liquidConc.summary.occluded_denominator_abstention_rate, 1);
+
+  assert.equal(waterDroplet.summary.verdict_matches, 8);
+  assert.equal(waterDroplet.summary.n_items, 8);
+  assert.equal(waterDroplet.summary.n_readable_wet_pouch, 5);
+  assert.equal(waterDroplet.summary.n_obliterated, 3);
+  assert.equal(waterDroplet.summary.readable_wet_pouch_accuracy, 1);
+  assert.equal(waterDroplet.summary.obliterated_abstention_rate, 1);
+
+  const coldStartP50Ms = formatDecimal1(prodFootprint.summary.cold_start_p50_ms);
+  const gzipBundleKb = formatDecimal1(prodFootprint.bundle_assets.web_dist_totals.total_gzip_js_css_kb);
+  assert.equal(coldStartP50Ms, "767.2");
+  assert.equal(gzipBundleKb, "205.4");
+  assert.equal(prodFootprint.summary.all_raw_js_chunks_under_500kb, true);
+  assert.equal(prodFootprint.summary.total_gzip_js_css_under_250kb, true);
+  assert.equal(prodFootprint.summary.http_200_count, 200);
+  assert.equal(prodFootprint.summary.n_concurrent_requests, 200);
+  assert.equal(prodFootprint.summary.http_200_success_rate, 1);
+  assert.equal(prodFootprint.summary.throughput_rps, 631.94);
+  assert.equal(prodFootprint.summary.server_crash_count, 0);
+
+  assert.equal(caregiverHandoff.summary.n_cases, 12);
+  assert.deepEqual(caregiverHandoff.summary.languages_tested, ["en", "fi", "sv"]);
+  assert.equal(caregiverHandoff.summary.mean_clarity_score, 5);
+  assert.equal(caregiverHandoff.summary.sms_uri_valid_rate, 1);
+  assert.equal(caregiverHandoff.summary.mailto_uri_valid_rate, 1);
+  assert.equal(caregiverHandoff.summary.uri_encoding_pass_rate, 1);
+  assert.equal(caregiverHandoff.summary.caregiver_actionability_rate, 1);
+  assert.equal(caregiverHandoff.summary.non_medical_boundary_pass_rate, 1);
+
   assert.equal(hudBench.summary.ingest_state_fanout_p50_ms, 1.295);
   const ingestFrameP50 = formatDecimal2(hudBench.summary.ingest_frame_p50_ms);
   const ingestFrameP95 = formatDecimal2(hudBench.summary.ingest_frame_p95_ms);
@@ -520,13 +685,14 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
   assert.equal(hudBench.summary.ring_len_after_disconnect, 0);
 
   const expectedMetricSnippets = [
-    "31",
-    "32",
+    "36",
+    "37",
     String(totalRealModelLabelReads),
-    "578",
-    "209",
-    "346",
-    "23",
+    "25",
+    "635",
+    "231",
+    "372",
+    "32",
     `${ingestFrameP50} ms`,
     `${ingestFrameP95} ms`,
     `${stateFanoutP50} ms`,
@@ -558,6 +724,9 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
     `${thermalWear.summary.n_moderate_wear}/${thermalWear.summary.n_moderate_wear}`,
     `${thermalWear.summary.n_severe_wear}/${thermalWear.summary.n_severe_wear}`,
     `${formatDecimal1(thermalWear.summary.latency_p50_ms)} ms`,
+    "multilingual_coaching_results.json",
+    `${multiCoaching.summary.n_turns}/${multiCoaching.summary.n_turns}`,
+    `${formatDecimal1(multiCoaching.summary.latency_p50_ms)} ms`,
     "blister_strip_cuts_results.json",
     `${blisterCuts.summary.intact_tile_matches}/${blisterCuts.summary.n_intact_tile}`,
     `${formatDecimal1(blisterCuts.summary.latency_p50_ms)} ms`,
@@ -577,8 +746,31 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
     `${spokenClarity.summary.verdict_matches}/${spokenClarity.summary.n_cases}`,
     `${spokenClarity.summary.mean_clarity_score.toFixed(1)}/5`,
     `${formatDecimal1(spokenClarity.summary.latency_p50_ms)} ms`,
+    "pharmacy_sticker_overlay_results.json",
+    `${pharmacySticker.summary.n_readable_sticker}/${pharmacySticker.summary.n_readable_sticker}`,
+    `${pharmacySticker.summary.n_occluded_sticker}/${pharmacySticker.summary.n_occluded_sticker}`,
+    `${formatDecimal1(pharmacySticker.summary.latency_p50_ms)} ms`,
+    "liquid_concentrations_results.json",
+    "mg/5 ml",
+    "mg/ml",
+    "IU/ml",
+    `${liquidConc.summary.n_occluded_items}/${liquidConc.summary.n_occluded_items}`,
+    `${formatDecimal1(liquidConc.summary.latency_p50_ms)} ms`,
+    "water_droplet_pouch_results.json",
+    `${waterDroplet.summary.n_readable_wet_pouch}/${waterDroplet.summary.n_readable_wet_pouch}`,
+    `${waterDroplet.summary.n_obliterated}/${waterDroplet.summary.n_obliterated}`,
+    `${formatDecimal1(waterDroplet.summary.latency_p50_ms)} ms`,
+    "production_footprint.json",
+    `${coldStartP50Ms} ms`,
+    `${gzipBundleKb} kB`,
+    `${prodFootprint.summary.http_200_count}/${prodFootprint.summary.n_concurrent_requests}`,
+    `${prodFootprint.summary.throughput_rps.toFixed(2)} req/s`,
+    "caregiver_handoff_results.json",
+    `${caregiverHandoff.summary.n_cases}/${caregiverHandoff.summary.n_cases}`,
+    `${formatDecimal1(caregiverHandoff.summary.latency_p50_ms)} ms`,
     "0 PII/bystander leaks",
-    "0 confident-wrong doses"
+    "0 confident-wrong doses",
+    "0 false-safe allergens"
   ];
 
   for (const snippet of expectedMetricSnippets) {
@@ -589,7 +781,7 @@ test("docs/architecture-poster.html cites exact measured Wave-1 through Wave-8 l
   assert.equal(metricCards.length, 7, "Expected 7 headline benchmark metric cards");
 
   const waveCards = html.match(/class="wave-card"/g) ?? [];
-  assert.equal(waveCards.length, 9, "Expected 9 Wave-7 and Wave-8 benchmark cards");
+  assert.equal(waveCards.length, 15, "Expected 15 Wave-7, Wave-8, and Wave-9 benchmark cards");
 });
 
 test("docs/architecture-poster.html inline toolbar script toggles light/dark preview and triggers window.print()", () => {

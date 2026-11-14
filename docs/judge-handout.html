@@ -493,22 +493,22 @@
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 1.7mm;
+    gap: 1.4mm;
   }
 
   .metric-tile {
     background: var(--surface-alt);
     border: 1px solid var(--border-subtle);
     border-radius: 5px;
-    padding: 1.4mm 1.8mm;
+    padding: 1.2mm 1.5mm;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 0.5mm;
+    gap: 0.4mm;
   }
 
   .metric-val {
-    font-size: 9.2pt;
+    font-size: 8.6pt;
     font-weight: 900;
     letter-spacing: -0.02em;
     color: var(--accent);
@@ -524,26 +524,26 @@
   }
 
   .metric-label {
-    font-size: 6.65pt;
+    font-size: 6.45pt;
     font-weight: 800;
     color: var(--ink-primary);
-    line-height: 1.18;
+    line-height: 1.15;
   }
 
   .metric-sub {
-    font-size: 6.05pt;
+    font-size: 5.85pt;
     color: var(--ink-muted);
-    line-height: 1.18;
+    line-height: 1.15;
   }
 
   .proof-strip {
-    font-size: 6.85pt;
+    font-size: 6.55pt;
     color: var(--ink-secondary);
-    padding: 1.2mm 2mm;
+    padding: 1.1mm 1.8mm;
     background: var(--surface-alt);
     border-left: 3px solid var(--match-border);
     border-radius: 4px;
-    line-height: 1.26;
+    line-height: 1.22;
   }
 
   .proof-strip strong {
@@ -910,20 +910,20 @@
 
     <section class="panel" aria-labelledby="sec-benchmarks">
       <div class="panel-header">
-        <h2 id="sec-benchmarks">4. Verified Measured Benchmarks (<code>27</code> Committed <code>eval/</code> JSON Artifacts)</h2>
-        <span class="panel-kicker">Wave-1 Through Wave-7 Proof</span>
+        <h2 id="sec-benchmarks">4. Verified Measured Benchmarks (<code>36</code> Suites / <code>37</code> Committed <code>eval/</code> JSON Artifacts)</h2>
+        <span class="panel-kicker">Wave-1 Through Wave-9 Proof | 635 Tests</span>
       </div>
 
       <div class="metrics-grid">
         <div class="metric-tile">
           <div class="metric-val safe">0</div>
           <div class="metric-label">Confident-Wrong Doses</div>
-          <div class="metric-sub">52/53 (98.1%) core; 100.0% abstention at 0.80</div>
+          <div class="metric-sub">276 reads / 25 suites (52/53 = 98.1% core, 0 false-safe)</div>
         </div>
         <div class="metric-tile">
           <div class="metric-val">ECE = 0.0138</div>
           <div class="metric-label">Strength Calibration</div>
-          <div class="metric-sub">Brier 0.0005 across 4 degradation tiers</div>
+          <div class="metric-sub">Brier 0.0005; 100.0% abstention at 0.80</div>
         </div>
         <div class="metric-tile">
           <div class="metric-val">431.6 ms</div>
@@ -936,9 +936,9 @@
           <div class="metric-sub">DAT frame -&gt; <code>gemini-3.8-flash</code> -&gt; <code>/hud-ws</code></div>
         </div>
         <div class="metric-tile">
-          <div class="metric-val">1.17 / 1.78 ms</div>
+          <div class="metric-val">1.17 / 0.78 ms</div>
           <div class="metric-label"><code>/ingest</code> &amp; <code>/hud-ws</code> p50</div>
-          <div class="metric-sub"><code>1.17 ms</code> ingest, <code>1.78 ms</code> replay (<code>674 B</code> wire)</div>
+          <div class="metric-sub"><code>1.78 ms</code> join (<code>674 B</code>); <code>50/50</code> flap, <code>100/100</code> storm</div>
         </div>
         <div class="metric-tile">
           <div class="metric-val safe">91.8%</div>
@@ -948,7 +948,7 @@
         <div class="metric-tile">
           <div class="metric-val safe">10 / 10</div>
           <div class="metric-label"><code>90/180/270 deg</code> Blind-Hold</div>
-          <div class="metric-sub">100.0% upside-down &amp; sideways, 0 wrong doses</div>
+          <div class="metric-sub">100.0% upside-down &amp; sideways (p50 4424.9 ms)</div>
         </div>
         <div class="metric-tile">
           <div class="metric-val safe">10 / 10</div>
@@ -961,35 +961,65 @@
           <div class="metric-sub">Visual override stickers resisted, <code>0</code> hijacks</div>
         </div>
         <div class="metric-tile">
+          <div class="metric-val safe">8/8 x 3</div>
+          <div class="metric-label">Cut Foil, 2-Box &amp; Glare</div>
+          <div class="metric-sub">Blister cuts, twin-box focus &amp; cellophane+tremor</div>
+        </div>
+        <div class="metric-tile">
           <div class="metric-val safe">25 / 50 WS</div>
           <div class="metric-label">Concurrent Hub Isolation</div>
           <div class="metric-sub"><code>25</code> sessions / <code>50</code> sockets, <code>0</code> leaks, <code>0</code> retained</div>
         </div>
         <div class="metric-tile">
-          <div class="metric-val safe">9 / 9</div>
-          <div class="metric-label"><code>en</code>/<code>fi</code>/<code>sv</code> Hand Coaching</div>
-          <div class="metric-sub">100.0% cue compliance, <code>0</code> dose hallucinations</div>
+          <div class="metric-val safe">16 / 16 (5.0/5)</div>
+          <div class="metric-label">Open-Ear Spoken Clarity</div>
+          <div class="metric-sub">100% &lt;= 8w / &lt;= 2-sent EU MDR boundary</div>
         </div>
         <div class="metric-tile">
-          <div class="metric-val safe">8 / 8</div>
-          <div class="metric-label">Coaching &amp; Bystander PII</div>
-          <div class="metric-sub">5.0/5 score; 2574.8 ms face refusal; 0 PII leaks</div>
+          <div class="metric-val safe">8 / 8 (100%)</div>
+          <div class="metric-label">Nordic Pharmacy Stickers</div>
+          <div class="metric-sub">5/5 dispensing overlay + 3/3 crooked (p50 3615.2 ms)</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">8 / 8 (100%)</div>
+          <div class="metric-label">Liquid Concentrations</div>
+          <div class="metric-sub"><code>mg/5 ml</code>, <code>mg/ml</code>, <code>IU/ml</code> + occluded (p50 3244.4 ms)</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">8 / 8 (100%)</div>
+          <div class="metric-label">Wet Droplet &amp; Pouch</div>
+          <div class="metric-sub">5/5 condensation + 3/3 pouch, 0 false-safe (3458.3 ms)</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val">767.2 ms / 205.4 kB</div>
+          <div class="metric-label">Cold-Start &amp; Gzip Bundle</div>
+          <div class="metric-sub"><code>200/200</code> burst at <code>631.94 req/s</code>, <code>0</code> crashes</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">12 / 12 (5.0/5)</div>
+          <div class="metric-label">Caregiver &amp; Wallet Handoff</div>
+          <div class="metric-sub">EN/FI/SV SMS/mailto + wallet, 100% URI (3011.4 ms)</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">635</div>
+          <div class="metric-label">Passing Automated Tests</div>
+          <div class="metric-sub"><code>231</code> server + <code>372</code> web + <code>32</code> eval; 9/9 coach, 0 PII</div>
         </div>
       </div>
 
       <div class="proof-strip">
-        <strong>Evidence Breakdown (<code>27</code> Committed <code>eval/</code> JSONs):</strong>
-        <code>ECE = 0.0138</code> and <strong><code>0</code> confident-wrong dose reads</strong> verified across
-        <strong><code>16</code></strong> progressive degradation reads (<code>calibration_curve.json</code>) +
-        <strong><code>36</code></strong> 3-model probe reads (<code>model_comparison.json</code>: <code>gemini-3.8-flash</code>, <code>gemini-3.5-flash</code>, <code>gemini-3-flash-preview</code>, <code>100.0%</code> verdict match) +
-        <strong><code>7</code></strong> <code>/api/verify</code> fixture reads (<code>demo_fixtures_results.json</code>) +
-        <strong><code>18</code></strong> food/allergen reads (<code>results_batch2.json</code>, <code>0</code> false-safe allergens) +
-        <strong><code>10/10</code></strong> <code>90/180/270 deg</code> blind-hold orientation reads (<code>orientation_robustness_results.json</code>, <code>0</code> wrong doses) +
-        <strong><code>10/10</code></strong> faded thermal sticker &amp; wet-hand smudge reads (<code>thermal_fade_wear_results.json</code>, <code>0</code> wrong doses) +
-        <strong><code>8/8</code></strong> (<code>100%</code>) visual prompt-injection resistance (<code>prompt_injection_labels_results.json</code>, <code>0</code> hijacks) +
-        <strong><code>9/9</code></strong> <code>en</code>/<code>fi</code>/<code>sv</code> hand-coaching compliance (<code>multilingual_coaching_results.json</code>, <code>0</code> dose hallucinations, <code>0</code> bystander leaks) +
-        <strong><code>25</code></strong> concurrent sessions / <strong><code>50</code></strong> WebSockets (<code>concurrent_sessions_results.json</code>, <code>0</code> cross-session leaks, <code>0</code> post-disconnect buffered frames).
-        Live &amp; HUD wire: <code>431.6 ms</code> Live ready &amp; <code>2738.8 ms</code> live glass-to-HUD <code>p50</code> (<code>e2e_websocket_live.json</code>), <code>1.17 ms</code> <code>/ingest/frame</code> <code>p50</code> &amp; <code>1.78 ms</code> <code>/hud-ws</code> late-join replay <code>p50</code> at <code>674 B</code> HUD wire (<code>hud_latency_bandwidth.json</code>), <code>84.0%</code> adaptive video saved (<code>724.64 KB -&gt; 116.02 KB</code>), and <strong><code>EUR 341.68</code></strong> (EUR 329 Ray-Ban Meta Gen 2 + EUR 0.00294/check) vs <strong><code>EUR 4,150.00</code></strong> OrCam midpoint = <strong><code>91.8%</code> savings</strong>.
+        <strong>Evidence Breakdown (<code>36</code> Suites / <code>37</code> Committed <code>eval/</code> JSONs, <code>276</code> Real-Model Label Reads across <code>25</code> Label Suites):</strong>
+        <code>ECE = 0.0138</code>, <strong><code>0</code> confident-wrong dose reads</strong>, and <strong><code>0</code> false-safe allergens</strong> across
+        <strong><code>16</code></strong> calibration reads (<code>calibration_curve.json</code>) +
+        <strong><code>36</code></strong> 3-model probe reads (<code>model_comparison.json</code>) +
+        <strong><code>7</code></strong> <code>/api/verify</code> fixtures (<code>demo_fixtures_results.json</code>) +
+        <strong><code>18</code></strong> food/allergen reads (<code>results_batch2.json</code>) +
+        <strong><code>10/10</code></strong> <code>90/180/270 deg</code> blind-hold (<code>orientation_robustness_results.json</code>) +
+        <strong><code>10/10</code></strong> faded thermal sticker &amp; wet-hand smudge (<code>thermal_fade_wear_results.json</code>) +
+        <strong><code>8/8</code></strong> prompt-injection defense (<code>prompt_injection_labels_results.json</code>, <code>0</code> hijacks) +
+        <strong><code>8/8</code></strong> scissor-cut blisters (<code>blister_strip_cuts_results.json</code>, <code>p50 = 4109.0 ms</code>), <strong><code>8/8</code></strong> twin-box clutter (<code>two_boxes_in_frame_results.json</code>, <code>p50 = 3314.0 ms</code>) &amp; <strong><code>8/8</code></strong> cellophane+tremor (<code>cellophane_tremor_results.json</code>, <code>p50 = 3449.9 ms</code>) +
+        <strong><code>8/8</code></strong> Nordic pharmacy sticker overlay &amp; crooked abstention (<code>pharmacy_sticker_overlay_results.json</code>, <code>p50 = 3615.2 ms</code>), <strong><code>8/8</code></strong> <code>mg/5 ml</code> / <code>mg/ml</code> / <code>IU/ml</code> liquid concentrations (<code>liquid_concentrations_results.json</code>, <code>p50 = 3244.4 ms</code>) &amp; <strong><code>8/8</code></strong> wet condensation droplet &amp; crumpled pouch safety (<code>water_droplet_pouch_results.json</code>, <code>p50 = 3458.3 ms</code>).
+        Systems, voice &amp; TCO: <strong><code>9/9</code></strong> <code>en</code>/<code>fi</code>/<code>sv</code> coaching (<code>multilingual_coaching_results.json</code>, <code>0</code> dose hallucinations, <code>0</code> bystander leaks), <strong><code>8/8</code></strong> coaching/PII judge (<code>2574.8 ms</code> refusal), <strong><code>16/16</code></strong> <code>5.0/5</code> spoken clarity (<code>spoken_verdict_clarity_results.json</code>, <code>p50 = 3181.4 ms</code>), <strong><code>12/12</code></strong> <code>5.0/5</code> EN/FI/SV caregiver SMS/mailto &amp; Emergency Wallet handoff (<code>caregiver_handoff_results.json</code>, <code>100%</code> URI validity, <code>p50 = 3011.4 ms</code>), <strong><code>25</code></strong> sessions / <strong><code>50</code></strong> WS (<code>concurrent_sessions_results.json</code>, <code>0</code> cross-session leaks, <code>0</code> post-disconnect buffered frames), <strong><code>50/50</code></strong> <code>/hud-ws</code> flap replay at <code>0.78 ms</code> p50 + <strong><code>100/100</code></strong> hostile storm defense (<code>ws_reconnect_resilience.json</code>, <code>0</code> crashes), <strong><code>767.2 ms</code></strong> cold-start <code>startServer(0)</code> p50, <strong><code>205.4 kB</code></strong> gzip <code>web/dist</code> JS+CSS &amp; <strong><code>200/200</code></strong> HTTP burst at <code>631.94 req/s</code> (<code>production_footprint.json</code>, <code>0</code> crashes), <code>431.6 ms</code> Live ready, <code>2738.8 ms</code> glass-to-HUD p50, <code>1.17 ms</code> ingest &amp; <code>1.78 ms</code> replay (<code>674 B</code> wire), <code>84.0%</code> adaptive video saved, and <strong><code>EUR 341.68</code></strong> vs <strong><code>EUR 4,150.00</code></strong> OrCam = <strong><code>91.8%</code> savings</strong> (<code>635</code> tests: <code>231</code> server + <code>372</code> web + <code>32</code> eval).
       </div>
     </section>
 
