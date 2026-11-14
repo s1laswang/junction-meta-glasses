@@ -1,0 +1,1164 @@
+{
+  "generated_at": "2026-11-14T14:11:03.830189+00:00",
+  "model": "gemini-3.8-flash",
+  "profile": {
+    "meds": [
+      {
+        "id": "aml",
+        "name": "Amlodipine",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "met",
+        "name": "Metformin",
+        "ingredient": "metformin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ]
+      },
+      {
+        "id": "par",
+        "name": "Panadol",
+        "ingredient": "paracetamol",
+        "strength": "500 mg",
+        "schedule": [
+          "as needed"
+        ]
+      }
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "n_items": 18,
+    "verdict_matches": 18,
+    "verdict_accuracy": 1.0,
+    "allergen_positive_count": 7,
+    "allergen_detected_count": 7,
+    "allergen_recall": 1.0,
+    "false_safe_allergen_count": 0,
+    "confident_wrong_dose_count": 0,
+    "clean_field_accuracy": 1.0,
+    "occluded_abstention_rate": 1.0,
+    "latency_p50_ms": 3413.6,
+    "latency_p95_ms": 4379.3,
+    "latency_mean_ms": 3447.9,
+    "tokens_in": 44730,
+    "tokens_out": 2169,
+    "tokens_thinking": 308,
+    "mean_tokens_in": 2485.0,
+    "mean_tokens_out": 120.5
+  },
+  "items": [
+    {
+      "id": "b2_01",
+      "description": "Granola bar with roasted hazelnuts (14%) in English",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_01.jpg",
+      "expected_kind": "food",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": true,
+      "panel_readable": true,
+      "allergen_detected": true,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3497.1,
+      "tokens_in": 2485,
+      "tokens_out": 118,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "Nordic Harvest Granola Bar",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "granola bar",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-10-18",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "oats",
+            "hazelnut"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.98
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains hazelnut",
+        "speech": "Warning: Nordic Harvest Granola Bar contains hazelnut. Your profile lists an allergy to tree nuts.",
+        "reasons": [
+          "contains hazelnut (allergy: tree nuts)"
+        ]
+      }
+    },
+    {
+      "id": "b2_02",
+      "description": "Chocolate spread synonym trap with arachis oil (= peanut)",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_02.jpg",
+      "expected_kind": "food",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": true,
+      "panel_readable": true,
+      "allergen_detected": true,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3192.6,
+      "tokens_in": 2485,
+      "tokens_out": 125,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "CHOCO VELVET Chocolate Spread",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "chocolate spread",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-12-01",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "peanut",
+            "arachis oil",
+            "milk"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains peanut",
+        "speech": "Warning: CHOCO VELVET Chocolate Spread contains peanut. Your profile lists an allergy to peanut.",
+        "reasons": [
+          "contains peanut (allergy: peanut)"
+        ]
+      }
+    },
+    {
+      "id": "b2_03",
+      "description": "Finnish cookie box with may-contain hazelnut and almond warning",
+      "language": "fi",
+      "image_path": "eval/synthetic/batch2/b2_03.jpg",
+      "expected_kind": "food",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": true,
+      "panel_readable": true,
+      "allergen_detected": true,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3567.8,
+      "tokens_in": 2485,
+      "tokens_out": 142,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "KOTILEIPOMO Voikeksi",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "vehnäjauho, sokeri, voi",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-10-05",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "wheat",
+            "milk",
+            "may contain: hazelnut",
+            "may contain: almond"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: may contain hazelnut",
+        "speech": "Warning: KOTILEIPOMO Voikeksi may contain hazelnut. Your profile lists an allergy to tree nuts.",
+        "reasons": [
+          "may contain hazelnut (allergy: tree nuts)"
+        ]
+      }
+    },
+    {
+      "id": "b2_04",
+      "description": "Swedish roasted peanut snack (rostade jordnotter)",
+      "language": "sv",
+      "image_path": "eval/synthetic/batch2/b2_04.jpg",
+      "expected_kind": "food",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": true,
+      "panel_readable": true,
+      "allergen_detected": true,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3045.0,
+      "tokens_in": 2485,
+      "tokens_out": 121,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "SKANDIA SNACKS Kvallssnacks",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "roasted snacks",
+          "confidence": 0.9
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-09-30",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "peanut"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains peanut",
+        "speech": "Warning: SKANDIA SNACKS Kvallssnacks contains peanut. Your profile lists an allergy to peanut.",
+        "reasons": [
+          "contains peanut (allergy: peanut)"
+        ]
+      }
+    },
+    {
+      "id": "b2_05",
+      "description": "Safe oat drink in English with future best-before date",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_05.jpg",
+      "expected_kind": "food",
+      "expected_level": "info",
+      "predicted_level": "info",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": true,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3728.6,
+      "tokens_in": 2485,
+      "tokens_out": 120,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "PURE NORDIC Oat Drink",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "oat drink",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-11-15",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": [
+            "oats"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "info",
+        "headline": "PURE NORDIC Oat Drink: none of your allergens",
+        "speech": "PURE NORDIC Oat Drink: no peanut and tree nuts listed. Best before 15 November 2027.",
+        "reasons": [
+          "no listed allergen matches your profile"
+        ]
+      }
+    },
+    {
+      "id": "b2_06",
+      "description": "Finnish 100% wholegrain oat porridge carton",
+      "language": "fi",
+      "image_path": "eval/synthetic/batch2/b2_06.jpg",
+      "expected_kind": "food",
+      "expected_level": "info",
+      "predicted_level": "info",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": true,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 4122.1,
+      "tokens_in": 2485,
+      "tokens_out": 121,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "POHJAN MYLLY Kaurapuuro",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "oat porridge / rolled oats",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-08",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": [
+            "oats"
+          ],
+          "confidence": 0.9
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "info",
+        "headline": "POHJAN MYLLY Kaurapuuro: none of your allergens",
+        "speech": "POHJAN MYLLY Kaurapuuro: no peanut and tree nuts listed. Best before August 2027.",
+        "reasons": [
+          "no listed allergen matches your profile"
+        ]
+      }
+    },
+    {
+      "id": "b2_07",
+      "description": "Almond marzipan wrapper with 42% almonds",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_07.jpg",
+      "expected_kind": "food",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": true,
+      "panel_readable": true,
+      "allergen_detected": true,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 2773.8,
+      "tokens_in": 2485,
+      "tokens_out": 120,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "Almond Marzipan",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "marzipan loaf",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-09-15",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": [
+            "almond"
+          ],
+          "confidence": 0.98
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.98
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains almond",
+        "speech": "Warning: Almond Marzipan contains almond. Your profile lists an allergy to tree nuts.",
+        "reasons": [
+          "contains almond (allergy: tree nuts)"
+        ]
+      }
+    },
+    {
+      "id": "b2_08",
+      "description": "Cashew basil pesto jar",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_08.jpg",
+      "expected_kind": "food",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": true,
+      "panel_readable": true,
+      "allergen_detected": true,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 2864.8,
+      "tokens_in": 2485,
+      "tokens_out": 122,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "Verde Cucina Basil Pesto",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "Italian Herb Pasta Sauce",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-07-22",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "cashews"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.98
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains cashews",
+        "speech": "Warning: Verde Cucina Basil Pesto contains cashews. Your profile lists an allergy to tree nuts.",
+        "reasons": [
+          "contains cashews (allergy: tree nuts)"
+        ]
+      }
+    },
+    {
+      "id": "b2_09",
+      "description": "Plain Greek yogurt (milk only, safe for nut-only profile)",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_09.jpg",
+      "expected_kind": "food",
+      "expected_level": "info",
+      "predicted_level": "info",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": true,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3029.5,
+      "tokens_in": 2485,
+      "tokens_out": 119,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "AEGEAN DAIRY Plain Greek Yogurt",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "strained yogurt",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-06-20",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": [
+            "milk"
+          ],
+          "confidence": 0.98
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 1
+      },
+      "verdict": {
+        "level": "info",
+        "headline": "AEGEAN DAIRY Plain Greek Yogurt: none of your",
+        "speech": "AEGEAN DAIRY Plain Greek Yogurt: no peanut and tree nuts listed. Best before 20 June 2027.",
+        "reasons": [
+          "no listed allergen matches your profile"
+        ]
+      }
+    },
+    {
+      "id": "b2_10",
+      "description": "Expired oat drink carton (Best before 2025-03-10)",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_10.jpg",
+      "expected_kind": "food",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": true,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 5836.5,
+      "tokens_in": 2485,
+      "tokens_out": 119,
+      "tokens_thinking": 217,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "DAILY GRAIN Oat Drink Classic",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "oat drink",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2025-03-10",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": [
+            "oats"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 1
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "DAILY GRAIN Oat Drink Classic: past its date",
+        "speech": "DAILY GRAIN Oat Drink Classic was best before 10 March 2025.",
+        "reasons": [
+          "expired 2025-03-10"
+        ]
+      }
+    },
+    {
+      "id": "b2_11",
+      "description": "Front of cookie box with no ingredient list printed",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_11.jpg",
+      "expected_kind": "food",
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": false,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3424.0,
+      "tokens_in": 2485,
+      "tokens_out": 119,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "Artisan Bakery Butter Cookies",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "butter cookies",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.9,
+        "guidance": "Turn the package to see the ingredients and expiry."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Can't read the allergens yet",
+        "speech": "This is Artisan Bakery Butter Cookies, but I can't read the allergen list. Turn the package to see the ingredients and expiry.",
+        "reasons": [
+          "allergen panel not readable"
+        ]
+      }
+    },
+    {
+      "id": "b2_12",
+      "description": "Snack wrapper with thumb and glare completely covering ingredients",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_12.jpg",
+      "expected_kind": "food",
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": false,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3403.1,
+      "tokens_in": 2485,
+      "tokens_out": 125,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "TRAIL PEAK Cereal Snack Bar",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "cereal snack bar",
+          "confidence": 0.85
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.45,
+        "guidance": "Move your thumb and tilt away from the glare."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Can't read the allergens yet",
+        "speech": "This is TRAIL PEAK Cereal Snack Bar, but I can't read the allergen list. Move your thumb and tilt away from the glare.",
+        "reasons": [
+          "allergen panel not readable"
+        ]
+      }
+    },
+    {
+      "id": "b2_13",
+      "description": "Heavily blurred food pouch (GaussianBlur(16)) unreadable",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_13.jpg",
+      "expected_kind": "unreadable",
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": false,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3454.6,
+      "tokens_in": 2485,
+      "tokens_out": 112,
+      "tokens_thinking": 39,
+      "read": {
+        "kind": "unreadable",
+        "product": {
+          "value": null,
+          "confidence": 0
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0,
+        "guidance": "Hold still and bring the item into focus."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Can't read the label yet",
+        "speech": "I can't read the label yet. Hold still and bring the item into focus.",
+        "reasons": [
+          "label not readable"
+        ]
+      }
+    },
+    {
+      "id": "b2_14",
+      "description": "Walnut brownie pack with walnuts, milk, egg, wheat",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_14.jpg",
+      "expected_kind": "food",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": true,
+      "panel_readable": true,
+      "allergen_detected": true,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3006.6,
+      "tokens_in": 2485,
+      "tokens_out": 131,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "HEARTH BAKERY Bakery Brownie Pack",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "brownie",
+          "confidence": 0.9
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-05-18",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": [
+            "butter",
+            "milk",
+            "walnuts",
+            "egg",
+            "wheat",
+            "gluten"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains walnuts",
+        "speech": "Warning: HEARTH BAKERY Bakery Brownie Pack contains walnuts. Your profile lists an allergy to tree nuts.",
+        "reasons": [
+          "contains walnuts (allergy: tree nuts)"
+        ]
+      }
+    },
+    {
+      "id": "b2_15",
+      "description": "Vitamin D3 1000 IU supplement bottle not on medication list",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_15.jpg",
+      "expected_kind": "medication",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": true,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3169.3,
+      "tokens_in": 2485,
+      "tokens_out": 128,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Vitamin D3",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "colecalciferol",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "1000 IU",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "Daily supplement: 1 tablet once daily.",
+          "confidence": 0.98
+        },
+        "expiry": {
+          "value": "2027-12",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Colecalciferol 1000 IU: not on your list",
+        "speech": "This is Colecalciferol 1000 IU. It isn't on your medication list.",
+        "reasons": [
+          "not on your medication list"
+        ]
+      }
+    },
+    {
+      "id": "b2_16",
+      "description": "Unscented hand lotion cosmetic tube",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_16.jpg",
+      "expected_kind": "other",
+      "expected_level": "info",
+      "predicted_level": "info",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": true,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3445.7,
+      "tokens_in": 2485,
+      "tokens_out": 107,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "other",
+        "product": {
+          "value": "DERMA SOFT Hand Cream",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0.2
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "dosing": {
+          "value": "External cosmetic skincare use",
+          "confidence": 0.9
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "info",
+        "headline": "DERMA SOFT Hand Cream",
+        "speech": "This is DERMA SOFT Hand Cream.",
+        "reasons": []
+      }
+    },
+    {
+      "id": "b2_17",
+      "description": "Household lemon dish soap bottle 500 ml",
+      "language": "en",
+      "image_path": "eval/synthetic/batch2/b2_17.jpg",
+      "expected_kind": "other",
+      "expected_level": "info",
+      "predicted_level": "info",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": true,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3069.6,
+      "tokens_in": 2485,
+      "tokens_out": 107,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "other",
+        "product": {
+          "value": "Sparkle Clean Hand Dishwashing Liquid Lemon",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "info",
+        "headline": "Sparkle Clean Hand Dishwashing Liquid Lemon",
+        "speech": "This is Sparkle Clean Hand Dishwashing Liquid Lemon.",
+        "reasons": []
+      }
+    },
+    {
+      "id": "b2_18",
+      "description": "Completely dark occluded camera frame",
+      "language": "n/a",
+      "image_path": "eval/synthetic/batch2/b2_18.jpg",
+      "expected_kind": "unreadable",
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "has_profile_allergen": false,
+      "panel_readable": false,
+      "allergen_detected": false,
+      "false_safe_allergen": false,
+      "confident_wrong_dose": false,
+      "latency_ms": 3430.8,
+      "tokens_in": 2485,
+      "tokens_out": 113,
+      "tokens_thinking": 52,
+      "read": {
+        "kind": "unreadable",
+        "product": {
+          "value": null,
+          "confidence": 0
+        },
+        "ingredient": {
+          "value": null,
+          "confidence": 0
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0,
+        "guidance": "Turn on a light or move into brighter lighting."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Can't read the label yet",
+        "speech": "I can't read the label yet. Turn on a light or move into brighter lighting.",
+        "reasons": [
+          "label not readable"
+        ]
+      }
+    }
+  ]
+}
