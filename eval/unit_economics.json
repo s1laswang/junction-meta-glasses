@@ -1,0 +1,473 @@
+{
+  "generated_at": "2026-11-14T13:42:28.068925+00:00",
+  "generated_by": "eval/unit_economics.py",
+  "measured_fixture_count": 7,
+  "measured_fixture_mean_bytes": 60386.71,
+  "measured_fixture_mean_kb": 60.39,
+  "measured_adaptive_512px_q50_mean_bytes": 19337.43,
+  "measured_adaptive_512px_q50_mean_kb": 19.34,
+  "headline_summary": {
+    "check_duration_s": 12.0,
+    "normal_1fps_check_bandwidth_kb": 1348.64,
+    "slow_network_adaptive_0_5fps_check_bandwidth_kb": 740.02,
+    "video_bandwidth_saved_in_adaptive_mode_pct": 84.0,
+    "total_bandwidth_saved_in_adaptive_mode_pct": 45.1,
+    "per_check_gemini_cost_eur_standard": 0.00294,
+    "per_check_gemini_cost_usd_standard": 0.00319,
+    "monthly_120_checks_gemini_cost_eur_standard": 0.35,
+    "annual_1440_checks_cloud_eur_pilot_band": "2.48 to 4.23 EUR/year (uncached native-audio ceiling: 10.79 EUR/year)",
+    "tco_3yr_holdup_rayban_meta_gen2_eur": 341.68,
+    "tco_3yr_orcam_myeye_midpoint_eur": 4150.0,
+    "tco_3yr_aira_paid_daily_plan_eur": 2340.0,
+    "tco_savings_vs_orcam_midpoint_pct": 91.8,
+    "tco_cost_reduction_multiple_vs_orcam": 12.1
+  },
+  "measured_payloads": {
+    "fixtures": {
+      "fixture_directory": "web/public/fixtures",
+      "count": 7,
+      "normal_768px": {
+        "mean_bytes": 60386.71,
+        "median_bytes": 60162,
+        "min_bytes": 54085,
+        "max_bytes": 65615,
+        "mean_kb": 60.39,
+        "mean_kib": 58.97
+      },
+      "adaptive_512px_q50": {
+        "mean_bytes": 19337.43,
+        "median_bytes": 19796,
+        "min_bytes": 17485,
+        "max_bytes": 20596,
+        "mean_kb": 19.34,
+        "mean_kib": 18.88
+      },
+      "files": [
+        {
+          "file": "amlodipine.jpg",
+          "normal_dimensions": "768x768",
+          "normal_bytes": 58414,
+          "normal_kb": 58.41,
+          "normal_kib": 57.04,
+          "normal_base64_bytes": 77888,
+          "adaptive_512px_q50_dimensions": "512x512",
+          "adaptive_512px_q50_bytes": 19542,
+          "adaptive_512px_q50_kb": 19.54,
+          "adaptive_512px_q50_kib": 19.08,
+          "adaptive_512px_q50_base64_bytes": 26056
+        },
+        {
+          "file": "back_of_box.jpg",
+          "normal_dimensions": "768x768",
+          "normal_bytes": 56531,
+          "normal_kb": 56.53,
+          "normal_kib": 55.21,
+          "normal_base64_bytes": 75376,
+          "adaptive_512px_q50_dimensions": "512x512",
+          "adaptive_512px_q50_bytes": 17874,
+          "adaptive_512px_q50_kb": 17.87,
+          "adaptive_512px_q50_kib": 17.46,
+          "adaptive_512px_q50_base64_bytes": 23832
+        },
+        {
+          "file": "blurry_amlodipine.jpg",
+          "normal_dimensions": "768x768",
+          "normal_bytes": 54085,
+          "normal_kb": 54.09,
+          "normal_kib": 52.82,
+          "normal_base64_bytes": 72116,
+          "adaptive_512px_q50_dimensions": "512x512",
+          "adaptive_512px_q50_bytes": 17485,
+          "adaptive_512px_q50_kb": 17.48,
+          "adaptive_512px_q50_kib": 17.08,
+          "adaptive_512px_q50_base64_bytes": 23316
+        },
+        {
+          "file": "expired_metformin.jpg",
+          "normal_dimensions": "768x768",
+          "normal_bytes": 64470,
+          "normal_kb": 64.47,
+          "normal_kib": 62.96,
+          "normal_base64_bytes": 85960,
+          "adaptive_512px_q50_dimensions": "512x512",
+          "adaptive_512px_q50_bytes": 20227,
+          "adaptive_512px_q50_kb": 20.23,
+          "adaptive_512px_q50_kib": 19.75,
+          "adaptive_512px_q50_base64_bytes": 26972
+        },
+        {
+          "file": "hazelnut_bar.jpg",
+          "normal_dimensions": "768x768",
+          "normal_bytes": 60162,
+          "normal_kb": 60.16,
+          "normal_kib": 58.75,
+          "normal_base64_bytes": 80216,
+          "adaptive_512px_q50_dimensions": "512x512",
+          "adaptive_512px_q50_bytes": 19796,
+          "adaptive_512px_q50_kb": 19.8,
+          "adaptive_512px_q50_kib": 19.33,
+          "adaptive_512px_q50_base64_bytes": 26396
+        },
+        {
+          "file": "ibuprofen.jpg",
+          "normal_dimensions": "768x768",
+          "normal_bytes": 65615,
+          "normal_kb": 65.61,
+          "normal_kib": 64.08,
+          "normal_base64_bytes": 87488,
+          "adaptive_512px_q50_dimensions": "512x512",
+          "adaptive_512px_q50_bytes": 20596,
+          "adaptive_512px_q50_kb": 20.6,
+          "adaptive_512px_q50_kib": 20.11,
+          "adaptive_512px_q50_base64_bytes": 27464
+        },
+        {
+          "file": "oat_milk.jpg",
+          "normal_dimensions": "768x768",
+          "normal_bytes": 63430,
+          "normal_kb": 63.43,
+          "normal_kib": 61.94,
+          "normal_base64_bytes": 84576,
+          "adaptive_512px_q50_dimensions": "512x512",
+          "adaptive_512px_q50_bytes": 19842,
+          "adaptive_512px_q50_kb": 19.84,
+          "adaptive_512px_q50_kib": 19.38,
+          "adaptive_512px_q50_base64_bytes": 26456
+        }
+      ]
+    },
+    "prompts_schema_and_coaching_eval": {
+      "live_system_prompt_file": "server/src/prompts/live.md",
+      "live_system_prompt_chars": 3563,
+      "live_system_prompt_est_tokens": 891,
+      "verify_prompt_file": "shared/verify_prompt.md",
+      "verify_prompt_chars": 5123,
+      "verify_prompt_est_tokens": 1281,
+      "label_schema_file": "shared/label_schema.json",
+      "label_schema_chars": 1362,
+      "label_schema_est_tokens": 340,
+      "coaching_eval_file": "eval/coaching_eval.json",
+      "coaching_eval_scenarios": 8,
+      "coaching_eval_pass_rate": 1.0,
+      "coaching_eval_mean_latency_ms": 5446.2,
+      "coaching_eval_mean_speech_chars": 55.6,
+      "coaching_eval_mean_speech_words": 10
+    }
+  },
+  "bandwidth_per_12s_check": {
+    "units": {
+      "kb_definition": "1 KB = 1,000 bytes (SI decimal kilobyte); KiB = 1,024 bytes also reported",
+      "check_duration_s": 12.0,
+      "uplink_audio_formula": "16,000 Hz * 2 bytes (PCM16 mono) = 32.0 KB/s (384.0 KB per 12 s check)",
+      "downlink_audio_formula": "24,000 Hz * 2 bytes (PCM16 mono) = 48.0 KB/s; typical 5.0 s spoken coaching + verdict = 240.0 KB (continuous 12.0 s ceiling = 576.0 KB)",
+      "verify_ring_buffer_note": "verify_label selects the 2 sharpest recent frames from Hub.ring in server RAM, requiring 0 KB extra phone-to-server upload"
+    },
+    "normal_mode": {
+      "mode": "normal_1fps_768px",
+      "fps": 1.0,
+      "max_dim_px": 768,
+      "jpeg_quality": 0.78,
+      "frames_sent_in_12s": 12,
+      "mean_frame_bytes": 60386.71,
+      "jpeg_frames_kb": 724.64,
+      "jpeg_frames_kib": 707.66,
+      "pcm16_16khz_uplink_12s_kb": 384.0,
+      "pcm16_16khz_uplink_12s_kib": 375.0,
+      "pcm16_24khz_downlink_typical_5s_kb": 240.0,
+      "pcm16_24khz_downlink_typical_5s_kib": 234.38,
+      "pcm16_24khz_downlink_ceiling_12s_kb": 576.0,
+      "pcm16_24khz_downlink_ceiling_12s_kib": 562.5,
+      "total_raw_media_typical_kb": 1348.64,
+      "total_raw_media_typical_kib": 1317.03,
+      "total_raw_media_ceiling_12s_kb": 1684.64,
+      "total_raw_media_ceiling_12s_kib": 1645.16,
+      "websocket_base64_wire_typical_kb": 1805.27,
+      "websocket_base64_wire_typical_kib": 1762.96,
+      "average_raw_bitrate_typical_kbps": 899.1,
+      "average_raw_bitrate_ceiling_12s_kbps": 1123.1,
+      "client_extra_verify_upload_kb": 0.0,
+      "server_to_gemini_verify_2_frames_kb": 120.77,
+      "monthly_120_checks_raw_typical_mb": 161.84,
+      "monthly_120_checks_ws_wire_typical_mb": 216.63
+    },
+    "slow_network_adaptive_mode": {
+      "mode": "slow_network_adaptive_0_5fps_512px",
+      "fps": 0.5,
+      "max_dim_px": 512,
+      "jpeg_quality": 0.5,
+      "frames_sent_in_12s": 6,
+      "mean_frame_bytes": 19337.43,
+      "jpeg_frames_kb": 116.02,
+      "jpeg_frames_kib": 113.31,
+      "pcm16_16khz_uplink_12s_kb": 384.0,
+      "pcm16_16khz_uplink_12s_kib": 375.0,
+      "pcm16_24khz_downlink_typical_5s_kb": 240.0,
+      "pcm16_24khz_downlink_typical_5s_kib": 234.38,
+      "pcm16_24khz_downlink_ceiling_12s_kb": 576.0,
+      "pcm16_24khz_downlink_ceiling_12s_kib": 562.5,
+      "total_raw_media_typical_kb": 740.02,
+      "total_raw_media_typical_kib": 722.68,
+      "total_raw_media_ceiling_12s_kb": 1076.02,
+      "total_raw_media_ceiling_12s_kib": 1050.81,
+      "websocket_base64_wire_typical_kb": 993.55,
+      "websocket_base64_wire_typical_kib": 970.27,
+      "average_raw_bitrate_typical_kbps": 493.3,
+      "average_raw_bitrate_ceiling_12s_kbps": 717.3,
+      "client_extra_verify_upload_kb": 0.0,
+      "server_to_gemini_verify_2_frames_kb": 38.67,
+      "monthly_120_checks_raw_typical_mb": 88.8,
+      "monthly_120_checks_ws_wire_typical_mb": 119.23,
+      "rtt_trigger_threshold_ms": 650,
+      "video_bandwidth_reduction_vs_normal_pct": 84.0,
+      "total_typical_bandwidth_reduction_vs_normal_pct": 45.1,
+      "total_ceiling_bandwidth_reduction_vs_normal_pct": 36.1
+    },
+    "degraded_fallbacks": {
+      "snapshot_http_verify_2_adaptive_frames": {
+        "raw_kb": 38.67,
+        "json_wire_kb": 51.99,
+        "monthly_120_checks_mb": 6.24,
+        "audio_bandwidth_kb": 0.0,
+        "mechanism": "POST /api/verify with 2 adaptive 512px frames + on-device browser speechSynthesis"
+      },
+      "offline_barcode_detector": {
+        "raw_kb": 0.0,
+        "monthly_120_checks_mb": 0.0,
+        "mechanism": "On-device BarcodeDetector matched against localStorage Profile.meds[].barcode"
+      }
+    }
+  },
+  "token_and_cost_model": {
+    "usage_cadence": {
+      "checks_per_day": 4,
+      "checks_per_month": 120,
+      "checks_per_year": 1440,
+      "checks_over_3_years": 4320,
+      "usd_to_eur_rate": 0.92,
+      "published_tokenization_rates": {
+        "video_or_image_frame_tokens": 258,
+        "pcm_audio_tokens_per_second": 32,
+        "text_chars_per_token_approx": 4.0
+      }
+    },
+    "per_check_tokens": {
+      "live_static_text_in": 1211,
+      "live_dynamic_text_in": 220,
+      "live_video_in_normal_1fps": 3096,
+      "live_video_in_adaptive_0_5fps": 1548,
+      "live_audio_in_12s": 384,
+      "live_audio_out_5s": 160,
+      "live_tool_text_out": 55,
+      "verify_static_text_in": 1621,
+      "verify_question_text_in": 25,
+      "verify_images_in_2_frames": 516,
+      "verify_images_in_3_frames_cap": 774,
+      "verify_json_and_thinking_out": 200,
+      "total_input_tokens_normal_1fps": 7073,
+      "total_input_tokens_adaptive_0_5fps": 5525,
+      "total_output_tokens_per_check": 415,
+      "total_tokens_per_check_normal_1fps": 7488,
+      "total_tokens_per_check_adaptive_0_5fps": 5940
+    },
+    "published_pricing_tiers": {
+      "gemini_flash_standard_cached": {
+        "description": "Published Gemini 2.5 Flash Paid Tier multimodal rates with 75% implicit prompt caching on static live.md + verify_prompt.md + label_schema.json prefixes",
+        "rates_per_1m_tokens_usd": {
+          "live_text_in_per_1m_usd": 0.3,
+          "cached_text_in_per_1m_usd": 0.075,
+          "live_video_in_per_1m_usd": 0.3,
+          "live_audio_in_per_1m_usd": 1.0,
+          "live_audio_out_per_1m_usd": 4.0,
+          "live_text_out_per_1m_usd": 2.5,
+          "verify_in_per_1m_usd": 0.3,
+          "verify_out_per_1m_usd": 2.5
+        },
+        "implicit_prompt_cache_hit_ratio": 0.75,
+        "per_check_breakdown_usd": {
+          "live_session_normal_1fps": 0.002315,
+          "live_session_adaptive_0_5fps": 0.001851,
+          "verify_label_2_frames_flash": 0.000875,
+          "total_normal_1fps": 0.00319,
+          "total_adaptive_0_5fps": 0.002726
+        },
+        "per_check_eur": {
+          "normal_1fps": 0.00294,
+          "adaptive_0_5fps": 0.00251
+        },
+        "monthly_120_checks": {
+          "normal_usd": 0.38,
+          "normal_eur": 0.35,
+          "adaptive_eur": 0.3,
+          "blended_30pct_local_barcode_eur": 0.25
+        },
+        "annual_1440_checks": {
+          "normal_usd": 4.59,
+          "normal_eur": 4.23,
+          "adaptive_eur": 3.61,
+          "blended_30pct_local_barcode_eur": 2.96
+        },
+        "three_year_4320_checks_cloud_eur": {
+          "normal_all_cloud": 12.68,
+          "adaptive_all_cloud": 10.83,
+          "blended_30pct_local_barcode": 8.88
+        }
+      },
+      "gemini_flash_economy_2_0_live": {
+        "description": "Published Gemini 2.0 Flash / Flash-Lite Multimodal Live Paid Tier rates",
+        "rates_per_1m_tokens_usd": {
+          "live_text_in_per_1m_usd": 0.15,
+          "cached_text_in_per_1m_usd": 0.0375,
+          "live_video_in_per_1m_usd": 0.15,
+          "live_audio_in_per_1m_usd": 0.7,
+          "live_audio_out_per_1m_usd": 2.8,
+          "live_text_out_per_1m_usd": 0.6,
+          "verify_in_per_1m_usd": 0.15,
+          "verify_out_per_1m_usd": 0.6
+        },
+        "implicit_prompt_cache_hit_ratio": 0.0,
+        "per_check_breakdown_usd": {
+          "live_session_normal_1fps": 0.001429,
+          "live_session_adaptive_0_5fps": 0.001197,
+          "verify_label_2_frames_flash": 0.000444,
+          "total_normal_1fps": 0.001873,
+          "total_adaptive_0_5fps": 0.001641
+        },
+        "per_check_eur": {
+          "normal_1fps": 0.00172,
+          "adaptive_0_5fps": 0.00151
+        },
+        "monthly_120_checks": {
+          "normal_usd": 0.22,
+          "normal_eur": 0.21,
+          "adaptive_eur": 0.18,
+          "blended_30pct_local_barcode_eur": 0.14
+        },
+        "annual_1440_checks": {
+          "normal_usd": 2.7,
+          "normal_eur": 2.48,
+          "adaptive_eur": 2.17,
+          "blended_30pct_local_barcode_eur": 1.74
+        },
+        "three_year_4320_checks_cloud_eur": {
+          "normal_all_cloud": 7.44,
+          "adaptive_all_cloud": 6.52,
+          "blended_30pct_local_barcode": 5.21
+        }
+      },
+      "gemini_live_native_audio_uncached_ceiling": {
+        "description": "Conservative zero-cache ceiling: Gemini 2.5 Flash Native-Audio Live ($0.50 text / $1.00 image-video / $3.00 audio-in / $12.00 native audio-out) + uncached 2.5 Flash verify",
+        "rates_per_1m_tokens_usd": {
+          "live_text_in_per_1m_usd": 0.5,
+          "cached_text_in_per_1m_usd": 0.5,
+          "live_video_in_per_1m_usd": 1.0,
+          "live_audio_in_per_1m_usd": 3.0,
+          "live_audio_out_per_1m_usd": 12.0,
+          "live_text_out_per_1m_usd": 2.0,
+          "verify_in_per_1m_usd": 0.3,
+          "verify_out_per_1m_usd": 2.5
+        },
+        "implicit_prompt_cache_hit_ratio": 0.0,
+        "per_check_breakdown_usd": {
+          "live_session_normal_1fps": 0.006993,
+          "live_session_adaptive_0_5fps": 0.005445,
+          "verify_label_2_frames_flash": 0.001149,
+          "total_normal_1fps": 0.008142,
+          "total_adaptive_0_5fps": 0.006594
+        },
+        "per_check_eur": {
+          "normal_1fps": 0.00749,
+          "adaptive_0_5fps": 0.00607
+        },
+        "monthly_120_checks": {
+          "normal_usd": 0.98,
+          "normal_eur": 0.9,
+          "adaptive_eur": 0.73,
+          "blended_30pct_local_barcode_eur": 0.63
+        },
+        "annual_1440_checks": {
+          "normal_usd": 11.72,
+          "normal_eur": 10.79,
+          "adaptive_eur": 8.74,
+          "blended_30pct_local_barcode_eur": 7.55
+        },
+        "three_year_4320_checks_cloud_eur": {
+          "normal_all_cloud": 32.36,
+          "adaptive_all_cloud": 26.21,
+          "blended_30pct_local_barcode": 22.65
+        }
+      }
+    }
+  },
+  "three_year_tco_comparison": {
+    "horizon_years": 3,
+    "total_checks_over_horizon": 4320,
+    "options": {
+      "holdup_consumer_rayban_meta_gen2": {
+        "label": "HoldUp + Consumer Ray-Ban Meta Gen 2",
+        "hardware_upfront_eur": 329.0,
+        "annual_cloud_inference_eur": {
+          "economy_flash_live": 2.48,
+          "blended_daily_pilot_with_barcode": 2.96,
+          "standard_cached_100pct_cloud": 4.23,
+          "uncached_native_audio_ceiling": 10.79
+        },
+        "three_year_tco_eur": {
+          "economy_flash_live": 336.44,
+          "blended_daily_pilot_with_barcode": 337.88,
+          "standard_cached_100pct_cloud": 341.68,
+          "uncached_native_audio_ceiling": 361.36
+        },
+        "effective_monthly_tco_standard_eur": 9.49,
+        "all_in_cost_per_check_standard_eur": 0.0791,
+        "privacy_and_ux_profile": "Hands-free mainstream eyewear with zero assistive stigma; medication list stays in on-device localStorage; zero human stranger sees prescriptions; deterministic STRENGTH_MIN_CONF >= 0.80 safety gate refuses to guess doses"
+      },
+      "dedicated_assistive_camera_orcam_class": {
+        "label": "Dedicated Proprietary Assistive Camera (OrCam MyEye class)",
+        "hardware_upfront_eur_range": [
+          3800.0,
+          4500.0
+        ],
+        "hardware_upfront_eur_midpoint": 4150.0,
+        "annual_subscription_eur": 0.0,
+        "three_year_tco_eur_range": [
+          3800.0,
+          4500.0
+        ],
+        "three_year_tco_eur_midpoint": 4150.0,
+        "effective_monthly_tco_midpoint_eur": 115.28,
+        "all_in_cost_per_check_midpoint_eur": 0.9606,
+        "holdup_savings_vs_midpoint_eur": 3808.32,
+        "holdup_savings_vs_midpoint_pct": 91.8,
+        "holdup_cost_reduction_multiple": 12.1,
+        "limitations": "11x to 13x higher upfront hardware barrier; raw OCR text dump with no personal medication schedule or allergy cross-check; no conversational body-relative alignment coaching; specialized clip-on hardware stigma"
+      },
+      "human_video_volunteer_or_paid_agent_aira_class": {
+        "label": "Human Video Volunteer / Paid Visual Interpreter (Aira / Be My Eyes class)",
+        "paid_agent_subscription": {
+          "entry_plan_monthly_eur": 27.0,
+          "daily_meds_180min_plan_monthly_eur": 65.0,
+          "three_year_tco_entry_phone_only_eur": 972.0,
+          "three_year_tco_daily_phone_only_eur": 2340.0,
+          "three_year_tco_daily_with_glasses_eur": 2669.0,
+          "holdup_savings_vs_daily_plan_pct": 85.4
+        },
+        "unpaid_volunteer_video_call": {
+          "direct_subscription_eur": 0.0,
+          "intimate_disclosures_per_year": 1440,
+          "typical_call_setup_latency_s_range": [
+            30,
+            90
+          ],
+          "privacy_and_independence_tradeoff": "Exposes private prescription boxes, patient name stickers, and home counters to 1,440 live video strangers per year; requires two hands when holding phone + pill box; social friction at night or early morning"
+        }
+      }
+    },
+    "rehabilitation_pilot_100_users_3yr": {
+      "cohort_size_users": 100,
+      "holdup_plus_rayban_gen2_total_eur": 34168.0,
+      "orcam_class_midpoint_total_eur": 415000.0,
+      "public_budget_saved_eur": 380832.0,
+      "users_served_per_100_orcam_budget": 1214
+    }
+  }
+}
