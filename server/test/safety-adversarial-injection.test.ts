@@ -205,8 +205,8 @@ test("exact medication confidence and readability cliff boundaries enforce 0.8 a
   assert.equal(exactAtCliff.level, "match");
 });
 
-test("food allergens empty array at confidence 0.599 with non-empty allergies returns unsure, never info", () => {
-  const belowCliff = checkLabel(
+test("food allergens empty array below ALLERGEN_SAFE_CONF (0.95) or ALLERGEN_SAFE_READABILITY (0.8) with non-empty allergies returns unsure, never info", () => {
+  const belowMinConf = checkLabel(
     makeRead({
       kind: "food",
       product: f("Oat biscuits", 0.95),
@@ -216,21 +216,47 @@ test("food allergens empty array at confidence 0.599 with non-empty allergies re
     baseProfile,
     NOW,
   );
-  assert.equal(belowCliff.level, "unsure");
-  assert.notEqual(belowCliff.level, "info");
-  assert.ok(belowCliff.reasons.includes("allergen panel not readable"));
+  assert.equal(belowMinConf.level, "unsure");
+  assert.notEqual(belowMinConf.level, "info");
+  assert.ok(belowMinConf.reasons.includes("allergen panel not readable"));
 
-  const atCliff = checkLabel(
+  const incompleteConf = checkLabel(
     makeRead({
       kind: "food",
       product: f("Oat biscuits", 0.95),
-      allergens: { value: [], confidence: 0.6 },
+      allergens: { value: [], confidence: 0.949 },
       readability: 0.95,
     }),
     baseProfile,
     NOW,
   );
-  assert.equal(atCliff.level, "info");
+  assert.equal(incompleteConf.level, "unsure");
+  assert.ok(incompleteConf.reasons.includes("allergen panel may be incomplete"));
+
+  const incompleteReadability = checkLabel(
+    makeRead({
+      kind: "food",
+      product: f("Oat biscuits", 0.95),
+      allergens: { value: [], confidence: 0.95 },
+      readability: 0.799,
+    }),
+    baseProfile,
+    NOW,
+  );
+  assert.equal(incompleteReadability.level, "unsure");
+  assert.ok(incompleteReadability.reasons.includes("allergen panel may be incomplete"));
+
+  const atSafeCliff = checkLabel(
+    makeRead({
+      kind: "food",
+      product: f("Oat biscuits", 0.95),
+      allergens: { value: [], confidence: 0.95 },
+      readability: 0.8,
+    }),
+    baseProfile,
+    NOW,
+  );
+  assert.equal(atSafeCliff.level, "info");
 });
 
 test("non-ISO expiry strings are capped to confidence <= 0.5 by toLabelRead so checkLabel reports expiry not readable", () => {

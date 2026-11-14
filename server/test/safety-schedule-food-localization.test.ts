@@ -171,7 +171,7 @@ test("all EU allergen groups match English, Finnish, and Swedish label terms inc
   }
 });
 
-test("Nordic multi-word ingredient phrases and food allergen confidence thresholds (0.29, 0.30, 0.59, 0.60)", () => {
+test("Nordic multi-word ingredient phrases and food allergen confidence thresholds (0.29, 0.30, 0.59, 0.60, 0.94, 0.95)", () => {
   const phraseCases: Array<{ phrase: string; allergy: string }> = [
     { phrase: "sisaltaa maapahkina ja hera", allergy: "peanut" },
     { phrase: "innehaller jordnot och mjolk", allergy: "milk" },
@@ -201,9 +201,18 @@ test("Nordic multi-word ingredient phrases and food allergen confidence threshol
   assert.equal(safeAt059.headline, "Can't read the allergens yet");
 
   const safeAt060 = checkLabel(makeRead({ kind: "food", product: f("Bar"), allergens: f(["oats"], 0.6) }), prof, NOW);
-  assert.equal(safeAt060.level, "info");
-  assert.equal(safeAt060.headline, "Bar: none of your allergens");
-  assert.equal(safeAt060.speech, "Bar: no peanut and sesame listed.");
+  assert.equal(safeAt060.level, "unsure");
+  assert.equal(safeAt060.headline, "Not sure it's free of your allergens");
+  assert.ok(safeAt060.reasons.includes("allergen panel may be incomplete"));
+
+  const safeAt094 = checkLabel(makeRead({ kind: "food", product: f("Bar"), allergens: f(["oats"], 0.94) }), prof, NOW);
+  assert.equal(safeAt094.level, "unsure");
+  assert.ok(safeAt094.reasons.includes("allergen panel may be incomplete"));
+
+  const safeAt095 = checkLabel(makeRead({ kind: "food", product: f("Bar"), allergens: f(["oats"], 0.95) }), prof, NOW);
+  assert.equal(safeAt095.level, "info");
+  assert.equal(safeAt095.headline, "Bar: none of your allergens");
+  assert.equal(safeAt095.speech, "Bar: no peanut and sesame listed.");
 });
 
 test("allergyBases conservative expansions cover nut/pahkina, celiac/coeliac, lactose/dairy, and shellfish", () => {
