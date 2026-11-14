@@ -193,12 +193,9 @@ export function Hud() {
       onMsg({ type: "device", device: { connected: true, worn: true, battery: 78, streaming: true, source: "glasses" } });
       let i = 0;
       const tick = () => !gotPhone && onMsg(cycle[i++ % cycle.length]);
-      const first = setTimeout(() => {
-        if (!gotPhone) tick();
-      }, 250);
+      tick();
       const t = setInterval(tick, 4000);
       return () => {
-        clearTimeout(first);
         clearInterval(t);
         ch?.close();
       };
