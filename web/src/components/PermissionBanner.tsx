@@ -1,15 +1,222 @@
 import React, { useId, type CSSProperties } from "react";
+import { normalizeLang, type UiLocale } from "../i18n/translations.ts";
 import type { CameraSource, PermissionStateSummary } from "../types.ts";
+
+void React;
+
+export type BrowserStepParts = {
+  lead: string;
+  beforeMenu: string;
+  aALabel?: string;
+  afterAa?: string;
+  menuLabel: string;
+  beforeCamera: string;
+  cameraLabel: string;
+  beforeAllow: string;
+  allowLabel: string;
+  afterAllow: string;
+};
+
+export type PermissionBannerCopy = {
+  cameraUnavailableHeading: string;
+  cameraDeniedHeading: string;
+  cameraUnavailableBadge: string;
+  cameraDeniedBadge: string;
+  cameraPrivacyBody: string;
+  cameraStepsHeading: string;
+  chromeStep: BrowserStepParts;
+  safariStep: BrowserStepParts;
+  useDemoPropsLabel: string;
+  retryCameraLabel: string;
+  micHeading: string;
+  micUnavailableBadge: string;
+  micDeniedBadge: string;
+  micFallbackBody: string;
+  continueWithoutMicLabel: string;
+  errorHeading: string;
+  errorRecoverableGuidance: string;
+  errorUnrecoverableGuidance: string;
+  retryErrorLabel: string;
+  dismissErrorLabel: string;
+};
 
 export type PermissionBannerProps = {
   permissions: PermissionStateSummary;
   currentSource: CameraSource;
   lastError: { code: string; message: string; recoverable: boolean } | null;
+  lang?: string;
   onUseSnapshotMode: () => void;
   onUseDemoProps: () => void;
   onRetryPermissions: () => void;
   onDismissError?: () => void;
 };
+
+const COPY_BY_LOCALE: Record<UiLocale, PermissionBannerCopy> = {
+  en: {
+    cameraUnavailableHeading: "Phone camera is unavailable",
+    cameraDeniedHeading: "Camera access is turned off",
+    cameraUnavailableBadge: "CAMERA UNAVAILABLE",
+    cameraDeniedBadge: "CAMERA BLOCKED",
+    cameraPrivacyBody:
+      "HoldUp needs the camera to read medication and food labels only while you hold them up. Frames stay in memory only, are never saved on a server, and capture stops automatically after 45 seconds.",
+    cameraStepsHeading: "How to turn camera access back on:",
+    chromeStep: {
+      lead: "Chrome (Android or Desktop):",
+      beforeMenu: " Tap the tune or lock icon in the address bar, open ",
+      menuLabel: "Site settings",
+      beforeCamera: ", set ",
+      cameraLabel: "Camera",
+      beforeAllow: " to ",
+      allowLabel: "Allow",
+      afterAllow: ", then tap Retry Camera Permission."
+    },
+    safariStep: {
+      lead: "Safari (iPhone, iPad, or Mac):",
+      beforeMenu: " Tap the ",
+      aALabel: "aA",
+      afterAa: " or page settings menu in the address bar, open ",
+      menuLabel: "Website Settings",
+      beforeCamera: ", set ",
+      cameraLabel: "Camera",
+      beforeAllow: " to ",
+      allowLabel: "Allow",
+      afterAllow: ", then reload or retry below."
+    },
+    useDemoPropsLabel: "Use Demo Label Props",
+    retryCameraLabel: "Retry Camera Permission",
+    micHeading: "Voice input is paused",
+    micUnavailableBadge: "MIC UNAVAILABLE",
+    micDeniedBadge: "MIC BLOCKED",
+    micFallbackBody:
+      "Microphone is off or blocked. You can still check labels using Snapshot Mode and typed or quick-tap questions.",
+    continueWithoutMicLabel: "Continue Without Microphone",
+    errorHeading: "Connection or device notice",
+    errorRecoverableGuidance:
+      "Fallback protection is active. You can retry now or dismiss this notice.",
+    errorUnrecoverableGuidance:
+      "Please check your device settings or network connection and retry.",
+    retryErrorLabel: "Retry",
+    dismissErrorLabel: "Dismiss"
+  },
+  fi: {
+    cameraUnavailableHeading: "Puhelimen kamera ei ole käytettävissä",
+    cameraDeniedHeading: "Kameran käyttöoikeus on pois päältä",
+    cameraUnavailableBadge: "KAMERA EI KÄYTETTÄVISSÄ",
+    cameraDeniedBadge: "KAMERA ESTETTY",
+    cameraPrivacyBody:
+      "HoldUp tarvitsee kameraa lääke- ja elintarvikepakkausten lukemiseen vain silloin, kun pidät pakkausta esillä. Kuvat käsitellään vain käyttömuistissa (RAM), niitä ei koskaan tallenneta palvelimelle ja kuvaus pysähtyy automaattisesti 45 sekunnin kuluttua.",
+    cameraStepsHeading: "Näin otat kameran käyttöön uudelleen:",
+    chromeStep: {
+      lead: "Chrome (Android tai tietokone):",
+      beforeMenu: " Napauta osoiterivin asetus- tai lukkokuvaketta, avaa ",
+      menuLabel: "Sivuston asetukset",
+      beforeCamera: ", valitse ",
+      cameraLabel: "Kamera",
+      beforeAllow: " ja ",
+      allowLabel: "Salli",
+      afterAllow: ", ja napauta sitten Yritä kameran lupaa uudelleen."
+    },
+    safariStep: {
+      lead: "Safari (iPhone, iPad tai Mac):",
+      beforeMenu: " Napauta osoiterivin ",
+      aALabel: "aA",
+      afterAa: "-painiketta tai sivuasetuksia, avaa ",
+      menuLabel: "Verkkosivuston asetukset",
+      beforeCamera: ", valitse ",
+      cameraLabel: "Kamera",
+      beforeAllow: " ja ",
+      allowLabel: "Salli",
+      afterAllow: ", ja päivitä sivu tai yritä alta uudelleen."
+    },
+    useDemoPropsLabel: "Käytä esimerkkipakkauksia",
+    retryCameraLabel: "Yritä kameran lupaa uudelleen",
+    micHeading: "Ääniohjaus on tauolla",
+    micUnavailableBadge: "MIKROFONI EI KÄYTETTÄVISSÄ",
+    micDeniedBadge: "MIKROFONI ESTETTY",
+    micFallbackBody:
+      "Mikrofoni on pois päältä tai estetty. Voit silti tarkistaa pakkaukset yksittäiskuvatilassa (Snapshot Mode) kirjoitetuilla kysymyksillä tai pikavalinnoilla.",
+    continueWithoutMicLabel: "Jatka ilman mikrofonia",
+    errorHeading: "Yhteys- tai laiteilmoitus",
+    errorRecoverableGuidance:
+      "Varatila on käytössä. Voit yrittää nyt uudelleen tai sulkea tämän ilmoituksen.",
+    errorUnrecoverableGuidance:
+      "Tarkista laitteen asetukset tai verkkoyhteys ja yritä uudelleen.",
+    retryErrorLabel: "Yritä uudelleen",
+    dismissErrorLabel: "Sulje"
+  },
+  sv: {
+    cameraUnavailableHeading: "Telefonkameran är inte tillgänglig",
+    cameraDeniedHeading: "Kameraåtkomst är avstängd",
+    cameraUnavailableBadge: "KAMERA EJ TILLGÄNGLIG",
+    cameraDeniedBadge: "KAMERA BLOCKERAD",
+    cameraPrivacyBody:
+      "HoldUp behöver kameran för att läsa läkemedels- och livsmedelsetiketter endast medan du håller upp förpackningen. Bildrutor hålls enbart i arbetsminnet (RAM), sparas aldrig på en server och stoppas automatiskt efter 45 sekunder.",
+    cameraStepsHeading: "Så aktiverar du kameraåtkomst igen:",
+    chromeStep: {
+      lead: "Chrome (Android eller dator):",
+      beforeMenu: " Tryck på reglage- eller låsikonen i adressfältet, öppna ",
+      menuLabel: "Webbplatsinställningar",
+      beforeCamera: ", ställ in ",
+      cameraLabel: "Kamera",
+      beforeAllow: " på ",
+      allowLabel: "Tillåt",
+      afterAllow: " och tryck sedan på Försök kameratillstånd igen."
+    },
+    safariStep: {
+      lead: "Safari (iPhone, iPad eller Mac):",
+      beforeMenu: " Tryck på ",
+      aALabel: "aA",
+      afterAa: " eller sidinställningar i adressfältet, öppna ",
+      menuLabel: "Webbplatsinställningar",
+      beforeCamera: ", ställ in ",
+      cameraLabel: "Kamera",
+      beforeAllow: " på ",
+      allowLabel: "Tillåt",
+      afterAllow: " och ladda om eller försök igen nedan."
+    },
+    useDemoPropsLabel: "Använd exempelpaket",
+    retryCameraLabel: "Försök kameratillstånd igen",
+    micHeading: "Röstinmatning är pausad",
+    micUnavailableBadge: "MIKROFON EJ TILLGÄNGLIG",
+    micDeniedBadge: "MIKROFON BLOCKERAD",
+    micFallbackBody:
+      "Mikrofonen är avstängd eller blockerad. Du kan ändå kontrollera etiketter i stillbildsläge (Snapshot Mode) med skrivna frågor eller snabbval.",
+    continueWithoutMicLabel: "Fortsätt utan mikrofon",
+    errorHeading: "Anslutnings- eller enhetsmeddelande",
+    errorRecoverableGuidance:
+      "Reservskydd är aktivt. Du kan försöka igen nu eller stänga det här meddelandet.",
+    errorUnrecoverableGuidance:
+      "Kontrollera enhetens inställningar eller nätverksanslutningen och försök igen.",
+    retryErrorLabel: "Försök igen",
+    dismissErrorLabel: "Stäng"
+  }
+};
+
+export function getPermissionBannerCopy(lang?: string): PermissionBannerCopy {
+  const locale = normalizeLang(lang ?? "en");
+  return COPY_BY_LOCALE[locale];
+}
+
+function renderBrowserStep(step: BrowserStepParts) {
+  return (
+    <>
+      <strong>{step.lead}</strong>
+      {step.beforeMenu}
+      {step.aALabel !== undefined && (
+        <>
+          <strong>{step.aALabel}</strong>
+          {step.afterAa}
+        </>
+      )}
+      <strong>{step.menuLabel}</strong>
+      {step.beforeCamera}
+      <strong>{step.cameraLabel}</strong>
+      {step.beforeAllow}
+      <strong>{step.allowLabel}</strong>
+      {step.afterAllow}
+    </>
+  );
+}
 
 const STACK_STYLE: CSSProperties = {
   display: "flex",
@@ -156,6 +363,7 @@ export function PermissionBanner(props: PermissionBannerProps) {
     permissions,
     currentSource,
     lastError,
+    lang,
     onUseSnapshotMode,
     onUseDemoProps,
     onRetryPermissions,
@@ -163,6 +371,8 @@ export function PermissionBanner(props: PermissionBannerProps) {
   } = props;
 
   const uid = useId();
+  const locale = normalizeLang(lang ?? "en");
+  const copy = COPY_BY_LOCALE[locale];
 
   const showCameraRecovery =
     currentSource === "phone" &&
@@ -182,7 +392,7 @@ export function PermissionBanner(props: PermissionBannerProps) {
   const errorHeadingId = `${uid}-error-alert-heading`;
 
   return (
-    <div className="permission-banner" style={STACK_STYLE}>
+    <div className="permission-banner" lang={locale} style={STACK_STYLE}>
       {showCameraRecovery && (
         <section
           className="card verdict-warning permission-card permission-camera-card"
@@ -197,36 +407,24 @@ export function PermissionBanner(props: PermissionBannerProps) {
               <CameraRecoveryIcon />
               <span>
                 {permissions.camera === "unavailable"
-                  ? "Phone camera is unavailable"
-                  : "Camera access is turned off"}
+                  ? copy.cameraUnavailableHeading
+                  : copy.cameraDeniedHeading}
               </span>
             </h2>
             <span className="badge" data-permission-camera={permissions.camera}>
-              {permissions.camera === "unavailable" ? "CAMERA UNAVAILABLE" : "CAMERA BLOCKED"}
+              {permissions.camera === "unavailable"
+                ? copy.cameraUnavailableBadge
+                : copy.cameraDeniedBadge}
             </span>
           </div>
 
-          <p style={BODY_TEXT_STYLE}>
-            HoldUp needs the camera to read medication and food labels only while you hold them up.
-            Frames stay in memory only, are never saved on a server, and capture stops automatically
-            after 45 seconds.
-          </p>
+          <p style={BODY_TEXT_STYLE}>{copy.cameraPrivacyBody}</p>
 
           <div style={STEPS_BOX_STYLE}>
-            <strong style={{ fontSize: "var(--text-sm, 1rem)" }}>
-              How to turn camera access back on:
-            </strong>
+            <strong style={{ fontSize: "var(--text-sm, 1rem)" }}>{copy.cameraStepsHeading}</strong>
             <ol style={STEPS_LIST_STYLE}>
-              <li>
-                <strong>Chrome (Android or Desktop):</strong> Tap the tune or lock icon in the
-                address bar, open <strong>Site settings</strong>, set <strong>Camera</strong> to{" "}
-                <strong>Allow</strong>, then tap Retry Camera Permission.
-              </li>
-              <li>
-                <strong>Safari (iPhone, iPad, or Mac):</strong> Tap the <strong>aA</strong> or page
-                settings menu in the address bar, open <strong>Website Settings</strong>, set{" "}
-                <strong>Camera</strong> to <strong>Allow</strong>, then reload or retry below.
-              </li>
+              <li>{renderBrowserStep(copy.chromeStep)}</li>
+              <li>{renderBrowserStep(copy.safariStep)}</li>
             </ol>
           </div>
 
@@ -238,7 +436,7 @@ export function PermissionBanner(props: PermissionBannerProps) {
               onClick={onUseDemoProps}
               style={ACTION_BUTTON_STYLE}
             >
-              Use Demo Label Props
+              {copy.useDemoPropsLabel}
             </button>
             <button
               type="button"
@@ -247,7 +445,7 @@ export function PermissionBanner(props: PermissionBannerProps) {
               onClick={onRetryPermissions}
               style={ACTION_BUTTON_STYLE}
             >
-              Retry Camera Permission
+              {copy.retryCameraLabel}
             </button>
           </div>
         </section>
@@ -265,17 +463,16 @@ export function PermissionBanner(props: PermissionBannerProps) {
           <div style={HEADER_ROW_STYLE}>
             <h2 id={micHeadingId} style={HEADING_STYLE}>
               <MicRecoveryIcon />
-              <span>Voice input is paused</span>
+              <span>{copy.micHeading}</span>
             </h2>
             <span className="badge" data-permission-microphone={permissions.microphone}>
-              {permissions.microphone === "unavailable" ? "MIC UNAVAILABLE" : "MIC BLOCKED"}
+              {permissions.microphone === "unavailable"
+                ? copy.micUnavailableBadge
+                : copy.micDeniedBadge}
             </span>
           </div>
 
-          <p style={BODY_TEXT_STYLE}>
-            Microphone is off or blocked. You can still check labels using Snapshot Mode and typed
-            or quick-tap questions.
-          </p>
+          <p style={BODY_TEXT_STYLE}>{copy.micFallbackBody}</p>
 
           <div style={ACTIONS_ROW_STYLE}>
             <button
@@ -285,7 +482,7 @@ export function PermissionBanner(props: PermissionBannerProps) {
               onClick={onUseSnapshotMode}
               style={ACTION_BUTTON_STYLE}
             >
-              Continue Without Microphone
+              {copy.continueWithoutMicLabel}
             </button>
           </div>
         </section>
@@ -307,7 +504,7 @@ export function PermissionBanner(props: PermissionBannerProps) {
           <div style={HEADER_ROW_STYLE}>
             <h2 id={errorHeadingId} style={HEADING_STYLE}>
               <InfoAlertIcon />
-              <span>Connection or device notice</span>
+              <span>{copy.errorHeading}</span>
             </h2>
             <span className="badge" data-error-code={lastError.code}>
               {lastError.code}
@@ -325,8 +522,8 @@ export function PermissionBanner(props: PermissionBannerProps) {
             }}
           >
             {lastError.recoverable
-              ? "Fallback protection is active. You can retry now or dismiss this notice."
-              : "Please check your device settings or network connection and retry."}
+              ? copy.errorRecoverableGuidance
+              : copy.errorUnrecoverableGuidance}
           </p>
 
           <div style={ACTIONS_ROW_STYLE}>
@@ -337,7 +534,7 @@ export function PermissionBanner(props: PermissionBannerProps) {
               onClick={onRetryPermissions}
               style={ACTION_BUTTON_STYLE}
             >
-              Retry
+              {copy.retryErrorLabel}
             </button>
             {onDismissError && (
               <button
@@ -347,7 +544,7 @@ export function PermissionBanner(props: PermissionBannerProps) {
                 onClick={onDismissError}
                 style={ACTION_BUTTON_STYLE}
               >
-                Dismiss
+                {copy.dismissErrorLabel}
               </button>
             )}
           </div>
