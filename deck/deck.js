@@ -1,6 +1,6 @@
 (function () {
   var DEFAULT_EVAL_DATA = {
-    generated_at: "2026-11-14T14:22:17Z",
+    generated_at: "2026-11-14T14:43:28Z",
     model: "gemini-3.8-flash",
     strength_min_conf: 0.80,
     ece: 0.0138,
@@ -13,6 +13,7 @@
     occluded_abstention_pct: "98.2%",
     confident_wrong_dose_count: 0,
     false_safe_allergen_count: 0,
+    pii_leak_count: 0,
     demo_fixtures_pass: "7 / 7 (100%)",
     demo_fixtures_p50_ms: 3817.2,
     live_models_online: "3 / 3",
@@ -23,12 +24,19 @@
     bystander_refusal_ms: 2574.8,
     calibration_p50_ms: 3424.9,
     verify_p50_ms: 3537.1,
-    unit_tests_passing: "394 / 394",
+    unit_tests_passing: "404 / 404",
     server_tests_passing: 154,
     web_tests_passing: 240,
+    eval_tests_passing: 10,
     overall_verdict_accuracy: 0.9811,
     overall_verdict_summary: "98.1% (52 / 53)",
     total_label_cases_evaluated: 53,
+    total_verdict_matches: 52,
+    extended_suites_count: 6,
+    extended_cases_evaluated: 60,
+    extended_verdict_matches: 60,
+    extended_verdict_accuracy: 1.0,
+    extended_verdict_summary: "100% (60 / 60)",
     clean_field_accuracy: 1.0,
     suites_present: [
       "coaching_eval",
@@ -40,6 +48,14 @@
       "model_comparison",
       "live_models_probe",
       "unit_economics"
+    ],
+    extended_suites_present: [
+      "curved_blister_results",
+      "coaching_trajectories",
+      "lighting_motion_results",
+      "multilingual_labels_results",
+      "bystander_privacy_results",
+      "polypharmacy_confusion_results"
     ]
   };
 
@@ -70,6 +86,72 @@
     }
     if (typeof incoming.overall_verdict_accuracy === "number" && typeof incoming.total_verdict_matches === "number" && typeof incoming.total_label_cases_evaluated === "number") {
       out.overall_verdict_summary = (incoming.overall_verdict_accuracy * 100).toFixed(1) + "% (" + incoming.total_verdict_matches + " / " + incoming.total_label_cases_evaluated + ")";
+    }
+    if (incoming.extended_summary && typeof incoming.extended_summary === "object") {
+      var es = incoming.extended_summary;
+      if (typeof es.suites_count === "number") {
+        out.extended_suites_count = es.suites_count;
+      }
+      if (typeof es.total_cases_evaluated === "number") {
+        out.extended_cases_evaluated = es.total_cases_evaluated;
+      }
+      if (typeof es.total_verdict_matches === "number") {
+        out.extended_verdict_matches = es.total_verdict_matches;
+      }
+      if (typeof es.overall_verdict_accuracy === "number") {
+        out.extended_verdict_accuracy = es.overall_verdict_accuracy;
+        var extPct = es.overall_verdict_accuracy === 1 ? "100%" : (es.overall_verdict_accuracy * 100).toFixed(1) + "%";
+        if (typeof out.extended_verdict_matches === "number" && typeof out.extended_cases_evaluated === "number") {
+          out.extended_verdict_summary = extPct + " (" + out.extended_verdict_matches + " / " + out.extended_cases_evaluated + ")";
+        }
+      }
+      if (typeof es.confident_wrong_dose_count === "number") {
+        var baseWrong = typeof incoming.total_confident_wrong_dose_count === "number" ? incoming.total_confident_wrong_dose_count : Number(out.confident_wrong_dose_count || 0);
+        out.confident_wrong_dose_count = baseWrong + es.confident_wrong_dose_count;
+      }
+      if (typeof es.false_safe_allergen_count === "number") {
+        var baseAllergen = typeof incoming.total_false_safe_allergen_count === "number" ? incoming.total_false_safe_allergen_count : Number(out.false_safe_allergen_count || 0);
+        out.false_safe_allergen_count = baseAllergen + es.false_safe_allergen_count;
+      }
+      if (typeof es.pii_or_bystander_leak_count === "number") {
+        out.pii_leak_count = es.pii_or_bystander_leak_count;
+      }
+    }
+    if (incoming.calibration && typeof incoming.calibration === "object") {
+      var cal = incoming.calibration;
+      if (typeof cal.ece === "number") {
+        out.ece = cal.ece;
+      }
+      if (typeof cal.brier_score === "number") {
+        out.brier_score = cal.brier_score;
+      }
+      if (typeof cal.n_items === "number") {
+        out.calibration_items = cal.n_items;
+      }
+      if (cal.latency_ms && typeof cal.latency_ms.p50 === "number") {
+        out.calibration_p50_ms = cal.latency_ms.p50;
+      }
+      if (cal.mean_strength_confidence_by_tier && typeof cal.mean_strength_confidence_by_tier === "object") {
+        if (typeof cal.mean_strength_confidence_by_tier.tier_0_clean === "number") {
+          out.tier_0_clean_conf = cal.mean_strength_confidence_by_tier.tier_0_clean;
+        }
+        if (typeof cal.mean_strength_confidence_by_tier.tier_1_mild === "number") {
+          out.tier_1_mild_conf = cal.mean_strength_confidence_by_tier.tier_1_mild;
+        }
+      }
+    }
+    if (incoming.live_probe && typeof incoming.live_probe === "object") {
+      var lp = incoming.live_probe;
+      if (typeof lp.primary_first_audio_ms === "number") {
+        out.live_first_audio_ms = lp.primary_first_audio_ms;
+      }
+      if (Array.isArray(lp.models) && lp.models.length > 0) {
+        var okCount = 0;
+        for (var mIdx = 0; mIdx < lp.models.length; mIdx++) {
+          if (lp.models[mIdx] && lp.models[mIdx].ok) okCount++;
+        }
+        out.live_models_online = okCount + " / " + lp.models.length;
+      }
     }
     if (incoming.coaching_judge && typeof incoming.coaching_judge === "object") {
       var cj = incoming.coaching_judge;
@@ -128,6 +210,7 @@
     if (!data) return;
     setEvalField("confident_wrong_dose_count", data.confident_wrong_dose_count);
     setEvalField("false_safe_allergen_count", data.false_safe_allergen_count);
+    setEvalField("pii_leak_count", data.pii_leak_count);
     setEvalField("ece", Number(data.ece).toFixed(4));
     setEvalField("brier_score", Number(data.brier_score).toFixed(4));
     setEvalField("calibration_items", data.calibration_items);
@@ -138,6 +221,8 @@
     setEvalField("occluded_abstention_pct", data.occluded_abstention_pct);
     setEvalField("overall_verdict_summary", data.overall_verdict_summary);
     setEvalField("total_label_cases_evaluated", data.total_label_cases_evaluated);
+    setEvalField("extended_cases_evaluated", data.extended_cases_evaluated);
+    setEvalField("extended_verdict_summary", data.extended_verdict_summary);
     setEvalField("demo_fixtures_pass", data.demo_fixtures_pass);
     setEvalField("live_models_online", data.live_models_online);
     setEvalField("live_first_audio_ms", Math.round(Number(data.live_first_audio_ms)) + " ms");
@@ -148,12 +233,23 @@
     setEvalField("verify_p50_ms", Math.round(Number(data.verify_p50_ms)).toLocaleString("en-US") + " ms");
     setEvalField("unit_tests_passing", data.unit_tests_passing);
 
+    var coreCount = Array.isArray(data.suites_present) ? data.suites_present.length : 9;
+    var extCount = Array.isArray(data.extended_suites_present) ? data.extended_suites_present.length : Number(data.extended_suites_count || 0);
+    var totalSuites = coreCount + extCount;
+
     if (typeof data.overall_verdict_accuracy === "number" && data.total_label_cases_evaluated > 0) {
       var accPct = (data.overall_verdict_accuracy * 100).toFixed(1) + "%";
-      setEvalField(
-        "suite_sync_status",
-        "HOLDUP_EVAL_DATA synced: " + accPct + " verdict accuracy across " + data.total_label_cases_evaluated + " verified cases + 16-frame calibration sweep (9/9 suites)"
-      );
+      if (Number(data.extended_cases_evaluated) > 0) {
+        setEvalField(
+          "suite_sync_status",
+          "HOLDUP_EVAL_DATA synced: " + accPct + " core (" + data.total_verdict_matches + "/" + data.total_label_cases_evaluated + ") + " + data.extended_verdict_summary + " stress (" + totalSuites + " suites)"
+        );
+      } else {
+        setEvalField(
+          "suite_sync_status",
+          "HOLDUP_EVAL_DATA synced: " + accPct + " verdict accuracy across " + data.total_label_cases_evaluated + " verified cases + 16-frame calibration sweep (" + coreCount + "/9 suites)"
+        );
+      }
     } else if (Array.isArray(data.suites_present)) {
       setEvalField(
         "suite_sync_status",
@@ -640,6 +736,18 @@
     renderEvalBindings(window.HOLDUP_EVAL_DATA);
     buildProgressAndOverview();
     updateStageScale();
+
+    var proto = String((window.location && window.location.protocol) || "");
+    if ((proto === "http:" || proto === "https:") && typeof window.fetch === "function") {
+      window.fetch("../api/eval-summary", { headers: { Accept: "application/json" } })
+        .then(function (res) { return res && res.ok ? res.json() : null; })
+        .then(function (payload) {
+          if (payload && payload.ok && payload.summary && typeof payload.summary === "object") {
+            window.updateHoldUpEvalData(payload.summary);
+          }
+        })
+        .catch(function () {});
+    }
 
     var initialIdx = parseHashSlide();
     goToSlide(initialIdx !== null ? initialIdx : 0, initialIdx === null);
