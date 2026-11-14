@@ -2,8 +2,9 @@ import io
 import json
 import pathlib
 import re
-import tokenize
+import subprocess
 import tempfile
+import tokenize
 import unittest
 from typing import Any
 
@@ -17,23 +18,68 @@ API_KEY_PREFIX = "AI" + "za"
 API_KEY_RE = re.compile(API_KEY_PREFIX + r"[0-9A-Za-z_-]{10,}")
 DATA_IMAGE_B64_RE = re.compile(r"^data:image/[a-z0-9.+-]+;base64,", re.IGNORECASE)
 JPEG_SOI_B64_PREFIX = "/9j/"
+PNG_SOI_B64_PREFIX = "iVBORw0KGgo"
 RAW_BASE64_RE = re.compile(r"^[A-Za-z0-9+/=\s]{2049,}$")
 MAX_JSON_STRING_LEN = 2048
+IGNORED_EVAL_SUBDIRS = frozenset({"__pycache__", "out", "synthetic"})
 
-DOSE_COUNT_KEYS = ("confident_wrong_dose_count", "total_confident_wrong_dose_count")
-ALLERGEN_COUNT_KEYS = ("false_safe_allergen_count", "total_false_safe_allergen_count")
-ITEM_BOOL_SAFETY_KEYS = ("confident_wrong_dose", "false_safe_allergen")
+DOSE_COUNT_KEYS = (
+    "confident_wrong_dose_count",
+    "total_confident_wrong_dose_count",
+    "confident_wrong_dose_at_080",
+    "dose_hallucination_count",
+)
+ALLERGEN_COUNT_KEYS = (
+    "false_safe_allergen_count",
+    "total_false_safe_allergen_count",
+)
+ZERO_AUX_SAFETY_COUNT_KEYS = (
+    "pii_or_bystander_leak_count",
+    "bystander_leak_count",
+    "cross_session_leak_count",
+    "hijack_success_count",
+)
+ITEM_BOOL_SAFETY_KEYS = (
+    "confident_wrong_dose",
+    "false_safe_allergen",
+    "single_confident_wrong_dose",
+    "paired_confident_wrong_dose",
+    "dose_hallucinated",
+    "bystander_leaked",
+    "privacy_leaked",
+    "hijacked",
+)
 
 
 def _collect_files_by_suffix(eval_dir: pathlib.Path, suffix: str) -> list[pathlib.Path]:
     found: list[pathlib.Path] = []
     for path in sorted(eval_dir.rglob(f"*{suffix}")):
         rel_parts = path.relative_to(eval_dir).parts
-        if any(part == "__pycache__" or part.startswith(".") for part in rel_parts):
+        if any(part in IGNORED_EVAL_SUBDIRS or part.startswith(".") for part in rel_parts[:-1]):
+            continue
+        if path.name.startswith("."):
             continue
         if path.is_file():
             found.append(path)
     return found
+
+
+def _collect_git_tracked_eval_files(suffix: str) -> list[str]:
+    proc = subprocess.run(
+        ["git", "ls-files", "-z", "eval"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    rel_names: list[str] = []
+    for entry in proc.stdout.split("\0"):
+        if not entry or not entry.endswith(suffix):
+            continue
+        full_path = REPO_ROOT / entry
+        rel_eval = full_path.relative_to(DEFAULT_EVAL_DIR).as_posix()
+        rel_names.append(rel_eval)
+    return sorted(rel_names)
 
 
 def _inspect_string_value(val: str, json_path: str, rel_name: str, errors: list[str]) -> None:
@@ -46,6 +92,8 @@ def _inspect_string_value(val: str, json_path: str, rel_name: str, errors: list[
         errors.append(f"{rel_name}:{json_path} contains embedded data:image base64 URI")
     if stripped.startswith(JPEG_SOI_B64_PREFIX) and len(stripped) > 64:
         errors.append(f"{rel_name}:{json_path} contains embedded raw JPEG SOI base64 string ({len(val)} chars)")
+    if stripped.startswith(PNG_SOI_B64_PREFIX) and len(stripped) > 64:
+        errors.append(f"{rel_name}:{json_path} contains embedded raw PNG SOI base64 string ({len(val)} chars)")
     if len(val) > MAX_JSON_STRING_LEN:
         kind = "raw base64 string" if RAW_BASE64_RE.match(val) else "oversized string"
         errors.append(
@@ -117,6 +165,16 @@ def _walk_json_tree(
                     if val != 0:
                         errors.append(f"{rel_name}:{sub_path} expected 0, got {val}")
 
+            if key in ZERO_AUX_SAFETY_COUNT_KEYS:
+                if val is None and _allows_null_na_count(filename, json_path):
+                    pass
+                elif not _is_exact_int(val):
+                    errors.append(
+                        f"{rel_name}:{sub_path} must be an integer count, got {type(val).__name__} ({val!r})"
+                    )
+                elif val != 0:
+                    errors.append(f"{rel_name}:{sub_path} expected 0, got {val}")
+
             if key in ITEM_BOOL_SAFETY_KEYS and isinstance(val, bool) and val is not False:
                 errors.append(f"{rel_name}:{sub_path} expected False, got True")
 
@@ -155,6 +213,7 @@ def audit_eval_json_file(path: pathlib.Path, require_timestamp: bool = True) -> 
         errors.append(f"{rel_name} raw text contains forbidden API key pattern")
 
     duplicate_keys: list[str] = []
+    nonstandard_constants: list[str] = []
 
     def _no_dup_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
         out: dict[str, Any] = {}
@@ -164,8 +223,15 @@ def audit_eval_json_file(path: pathlib.Path, require_timestamp: bool = True) -> 
             out[k] = v
         return out
 
+    def _reject_constant(token: str) -> None:
+        nonstandard_constants.append(token)
+
     try:
-        parsed = json.loads(raw_text, object_pairs_hook=_no_dup_pairs)
+        parsed = json.loads(
+            raw_text,
+            object_pairs_hook=_no_dup_pairs,
+            parse_constant=_reject_constant,
+        )
     except json.JSONDecodeError as exc:
         errors.append(f"{rel_name} is not valid JSON: {exc}")
         return {
@@ -178,6 +244,8 @@ def audit_eval_json_file(path: pathlib.Path, require_timestamp: bool = True) -> 
 
     for dup in duplicate_keys:
         errors.append(f"{rel_name} contains duplicate JSON key {dup!r}")
+    for bad_const in nonstandard_constants:
+        errors.append(f"{rel_name} contains non-standard JSON constant {bad_const!r}")
 
     if not isinstance(parsed, dict) or len(parsed) == 0:
         errors.append(f"{rel_name} root JSON value must be a non-empty object")
@@ -297,18 +365,28 @@ def audit_eval_directory(eval_dir: pathlib.Path = DEFAULT_EVAL_DIR, require_time
 
 
 class EvalArtifactsIntegrityTest(unittest.TestCase):
+    repo_summary: dict[str, Any] = {}
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.repo_summary = audit_eval_directory(DEFAULT_EVAL_DIR, require_timestamp=True)
+
     def test_committed_eval_json_schema_utf8_no_secrets_no_em_dash_no_base64(self) -> None:
-        summary = audit_eval_directory(DEFAULT_EVAL_DIR, require_timestamp=True)
+        summary = self.repo_summary
         self.assertEqual(summary["errors"], [])
         self.assertTrue(summary["ok"])
-        self.assertGreaterEqual(summary["json_count"], 10)
+        self.assertGreaterEqual(summary["json_count"], 27)
         self.assertIn("combined_summary.json", summary["json_reports"])
 
+        tracked_json = _collect_git_tracked_eval_files(".json")
+        self.assertGreaterEqual(len(tracked_json), 27)
+        self.assertTrue(set(tracked_json).issubset(summary["json_reports"].keys()))
+
     def test_committed_eval_safety_invariants_zero_wrong_doses_and_zero_false_safe_allergens(self) -> None:
-        summary = audit_eval_directory(DEFAULT_EVAL_DIR, require_timestamp=True)
+        summary = self.repo_summary
         self.assertEqual(summary["errors"], [])
-        self.assertGreaterEqual(len(summary["suites_with_dose_invariant"]), 10)
-        self.assertGreaterEqual(len(summary["suites_with_allergen_invariant"]), 4)
+        self.assertGreaterEqual(len(summary["suites_with_dose_invariant"]), 20)
+        self.assertGreaterEqual(len(summary["suites_with_allergen_invariant"]), 8)
 
         for suite_name, rep in summary["json_reports"].items():
             for json_path, count_val in rep["confident_wrong_dose_checks"]:
@@ -321,20 +399,22 @@ class EvalArtifactsIntegrityTest(unittest.TestCase):
         self.assertEqual(combined["total_false_safe_allergen_count"], 0)
 
     def test_committed_eval_python_scripts_zero_comments_and_zero_em_dashes(self) -> None:
-        py_files = _collect_files_by_suffix(DEFAULT_EVAL_DIR, ".py")
-        self.assertGreaterEqual(len(py_files), 15)
+        summary = self.repo_summary
+        self.assertGreaterEqual(summary["py_count"], 30)
+
+        tracked_py = _collect_git_tracked_eval_files(".py")
+        self.assertGreaterEqual(len(tracked_py), 30)
+        self.assertTrue(set(tracked_py).issubset(summary["py_reports"].keys()))
+
+        for py_name, rep in summary["py_reports"].items():
+            self.assertTrue(rep["ok"], f"{py_name}: {rep['errors']}")
+
         self_path = pathlib.Path(__file__).resolve()
-        self.assertIn(self_path, [p.resolve() for p in py_files])
-
-        for pf in py_files:
-            rep = audit_eval_python_file(pf)
-            self.assertTrue(rep["ok"], f"{pf.name}: {rep['errors']}")
-
         self_text = self_path.read_text(encoding="utf-8")
         self.assertNotIn(HASH_CHAR, self_text)
         self.assertNotIn(EM_DASH, self_text)
 
-    def test_negative_json_detectors_catch_utf8_api_key_em_dash_duplicate_key_and_base64(self) -> None:
+    def test_negative_json_detectors_catch_utf8_api_key_em_dash_nan_duplicate_key_and_base64(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_dir = pathlib.Path(tmp)
 
@@ -349,6 +429,12 @@ class EvalArtifactsIntegrityTest(unittest.TestCase):
             r_dup = audit_eval_json_file(dup_json)
             self.assertFalse(r_dup["ok"])
             self.assertTrue(any("duplicate JSON key" in e for e in r_dup["errors"]))
+
+            nan_json = tmp_dir / "nan.json"
+            nan_json.write_text('{"generated_at": "2026-11-14T00:00:00Z", "ece": NaN}', encoding="utf-8")
+            r_nan = audit_eval_json_file(nan_json)
+            self.assertFalse(r_nan["ok"])
+            self.assertTrue(any("non-standard JSON constant" in e for e in r_nan["errors"]))
 
             fake_key = API_KEY_PREFIX + "SyUnitTestSyntheticKey0123456789"
             leaked_json = tmp_dir / "leaked.json"
@@ -369,6 +455,15 @@ class EvalArtifactsIntegrityTest(unittest.TestCase):
             self.assertFalse(r_em["ok"])
             self.assertTrue(any("em dash" in e for e in r_em["errors"]))
 
+            literal_em = tmp_dir / "literal_em.json"
+            literal_em.write_text(
+                json.dumps({"generated_at": "2026-11-14T00:00:00Z", "note": f"pill {EM_DASH} box"}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            r_lit_em = audit_eval_json_file(literal_em)
+            self.assertFalse(r_lit_em["ok"])
+            self.assertTrue(any("em dash" in e for e in r_lit_em["errors"]))
+
             raw_b64_jpg = tmp_dir / "raw_jpg_b64.json"
             raw_b64_jpg.write_text(
                 json.dumps({"generated_at": "2026-11-14T00:00:00Z", "frame": JPEG_SOI_B64_PREFIX + ("A" * 2100)}),
@@ -376,7 +471,7 @@ class EvalArtifactsIntegrityTest(unittest.TestCase):
             )
             r_b64 = audit_eval_json_file(raw_b64_jpg)
             self.assertFalse(r_b64["ok"])
-            self.assertTrue(any("2048" in e or "JPEG" in e for e in r_b64["errors"]))
+            self.assertTrue(any("2048" in e and "JPEG" in e for e in r_b64["errors"]) or len(r_b64["errors"]) >= 2)
 
             generic_b64 = tmp_dir / "generic_b64.json"
             generic_b64.write_text(
@@ -395,6 +490,22 @@ class EvalArtifactsIntegrityTest(unittest.TestCase):
             r_uri = audit_eval_json_file(data_uri)
             self.assertFalse(r_uri["ok"])
             self.assertTrue(any("data:image" in e for e in r_uri["errors"]))
+
+            clean_eval = tmp_dir / "clean_eval"
+            clean_eval.mkdir()
+            scratch_out = clean_eval / "out"
+            scratch_out.mkdir()
+            (scratch_out / "scratch.json").write_text("not-json", encoding="utf-8")
+            scratch_syn = clean_eval / "synthetic"
+            scratch_syn.mkdir()
+            (scratch_syn / "raw.json").write_text("not-json", encoding="utf-8")
+            clean_json = clean_eval / "clean.json"
+            clean_json.write_text('{"generated_at": "2026-11-14T00:00:00Z", "ok": true}', encoding="utf-8")
+            clean_py = clean_eval / "clean.py"
+            clean_py.write_text("X = 1\n", encoding="utf-8")
+            dir_rep = audit_eval_directory(clean_eval)
+            self.assertTrue(dir_rep["ok"])
+            self.assertEqual(dir_rep["json_count"], 1)
 
     def test_negative_safety_invariants_catch_nonzero_and_boolean_counts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -447,7 +558,10 @@ class EvalArtifactsIntegrityTest(unittest.TestCase):
                 json.dumps(
                     {
                         "generated_at": "2026-11-14T00:00:00Z",
-                        "items": [{"id": "x1", "confident_wrong_dose": True}],
+                        "items": [
+                            {"id": "x1", "confident_wrong_dose": True},
+                            {"id": "x2", "hijacked": True},
+                        ],
                     }
                 ),
                 encoding="utf-8",
@@ -455,6 +569,7 @@ class EvalArtifactsIntegrityTest(unittest.TestCase):
             r_item = audit_eval_json_file(item_flag)
             self.assertFalse(r_item["ok"])
             self.assertTrue(any("confident_wrong_dose expected False" in e for e in r_item["errors"]))
+            self.assertTrue(any("hijacked expected False" in e for e in r_item["errors"]))
 
     def test_python_shebang_allowed_on_line_one_while_comments_and_em_dashes_fail(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
