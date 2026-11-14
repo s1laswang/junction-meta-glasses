@@ -3,6 +3,7 @@ import type { Checker } from "../lib/checker.ts";
 import { CueArrow, Icon } from "../components/Icons.tsx";
 import { POSITION_WORD, VerdictCard } from "../components/VerdictCard.tsx";
 import { DevicePanel } from "../components/DevicePanel.tsx";
+import { AddSheet } from "../components/AddSheet.tsx";
 import { frameFromFile } from "../lib/frames.ts";
 import { IS_MOCK } from "../lib/mock.ts";
 import { loadSettings, saveSettings } from "../lib/storage.ts";
@@ -201,9 +202,14 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
             <div className="camon">
               <span className="dot" aria-hidden="true" /> CAMERA ON
             </div>
-            <div className="sharpmeter" aria-hidden="true">
-              <span style={{ width: `${Math.round(s.sharpness * 100)}%` }} />
+            <div className={`sharpmeter ${s.readiness != null ? "ready" : ""}`} aria-hidden="true">
+              <span style={{ width: `${Math.round((s.readiness ?? s.sharpness) * 100)}%` }} />
             </div>
+            {s.readiness != null ? (
+              <div className="readytag" aria-hidden="true">
+                Readable {Math.round(s.readiness * 100)}%
+              </div>
+            ) : null}
           </>
         ) : null}
       </div>
@@ -269,6 +275,10 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
           saveSettings({ ...loadSettings(), showPanel: o });
         }}
       />
+
+      {s.addProposal ? (
+        <AddSheet med={s.addProposal.med} speech={s.addProposal.speech} expiresAt={s.addProposal.expiresAt} onAnswer={(a) => checker.answerProposal(a)} />
+      ) : null}
 
       <div className="bigbtn-wrap">
         <button className={`bigbtn ${big.cls}`} onClick={() => checker.primary()} aria-describedby="big-hint" disabled={s.snapshotBusy}>

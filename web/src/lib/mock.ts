@@ -59,6 +59,7 @@ export class MockSocket {
   private frames = 0;
   private features: FeatureFlag[] = ["scene", "datamatrix", "addmed", "sonar"];
   private pendingCode: Gs1Code | null = null;
+  private autoTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     mockCtl.sockets.add(this);
@@ -110,10 +111,15 @@ export class MockSocket {
         this.emit({ type: "status", live: "open", detail: "Mock server: scripted demo" });
         if (mockCtl.device.connected) this.emit({ type: "device", device: mockCtl.device });
         this.later(900, () => this.emit({ type: "transcript", role: "assistant", text: "Hi, I'm watching. Hold the box up in front of you.", final: true }));
-        this.later(1600, () => this.runScenario());
+        // the scripted demo starts by itself unless the user types/asks something first
+        this.autoTimer = setTimeout(() => this.runScenario(), 1600);
+        this.timers.push(this.autoTimer);
         break;
       case "ping":
         this.later(mockCtl.slow ? 1100 + Math.random() * 400 : 40 + Math.random() * 60, () => this.emit({ type: "pong", t: m.t }));
+        break;
+      case "profile_add_result":
+        this.say(m.accepted ? `Added ${m.med?.name ?? "it"} to your list. Hold up the next box, or say stop when you're done.` : "Okay, I didn't add it.");
         break;
       case "datamatrix": {
         const code = parseGs1(m.raw);
@@ -124,8 +130,13 @@ export class MockSocket {
         this.frames++;
         break;
       case "text": {
+        if (this.autoTimer) clearTimeout(this.autoTimer);
         this.emit({ type: "transcript", role: "user", text: m.text, final: true });
         const t = m.text.toLowerCase();
+        if (/\badd\b|my medicines/.test(t) && this.features.includes("addmed")) {
+          this.later(400, () => this.runAddMed());
+          break;
+        }
         const pick = /which|table|three/.test(t) && this.features.includes("scene") ? 4 : /nut|allerg|food|bar/.test(t) ? 3 : /ibu|nsaid|pain/.test(t) ? 1 : /strength|metformin/.test(t) ? 2 : /evening|amlo|pill/.test(t) ? 0 : undefined;
         this.later(400, () => this.runScenario(pick));
         break;
@@ -138,6 +149,26 @@ export class MockSocket {
       case "audio":
         break;
     }
+  }
+
+  /** Readiness rising over ~7 s (sonar), as the label gets readable. */
+  private rampReadiness(fromMs: number, toMs: number) {
+    if (!this.features.includes("sonar")) return;
+    for (let t = fromMs, i = 0; t <= toMs; t += 250, i++) {
+      const v = Math.min(0.97, 0.08 + ((t - fromMs) / (toMs - fromMs)) * 0.9 + (i % 3 === 0 ? -0.04 : 0));
+      this.later(t, () => this.emit({ type: "readiness", value: Math.max(0, v) }));
+    }
+  }
+
+  /** "Hold up to add": Gemini read the box and heard the schedule; the phone must confirm. */
+  private runAddMed() {
+    this.say("Sure. Hold up the first box and tell me when you take it.");
+    this.rampReadiness(800, 5200);
+    this.later(2500, () => this.emit({ type: "transcript", role: "user", text: "I take this one in the morning.", final: true }));
+    this.later(5600, () => {
+      const med = { id: "lisinopril", name: "Lisinopril", ingredient: "lisinopril", strength: "10 mg", schedule: ["morning"], gtin: "06416542005218" };
+      this.emit({ type: "profile_add", proposalId: "p" + Date.now().toString(36), med, speech: "I read Lisinopril 10 milligrams, taken in the morning." });
+    });
   }
 
   /** 0 match, 1 NSAID warning, 2 unsure strength, 3 food allergen. Cycles when not specified. */
@@ -175,6 +206,7 @@ export class MockSocket {
       ],
     ];
     for (const [ms, fn] of steps) this.later(ms, fn);
+    this.rampReadiness(1300, 8900);
   }
 
   pushDevice(d: DeviceState) {

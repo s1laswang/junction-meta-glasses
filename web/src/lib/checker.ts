@@ -1,6 +1,7 @@
 // The check session controller: owns camera, mic, playback, the /live socket, snapshot and offline
 // fallbacks, and device-state reactions. React subscribes through useSyncExternalStore.
-import type { CoachCue, DeviceState, FeatureFlag, Gs1Code, LiveState, Profile, ServerMsg, Verdict } from "../../../shared/types.ts";
+import type { CoachCue, DeviceState, FeatureFlag, Gs1Code, LiveState, Med, Profile, ServerMsg, Verdict } from "../../../shared/types.ts";
+import { Sonar } from "./sonar.ts";
 import { MicCapture, PcmPlayer } from "./audio.ts";
 import { verify, health } from "./api.ts";
 import { barcodeSupported, detectBarcode, detectCodes } from "./barcode.ts";
@@ -10,7 +11,7 @@ import { captureFrame, FrameRing, policyForRtt, shouldSend, type CapturedFrame, 
 import { LiveClient, type ConnState } from "./live.ts";
 import { audioRoute, classifyError, explain, getCamera, getMic, type PermState } from "./media.ts";
 import { IS_MOCK, mockCtl, mockHudChannel } from "./mock.ts";
-import { loadProfile, loadSettings, logDose, saveSettings, sessionCode } from "./storage.ts";
+import { loadProfile, loadSettings, logDose, newMedId, saveProfile, saveSettings, sessionCode } from "./storage.ts";
 import { AuthError } from "./key.ts";
 import { findByBarcode, findByGtin, matchVerdict, offlineUnknownBarcode, offlineUnknownCode } from "./verdicts.ts";
 
@@ -60,6 +61,10 @@ export type CheckState = {
   serverFeatures: FeatureFlag[] | null;
   /** last GS1 pack code decoded on the phone */
   lastCode: Gs1Code | null;
+  /** label readiness 0..1 from the server (sonar), null when not streaming */
+  readiness: number | null;
+  /** "hold up to add": a medicine the server proposes; needs explicit confirmation on the phone */
+  addProposal: { proposalId: string; med: Med; speech: string; expiresAt: number } | null;
   banner: Banner;
   lastError: string | null;
   hidden: boolean;
@@ -110,6 +115,8 @@ function initial(): CheckState {
     sharpness: 0,
     serverFeatures: null,
     lastCode: null,
+    readiness: null,
+    addProposal: null,
     banner: null,
     lastError: null,
     hidden: document.visibilityState === "hidden",
@@ -137,6 +144,11 @@ export class Checker {
   private lastBarcodeAt = 0;
   private silentAudio: HTMLAudioElement | null = null;
   private routeKey = "";
+  private sonar = new Sonar();
+  private verdictAt = 0;
+  private readableSaidAt = 0;
+  private readinessTimer: ReturnType<typeof setTimeout> | null = null;
+  private proposalTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingText: string | null = null;
   onProfileChange?: (p: Profile) => void;
 
@@ -147,6 +159,7 @@ export class Checker {
     });
     this.player.onPlayingChange = (p) => {
       this.set({ speaking: p });
+      this.sonar.duck(p);
       if (p) this.armAutoStop();
     };
     window.addEventListener("online", this.onOnline);
@@ -192,6 +205,7 @@ export class Checker {
     primeSpeech();
     this.mic.prime();
     const unlocked = this.player.unlock();
+    this.sonar.unlock();
     this.enableMediaSession();
     earcon.start();
     haptic.start();
@@ -240,6 +254,8 @@ export class Checker {
     } catch {
       /* ignore */
     }
+    this.stopSonar();
+    if (this.s.addProposal) this.answerProposal(false, "check stopped");
     earcon.stop();
     haptic.stop();
     this.set({ running: false, checking: false, camera: "off", mic: "off", conn: "idle", autoStopAt: null, cue: null, fps: 0, speaking: false, micLevel: 0, serverLive: null, banner: null });
@@ -443,6 +459,12 @@ export class Checker {
       case "hud_event":
         this.onHudEvent(m.name);
         break;
+      case "readiness":
+        this.onReadiness(m.value);
+        break;
+      case "profile_add":
+        this.onProfileAdd(m.proposalId, m.med, m.speech);
+        break;
       case "dose_logged": {
         // the user logged a dose by voice (Gemini log_dose tool): mirror it into the on-device log, no echo
         const p = logDose(loadProfile(), m.medId);
@@ -534,6 +556,8 @@ export class Checker {
 
   // ---- verdicts ----
   private showVerdict(v: Verdict, via: Mode) {
+    this.stopSonar();
+    this.verdictAt = Date.now();
     this.set({ verdict: v, verdictVia: via, cue: null, checking: false });
     earconForVerdict(v.level);
     haptic.verdict(v.level);
@@ -681,6 +705,76 @@ export class Checker {
       earcon.coach();
       announce(`Pack code read${gs1?.expiry ? `, expiry ${gs1.expiry}` : ""}. Double-checking the label.`);
     }
+  }
+
+  // ---- readiness sonar (flag sonar) ----
+  private onReadiness(value: number) {
+    const st = loadSettings();
+    if (!this.s.running || !this.feature("sonar") || st.quiet || this.s.mode !== "live" || this.s.addProposal || Date.now() - this.verdictAt < 3000) return;
+    this.sonar.volume = st.sonarVolume;
+    this.sonar.set(value);
+    // the tone is the main signal; screen readers get one short note when the label becomes readable
+    if (value >= 0.8 && (this.s.readiness ?? 0) < 0.8 && Date.now() - this.readableSaidAt > 10_000) {
+      this.readableSaidAt = Date.now();
+      announce("Readable.");
+    }
+    this.set({ readiness: value });
+    if (this.readinessTimer) clearTimeout(this.readinessTimer);
+    this.readinessTimer = setTimeout(() => this.set({ readiness: null }), 1600);
+  }
+  private stopSonar() {
+    this.sonar.stop();
+    if (this.readinessTimer) clearTimeout(this.readinessTimer);
+    this.readinessTimer = null;
+    if (this.s.readiness != null) this.set({ readiness: null });
+  }
+
+  // ---- hold up to add (flag addmed): the phone button is the source of truth ----
+  private onProfileAdd(proposalId: string, med: Med, speech: string) {
+    if (!this.feature("addmed")) {
+      this.live?.send({ type: "profile_add_result", proposalId, accepted: false });
+      return;
+    }
+    if (this.s.addProposal) this.answerProposal(false, "replaced");
+    this.stopSonar();
+    this.set({ addProposal: { proposalId, med, speech, expiresAt: Date.now() + 60_000 }, cue: null });
+    earcon.info();
+    haptic.pattern([60, 60, 60]);
+    announce(`${speech} Add ${medSummary(med)} to your list? Double-tap Add to confirm, or Cancel.`, "assertive");
+    if (this.s.mode !== "live" || IS_MOCK) speak(speech);
+    if (this.proposalTimer) clearTimeout(this.proposalTimer);
+    this.proposalTimer = setTimeout(() => this.answerProposal(false, "timeout"), 60_000);
+    this.armAutoStop();
+  }
+
+  /** Add (true) or Cancel (false). On Add the med is saved on this phone, then the server is told. */
+  answerProposal(accepted: boolean, why: "user" | "timeout" | "replaced" | "check stopped" = "user") {
+    const pr = this.s.addProposal;
+    if (!pr) return;
+    if (this.proposalTimer) clearTimeout(this.proposalTimer);
+    this.proposalTimer = null;
+    this.set({ addProposal: null });
+    let med: Med | undefined;
+    if (accepted) {
+      const p = loadProfile();
+      med = { ...pr.med, id: pr.med.id && !p.meds.some((m) => m.id === pr.med.id) ? pr.med.id : newMedId(pr.med.name) };
+      const next = { ...p, meds: [...p.meds, med] };
+      saveProfile(next);
+      this.onProfileChange?.(next);
+      earcon.match();
+      announce(`Added ${medSummary(med)} to your list. Saved on this phone only. Hold up the next box, or press Stop when you're done.`, "assertive");
+      if (this.s.mode !== "live" || IS_MOCK) speak(`Added ${med.name}.`);
+    } else {
+      announce(why === "timeout" ? "No answer, so I didn't add it." : why === "user" ? "Not added." : "", "assertive");
+    }
+    this.live?.send({ type: "profile_add_result", proposalId: pr.proposalId, accepted, ...(med ? { med } : {}) });
+    this.armAutoStop();
+  }
+
+  /** Onboarding path: build the list by holding up each box. */
+  async startSetupByVoice() {
+    if (!this.s.running) await this.start();
+    this.sendText("I want to add my medicines to my list. I'll hold up each box and tell you when I take it.");
   }
 
   /** Demo / test: behave as if the camera decoded this code. */
@@ -918,4 +1012,8 @@ function silentWavUrl() {
 export function localFeatures(): FeatureFlag[] {
   const f = loadSettings().features;
   return (Object.keys(f) as FeatureFlag[]).filter((k) => f[k]);
+}
+
+export function medSummary(m: Med) {
+  return `${m.name} ${m.strength}`.trim() + (m.schedule.length ? `, ${m.schedule.join(" and ")}` : "");
 }
