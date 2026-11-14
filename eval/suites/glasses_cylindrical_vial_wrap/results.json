@@ -1,0 +1,683 @@
+{
+ "suite":"glasses_cylindrical_vial_wrap",
+ "generated_at":"2026-11-14T19:47:41.071757+00:00",
+ "eval_now_iso":"2026-11-14T12:00:00+02:00",
+ "gaze_deg":35.0,
+ "model":"gemini-3.8-flash",
+ "thinking_level":"low",
+ "prompt_source":"shared/verify_prompt.md+shared/label_schema.json",
+ "prompt_sha256_12":"814770315c42",
+ "safety_module":"server/src/safety.ts",
+ "profile":{
+  "meds":[
+   {
+    "id":"metoprolol",
+    "name":"Metoprolol",
+    "ingredient":"metoprolol",
+    "strength":"25 mg",
+    "schedule":[
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id":"metformin",
+    "name":"Metformin",
+    "ingredient":"metformin",
+    "strength":"500 mg",
+    "schedule":[
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id":"timolol",
+    "name":"Timolol",
+    "ingredient":"timolol",
+    "strength":"0.5%",
+    "schedule":[
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id":"lantus",
+    "name":"Lantus",
+    "ingredient":"insulin glargine",
+    "strength":"100 IU/mL",
+    "schedule":[
+     "evening"
+    ]
+   }
+  ],
+  "allergies":[
+   "tree nuts",
+   "peanut"
+  ],
+  "avoid":[
+   "NSAIDs"
+  ],
+  "doseLog":[],
+  "lang":"en"
+ },
+ "summary":{
+  "n_cases":12,
+  "verdict_matches":12,
+  "verdict_accuracy":1.0,
+  "verdict_accuracy_ci95":[
+   0.7575,
+   1.0
+  ],
+  "confident_wrong_count":0,
+  "confident_wrong_rate":0.0,
+  "confident_wrong_ci95":[
+   0.0,
+   0.2425
+  ],
+  "false_match_count":0,
+  "unsafe_reassurance_count":0,
+  "abstain_or_unsure_count":6,
+  "error_count":0,
+  "latency_p50_ms":3036.8,
+  "latency_p95_ms":4088.8,
+  "readable_curved_vial_accuracy":1.0,
+  "limb_wrapped_abstention_rate":1.0
+ },
+ "cases":[
+  {
+   "id":"cv_01",
+   "category":"readable_curved_vial",
+   "wrap_mode":"front_foreshortened_25mg_vial",
+   "container_kind":"pill_bottle",
+   "description":"Downward-gaze (~35 deg) amber cylindrical Metoprolol 25 mg pill bottle with curved text arc and foreshortened 25 mg near right edge",
+   "question":"Is this my Metoprolol?",
+   "expected_level":"match",
+   "predicted_level":"match",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2640.5,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"METOPROLOL",
+     "confidence":0.99
+    },
+    "ingredient":{
+     "value":"metoprolol",
+     "confidence":0.99
+    },
+    "strength":{
+     "value":"25 mg",
+     "confidence":0.99
+    },
+    "dosing":{
+     "value":"1 tablet morning and evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-11",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "matches metoprolol",
+    "taken today: 0/2"
+   ]
+  },
+  {
+   "id":"cv_02",
+   "category":"readable_curved_vial",
+   "wrap_mode":"front_foreshortened_05pct_dropper",
+   "container_kind":"eyedrop_bottle",
+   "description":"Downward-gaze (~35 deg) sterile cylindrical Timolol 0.5% eye-drop bottle with foreshortened 0.5% badge on curved barrel",
+   "question":"Are these my Timolol eye drops?",
+   "expected_level":"match",
+   "predicted_level":"match",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2902.7,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"TIMOLOL Sterile Eye Drops",
+     "confidence":0.95
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":"0.5%",
+     "confidence":0.98
+    },
+    "dosing":{
+     "value":"1 drop in eye morning and evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-09",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "matches timolol",
+    "taken today: 0/2"
+   ]
+  },
+  {
+   "id":"cv_03",
+   "category":"readable_curved_vial",
+   "wrap_mode":"front_foreshortened_100iu_pen",
+   "container_kind":"insulin_pen",
+   "description":"Downward-gaze (~35 deg) cylindrical Lantus insulin glargine 100 IU/mL pen with foreshortened IU/mL unit near right barrel curve",
+   "question":"Is this my evening insulin pen?",
+   "expected_level":"match",
+   "predicted_level":"match",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":3331.6,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"LANTUS SANOFI SOLOSTAR Pen",
+     "confidence":0.95
+    },
+    "ingredient":{
+     "value":"insulin glargine",
+     "confidence":0.95
+    },
+    "strength":{
+     "value":"100 IU/mL",
+     "confidence":0.95
+    },
+    "dosing":{
+     "value":"Inject once daily in the evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-10",
+     "confidence":0.95
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "matches lantus",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id":"cv_04",
+   "category":"readable_curved_vial",
+   "wrap_mode":"wrong_strength_025pct_dropper",
+   "container_kind":"eyedrop_bottle",
+   "description":"Downward-gaze (~35 deg) cylindrical Timolol 0.25% eye-drop bottle differing from prescribed 0.5% concentration",
+   "question":"Are these my morning eye drops?",
+   "expected_level":"warning",
+   "predicted_level":"warning",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":3271.6,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"TIMOLOL",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":"0.25%",
+     "confidence":0.98
+    },
+    "dosing":{
+     "value":"1 drop in eye morning and evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-09",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "strength 0.25% differs from your 0.5%"
+   ]
+  },
+  {
+   "id":"cv_05",
+   "category":"readable_curved_vial",
+   "wrap_mode":"wrong_strength_300iu_pen",
+   "container_kind":"insulin_pen",
+   "description":"Downward-gaze (~35 deg) concentrated Toujeo insulin glargine 300 IU/mL cylindrical pen differing from prescribed 100 IU/mL",
+   "question":"Is this my evening insulin pen?",
+   "expected_level":"warning",
+   "predicted_level":"warning",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2791.8,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"TOUJEO",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"insulin glargine",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":"300 IU/mL",
+     "confidence":0.98
+    },
+    "dosing":{
+     "value":"Inject once daily in the evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-10",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "strength 300 IU/mL differs from your 100 IU/mL"
+   ]
+  },
+  {
+   "id":"cv_06",
+   "category":"readable_curved_vial",
+   "wrap_mode":"nsaid_400mg_hdpe_bottle",
+   "container_kind":"pill_bottle",
+   "description":"Downward-gaze (~35 deg) white HDPE cylindrical Burana ibuprofen 400 mg bottle with curved label triggering NSAID avoid warning",
+   "question":"Can I take this for pain?",
+   "expected_level":"warning",
+   "predicted_level":"warning",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":3170.9,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"BURANA",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"ibuprofen",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":"400 mg",
+     "confidence":0.98
+    },
+    "dosing":{
+     "value":"1 tablet as needed for acute pain",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-11",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "ibuprofen is an NSAID, on your avoid list",
+    "not on your medication list"
+   ]
+  },
+  {
+   "id":"cv_07",
+   "category":"limb_wrapped_strength_clip",
+   "wrap_mode":"trailing_zeros_clipped_500mg",
+   "container_kind":"pill_bottle",
+   "description":"Downward-gaze (~35 deg) rotated Metformin amber pill bottle where 500 mg wraps around right limb clipping trailing zeros and mg unit",
+   "question":"Is this my Metformin?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2869.3,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"METFORMIN",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"metformin",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":null,
+     "confidence":0
+    },
+    "dosing":{
+     "value":"1 tablet morning and evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-12",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.9,
+    "guidance":"Turn the bottle slightly to check for the strength."
+   },
+   "reasons":[
+    "strength not readable"
+   ]
+  },
+  {
+   "id":"cv_08",
+   "category":"limb_wrapped_strength_clip",
+   "wrap_mode":"limb_wrapped_unit_25mg",
+   "container_kind":"pill_bottle",
+   "description":"Downward-gaze (~35 deg) rotated Metoprolol amber pill bottle where 25 mg wraps past the curved right cylinder horizon",
+   "question":"Is this my evening pill?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":3193.5,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"METOPROLOL",
+     "confidence":0.95
+    },
+    "ingredient":{
+     "value":"metoprolol",
+     "confidence":0.95
+    },
+    "strength":{
+     "value":null,
+     "confidence":0
+    },
+    "dosing":{
+     "value":"1 tablet morning and evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-11",
+     "confidence":0.95
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.9
+   },
+   "reasons":[
+    "strength not readable"
+   ]
+  },
+  {
+   "id":"cv_09",
+   "category":"limb_wrapped_strength_clip",
+   "wrap_mode":"narrow_dropper_wrap_05pct",
+   "container_kind":"eyedrop_bottle",
+   "description":"Downward-gaze (~35 deg) narrow Timolol eye-drop bottle rotated so 0.5% concentration wraps behind the right squeeze-bottle limb",
+   "question":"Are these my glaucoma eye drops?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2884.0,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"TIMOLOL",
+     "confidence":0.95
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.95
+    },
+    "strength":{
+     "value":null,
+     "confidence":0.1
+    },
+    "dosing":{
+     "value":"1 drop in eye morning and evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-09",
+     "confidence":0.95
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0.1
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0.1
+    },
+    "readability":0.9
+   },
+   "reasons":[
+    "strength not readable"
+   ]
+  },
+  {
+   "id":"cv_10",
+   "category":"limb_wrapped_strength_clip",
+   "wrap_mode":"pen_barrel_trailing_zeros_100iu",
+   "container_kind":"insulin_pen",
+   "description":"Downward-gaze (~35 deg) narrow Lantus insulin pen rotated around barrel axis clipping trailing zeros and IU/mL unit around curve",
+   "question":"Is this my evening insulin pen?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2405.5,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"LANTUS",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"insulin glargine",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":null,
+     "confidence":0
+    },
+    "dosing":{
+     "value":"Inject once daily in the evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-10",
+     "confidence":0.95
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.85
+   },
+   "reasons":[
+    "strength not readable"
+   ]
+  },
+  {
+   "id":"cv_11",
+   "category":"limb_wrapped_strength_clip",
+   "wrap_mode":"back_seam_rotated_vial",
+   "container_kind":"pill_bottle",
+   "description":"Downward-gaze (~35 deg) amber pill bottle turned to back sticker seam and storage note with front identity and strength hidden",
+   "question":"Is this my evening pill?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":4312.2,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":null,
+     "confidence":0
+    },
+    "ingredient":{
+     "value":null,
+     "confidence":0
+    },
+    "strength":{
+     "value":null,
+     "confidence":0
+    },
+    "dosing":{
+     "value":null,
+     "confidence":0
+    },
+    "expiry":{
+     "value":null,
+     "confidence":0
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.1,
+    "guidance":"Turn the bottle around to show the front label."
+   },
+   "reasons":[
+    "label not readable"
+   ]
+  },
+  {
+   "id":"cv_12",
+   "category":"limb_wrapped_strength_clip",
+   "wrap_mode":"two_frame_insufficient_wrist_roll",
+   "container_kind":"pill_bottle",
+   "description":"Two-frame downward-gaze (~35 deg) wrist-roll sequence where Metoprolol 25 mg stays wrapped past right cylinder limb in both frames",
+   "question":"Is this my Metoprolol?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":3906.0,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"METOPROLOL",
+     "confidence":0.85
+    },
+    "ingredient":{
+     "value":"metoprolol",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":null,
+     "confidence":0
+    },
+    "dosing":{
+     "value":"1 tablet morning and evening",
+     "confidence":0.98
+    },
+    "expiry":{
+     "value":"2027-11",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.8,
+    "guidance":"Rotate the bottle slightly right to see the full name."
+   },
+   "reasons":[
+    "strength not readable"
+   ]
+  }
+ ]
+}
