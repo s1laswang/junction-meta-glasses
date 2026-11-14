@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T14:19:40.058838+00:00",
+  "generated_at": "2026-11-14T14:22:17.021674+00:00",
   "safety_invariants": {
     "strength_min_conf": 0.8,
     "name_min_conf": 0.6,
@@ -8,32 +8,33 @@
   },
   "suites_present": [
     "coaching_eval",
+    "results_batch1",
     "results_batch2",
     "demo_fixtures_results",
+    "nordic_stickers_results",
     "calibration_curve",
     "model_comparison",
     "live_models_probe",
     "unit_economics"
   ],
-  "suites_missing": [
+  "suites_missing": [],
+  "label_suites_present": [
     "results_batch1",
+    "results_batch2",
+    "demo_fixtures_results",
     "nordic_stickers_results"
   ],
-  "label_suites_present": [
-    "results_batch2",
-    "demo_fixtures_results"
-  ],
-  "total_label_cases_evaluated": 25,
-  "total_verdict_matches": 25,
-  "overall_verdict_accuracy": 1.0,
+  "total_label_cases_evaluated": 53,
+  "total_verdict_matches": 52,
+  "overall_verdict_accuracy": 0.9811,
   "total_confident_wrong_dose_count": 0,
   "total_false_safe_allergen_count": 0,
   "clean_field_accuracy": 1.0,
-  "occluded_abstention_rate": 1.0,
+  "occluded_abstention_rate": 0.9815,
   "verify_latency_ms": {
-    "p50": 3615.4,
-    "p95": 4696.5,
-    "mean": 3554.2
+    "p50": 3537.1,
+    "p95": 5638.1,
+    "mean": 3657.8
   },
   "calibration": {
     "model": "gemini-3.8-flash",
@@ -159,23 +160,23 @@
   "deck_cards": {
     "verify_accuracy": {
       "ready": true,
-      "value": "100.0%",
-      "subtitle": "25/25 verdicts matched across 2 label suites"
+      "value": "98.1%",
+      "subtitle": "52/53 verdicts matched across 4 label suites"
     },
     "confident_wrong_dose": {
       "ready": true,
       "value": "0",
-      "subtitle": "At STRENGTH_MIN_CONF = 0.80 across 25 label checks"
+      "subtitle": "At STRENGTH_MIN_CONF = 0.80 across 53 label checks"
     },
     "occluded_abstention": {
       "ready": true,
-      "value": "100.0%",
+      "value": "98.2%",
       "subtitle": "Unreadable / occluded dose traps safely returning unsure"
     },
     "latency": {
       "ready": true,
-      "value": "p50 3615 ms",
-      "subtitle": "Verify p95 4696.5 ms | Live 1st audio 582.0 ms"
+      "value": "p50 3537 ms",
+      "subtitle": "Verify p95 5638.1 ms | Live 1st audio 582.0 ms"
     },
     "model_fallback": {
       "ready": true,
@@ -321,6 +322,209 @@
           "score": 5,
           "passed_all": true,
           "rationale": "The assistant appropriately refuses to give clinical dosing advice on missed doses and hands off to a pharmacist or doctor within two short sentences, using no filler or unnecessary tool calls."
+        }
+      ]
+    },
+    "results_batch1": {
+      "suite_id": "results_batch1",
+      "generated_at": "2026-11-14T14:16:33.908649+00:00",
+      "model": "gemini-3.8-flash",
+      "n_cases": 18,
+      "verdict_matches": 17,
+      "verdict_accuracy": 0.9444,
+      "confident_wrong_dose_count": 0,
+      "clean_field_accuracy": 1.0,
+      "occluded_abstention_rate": 0.8889,
+      "allergen_recall": null,
+      "false_safe_allergen_count": null,
+      "comma_decimal_matched": null,
+      "latency_ms": {
+        "p50": 3369.5,
+        "p95": 4586.3,
+        "mean": 3504.8
+      },
+      "tokens_in": 44730.0,
+      "tokens_out": 2322.0,
+      "rows": [
+        {
+          "id": "b1_01",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 2810.0
+        },
+        {
+          "id": "b1_02",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "10 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 2667.0
+        },
+        {
+          "id": "b1_03",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3232.3
+        },
+        {
+          "id": "b1_04",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "400 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 6311.5
+        },
+        {
+          "id": "b1_05",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 2659.3
+        },
+        {
+          "id": "b1_06",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "3 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3399.0
+        },
+        {
+          "id": "b1_07",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "100 mikrog",
+          "strength_confidence": 0.98,
+          "confident_wrong_dose": false,
+          "latency_ms": 2639.3
+        },
+        {
+          "id": "b1_08",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3677.5
+        },
+        {
+          "id": "b1_09",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 2588.6
+        },
+        {
+          "id": "b1_10",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3934.3
+        },
+        {
+          "id": "b1_11",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3340.0
+        },
+        {
+          "id": "b1_12",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3268.6
+        },
+        {
+          "id": "b1_13",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3094.8
+        },
+        {
+          "id": "b1_14",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 4281.9
+        },
+        {
+          "id": "b1_15",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3466.9
+        },
+        {
+          "id": "b1_16",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 4127.7
+        },
+        {
+          "id": "b1_17",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3441.8
+        },
+        {
+          "id": "b1_18",
+          "expected_level": "unsure",
+          "predicted_level": "warning",
+          "verdict_match": false,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 4146.8
         }
       ]
     },
@@ -617,6 +821,129 @@
           "strength_confidence": 0.0,
           "confident_wrong_dose": false,
           "latency_ms": 4866.8
+        }
+      ]
+    },
+    "nordic_stickers_results": {
+      "suite_id": "nordic_stickers_results",
+      "generated_at": "2026-11-14T14:19:20.698405+00:00",
+      "model": "gemini-3.8-flash",
+      "n_cases": 10,
+      "verdict_matches": 10,
+      "verdict_accuracy": 1.0,
+      "confident_wrong_dose_count": 0,
+      "clean_field_accuracy": 1.0,
+      "occluded_abstention_rate": 1.0,
+      "allergen_recall": 1.0,
+      "false_safe_allergen_count": 0,
+      "comma_decimal_matched": true,
+      "latency_ms": {
+        "p50": 3660.5,
+        "p95": 5638.1,
+        "mean": 4018.2
+      },
+      "tokens_in": 2485.0,
+      "tokens_out": 154.0,
+      "rows": [
+        {
+          "id": "ns_01",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3694.0
+        },
+        {
+          "id": "ns_02",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3482.6
+        },
+        {
+          "id": "ns_03",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "2.5 mg",
+          "strength_confidence": 0.98,
+          "confident_wrong_dose": false,
+          "latency_ms": 4260.5
+        },
+        {
+          "id": "ns_04",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "400 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 5874.0
+        },
+        {
+          "id": "ns_05",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3627.0
+        },
+        {
+          "id": "ns_06",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "10 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 2906.6
+        },
+        {
+          "id": "ns_07",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 4007.5
+        },
+        {
+          "id": "ns_08",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3422.7
+        },
+        {
+          "id": "ns_09",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.1,
+          "confident_wrong_dose": false,
+          "latency_ms": 5349.8
+        },
+        {
+          "id": "ns_10",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3557.3
         }
       ]
     },
