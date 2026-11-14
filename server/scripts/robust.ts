@@ -1,5 +1,5 @@
 // Robustness checks against real Gemini (each case is short). Usage: tsx scripts/robust.ts [case...]
-// cases: audio fallback idle drop reconnect hud input auth snapshot
+// cases: audio fallback idle drop reconnect hud input auth snapshot datamatrix addmed
 import fs from "node:fs";
 import path from "node:path";
 import WebSocket from "ws";
@@ -214,6 +214,54 @@ await run("snapshot", async () => {
   c.close();
   return [fr.status === 204 && v.status === 200 && vj.level === "match" && none.status === 400 && unknown.status === 400,
     `ingest=${fr.status} verify(session, no frames)=${v.status} ${vj.level} in ${ms} ms (hub profile used); no frames+no session=${none.status}; unknown session=${unknown.status}`];
+});
+
+await run("datamatrix", async () => {
+  // glasses mode: the server decodes the pack's DataMatrix from a glasses frame, then the label read is cross-checked
+  const dmJpeg = fs.readFileSync(path.join(SERVER_DIR, "fixtures", "dm_amlodipine.jpg"));
+  const withGtin = { ...profile, meds: [{ ...profile.meds[0], gtin: "09501101530003" }] };
+  const c = new Client("rb-dm"); await c.open();
+  c.send({ type: "start", profile: withGtin, lang: "en", voice: true, source: "glasses" });
+  await c.waitFor((m) => m.type === "ready", 15000);
+  const post = (p: string, body: string | Buffer, type: string) => fetch(`http://localhost:${port}${p}`, { method: "POST", headers: { "content-type": type, ...KH }, body });
+  await post("/ingest/frame?session=rb-dm", dmJpeg, "image/jpeg");
+  await sleep(300);
+  const decoded = !!getHub("rb-dm")!.freshCode();
+  await post("/ingest/frame?session=rb-dm&sharpness=0.9", Buffer.from(jpeg, "base64"), "image/jpeg");
+  const verifySession = async () => (await post("/api/verify", JSON.stringify({ session: "rb-dm", question: "is this my evening pill?" }), "application/json")).json() as Promise<any>;
+  const agree = await verifySession();
+  // phone path: a conflicting code (different expiry) must turn the answer into "unsure, ask a pharmacist"
+  c.send({ type: "datamatrix", raw: "(01)09501101530003(17)280300", ts: Date.now() });
+  await sleep(200);
+  const conflict = await verifySession();
+  c.close();
+  const ok = decoded && agree.level === "match" && agree.crossCheck?.agrees === true && /double-checked/.test(agree.speech)
+    && conflict.level === "unsure" && conflict.crossCheck?.agrees === false;
+  return [ok, `server decode=${decoded}; agree: ${agree.level} "${agree.speech}"; conflict: ${conflict.level} "${conflict.speech}"`];
+});
+
+await run("addmed", async () => {
+  // hold up to add: verify_label -> ask schedule -> add_medication -> profile_add -> phone accepts -> saved
+  const empty = { ...profile, meds: [] };
+  const c = new Client("rb-add"); await c.open();
+  c.send({ type: "start", profile: empty, lang: "en", voice: true, source: "phone" });
+  const f = () => c.ws.readyState === 1 && c.send({ type: "frame", data: jpeg, w: 768, h: 768, sharpness: 0.85, ts: Date.now() });
+  f(); c.frameTimer = setInterval(f, 1000);
+  await c.waitFor((m) => m.type === "ready", 15000); await sleep(2500);
+  c.send({ type: "text", text: "Please add this medicine to my list. I take it every evening." });
+  let prop = await c.waitFor((m) => m.type === "profile_add", 25000) as any;
+  if (!prop) { // the model may ask "when do you take it?" first
+    c.send({ type: "text", text: "In the evening." });
+    prop = await c.waitFor((m) => m.type === "profile_add", 20000) as any;
+  }
+  const before = c.msgs.length;
+  const inProfileBefore = getHub("rb-add")!.profile.meds.length;
+  if (prop) c.send({ type: "profile_add_result", proposalId: prop.proposalId, accepted: true });
+  await c.waitFor((m) => m.type === "transcript" && m.role === "assistant" && (m as any).final, 15000, before);
+  const saved = getHub("rb-add")!.profile.meds;
+  c.close();
+  return [!!prop && inProfileBefore === 0 && saved.length === 1 && /amlodipine/i.test(saved[0].ingredient) && saved[0].strength === "5 mg",
+    `proposal=${prop ? JSON.stringify({ name: prop.med.name, ingredient: prop.med.ingredient, strength: prop.med.strength, schedule: prop.med.schedule }) : "none"} "${prop?.speech}"; profile before accept=${inProfileBefore}, after=${saved.length}; said after: "${finalSaid(c, before)}"`];
 });
 
 server.close();
