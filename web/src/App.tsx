@@ -15,7 +15,9 @@ import { ConfidenceBreakdownCard } from "./components/ConfidenceBreakdownCard.ts
 import { ConsentOnboarding } from "./components/ConsentOnboarding.tsx";
 import { ConversationBar } from "./components/ConversationBar.tsx";
 import { DeviceResiliencePanel } from "./components/DeviceResiliencePanel.tsx";
+import { DoseTimelineCard } from "./components/DoseTimelineCard.tsx";
 import { EvalProofCard } from "./components/EvalProofCard.tsx";
+import { HardwareTelemetryCard } from "./components/HardwareTelemetryCard.tsx";
 import {
   JudgeDemoTour,
   type TourStepAction,
@@ -30,6 +32,7 @@ import { ShortcutsModal } from "./components/ShortcutsModal.tsx";
 import { VerdictCard } from "./components/VerdictCard.tsx";
 import { ViewfinderStage } from "./components/ViewfinderStage.tsx";
 import { VoiceActivityPill } from "./components/VoiceActivityPill.tsx";
+import { VoiceCommandCheatSheetCard } from "./components/VoiceCommandCheatSheetCard.tsx";
 import { HudApp } from "./hud/HudApp.tsx";
 import { HudPreviewFrame } from "./hud/HudPreviewFrame.tsx";
 import { buildBridgeDeepLink, buildHudUrl } from "./pairing/links.ts";
@@ -63,6 +66,7 @@ type FooterResourceLink = {
 const FOOTER_RESOURCE_LINKS: readonly FooterResourceLink[] = [
   { href: "/deck", label: "Pitch Deck (12 Slides)" },
   { href: "/judge-handout.html", label: "Judge Quick-Start (A4)" },
+  { href: "/architecture-poster.html", label: "Architecture Poster (SVG)" },
   { href: "/printable-props.html", label: "Printable Demo Props & QR" },
   { href: "/hud", label: "Ray-Ban Display HUD (/hud)" }
 ];
@@ -559,6 +563,14 @@ function HoldUpPwaShell({
                   lang={effectiveLang}
                   onSubmitQuestion={handleSubmitConversation}
                 />
+
+                <VoiceCommandCheatSheetCard
+                  lang={effectiveLang}
+                  onRunPhrase={handleSubmitConversation}
+                  onTriggerHudGesture={(event) => {
+                    ctrl.triggerHudEvent(event);
+                  }}
+                />
               </div>
 
               <div style={COLUMN_STACK_STYLE}>
@@ -631,6 +643,14 @@ function HoldUpPwaShell({
                 }}
               />
 
+              <DoseTimelineCard
+                profile={effectiveProfile}
+                lang={effectiveLang}
+                onUndoLastDose={() => {
+                  ctrl.undoDose();
+                }}
+              />
+
               <SafetyRuleExplainerCard
                 profile={effectiveProfile}
                 lang={effectiveLang}
@@ -669,6 +689,15 @@ function HoldUpPwaShell({
               aria-labelledby="tab-device"
               style={COLUMN_STACK_STYLE}
             >
+              <HardwareTelemetryCard
+                device={ctrl.snapshot.device}
+                hudConnected={ctrl.snapshot.hudConnected}
+                mode={ctrl.snapshot.mode}
+                rttMs={ctrl.snapshot.network.rttMs}
+                cameraActive={ctrl.snapshot.cameraActive}
+                lang={effectiveLang}
+              />
+
               <DeviceResiliencePanel
                 snapshot={ctrl.snapshot}
                 chaos={ctrl.chaos}
