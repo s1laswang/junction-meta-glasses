@@ -112,7 +112,11 @@ Fallbacks, in order:
 
 **Silas** [shows the **barcode side** of the amlodipine box].
 
-**Expected:** **MATCH** · offline barcode, "Yes. Amlodipine 5 mg, your evening pill. You already logged a dose today."
+**Expected:** **WARNING** · offline barcode, headline "Amlodipine: already taken today", spoken "You already took Amlodipine today at <time>. Don't take another unless your plan says so." (Since `e83ff22`, `matchVerdict` in `web/src/lib/verdicts.ts` applies the online dose rule offline: once today's logged doses reach the schedule, it warns instead of matching. This only happens because the 1:40 beat logged "I took it"; on a fresh profile the same box gives **MATCH** "Yes. Amlodipine 5 mg, your evening pill.")
+
+**Silas**: "Even offline, it remembers I already took it. It stops a double dose."
+
+- *Fallback:* if it says MATCH instead, the dose wasn't logged (the "I took it" beat was skipped). Say: "Offline, it still knows my saved boxes." and move on. If the barcode isn't recognised: "Offline it only knows the boxes I've saved."
 
 **Momin010** [turns airplane mode off]. **Expected (on screen; it is only spoken to screen-reader users):** a "Back online" banner → **Snapshot** → "Live assistant connected" within a few seconds.
 
@@ -126,7 +130,7 @@ Fallbacks:
 ### 2:35–3:00 · Proof and path (slides 7, 10, 11, 12)
 **Momin010** [switches the projector to the deck, slide 7].
 
-**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about one to three seconds instead of six." [slide 10] "We used Gemini as a workforce to build a test set of [TODO: N] labels with known answers: [TODO: X] confident wrong dose reads." [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
+**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about one to three seconds instead of six." [slide 10] "We measure the failure that matters: a confident wrong dose. Model image scores are not in yet: [TODO: N, from docs/EVAL.md] labels with known answers, and [TODO: X] confident-wrong strength reads. What we have measured is the rules layer, not the model: 0 of 216 adversarial reads got a reassurance they should not have, and match recall on safe, confident reads was 15/15." (Source: `cd server && npx --yes tsx scripts/eval-rules.ts`, re-run Sat 14 Nov 2026, 20:48 EET, exit 0. It calls `safety.ts` only.) [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
 
 - *Fallback:* if time has run out, jump straight to slide 12 and say the last line.
 

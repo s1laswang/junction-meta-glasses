@@ -1,0 +1,673 @@
+{
+ "suite": "fmd_tamper_hologram",
+ "generated_at": "2026-11-14T18:48:12.429819+00:00",
+ "eval_now_iso": "2026-11-14T12:00:00+02:00",
+ "model": "gemini-3.8-flash",
+ "thinking_level": "low",
+ "prompt_source": "shared/verify_prompt.md+shared/label_schema.json",
+ "prompt_sha256_12": "814770315c42",
+ "safety_module": "server/src/safety.ts",
+ "profile": {
+  "meds": [
+   {
+    "id": "amlodipine",
+    "name": "Amlodipin",
+    "ingredient": "amlodipine",
+    "strength": "5 mg",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "metformin",
+    "name": "Metformin",
+    "ingredient": "metformin",
+    "strength": "500 mg",
+    "schedule": [
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id": "atorvastatin",
+    "name": "Atorvastatin",
+    "ingredient": "atorvastatin",
+    "strength": "20 mg",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "paracetamol",
+    "name": "Panadol",
+    "ingredient": "paracetamol",
+    "strength": "500 mg",
+    "schedule": [
+     "evening"
+    ]
+   }
+  ],
+  "allergies": [
+   "tree nuts",
+   "peanut"
+  ],
+  "avoid": [
+   "NSAIDs"
+  ],
+  "doseLog": [],
+  "lang": "en"
+ },
+ "summary": {
+  "n_cases": 12,
+  "verdict_matches": 12,
+  "verdict_accuracy": 1.0,
+  "verdict_accuracy_ci95": [
+   0.7575,
+   1.0
+  ],
+  "confident_wrong_count": 0,
+  "confident_wrong_rate": 0.0,
+  "confident_wrong_ci95": [
+   0.0,
+   0.2425
+  ],
+  "false_match_count": 0,
+  "unsafe_reassurance_count": 0,
+  "abstain_or_unsure_count": 6,
+  "latency_p50_ms": 3696.7,
+  "latency_p95_ms": 5745.7,
+  "intact_fmd_pack_accuracy": 1.0,
+  "tamper_occluded_abstention_rate": 1.0
+ },
+ "cases": [
+  {
+   "id": "fh_01",
+   "category": "intact_fmd_pack",
+   "seal_mode": "rainbow_flap_safe",
+   "description": "Intact EU FMD rainbow hologram flap seal and GS1 DataMatrix on Amlodipin 5 mg",
+   "question": "Is this my evening pill?",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3713.9,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": "5 mg",
+     "confidence": 0.98
+    },
+    "dosing": {
+     "value": "1 tablet in the evening",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.3
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "matches amlodipine",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id": "fh_02",
+   "category": "intact_fmd_pack",
+   "seal_mode": "translucent_flap_safe",
+   "description": "Intact translucent EU FMD seal and DataMatrix on wrong-strength Amlodipin 10 mg",
+   "question": "Is this my evening pill?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3701.8,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "10 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "Once daily",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "strength 10 mg differs from your 5 mg"
+   ]
+  },
+  {
+   "id": "fh_03",
+   "category": "intact_fmd_pack",
+   "seal_mode": "silver_foil_safe",
+   "description": "Intact silver FMD security seal and DataMatrix on Burana 400 mg NSAID carton",
+   "question": "Can I take this for pain?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 6293.8,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Burana",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "ibuprofen",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "400 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": "2027-12",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": "06432100077401",
+     "confidence": 0.95
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "ibuprofen is an NSAID, on your avoid list",
+    "not on your medication list"
+   ]
+  },
+  {
+   "id": "fh_04",
+   "category": "intact_fmd_pack",
+   "seal_mode": "datamatrix_expired",
+   "description": "Intact EU FMD seal and GS1 DataMatrix showing expired EXP 2025-01 Metformin 500 mg",
+   "question": "Is this my Metformin?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3691.6,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Metformin",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "metformin",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "500 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "Twice daily with meals",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2025-01",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.3
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "expired 2025-01"
+   ]
+  },
+  {
+   "id": "fh_05",
+   "category": "intact_fmd_pack",
+   "seal_mode": "foil_seal_allergen",
+   "description": "Intact hologram-sealed Cocoa Hazelnut Crisp box with readable tree-nut allergen",
+   "question": "Does this contain tree nuts or peanuts?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3487.5,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "Cocoa Hazelnut Crisp",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "cocoa snack",
+     "confidence": 0.9
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": "2027-09-18",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": [
+      "hazelnut",
+      "wheat"
+     ],
+     "confidence": 0.98
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "contains hazelnut (allergy: tree nuts)"
+   ]
+  },
+  {
+   "id": "fh_06",
+   "category": "intact_fmd_pack",
+   "seal_mode": "silver_seal_safe_food",
+   "description": "Intact silver-sealed Nordic Oat Crackers box with nut-free allergen panel",
+   "question": "Is this safe with my nut allergies?",
+   "expected_level": "info",
+   "predicted_level": "info",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3160.7,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "Nordic Oat Crackers",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "Oven-Baked Wholegrain Crackers",
+     "confidence": 0.95
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": "2027-08-20",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": [
+      "wheat",
+      "oats",
+      "gluten"
+     ],
+     "confidence": 0.95
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "no listed allergen matches your profile"
+   ]
+  },
+  {
+   "id": "fh_07",
+   "category": "hologram_specular_rainbow",
+   "seal_mode": "hologram_over_strength",
+   "description": "EU FMD rainbow hologram seal pasted directly over Amlodipin strength digits",
+   "question": "Is this my evening pill?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3444.7,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": "Take in the evening",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "fh_08",
+   "category": "hologram_specular_rainbow",
+   "seal_mode": "specular_rainbow_flare",
+   "description": "Specular rainbow diffraction flare across FMD hologram seal over Atorvastatin strength",
+   "question": "Is this my evening cholesterol pill?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4369.6,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Atorvastatin",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "atorvastatin",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.1
+    },
+    "dosing": {
+     "value": "1 tablet in the evening",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "readability": 0.75,
+    "guidance": "Tilt it away from the light to stop the glare."
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "fh_09",
+   "category": "void_adhesive_residue",
+   "seal_mode": "void_checker_strength",
+   "description": "Peeled EU FMD seal leaving VOID OPENED checkerboard residue over Metformin strength",
+   "question": "Is this my Metformin?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3870.4,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Metformin",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "metformin",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": "Take with meals",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-09",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.85
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "fh_10",
+   "category": "void_adhesive_residue",
+   "seal_mode": "void_fiber_tear_strength",
+   "description": "Opened FMD tamper tape leaving VOID adhesive fiber tear ripping off Panadol strength",
+   "question": "Can I take this Panadol?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3188.9,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Panadol",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "paracetamol",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": "For pain or fever",
+     "confidence": 0.85
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.7,
+    "guidance": "The tamper seal says VOID OPENED, showing prior opening."
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "fh_11",
+   "category": "torn_perforation_tamper",
+   "seal_mode": "torn_perf_datamatrix_strength",
+   "description": "Partially torn FMD perforation ripping across strength, DataMatrix, and expiry on Amlodipin",
+   "question": "Is this my evening pill?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 5297.3,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.95
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.95
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": null,
+     "confidence": 0
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.4,
+    "guidance": "Turn the box around to show the instructions."
+   },
+   "reasons": [
+    "identity not confident (name 0.95, readability 0.40)"
+   ]
+  },
+  {
+   "id": "fh_12",
+   "category": "torn_perforation_tamper",
+   "seal_mode": "torn_perf_allergen_expiry",
+   "description": "Partially torn perforation and silver seal covering allergen and expiry panel on biscuits",
+   "question": "Is this safe with my nut allergies?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3246.8,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "NORDIC BAKEHOUSE Golden Tea Biscuits",
+     "confidence": 0.95
+    },
+    "ingredient": {
+     "value": "biscuits",
+     "confidence": 0.9
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": null,
+     "confidence": 0
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.5,
+    "guidance": "Turn it around, the ingredient list is on the back."
+   },
+   "reasons": [
+    "allergen panel not readable"
+   ]
+  }
+ ]
+}

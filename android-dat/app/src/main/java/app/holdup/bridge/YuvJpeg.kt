@@ -94,7 +94,7 @@ object YuvJpeg {
   }
 
   /** Finds (stride, sliceHeight) such that the buffer is exactly one padded 4:2:0 frame. */
-  private fun inferStride(size: Int, w: Int, h: Int): Pair<Int, Int>? {
+  internal fun inferStride(size: Int, w: Int, h: Int): Pair<Int, Int>? {
     fun align(v: Int, a: Int) = (v + a - 1) / a * a
     val strides = listOf(w, align(w, 16), align(w, 32), align(w, 64), align(w, 128), align(w, 256)).distinct()
     val heights = listOf(h, align(h, 16), align(h, 32), align(h, 64)).distinct()
@@ -108,7 +108,7 @@ object YuvJpeg {
    * Interleaved chroma (UVUV…) has big differences between neighbouring bytes (U vs V) but small
    * differences two bytes apart (U vs U). A planar U plane is smooth at lag 1.
    */
-  private fun detectLayout(src: ByteArray, w: Int, h: Int, stride: Int, sliceHeight: Int): Layout {
+  internal fun detectLayout(src: ByteArray, w: Int, h: Int, stride: Int, sliceHeight: Int): Layout {
     val start = stride * sliceHeight
     var lag1 = 0L
     var lag2 = 0L
