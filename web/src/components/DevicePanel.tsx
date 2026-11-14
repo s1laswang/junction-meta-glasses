@@ -65,8 +65,8 @@ export function DevicePanel({ s, checker, open, onToggle }: { s: CheckState; che
           {s.fps} fps · {s.framesSent} total · target {s.policy.fps} fps q{s.policy.quality} · sharp {Math.round(s.sharpness * 100)}%
         </dd>
         <dt>Glasses</dt>
-        <dd className={d ? tone(d.connected && d.worn) : undefined}>
-          {d ? `${d.connected ? "connected" : "disconnected"} · ${d.worn ? "worn" : "not worn"} · battery ${d.battery ?? "?"}% · ${d.streaming ? "streaming" : "idle"}` : "no state yet"}
+        <dd className={d ? tone(d.connected !== false && d.worn !== false) : undefined}>
+          {d ? `${d.connected === false ? "disconnected" : "connected"} · ${d.worn == null ? "worn unknown" : d.worn ? "worn" : "not worn"} · battery ${d.battery == null ? "unknown" : d.battery + "%"} · ${d.streaming ? "streaming" : "idle"} · ${d.source}` : "no state yet"}
         </dd>
         <dt>Display (HUD)</dt>
         <dd className={tone(s.hudConnected)}>{s.hudConnected == null ? "–" : s.hudConnected ? "connected" : "not connected"}</dd>

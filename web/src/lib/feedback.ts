@@ -91,6 +91,19 @@ export function speak(text: string, opts: { interrupt?: boolean; lang?: string }
     /* ignore */
   }
 }
+/** iOS only lets speechSynthesis talk after one utterance started inside a user gesture. */
+let speechPrimed = false;
+export function primeSpeech() {
+  if (speechPrimed || !window.speechSynthesis) return;
+  try {
+    const u = new SpeechSynthesisUtterance(" ");
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+    speechPrimed = true;
+  } catch {
+    /* ignore */
+  }
+}
 export function stopSpeaking() {
   try {
     window.speechSynthesis?.cancel();

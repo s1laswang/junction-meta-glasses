@@ -4,7 +4,7 @@ import type { CoachCue, DeviceState, LiveState, Profile, ServerMsg, Verdict } fr
 import { MicCapture, PcmPlayer } from "./audio.ts";
 import { verify, health } from "./api.ts";
 import { barcodeSupported, detectBarcode } from "./barcode.ts";
-import { announce, earcon, earconForVerdict, haptic, speak, stopSpeaking } from "./feedback.ts";
+import { announce, earcon, earconForVerdict, haptic, primeSpeech, speak, stopSpeaking } from "./feedback.ts";
 import { captureFrame, FrameRing, policyForRtt, shouldSend, type CapturedFrame, type FramePolicy } from "./frames.ts";
 import { LiveClient, type ConnState } from "./live.ts";
 import { audioRoute, classifyError, explain, getCamera, getMic, type PermState } from "./media.ts";
@@ -141,7 +141,7 @@ export class Checker {
     document.addEventListener("visibilitychange", this.onVisibility);
     navigator.mediaDevices?.addEventListener?.("devicechange", this.onDeviceChange);
     if (IS_MOCK) {
-      const ch = mockHudChannel(this.s.session);
+      const ch = mockHudChannel();
       if (ch) ch.onmessage = (e: MessageEvent<{ type?: string; name?: string }>) => e.data?.type === "hud_event" && this.onHudEvent(e.data.name ?? "");
     }
     void this.checkHealth();
@@ -174,12 +174,17 @@ export class Checker {
   // ---- lifecycle ----
   async start() {
     if (this.s.running) return;
+    // everything that needs the user gesture happens before the first await (iOS Safari)
     stopSpeaking();
-    await this.player.unlock();
+    primeSpeech();
+    this.mic.prime();
+    const unlocked = this.player.unlock();
+    this.enableMediaSession();
     earcon.start();
     haptic.start();
-    this.set({ running: true, mode: navigator.onLine ? "live" : "offline", captions: [], cue: null, verdict: null, verdictVia: null, banner: null, lastError: null, framesSent: 0 });
-    this.enableMediaSession();
+    this.set({ running: true, mode: "live", captions: [], cue: null, verdict: null, verdictVia: null, banner: null, lastError: null, framesSent: 0 });
+    if (!navigator.onLine) this.setMode("offline", "You're offline. I can recognise your saved medicines by barcode, but I can't read new labels.");
+    await unlocked;
     this.armAutoStop();
     announce("Check started. Camera and microphone on. Hold the item up in front of you.", "assertive");
 
@@ -302,7 +307,7 @@ export class Checker {
   }
   private async restartMic(why: string) {
     announce(why + " Switching microphone.");
-    await this.mic.stop();
+    await this.mic.stop(true);
     await this.startMic();
   }
 
@@ -443,9 +448,10 @@ export class Checker {
   private onDevice(d: DeviceState) {
     const prev = this.s.device;
     this.set({ device: d });
-    const usable = d.connected && d.worn;
-    if (this.s.source === "glasses" && !usable) {
-      const why = !d.connected ? "Glasses disconnected." : "Glasses taken off.";
+    // worn/battery can be null (unknown): only a definite false means the glasses camera is unusable
+    const unusable = d.connected === false || d.worn === false;
+    if (this.s.source === "glasses" && unusable) {
+      const why = d.connected === false ? "Glasses disconnected." : "Glasses taken off.";
       void this.setSource("phone", `${why} Switched to the phone camera.`);
       earcon.alert();
     } else if (prev && prev.connected !== d.connected) {
@@ -563,6 +569,7 @@ export class Checker {
   // ---- snapshot mode (HTTP verify) ----
   async snapshot(extra?: CapturedFrame, question?: string) {
     if (this.s.snapshotBusy) return;
+    primeSpeech();
     const frames = extra ? [extra] : this.ring.sharpest(2);
     if (!frames.length) {
       announce("I don't have a picture yet. Hold the label up to the camera, or take a photo.", "assertive");

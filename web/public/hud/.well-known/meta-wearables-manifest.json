@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "name": "HoldUp",
+  "description": "Hold up a medicine box or food package; HoldUp tells you if it's the right one.",
+  "appearance": {
+    "theme_color": "#2E7D32",
+    "icon": { "src": "../icon-mono.png", "type": "monochrome" }
+  }
+}
