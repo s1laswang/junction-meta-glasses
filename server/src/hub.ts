@@ -26,6 +26,8 @@ export class Hub {
   lastCoach?: ServerMsg;
   lastStatus?: ServerMsg;
   device?: DeviceState;
+  /** Which camera the phone chose. Glasses frames from /ingest are only used while this is "glasses". */
+  source: "phone" | "glasses" = "phone";
   resume?: { handle: string; model: string; at: number };
   touchedAt = Date.now();
   constructor(readonly id: string) {}

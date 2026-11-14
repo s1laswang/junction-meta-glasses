@@ -31,7 +31,9 @@ export type ClientMsg =
   | { type: "frame"; data: string; w: number; h: number; sharpness: number; ts: number }
   | { type: "text"; text: string }
   | { type: "event"; name: "log_dose" | "repeat" | "stop" }
-  | { type: "ping"; t: number };
+  | { type: "ping"; t: number }
+  // added Sat 18:00 (CEO): mid-session camera switch; server only accepts /ingest frames while source = "glasses"
+  | { type: "source"; source: "phone" | "glasses" };
 
 export type ServerMsg =
   | { type: "ready"; model: string; session: string }

@@ -355,6 +355,7 @@ export class Checker {
     if (src === this.s.source) return;
     saveSettings({ ...loadSettings(), source: src });
     this.set({ source: src });
+    if (this.live?.isOpen) this.live.send({ type: "source", source: src });
     if (src === "glasses") {
       this.stopCamera();
       this.set({ camera: "off", sharpness: 0 });

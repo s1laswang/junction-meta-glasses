@@ -85,12 +85,12 @@ export function createApp() {
     const buf = req.body as Buffer;
     if (!Buffer.isBuffer(buf) || buf.length < 100) { res.status(400).json({ type: "error", code: "bad_input", message: "image/jpeg body required", recoverable: true }); return; }
     const hub = resolveHub(req.query.session as string | undefined);
-    if (hub) {
+    if (hub && hub.source === "glasses") {
       const data = buf.toString("base64");
       const sharpness = Number(req.query.sharpness) || jpegSharpness(buf);
       hub.addFrame({ data, sharpness, ts: Date.now(), bytes: buf.length, source: "glasses" });
       (hub.live as LiveProxy | undefined)?.frame(data);
-    } // no session: frame dropped (never stored)
+    } // no session, or the phone chose its own camera: frame dropped (never stored)
     res.status(204).end();
   });
   app.post("/ingest/state", express.json({ limit: "16kb" }), (req, res) => {
@@ -164,6 +164,7 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
         hub.live = proxy;
         markLatest(hub);
         if (msg.source === "phone" || msg.source === "glasses") {
+          hub.source = msg.source;
           hub.emit({ type: "device", device: { ...(hub.device ?? { connected: msg.source === "glasses", worn: msg.source === "glasses", battery: null, streaming: false }), source: msg.source } }, { clients: false });
         }
         void proxy.start();
@@ -190,6 +191,13 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
         return;
       case "ping":
         safeSend(ws, JSON.stringify({ type: "pong", t: msg.t }));
+        return;
+      case "source":
+        if (msg.source === "phone" || msg.source === "glasses") {
+          hub.source = msg.source;
+          if (hub.device) hub.emit({ type: "device", device: { ...hub.device, source: msg.source } }, { clients: false });
+          log("ws.live.source", { session: shortId(id), source: msg.source });
+        }
         return;
       default:
         err("bad_input", "unknown message type");
