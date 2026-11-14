@@ -1,0 +1,659 @@
+{
+ "suite":"ophthalmic_otic_dropper_bottles",
+ "generated_at":"2026-11-14T19:47:02.315622+00:00",
+ "eval_now_iso":"2026-11-14T12:00:00+02:00",
+ "model":"gemini-3.8-flash",
+ "thinking_level":"low",
+ "concurrency":3,
+ "prompt_source":"shared/verify_prompt.md+shared/label_schema.json",
+ "prompt_sha256_12":"814770315c42",
+ "safety_module":"server/src/safety.ts",
+ "profile":{
+  "meds":[
+   {
+    "id":"timolol",
+    "name":"Timolol",
+    "ingredient":"timolol",
+    "strength":"0.5 %",
+    "schedule":[
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id":"latanoprost",
+    "name":"Latanoprost",
+    "ingredient":"latanoprost",
+    "strength":"50 mcg",
+    "schedule":[
+     "evening"
+    ]
+   },
+   {
+    "id":"dorzolamide",
+    "name":"Dorzolamide",
+    "ingredient":"dorzolamide",
+    "strength":"2 %",
+    "schedule":[
+     "morning",
+     "evening"
+    ]
+   }
+  ],
+  "allergies":[
+   "penicillin"
+  ],
+  "avoid":[
+   "NSAIDs"
+  ],
+  "doseLog":[],
+  "lang":"en"
+ },
+ "summary":{
+  "n_cases":12,
+  "verdict_matches":12,
+  "verdict_accuracy":1.0,
+  "verdict_accuracy_ci95":[
+   0.7575,
+   1.0
+  ],
+  "confident_wrong_count":0,
+  "confident_wrong_rate":0.0,
+  "confident_wrong_ci95":[
+   0.0,
+   0.2425
+  ],
+  "false_match_count":0,
+  "unsafe_reassurance_count":0,
+  "abstain_or_unsure_count":4,
+  "api_error_count":0,
+  "timeout_count":0,
+  "latency_p50_ms":2751.9,
+  "latency_p95_ms":4484.7,
+  "sharp_verdict_accuracy":1.0,
+  "degraded_abstention_rate":1.0
+ },
+ "cases":[
+  {
+   "id":"eo_01",
+   "category":"ophthalmic_carton_match",
+   "pack_style":"carton",
+   "description":"Sharp Finnish Timolol Orion 0,5 % eye-drop carton with comma decimal matching 0.5 % profile",
+   "question":"Is this my Timolol 0.5 % glaucoma eye-drop carton?",
+   "expected_level":"match",
+   "predicted_level":"match",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":3185.7,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"TIMOLOL ORION",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":"0.5 %",
+     "confidence":0.98
+    },
+    "dosing":{
+     "value":"1 tippa 2 kertaa paivassa",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-10",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "matches timolol",
+    "taken today: 0/2"
+   ]
+  },
+  {
+   "id":"eo_02",
+   "category":"ophthalmic_bottle_match",
+   "pack_style":"dropper_bottle",
+   "description":"Sharp 5 ml Oftan Timolol 0.5 % LDPE glaucoma dropper bottle matching 0.5 % profile",
+   "question":"Is this my morning Timolol 0.5 % eye-drop bottle?",
+   "expected_level":"match",
+   "predicted_level":"match",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2510.5,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"OFTAN TIMOLOL",
+     "confidence":0.99
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.99
+    },
+    "strength":{
+     "value":"0.5 %",
+     "confidence":0.99
+    },
+    "dosing":{
+     "value":"1 drop morning and evening",
+     "confidence":0.98
+    },
+    "expiry":{
+     "value":"2027-09",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.98
+   },
+   "reasons":[
+    "matches timolol",
+    "taken today: 0/2"
+   ]
+  },
+  {
+   "id":"eo_03",
+   "category":"single_dose_pipette_match",
+   "pack_style":"single_dose_pipette",
+   "description":"Sharp Monoprost latanoprost 50 mikrog single-dose pipette strip matching 50 mcg evening profile",
+   "question":"Are these my evening Latanoprost 50 mcg single-dose pipettes?",
+   "expected_level":"match",
+   "predicted_level":"match",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":5479.1,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"MONOPROST",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"latanoprost",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":"50 mikrog",
+     "confidence":0.98
+    },
+    "dosing":{
+     "value":"1 drop in the evening",
+     "confidence":0.98
+    },
+    "expiry":{
+     "value":"2027-11",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.98
+   },
+   "reasons":[
+    "matches latanoprost",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id":"eo_04",
+   "category":"wrong_strength_glaucoma_bottle",
+   "pack_style":"dropper_bottle",
+   "description":"Sharp Oftan Timolol 0.25 % 5 ml glaucoma bottle caught as wrong strength against 0.5 % profile",
+   "question":"Is this my 0.5 % Timolol glaucoma bottle?",
+   "expected_level":"warning",
+   "predicted_level":"warning",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2577.0,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"OFTAN TIMOLOL",
+     "confidence":0.99
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.99
+    },
+    "strength":{
+     "value":"0.25 %",
+     "confidence":0.99
+    },
+    "dosing":{
+     "value":"1 drop morning and evening",
+     "confidence":0.98
+    },
+    "expiry":{
+     "value":"2027-09",
+     "confidence":0.99
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.98
+   },
+   "reasons":[
+    "strength 0.25 % differs from your 0.5 %"
+   ]
+  },
+  {
+   "id":"eo_05",
+   "category":"otic_lookalike_otipax",
+   "pack_style":"dropper_bottle",
+   "description":"Look-alike 10 ml Otipax ear-drop dropper bottle flagged as not on medication list",
+   "question":"Can I put these drops in my eyes?",
+   "expected_level":"warning",
+   "predicted_level":"warning",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2746.0,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"OTIPAX",
+     "confidence":0.99
+    },
+    "ingredient":{
+     "value":"phenazone, lidocaine",
+     "confidence":0.99
+    },
+    "strength":{
+     "value":"40 mg/g + 10 mg/g",
+     "confidence":0.99
+    },
+    "dosing":{
+     "value":"For ear use only: 4 drops in ear",
+     "confidence":0.98
+    },
+    "expiry":{
+     "value":"2027-08",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.98
+   },
+   "reasons":[
+    "not on your medication list"
+   ]
+  },
+  {
+   "id":"eo_06",
+   "category":"otic_lookalike_ciprofloxacin",
+   "pack_style":"dropper_bottle",
+   "description":"Look-alike 10 ml Ciprofloxacin 0.3 % antibiotic ear-drop bottle flagged as not on medication list",
+   "question":"Are these my prescribed glaucoma eye drops?",
+   "expected_level":"warning",
+   "predicted_level":"warning",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2421.7,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"SALVAT",
+     "confidence":0.95
+    },
+    "ingredient":{
+     "value":"ciprofloxacin",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":"0.3 %",
+     "confidence":0.98
+    },
+    "dosing":{
+     "value":"Ear drops: 4 drops twice daily",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-10",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "not on your medication list"
+   ]
+  },
+  {
+   "id":"eo_07",
+   "category":"penicillin_allergy_dropper_bottle",
+   "pack_style":"dropper_bottle",
+   "description":"Amoxicillin 100 mg/ml oral dropper bottle caught against penicillin class drug allergy",
+   "question":"Is this dropper bottle safe for me to use?",
+   "expected_level":"warning",
+   "predicted_level":"warning",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2572.1,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"AMOXICILLIN",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"amoxicillin",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":"100 mg/ml",
+     "confidence":0.98
+    },
+    "dosing":{
+     "value":"Shake bottle well before use",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-07",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0.3
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0.3
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "contains amoxicillin (allergy: penicillin)"
+   ]
+  },
+  {
+   "id":"eo_08",
+   "category":"expired_ophthalmic_bottle",
+   "pack_style":"dropper_bottle",
+   "description":"Expired Oftan Timolol 0.5 % eye-drop bottle (EXP 2025-06) caught as expired despite matching dose",
+   "question":"Can I still use this Timolol 0.5 % bottle from my bathroom cabinet?",
+   "expected_level":"warning",
+   "predicted_level":"warning",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2757.8,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"OFTAN TIMOLOL",
+     "confidence":0.99
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.99
+    },
+    "strength":{
+     "value":"0.5 %",
+     "confidence":0.99
+    },
+    "dosing":{
+     "value":"1 drop morning and evening",
+     "confidence":0.98
+    },
+    "expiry":{
+     "value":"2025-06",
+     "confidence":0.99
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "expired 2025-06"
+   ]
+  },
+  {
+   "id":"eo_09",
+   "category":"cylindrical_wrap_clipped_strength",
+   "pack_style":"dropper_bottle",
+   "description":"Curved 5 ml cylindrical Timolol dropper bottle clipping strength badge around right edge",
+   "question":"Is this my morning Timolol eye-drop bottle?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":3250.6,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"OFTAN TIMOLOL",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":null,
+     "confidence":0
+    },
+    "dosing":{
+     "value":"1 drop twice daily",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-09",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.95
+   },
+   "reasons":[
+    "strength not readable"
+   ]
+  },
+  {
+   "id":"eo_10",
+   "category":"wet_tear_smudged_strength",
+   "pack_style":"dropper_bottle",
+   "description":"Latanoprost eye-dropper bottle with wet tear droplets and smeared ink across strength badge",
+   "question":"Are these my evening Latanoprost eye drops?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2308.2,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"LATANOPROST",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"latanoprost",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":null,
+     "confidence":0
+    },
+    "dosing":{
+     "value":"1 drop once daily in the evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-11",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.9
+   },
+   "reasons":[
+    "strength not readable"
+   ]
+  },
+  {
+   "id":"eo_11",
+   "category":"thumb_occluding_concentration",
+   "pack_style":"dropper_bottle",
+   "description":"Pinch-gripped 5 ml Timolol dropper bottle with thumb covering the concentration badge",
+   "question":"Is this my morning Timolol eye-drop bottle?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":2838.1,
+   "read":{
+    "kind":"medication",
+    "product":{
+     "value":"OFTAN TIMOLOL",
+     "confidence":0.98
+    },
+    "ingredient":{
+     "value":"timolol",
+     "confidence":0.98
+    },
+    "strength":{
+     "value":null,
+     "confidence":0.1
+    },
+    "dosing":{
+     "value":"1 drop morning and evening",
+     "confidence":0.95
+    },
+    "expiry":{
+     "value":"2027-09",
+     "confidence":0.98
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0.85,
+    "guidance":"Move your finger to reveal the hidden line."
+   },
+   "reasons":[
+    "strength not readable"
+   ]
+  },
+  {
+   "id":"eo_12",
+   "category":"out_of_focus_closeup_bottle",
+   "pack_style":"dropper_bottle",
+   "description":"Extreme close-up 5 ml dropper bottle held inside focus distance with severe optical defocus",
+   "question":"What eye drops are in this bottle?",
+   "expected_level":"unsure",
+   "predicted_level":"unsure",
+   "verdict_ok":true,
+   "confident_wrong":false,
+   "false_match":false,
+   "latency_ms":3671.1,
+   "read":{
+    "kind":"unreadable",
+    "product":{
+     "value":null,
+     "confidence":0
+    },
+    "ingredient":{
+     "value":null,
+     "confidence":0
+    },
+    "strength":{
+     "value":null,
+     "confidence":0
+    },
+    "dosing":{
+     "value":null,
+     "confidence":0
+    },
+    "expiry":{
+     "value":null,
+     "confidence":0
+    },
+    "allergens":{
+     "value":null,
+     "confidence":0
+    },
+    "barcode":{
+     "value":null,
+     "confidence":0
+    },
+    "readability":0,
+    "guidance":"Hold still and bring the bottle into focus."
+   },
+   "reasons":[
+    "label not readable"
+   ]
+  }
+ ]
+}
