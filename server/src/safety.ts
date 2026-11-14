@@ -99,19 +99,33 @@ const UNIT: Record<string, { unit: string; f: number }> = {
   microgram: { unit: "mg", f: 0.001 }, micrograms: { unit: "mg", f: 0.001 },
   microgramme: { unit: "mg", f: 0.001 }, microgrammes: { unit: "mg", f: 0.001 },
   ml: { unit: "ml", f: 1 }, milliliter: { unit: "ml", f: 1 }, milliliters: { unit: "ml", f: 1 },
-  millilitre: { unit: "ml", f: 1 }, millilitres: { unit: "ml", f: 1 }, millilitra: { unit: "ml", f: 1 }, millilitraa: { unit: "ml", f: 1 },
+  millilitre: { unit: "ml", f: 1 }, millilitres: { unit: "ml", f: 1 }, millilitra: { unit: "ml", f: 1 }, millilitraa: { unit: "ml", f: 1 }, millilitrassa: { unit: "ml", f: 1 },
   iu: { unit: "iu", f: 1 }, ky: { unit: "iu", f: 1 }, ie: { unit: "iu", f: 1 }, "%": { unit: "%", f: 1 },
 };
 const UNIT_WORDS = Object.keys(UNIT).filter((k) => /^[a-z]+$/.test(k)).sort((a, b) => b.length - a.length);
+const VOL_WORDS = UNIT_WORDS.filter((k) => UNIT[k].unit === "ml");
+const RATE_WORDS = ["tunnissa", "stunden", "stunde", "timmar", "tuntia", "heures", "heure", "hours", "tunti", "timme", "hour", "hrs", "tim", "std", "hr", "h"];
 const STRENGTH_RE = new RegExp(
-  `(\\d+(?:\\.\\d+)?(?:\\s*[+/]\\s*\\d+(?:\\.\\d+)?)*)\\s*(${UNIT_WORDS.join("|")})\\b|(\\d+(?:\\.\\d+)?(?:\\s*[+/]\\s*\\d+(?:\\.\\d+)?)*)\\s*(%)`,
+  `(\\d+(?:\\.\\d+)?(?:\\s*[+/]\\s*\\d+(?:\\.\\d+)?)*)\\s*(${UNIT_WORDS.join("|")})\\b` +
+    `|(\\d+(?:\\.\\d+)?(?:\\s*[+/]\\s*\\d+(?:\\.\\d+)?)*)\\s*(%)` +
+    `|(?:\\/|\\bper\\b)\\s*(${VOL_WORDS.join("|")})\\b` +
+    `|(?:\\/|\\bper\\b)\\s*(\\d+(?:\\.\\d+)?)?\\s*(${RATE_WORDS.join("|")})\\b`,
   "g",
 );
 export function parseStrength(s: string | null | undefined): Strength[] {
   if (!s) return [];
-  const t = s.toLowerCase().replace(/(\d),(\d)/g, "$1.$2").replace(/[\u00b5\u03bc]/g, "u");
+  const t = s.toLowerCase().replace(/(\d),(\d)/g, "$1.$2").replace(/[\u00b5\u03bc]/g, "u").replace(/[\u2044\u2215]/g, "/");
   const out: Strength[] = [];
   for (const m of t.matchAll(STRENGTH_RE)) {
+    if (m[5]) {
+      out.push({ amount: 1, unit: "ml" });
+      continue;
+    }
+    if (m[7]) {
+      const rateNum = m[6] ? Number(m[6]) : 1;
+      if (Number.isFinite(rateNum) && rateNum > 0) out.push({ amount: +rateNum.toFixed(6), unit: "h" });
+      continue;
+    }
     const rawNums = m[1] ?? m[3];
     const u = UNIT[m[2] ?? m[4]];
     if (!u || !rawNums) continue;
@@ -122,24 +136,39 @@ export function parseStrength(s: string | null | undefined): Strength[] {
   }
   return out;
 }
-function sameStrengthList(xs: Strength[], ys: Strength[]): boolean {
-  if (xs.length !== ys.length) return false;
+function sameRatioList(xs: Strength[], da: number, ys: Strength[], db: number): boolean {
+  if (xs.length !== ys.length || da <= 0 || db <= 0) return false;
+  const tol = 1e-6 * Math.min(da, db);
   const used = new Array<boolean>(ys.length).fill(false);
   return xs.every((x) => {
-    const idx = ys.findIndex((y, i) => !used[i] && y.unit === x.unit && Math.abs(y.amount - x.amount) < 1e-6);
+    const idx = ys.findIndex((y, i) => !used[i] && y.unit === x.unit && Math.abs(x.amount * db - y.amount * da) < tol);
     if (idx < 0) return false;
     used[idx] = true;
     return true;
   });
 }
+const sameStrengthList = (xs: Strength[], ys: Strength[]) => sameRatioList(xs, 1, ys, 1);
+const commonDenom = (xs: Strength[]): number | undefined =>
+  xs.length && xs.every((x) => x.amount > 0 && Math.abs(x.amount - xs[0].amount) < 1e-6) ? xs[0].amount : undefined;
 export function sameStrength(a: string | null | undefined, b: string | null | undefined): boolean {
   const pa = parseStrength(a), pb = parseStrength(b);
   if (!pa.length || !pb.length) return false;
-  const da = pa.filter((x) => x.unit !== "ml"), db = pb.filter((x) => x.unit !== "ml");
+  const da = pa.filter((x) => x.unit !== "ml" && x.unit !== "h");
+  const db = pb.filter((x) => x.unit !== "ml" && x.unit !== "h");
   const va = pa.filter((x) => x.unit === "ml"), vb = pb.filter((x) => x.unit === "ml");
+  const ha = pa.filter((x) => x.unit === "h"), hb = pb.filter((x) => x.unit === "h");
+  if (Boolean(ha.length) !== Boolean(hb.length)) return false;
+  if (ha.length) {
+    if (!da.length || !db.length) return false;
+    if (va.length || vb.length) return sameStrengthList(va, vb) && sameStrengthList(da, db) && sameStrengthList(ha, hb);
+    const ra = commonDenom(ha), rb = commonDenom(hb);
+    return ra !== undefined && rb !== undefined ? sameRatioList(da, ra, db, rb) : sameStrengthList(da, db) && sameStrengthList(ha, hb);
+  }
   if (!da.length && !db.length) return sameStrengthList(va, vb);
-  if (!da.length || !db.length || !sameStrengthList(da, db)) return false;
-  return !va.length || !vb.length || sameStrengthList(va, vb);
+  if (!da.length || !db.length) return false;
+  if (!va.length || !vb.length) return sameStrengthList(da, db);
+  const cva = commonDenom(va), cvb = commonDenom(vb);
+  return cva !== undefined && cvb !== undefined ? sameRatioList(da, cva, db, cvb) : sameStrengthList(da, db) && sameStrengthList(va, vb);
 }
 export const fmtStrength = (s: string) =>
   s.replace(/(\d)\s*(mg|g|mcg|ug|[\u00b5\u03bc]g|mikrog|mikrogram(?:maa|ma|m)?|micrograms?|milligram(?:maa|ma|s)?|gram(?:maa|ma|s)?|ml|iu|ky|ie)\b/gi, "$1 $2");
