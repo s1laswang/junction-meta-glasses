@@ -66,7 +66,7 @@ test("redact and errSummary scrub Gemini-shaped keys from strings and errors", (
   assert.equal(nonErr.length, 160);
 });
 
-test("FrameRing evicts oldest past capacity, picks sharpest in window, falls back to latest 3, and clears", () => {
+test("FrameRing evicts oldest past capacity, picks sharpest within sameItemMs of latest, and clears", () => {
   const ring = new FrameRing(5);
   assert.equal(ring.length, 0);
   assert.equal(ring.lastTs, 0);
@@ -83,13 +83,13 @@ test("FrameRing evicts oldest past capacity, picks sharpest in window, falls bac
   assert.equal(ring.lastTs, 9000);
 
   const recentPick = ring.pick(2, 5000, 10_000);
-  assert.deepEqual(recentPick.map((f) => f.data), ["r1", "r2"]);
+  assert.deepEqual(recentPick.map((f) => f.data), ["r4", "r3"]);
 
-  const stalePick = ring.pick(2, 5000, 25_000);
-  assert.deepEqual(stalePick.map((f) => f.data), ["r2", "r4"]);
+  const widerWindowPick = ring.pick(2, 5000, 25_000, 2000);
+  assert.deepEqual(widerWindowPick.map((f) => f.data), ["r2", "r4"]);
 
-  const stalePick3 = ring.pick(3, 5000, 25_000);
-  assert.deepEqual(stalePick3.map((f) => f.data), ["r2", "r4", "r3"]);
+  const widerWindowPick3 = ring.pick(3, 5000, 25_000, 2000);
+  assert.deepEqual(widerWindowPick3.map((f) => f.data), ["r2", "r4", "r3"]);
 
   ring.clear();
   assert.equal(ring.length, 0);
