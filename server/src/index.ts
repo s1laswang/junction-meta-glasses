@@ -4,14 +4,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import { WebSocketServer, type WebSocket } from "ws";
-import { Modality } from "@google/genai";
 import type { ClientMsg, DeviceState } from "../../shared/types.ts";
 import { env, REPO_ROOT } from "./env.ts";
-import { ai, unaryGate } from "./gemini.ts";
+import { ai } from "./gemini.ts";
 import { addHud, getHub, getOrCreateHub, hasHud, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
-import { ledger, stats } from "./ledger.ts";
+import { stats } from "./ledger.ts";
 import { LiveProxy } from "./live.ts";
 import { errSummary, log, shortId } from "./log.ts";
+import { synthesizeTts } from "./tts.ts";
 import { jpegSharpness, toProfile, verify } from "./verify.ts";
 
 const MAX_WS_MSG = 4 * 1024 * 1024;
@@ -109,29 +109,9 @@ export function createApp(opts?: { repoRoot?: string }) {
 
   app.post("/api/tts", express.json({ limit: "64kb" }), async (req, res) => {
     res.setHeader("Cache-Control", "no-store");
-    const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 600) : "";
-    if (!text) { res.status(400).json({ type: "error", code: "bad_input", message: "text required", recoverable: true }); return; }
-    for (const model of env.ttsModels) {
-      const t = Date.now();
-      try {
-        const r = await unaryGate.run(() => ai.models.generateContent({
-          model,
-          contents: [{ role: "user", parts: [{ text: `Say calmly and clearly: ${text}` }] }],
-          config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: process.env.TTS_VOICE ?? "Kore" } } } },
-        }));
-        const part = r.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
-        if (!part?.inlineData?.data) throw new Error("empty reply");
-        const pcm = Buffer.from(part.inlineData.data, "base64");
-        const rate = Number(/rate=(\d+)/.exec(part.inlineData.mimeType ?? "")?.[1] ?? 24000);
-        ledger({ feature: "tts", model, latency_s: (Date.now() - t) / 1000, ok: true, in: r.usageMetadata?.promptTokenCount ?? 0, out: r.usageMetadata?.candidatesTokenCount ?? 0 });
-        res.type("audio/wav").send(wav(pcm, rate));
-        return;
-      } catch (e) {
-        ledger({ feature: "tts", model, latency_s: (Date.now() - t) / 1000, ok: false });
-        log("tts.failed", { model, err: errSummary(e) });
-      }
-    }
-    res.status(503).json({ type: "error", code: "gemini_unavailable", message: "TTS unavailable, use speechSynthesis", recoverable: true });
+    const r = await synthesizeTts({ text: req.body?.text, lang: req.body?.lang, voice: req.body?.voice });
+    if (!r.ok) { res.status(r.status).json({ type: "error", code: r.code, message: r.message, recoverable: true }); return; }
+    res.type("audio/wav").send(r.wav);
   });
 
   app.post("/ingest/frame", express.raw({ type: ["image/jpeg", "application/octet-stream"], limit: "6mb" }), (req, res) => {
@@ -183,14 +163,6 @@ export function createApp(opts?: { repoRoot?: string }) {
   });
   app.use((_req, res) => { res.status(404).json({ type: "error", code: "not_found", message: "not found", recoverable: false }); });
   return app;
-}
-
-function wav(pcm: Buffer, rate: number): Buffer {
-  const h = Buffer.alloc(44);
-  h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVE", 8); h.write("fmt ", 12);
-  h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22); h.writeUInt32LE(rate, 24);
-  h.writeUInt32LE(rate * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34); h.write("data", 36); h.writeUInt32LE(pcm.length, 40);
-  return Buffer.concat([h, pcm]);
 }
 
 function onLive(ws: WebSocket, sessionParam: string | null) {
