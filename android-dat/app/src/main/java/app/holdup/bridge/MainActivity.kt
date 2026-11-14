@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
@@ -40,6 +41,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -159,7 +167,18 @@ class MainActivity : ComponentActivity() {
                   .padding(16.dp),
           verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
-        Text("HoldUp Bridge", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        val bridgeHeading = stringResource(R.string.a11y_bridge_heading)
+        Text(
+            "HoldUp Bridge",
+            color = Color.White,
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold,
+            modifier =
+                Modifier.semantics {
+                  heading()
+                  contentDescription = bridgeHeading
+                },
+        )
         Text("Glasses camera → HoldUp server", color = Color(0xFFB0B0B0), fontSize = 14.sp)
 
         OutlinedTextField(
@@ -183,15 +202,38 @@ class MainActivity : ComponentActivity() {
 
         if (!ui.btPermissionGranted) {
           Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { androidPermissions.launch(PERMISSIONS) }) { Text("Grant Bluetooth") }
-            OutlinedButton(onClick = ::openAppSettings) { Text("App settings") }
+            Button(
+                onClick = { androidPermissions.launch(PERMISSIONS) },
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) {
+              Text("Grant Bluetooth")
+            }
+            OutlinedButton(
+                onClick = ::openAppSettings,
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) {
+              Text("App settings")
+            }
           }
         }
 
         val connected = ui.sessionState.name != "IDLE" && ui.sessionState.name != "STOPPED"
+        val connectStateDesc =
+            when {
+              ui.sessionActive -> stringResource(R.string.a11y_state_glasses_connected)
+              connected || ui.wantConnected -> stringResource(R.string.a11y_state_glasses_connecting)
+              else -> stringResource(R.string.a11y_state_glasses_disconnected)
+            }
+        val streamStateDesc =
+            when {
+              ui.streaming -> stringResource(R.string.a11y_state_stream_active)
+              ui.wantStreaming -> stringResource(R.string.a11y_state_stream_starting)
+              else -> stringResource(R.string.a11y_state_stream_stopped)
+            }
         BigButton(
             text = if (connected || ui.wantConnected) "Disconnect glasses" else "Connect glasses",
             enabled = ui.sdkReady,
+            stateLabel = connectStateDesc,
             onClick = {
               if (connected || ui.wantConnected) viewModel.disconnect() else viewModel.connect(this@MainActivity)
             },
@@ -200,23 +242,34 @@ class MainActivity : ComponentActivity() {
             text = if (ui.wantStreaming) "Stop streaming" else "Start streaming",
             enabled = ui.sdkReady,
             danger = ui.wantStreaming,
+            stateLabel = streamStateDesc,
             onClick = {
               if (ui.wantStreaming) viewModel.stopStreaming() else viewModel.startStreaming(this@MainActivity)
             },
         )
 
         if (ui.firmwareUpdateRequired) {
-          OutlinedButton(onClick = { viewModel.openFirmwareUpdate(this@MainActivity) }) {
+          OutlinedButton(
+              onClick = { viewModel.openFirmwareUpdate(this@MainActivity) },
+              modifier = Modifier.heightIn(min = 48.dp),
+          ) {
             Text("Update glasses firmware")
           }
         }
         if (ui.glassesAppUpdateRequired) {
-          OutlinedButton(onClick = { viewModel.openGlassesAppUpdate(this@MainActivity) }) {
+          OutlinedButton(
+              onClick = { viewModel.openGlassesAppUpdate(this@MainActivity) },
+              modifier = Modifier.heightIn(min = 48.dp),
+          ) {
             Text("Update glasses app")
           }
         }
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = { viewModel.unregister(this@MainActivity) }, enabled = ui.isRegistered) {
+        TextButton(
+            onClick = { viewModel.unregister(this@MainActivity) },
+            enabled = ui.isRegistered,
+            modifier = Modifier.heightIn(min = 48.dp),
+        ) {
           Text("Unlink from Meta AI (troubleshooting)", color = Color(0xFF909090))
         }
       }
@@ -224,7 +277,13 @@ class MainActivity : ComponentActivity() {
   }
 
   @Composable
-  private fun BigButton(text: String, enabled: Boolean, danger: Boolean = false, onClick: () -> Unit) {
+  private fun BigButton(
+      text: String,
+      enabled: Boolean,
+      danger: Boolean = false,
+      stateLabel: String? = null,
+      onClick: () -> Unit,
+  ) {
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -232,7 +291,15 @@ class MainActivity : ComponentActivity() {
         colors =
             if (danger) ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
             else ButtonDefaults.buttonColors(),
-        modifier = Modifier.fillMaxWidth().height(60.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .height(60.dp)
+                .heightIn(min = 48.dp)
+                .semantics {
+                  if (stateLabel != null) {
+                    stateDescription = stateLabel
+                  }
+                },
     ) {
       Text(text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
     }
@@ -240,6 +307,13 @@ class MainActivity : ComponentActivity() {
 
   @Composable
   private fun StatusCard(ui: UiState) {
+    val dismissErrorDesc = stringResource(R.string.a11y_dismiss_error)
+    val glassesNoneSpoken = stringResource(R.string.a11y_glasses_none)
+    val statePostIdleSpoken = stringResource(R.string.a11y_state_post_idle)
+    val networkOkSpoken = stringResource(R.string.a11y_network_ok)
+    val networkRetryingSpoken = stringResource(R.string.a11y_network_retrying)
+    val networkIdleSpoken = stringResource(R.string.a11y_network_idle)
+
     Column(
         modifier =
             Modifier.fillMaxWidth()
@@ -247,10 +321,29 @@ class MainActivity : ComponentActivity() {
                 .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-      Text(ui.status, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+      Text(
+          ui.status,
+          color = Color.White,
+          fontSize = 18.sp,
+          fontWeight = FontWeight.SemiBold,
+          modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+      )
       ui.error?.let {
-        Text(it, color = Color(0xFFFF8A80), fontSize = 15.sp)
-        TextButton(onClick = viewModel::clearError) { Text("Dismiss") }
+        Text(
+            it,
+            color = Color(0xFFFF8A80),
+            fontSize = 15.sp,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+        )
+        TextButton(
+            onClick = viewModel::clearError,
+            modifier =
+                Modifier.heightIn(min = 48.dp).semantics {
+                  contentDescription = dismissErrorDesc
+                },
+        ) {
+          Text("Dismiss")
+        }
       }
       Line("Meta AI link", ui.registration.name.lowercase())
       val glasses =
@@ -274,7 +367,9 @@ class MainActivity : ComponentActivity() {
                 ui.battery?.let { append(" · $it%") }
                 if (ui.charging) append(" (charging)")
               }
-      Line("Glasses", glasses)
+      val glassesSpoken =
+          if (ui.deviceName == null) glassesNoneSpoken else ui.talkBackGlassesSummary()
+      Line("Glasses", glasses, spokenValue = glassesSpoken)
       if (ui.thermal.name !in setOf("UNKNOWN", "NONE")) Line("Thermal", ui.thermal.name.lowercase())
       Line("Session", ui.sessionState.name.lowercase())
       Line(
@@ -282,25 +377,52 @@ class MainActivity : ComponentActivity() {
           ui.streamState.name.lowercase() +
               (if (ui.streamState == StreamState.STREAMING && ui.frameSize.isNotEmpty())
                   " · ${ui.frameSize} ${ui.yuvLayout}"
-              else ""))
+              else ""),
+          spokenValue = ui.talkBackStreamSummary(),
+      )
+      val framesSpoken =
+          if (ui.frameHttp == "\u2013") {
+            "sent ${ui.framesSent}, dropped ${ui.framesDropped}, $statePostIdleSpoken"
+          } else if (ui.lastFrameKb > 0) {
+            "sent ${ui.framesSent}, dropped ${ui.framesDropped}, ${ui.frameHttp}, ${ui.lastFrameKb} kilobytes"
+          } else {
+            "sent ${ui.framesSent}, dropped ${ui.framesDropped}, ${ui.frameHttp}"
+          }
       Line(
           "Frames",
           "sent ${ui.framesSent} · dropped ${ui.framesDropped} · ${ui.frameHttp}" +
-              (if (ui.lastFrameKb > 0) " · ${ui.lastFrameKb} KB" else ""))
-      Line("State POST", ui.stateHttp)
+              (if (ui.lastFrameKb > 0) " · ${ui.lastFrameKb} KB" else ""),
+          spokenValue = framesSpoken,
+      )
       Line(
-          "Network",
+          "State POST",
+          ui.stateHttp,
+          spokenValue = if (ui.stateHttp == "\u2013") statePostIdleSpoken else ui.stateHttp,
+      )
+      val networkVisual =
           when (ui.netOk) {
             true -> "ok"
             false -> "failing (retrying)"
             null -> "–"
-          })
+          }
+      val networkSpoken =
+          when (ui.netOk) {
+            true -> networkOkSpoken
+            false -> networkRetryingSpoken
+            null -> networkIdleSpoken
+          }
+      Line("Network", networkVisual, spokenValue = networkSpoken)
     }
   }
 
   @Composable
-  private fun Line(label: String, value: String) {
-    Row {
+  private fun Line(label: String, value: String, spokenValue: String = value) {
+    Row(
+        modifier =
+            Modifier.semantics(mergeDescendants = true) {
+              contentDescription = "$label: $spokenValue"
+            },
+    ) {
       Text("$label: ", color = Color(0xFF9E9E9E), fontSize = 15.sp)
       Text(value, color = Color(0xFFEDEDED), fontSize = 15.sp)
     }
