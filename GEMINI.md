@@ -1,5 +1,12 @@
 # HoldUp × Gemini: Best Use of Gemini API
 
+**Code pointers:**
+- Live API with mid-stream function calling: `server/src/live.ts:150-155` (`ai.live.connect`, `functionDeclarations`); non-blocking `show_cue` at `live.ts:34`; tool responses at `live.ts:267`.
+- Schema-constrained verify: `server/src/verify.ts:130` (`responseJsonSchema`), prompt `shared/verify_prompt.md`, schema `shared/label_schema.json`.
+- `box_2d` grounding: `server/src/find.ts:21` (scene mode, "Which one?").
+- Speculative verify cache: `server/src/speculate.ts:21` (`Speculator`); cache hits are logged at `speculate.ts:85`.
+- Deterministic safety layer: `server/src/safety.ts`. Eval: `docs/EVAL.md`, `eval/results/v1_results.json`.
+
 ## 1. The problem and why it matters
 About 55,000 people in Finland are visually impaired, most of them over 65, and many manage several look-alike medicine boxes a day. "Is this my evening pill?" and "does this contain nuts?" are questions they can't answer alone. A wrong answer is a medication error or an allergic reaction. Phone OCR apps need a free hand to aim, and they read every word without knowing what matters to *you*.
 

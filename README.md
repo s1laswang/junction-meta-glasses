@@ -125,6 +125,7 @@ cd holdup && cp .env.example .env && make accept   # keyless checks; add GEMINI_
 Don't mix this up with our other entries (`s1laswang/agent-arena`, `s1laswang/junction-aimo-agents`).
 
 ## Docs
+- [GEMINI.md](GEMINI.md): how HoldUp uses the Gemini API (Google DeepMind "Best Use of Gemini API")
 - [docs/PLAN.md](docs/PLAN.md): idea, architecture, demo script, hardware plan, timeline, questions for Silas
 - [docs/TEAM.md](docs/TEAM.md): roles, interfaces, milestones
 - [docs/HARDWARE_NOTES.md](docs/HARDWARE_NOTES.md) and [docs/HUD_SPEC.md](docs/HUD_SPEC.md): glasses setup, DAT bridge, Display Web App
