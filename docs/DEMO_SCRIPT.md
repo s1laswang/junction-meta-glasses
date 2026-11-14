@@ -98,7 +98,7 @@ Fallbacks, in order:
 
 **Expected:** a blue **NOT SURE** card (diamond): **"It looks like Metformin…, but I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist."**
 
-**Silas**: "It never guesses a dose. Every field has a confidence, and below the bar it says so."
+**Silas**: "It only states a dose it can read clearly. Every field has a confidence, and below the bar it says so."
 
 - *Fallback:* if the taped box is read as a match (the strength is visible elsewhere on the box), say "It found the strength on the side panel, which is exactly what it should do", and move on.
 - *Optional (only if ahead of time):* the hazelnut snack: "Does this have nuts?" → warning, contains hazelnut.

@@ -71,7 +71,7 @@ The overall winner comes from peer review (top 5), then a 7-person grand jury, s
 - [ ] Multimodal output: voice, earcons, haptics, HUD shapes plus words (never colour alone); WCAG 2.2 AA (axe clean)
 - [ ] Input options: voice, glasses tap or media key, Neural Band or touchpad on the HUD, large phone buttons, text
 - [ ] Trust you can see:
-  - never guesses doses (the thumb-over-strength demo);
+  - no dose stated below 0.8 confidence (the thumb-over-strength demo);
   - per-field confidence;
   - the "double-checked" badge;
   - consent first;
@@ -108,7 +108,7 @@ HoldUp is a hands-free label assistant powered by Gemini Live.
 4. **Personal safety check.** The read is matched against the user's own profile, which is stored **on the device only**: their medication list with schedule, and their allergies. The verdict is one of three:
    - ✅ *"Yes. Amlodipine 5 mg, your evening pill. You haven't taken it today."*
    - ⚠️ *"This is Ibuprofen 400 mg. It isn't on your list, and your list says to avoid NSAIDs."*
-   - ❓ *"I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist."* **It never guesses on doses.**
+   - ❓ *"I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist."* **Below 0.8 confidence it never states a dose.**
 5. **Log it** (optional). "I took it." The dose goes into an on-device log, so the next time you ask, it can say "you already took this today".
 
 **Second scenario for the demo:** food. *"Does this contain nuts?"* reads the allergen panel, checks it against your allergies and gives the expiry date.
