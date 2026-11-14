@@ -98,7 +98,11 @@ class Uploader {
       return s
     }
 
-    fun endpoint(server: String, path: String, session: String): String =
-        normalizeServer(server) + path + "?session=" + URLEncoder.encode(session.trim(), "UTF-8")
+    /** Session is optional: without it the server uses the most recent live session. */
+    fun endpoint(server: String, path: String, session: String): String {
+      val base = normalizeServer(server) + path
+      val s = session.trim()
+      return if (s.isEmpty()) base else base + "?session=" + URLEncoder.encode(s, "UTF-8")
+    }
   }
 }

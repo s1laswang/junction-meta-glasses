@@ -372,7 +372,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
 
   fun startStreaming(activity: Activity) {
     if (target() == null) {
-      setError("Enter the server URL and session code first")
+      setError("Enter the server URL first")
       return
     }
     _ui.update { it.copy(wantStreaming = true, error = null) }
@@ -642,8 +642,9 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
 
   private fun target(): Pair<String, String>? {
     val server = Uploader.normalizeServer(_ui.value.serverUrl)
+    // Session code is optional (server defaults to the latest live session; TEAM.md, Sat 15:10).
     val code = _ui.value.sessionCode.trim()
-    return if (server.isEmpty() || code.isEmpty()) null else Pair(server, code)
+    return if (server.isEmpty()) null else Pair(server, code)
   }
 
   // ---------------------------------------------------------------- status helpers

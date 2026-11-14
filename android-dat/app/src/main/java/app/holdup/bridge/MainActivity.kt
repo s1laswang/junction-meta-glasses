@@ -173,7 +173,7 @@ class MainActivity : ComponentActivity() {
         OutlinedTextField(
             value = ui.sessionCode,
             onValueChange = viewModel::setSessionCode,
-            label = { Text("Session code (from the phone app)") },
+            label = { Text("Session code (optional, blank = latest session)") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done),
             modifier = Modifier.fillMaxWidth(),

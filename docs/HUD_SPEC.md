@@ -11,10 +11,8 @@ Source: Meta Web Apps docs v1.0 ([setup](https://wearables.developer.meta.com/do
 
 ## 2. URL and session
 - Serve the HUD at a **directory-style URL with a trailing slash**: `https://<host>/hud/`. Make `/hud` redirect to `/hud/`. The `.well-known` manifest location resolves relative to that directory.
-- Session: `https://<host>/hud/?session=<id>` → open `wss://<host>/hud-ws?session=<id>` (same origin, contract in `docs/TEAM.md`).
-- **Problem:** the URL is typed once into the Meta AI app and is awkward to change on the glasses. So:
-  1. If `?session=` is missing, show a big **"Enter session code"** `<input type="text">`. Activating it opens the glasses' system composer (handwriting/dictation/keyboard). Read the code from the `change` event and save it in `localStorage`.
-  2. **Ask for the CEO/server** (not yet in the contract): support `session=latest` on `/hud-ws` (bind to the most recently started phone session). Then the URL we save in Meta AI can be just `https://<host>/hud/?session=latest`, and nobody has to type on the glasses during the demo.
+- Session: per the CEO decision in `docs/TEAM.md`, `session` is **optional**. The URL saved in Meta AI is just **`https://<host>/hud/`** → open `wss://<host>/hud-ws` (no param), and the server attaches it to the latest live session and replays the last verdict and device state. If the page URL has `?session=<id>`, pass it through to `/hud-ws?session=<id>`.
+- Don't make anyone type on the glasses during the demo. An optional "Enter session code" `<input type="text">` is fine as a fallback; activating it opens the system composer, and the value arrives through the `change` event.
 - Reconnect the WS with backoff (1 s → 2 s → 5 s, capped). Show a small "Reconnecting…" line. Never leave a stale verdict on screen without marking it stale (dim it and add "(old)").
 
 ## 3. Required `<head>`
@@ -43,7 +41,7 @@ Serve **`https://<host>/hud/.well-known/meta-wearables-manifest.json`** with `Co
 ```
 - `icon-mono.png`: **transparent background, single-colour mask** (alpha is the shape; colours are ignored), designed for a 64×64 area with padding, ≤ 2 MiB. It resolves to `/hud/icon-mono.png`.
 - Meta's generator/previewer: https://meta.github.io/meta-ray-ban-display-ui-toolkit-web/utilities/app-icons/
-- With the Vite/Express setup: put the files under `web/public/hud/` (including `web/public/hud/.well-known/…`) and make sure the server's static handler **doesn't ignore dotfiles** (`express.static(dir, { dotfiles: 'allow' })`).
+- With the Vite/Express setup: put the files under `web/public/hud/` (including `web/public/hud/.well-known/…`). **Server change needed:** `server/src/index.ts` serves `web/dist` with `express.static(dist, …)`, whose default `dotfiles: "ignore"` makes `/hud/.well-known/meta-wearables-manifest.json` fall through to the SPA `index.html` (wrong content type). Add `dotfiles: "allow"`, or an explicit route for that path with `Content-Type: application/json; charset=utf-8`. After `vite build`, check that `web/dist/hud/.well-known/meta-wearables-manifest.json` exists, and `curl -i https://<tunnel>/hud/.well-known/meta-wearables-manifest.json` returns JSON.
 
 ## 5. Layout and visual rules
 - `html, body { background:#000; margin:0; height:100%; }`. Black is invisible on the glasses, so draw **bounded cards**, not full-screen colour.
@@ -69,4 +67,4 @@ The phone's Gemini Live audio already plays through the glasses speakers (Blueto
 2. Start Chrome with `--enable-spatial-navigation` (quit Chrome first, or use `--user-data-dir=/tmp/x`). The arrows reach every button and Enter activates each one **once**.
 3. [Meta Ray-Ban Display Simulator](https://chromewebstore.google.com/detail/jpjlmmodokemlepklkdbimceggpbjcll) extension: additive preview, quality checklist (viewport meta, favicon, focus targets, overflow, focus styles). Its **View on Glasses QR** is a backup way to install the app on the glasses.
 4. Fake data: `/hud/?session=demo` should render a sample verdict when the WS sends one. A `?mock=1` mode that cycles match → warning → unsure every 4 s is very useful for the hardware slot.
-5. On device: Meta AI app → App Settings → Apps → Web Apps → Connect Web App → `https://<tunnel>/hud/?session=latest` → Save. Open it from the app grid. Reload with middle tap → Restart.
+5. On device: Meta AI app → App Settings → Apps → Web Apps → Connect Web App → `https://<tunnel>/hud/` → Save. Open it from the app grid. Reload with middle tap → Restart.

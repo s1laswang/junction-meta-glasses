@@ -85,14 +85,14 @@ If it fails, go to §7 Troubleshooting **before** trying our bridge.
 
 ## 5. Build and run HoldUp Bridge (`android-dat/`)
 
-What it does: connects to the glasses via DAT, starts a camera stream at **720×1280 (`VideoQuality.HIGH`) @ 2 fps** (the lowest the SDK allows; valid fps are 2/7/15/24/30). It JPEG-encodes **at most ~1 frame/s** and POSTs it to `{server}/ingest/frame?session=<id>` (`image/jpeg`). If a POST is still in flight, the frame is dropped. It also POSTs device state (`connected`, `worn`, `battery`, `streaming`) to `{server}/ingest/state?session=<id>` on every change.
+What it does: connects to the glasses via DAT, starts a camera stream at **720×1280 (`VideoQuality.HIGH`) @ 2 fps** (the lowest the SDK allows; valid fps are 2/7/15/24/30). It JPEG-encodes **at most ~1 frame/s** and POSTs it to `{server}/ingest/frame` (`image/jpeg`; `?session=<id>` only if a code is entered, otherwise the server uses the latest live session). If a POST is still in flight, the frame is dropped. It also POSTs device state (`connected`, `worn`, `battery`, `streaming`) to `{server}/ingest/state` on every change and every 10 s.
 
 1. The server and tunnel must be running on the demo laptop: `npm run dev` + `npm run tunnel`. Copy the printed `https://….trycloudflare.com` URL.
-2. Open the phone PWA (same tunnel URL) and note the **session code** shown there.
+2. Open the phone PWA (same tunnel URL) and start a session there. A session code is **not needed**: the server attaches the bridge to the latest live session.
 3. Android Studio → open `junction-meta-glasses/android-dat` → sync → **Run ▶ app** on the phone. No `local.properties` edits are needed (Developer Mode IDs default to `0`).
 4. In **HoldUp Bridge**:
    - **Server URL**: paste the tunnel URL (no trailing slash needed).
-   - **Session code**: type it, or open a link `holdupbridge://connect?server=<url>&session=<code>` (for example from a QR code that the phone camera scans), which fills both fields.
+   - **Session code**: leave it **blank** (= latest session). Only fill it in if several phones run sessions at once. A link `holdupbridge://connect?server=<url>&session=<code>` (for example from a QR code) fills both fields.
    - Tap **Connect glasses**. The Meta AI app opens. Approve. **This unregisters the CameraAccess sample** (only one dev-mode app at a time). Status should read `Registered`, then `Device: <name> connected`.
    - Tap **Start streaming**. The first time, Meta AI opens for the camera permission. Choose **Allow always**.
    - Status shows `Streaming`, **frames sent / dropped / last HTTP code**, and the glasses' **battery and worn** state.
@@ -123,8 +123,8 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 
 ### Steps to load the HUD on the glasses
 1. The server and tunnel are running. The web engineer has built `/hud` (spec in `docs/HUD_SPEC.md`).
-2. On the laptop, open `https://<tunnel>/hud/?session=<code>` in Chrome first. (If the server supports `session=latest`, see `docs/HUD_SPEC.md` §2, save `https://<tunnel>/hud/?session=latest` in Meta AI instead, so you don't retype it for every session.) It must load with **no console or certificate errors**. Optional: preview with the [Meta Ray-Ban Display Simulator](https://chromewebstore.google.com/detail/jpjlmmodokemlepklkdbimceggpbjcll) Chrome extension (600×600 additive preview, arrow/Select buttons, and a **View on Glasses QR** generator).
-3. On the phone: **Meta AI app → App Settings (left panel) → Apps → Web Apps → Connect Web App** → enter `https://<tunnel>/hud/?session=<code>` → **Save**.
+2. On the laptop, open `https://<tunnel>/hud/` in Chrome first (no session param: the server attaches the HUD to the latest live session and replays the last verdict). It must load with **no console or certificate errors**. Optional: preview with the [Meta Ray-Ban Display Simulator](https://chromewebstore.google.com/detail/jpjlmmodokemlepklkdbimceggpbjcll) Chrome extension (600×600 additive preview, arrow/Select buttons, and a **View on Glasses QR** generator).
+3. On the phone: **Meta AI app → App Settings (left panel) → Apps → Web Apps → Connect Web App** → enter `https://<tunnel>/hud/` (with the trailing slash) → **Save**.
 4. On the glasses: the app appears at the **bottom of the app grid**. Pin it, then open it.
 5. Alternative: scan the **View on Glasses QR** from the simulator with the glasses, then confirm on the glasses. The QR encodes `fb-viewapp://web_app_deep_link?appName=HoldUp&appUrl=<https-url>`. A plain URL QR does **not** work.
 6. **Every time the cloudflared quick-tunnel URL changes**, you must edit the Web App URL again. So keep one tunnel process running for the whole demo, or ask the CEO for a named tunnel or stable host.
@@ -151,7 +151,7 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 | Stream stuck at `STARTING` / black | Camera broken after the V128 OTA → **reboot the glasses**. Too hot → let them cool (thermal level shown in the bridge). |
 | `CAPABILITY_DENIED` | The capability is server-gated for that account. Ask Amanda. Fallback: phone camera. |
 | Bridge says `HTTP 404` on /ingest | The server branch doesn't have the ingest routes yet. Tell the CEO. `HTTP 0 / network error` = wrong URL or the tunnel is down. |
-| Frames arrive but the PWA doesn't switch to the glasses | The session code is wrong. Copy it again from the PWA. |
+| Frames arrive but the PWA doesn't switch to the glasses | Clear the bridge's session code (blank = latest session), or the phone session started after a different one. Restart the session on the phone. |
 | Sample worked, now the bridge can't connect (or the other way round) | Only one dev-mode app can be registered: tap **Connect glasses** again in the app you want to use. |
 | Web App not visible on the Display | Web Apps are geo/age gated (see §2 Q5). Add a birthday to the account. Update the glasses and Meta AI. Fallback: DAT Display API from the bridge, or show the HUD on the phone. |
 | Web App shows an old version | Middle tap → **Restart**. Check the tunnel serves the new build. |
@@ -179,4 +179,5 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 | Sat 14:20 | glasses agent | Docs research done. SDK 1.0.1 is on Maven Central (no PAT). Dev Mode uses app ID `0`. Web Apps are loaded via Meta AI → Connect Web App. |
 | Sat 14:25 | glasses agent | **Bridge not compiled yet.** freighter (FR8) is unreachable from the venue network (ports 22 and 443 time out), and building on Silas' laptop is off-limits. Every DAT call was checked with `javap` against the real `mwdat-core`/`mwdat-camera` 1.0.1 AARs from Maven Central, so the API names and signatures match. **Momin's first Android Studio sync and build of `android-dat/` is the compile check.** Send any compile error to the glasses agent (paste the first error line). |
 | Sat 14:25 | glasses agent | Uncompressed DAT frames are the raw MediaCodec output. The SDK requests color format 19 (I420, found in the AAR), but phone decoders can return NV12 or padded rows. `YuvJpeg.kt` auto-detects the layout. The bridge shows the detected layout next to the frame size. **If colours look wrong (blue/orange swapped) on the server, note it here.** Text stays readable either way. |
+| Sat 14:35 | glasses agent | The bridge sends `worn: null` / `battery: null` when the glasses report UNKNOWN (often the case before the first wear-detection event). `server/src/index.ts` currently maps `worn: !!b.worn`, so null becomes **false (doffed)**, which could trigger the "glasses doffed, use phone camera" fallback wrongly. Server fix requested: keep `null` as unknown. |
 | | | |
