@@ -28,14 +28,15 @@ function useTempLedger(): void {
 afterEach(() => {
   (ai.live as any).connect = originalConnect;
   env.ledgerPath = originalLedgerPath;
-  for (const dir of tempDirs.splice(0)) {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
 });
 
-after(() => {
+after(async () => {
   (ai.live as any).connect = originalConnect;
   env.ledgerPath = originalLedgerPath;
+  await new Promise((r) => setTimeout(r, 30));
+  for (const dir of tempDirs.splice(0)) {
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 20 });
+  }
   if (originalQuiet === undefined) delete process.env.HOLDUP_QUIET;
   else process.env.HOLDUP_QUIET = originalQuiet;
 });
