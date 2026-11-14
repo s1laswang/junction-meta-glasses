@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HoldUp Bridge</string>
+    <string name="notification_channel_name">HoldUp Glasses Stream</string>
+    <string name="notification_channel_description">Keeps Meta AI Glasses camera streaming active while HoldUp is in use</string>
+    <string name="notification_title">HoldUp Bridge</string>
+    <string name="notification_body">HoldUp is streaming from your glasses</string>
+</resources>
