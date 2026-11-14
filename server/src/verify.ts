@@ -1,5 +1,3 @@
-// verify_label: pick the sharpest recent frames, schema-constrained read with per-field confidence, then the
-// deterministic safety check. Prompt and schema live in shared/ so eval/ (Python) uses the exact same ones.
 import fs from "node:fs";
 import path from "node:path";
 import { ThinkingLevel } from "@google/genai";
@@ -12,7 +10,6 @@ import { checkLabel } from "./safety.ts";
 
 export const VERIFY_PROMPT = fs.readFileSync(path.join(REPO_ROOT, "shared", "verify_prompt.md"), "utf8");
 const RAW_SCHEMA = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "shared", "label_schema.json"), "utf8"));
-/** Inline $ref/$defs and drop $comment so the schema works with any JSON-schema consumer. */
 function inlineRefs(s: any, defs = s.$defs ?? {}): any {
   if (Array.isArray(s)) return s.map((x) => inlineRefs(x, defs));
   if (s && typeof s === "object") {
@@ -25,7 +22,6 @@ function inlineRefs(s: any, defs = s.$defs ?? {}): any {
 }
 export const LABEL_SCHEMA = inlineRefs(RAW_SCHEMA);
 
-// ---------- frame ring buffer ----------
 export type Frame = { data: string; sharpness: number; ts: number; bytes: number; source: "phone" | "glasses" };
 export class FrameRing {
   private frames: Frame[] = [];
@@ -34,7 +30,6 @@ export class FrameRing {
   clear() { this.frames = []; }
   get length() { return this.frames.length; }
   get lastTs() { return this.frames.at(-1)?.ts ?? 0; }
-  /** The n sharpest frames among the recent ones (last `windowMs`, at least the latest 3). */
   pick(n = 2, windowMs = 5000, now = Date.now()): Frame[] {
     if (!this.frames.length) return [];
     let recent = this.frames.filter((f) => now - f.ts <= windowMs);
@@ -43,7 +38,6 @@ export class FrameRing {
   }
 }
 
-/** Cheap server-side sharpness proxy for frames without a client score: JPEG bytes per pixel. */
 export function jpegSharpness(buf: Buffer): number {
   const dim = jpegSize(buf);
   const px = dim ? dim.w * dim.h : 768 * 768;
@@ -63,7 +57,6 @@ export function jpegSize(buf: Buffer): { w: number; h: number } | undefined {
   return undefined;
 }
 
-// ---------- validation / deterministic fallback ----------
 const clamp01 = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? Math.max(0, Math.min(1, x)) : 0);
 function field<T>(x: any, isT: (v: unknown) => v is T): Field<T> {
   const value = x && isT(x.value) ? x.value : null;
@@ -78,7 +71,6 @@ export function unreadable(guidance = "Hold it up in front of you and keep it st
   return { kind: "unreadable", product: nf, ingredient: nf, strength: nf, dosing: nf, expiry: nf, allergens: nf, barcode: nf, readability: 0, guidance };
 }
 
-/** Coerce model JSON into a valid LabelRead (never throws). */
 export function toLabelRead(j: any): LabelRead {
   if (!j || typeof j !== "object") return unreadable();
   const kinds = ["medication", "food", "other", "unreadable"] as const;
@@ -160,7 +152,6 @@ export async function verify(frames: string[], profile: Profile, question?: stri
 export function emptyProfile(): Profile {
   return { meds: [], allergies: [], avoid: [], doseLog: [], lang: "en" };
 }
-/** Validate a client-sent profile defensively (it's user input). */
 export function toProfile(p: any): Profile {
   const s = (x: unknown, max = 120) => (typeof x === "string" ? x.slice(0, max) : "");
   const arr = (x: unknown) => (Array.isArray(x) ? x : []);
