@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T13:52:03.722739+00:00",
+  "generated_at": "2026-11-14T14:19:40.058838+00:00",
   "safety_invariants": {
     "strength_min_conf": 0.8,
     "name_min_conf": 0.6,
@@ -8,28 +8,53 @@
   },
   "suites_present": [
     "coaching_eval",
-    "calibration_curve"
+    "results_batch2",
+    "demo_fixtures_results",
+    "calibration_curve",
+    "model_comparison",
+    "live_models_probe",
+    "unit_economics"
   ],
   "suites_missing": [
     "results_batch1",
-    "results_batch2",
-    "demo_fixtures_results",
-    "nordic_stickers_results",
-    "model_comparison",
-    "live_models_probe"
+    "nordic_stickers_results"
   ],
-  "label_suites_present": [],
-  "total_label_cases_evaluated": 0,
-  "total_verdict_matches": 0,
-  "overall_verdict_accuracy": null,
+  "label_suites_present": [
+    "results_batch2",
+    "demo_fixtures_results"
+  ],
+  "total_label_cases_evaluated": 25,
+  "total_verdict_matches": 25,
+  "overall_verdict_accuracy": 1.0,
   "total_confident_wrong_dose_count": 0,
-  "total_false_safe_allergen_count": null,
-  "clean_field_accuracy": null,
+  "total_false_safe_allergen_count": 0,
+  "clean_field_accuracy": 1.0,
   "occluded_abstention_rate": 1.0,
   "verify_latency_ms": {
-    "p50": null,
-    "p95": null,
-    "mean": null
+    "p50": 3615.4,
+    "p95": 4696.5,
+    "mean": 3554.2
+  },
+  "calibration": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "n_items": 16,
+    "readable_items": 8,
+    "unreadable_items": 8,
+    "ece": 0.0138,
+    "brier_score": 0.0005,
+    "latency_ms": {
+      "p50": 3424.9,
+      "mean": 3718.5,
+      "max": 5888.3
+    },
+    "mean_strength_confidence_by_tier": {
+      "tier_0_clean": 0.9875,
+      "tier_1_mild": 0.9575,
+      "tier_2_heavy": 0.0,
+      "tier_3_occluded": 0.0
+    },
+    "confident_wrong_dose_at_080": 0
   },
   "coaching_judge": {
     "model": "gemini-3.8-flash",
@@ -58,17 +83,89 @@
       "max": 3373.3
     }
   },
-  "live_probe": null,
+  "live_probe": {
+    "tested_at": "2026-11-14T14:08:37.455Z",
+    "primary_model": "gemini-3.8-live",
+    "primary_connect_ms": 706.0,
+    "primary_first_audio_ms": 582.0,
+    "models": [
+      {
+        "model": "gemini-3.8-live",
+        "ok": true,
+        "connect_ms": 706.0,
+        "first_audio_ms": 582.0,
+        "kinds": [
+          "setupComplete",
+          "sessionResumptionUpdate",
+          "serverContent",
+          "serverContent+sc.modelTurn+sc.outputTranscription",
+          "serverContent+sc.modelTurn",
+          "serverContent+sc.generationComplete",
+          "serverContent+usageMetadata+sc.turnComplete"
+        ],
+        "error": null
+      },
+      {
+        "model": "gemini-3.1-flash-live-preview",
+        "ok": true,
+        "connect_ms": 222.0,
+        "first_audio_ms": 489.0,
+        "kinds": [
+          "setupComplete",
+          "serverContent",
+          "serverContent+sc.modelTurn+sc.outputTranscription",
+          "serverContent+sc.modelTurn",
+          "sessionResumptionUpdate",
+          "serverContent+sc.generationComplete",
+          "serverContent+usageMetadata+sc.turnComplete"
+        ],
+        "error": null
+      },
+      {
+        "model": "gemini-2.5-flash-native-audio-latest",
+        "ok": true,
+        "connect_ms": 244.0,
+        "first_audio_ms": 3126.0,
+        "kinds": [
+          "setupComplete",
+          "sessionResumptionUpdate",
+          "serverContent+sc.modelTurn",
+          "serverContent+sc.outputTranscription",
+          "serverContent+sc.generationComplete",
+          "serverContent+usageMetadata+sc.turnComplete"
+        ],
+        "error": null
+      }
+    ]
+  },
+  "unit_economics": {
+    "measured_fixture_count": 7,
+    "measured_fixture_mean_bytes": 60386.71,
+    "measured_adaptive_512px_q50_mean_bytes": 19337.43,
+    "check_duration_s": 12.0,
+    "normal_1fps_check_bandwidth_kb": 1348.64,
+    "slow_network_adaptive_0_5fps_check_bandwidth_kb": 740.02,
+    "video_bandwidth_saved_in_adaptive_mode_pct": 84.0,
+    "total_bandwidth_saved_in_adaptive_mode_pct": 45.1,
+    "per_check_gemini_cost_eur_standard": 0.00294,
+    "monthly_120_checks_gemini_cost_eur_standard": 0.35,
+    "annual_1440_checks_cloud_eur_pilot_band": "2.48 to 4.23 EUR/year (uncached native-audio ceiling: 10.79 EUR/year)",
+    "tco_3yr_holdup_rayban_meta_gen2_eur": 341.68,
+    "tco_3yr_orcam_myeye_midpoint_eur": 4150.0,
+    "tco_3yr_aira_paid_daily_plan_eur": 2340.0,
+    "tco_savings_vs_orcam_midpoint_pct": 91.8,
+    "tco_cost_reduction_multiple_vs_orcam": 12.1
+  },
   "deck_cards": {
     "verify_accuracy": {
-      "ready": false,
-      "value": null,
-      "subtitle": "Pending label-suite artifact merge"
+      "ready": true,
+      "value": "100.0%",
+      "subtitle": "25/25 verdicts matched across 2 label suites"
     },
     "confident_wrong_dose": {
       "ready": true,
       "value": "0",
-      "subtitle": "Pending medication verification artifact merge"
+      "subtitle": "At STRENGTH_MIN_CONF = 0.80 across 25 label checks"
     },
     "occluded_abstention": {
       "ready": true,
@@ -76,19 +173,24 @@
       "subtitle": "Unreadable / occluded dose traps safely returning unsure"
     },
     "latency": {
-      "ready": false,
-      "value": null,
-      "subtitle": "Pending verify & live timing merge"
+      "ready": true,
+      "value": "p50 3615 ms",
+      "subtitle": "Verify p95 4696.5 ms | Live 1st audio 582.0 ms"
     },
     "model_fallback": {
-      "ready": false,
-      "value": null,
-      "subtitle": "Pending model_comparison.json merge"
+      "ready": true,
+      "value": "3 models",
+      "subtitle": "12 probe cards compared across Gemini Flash family"
     },
     "coaching_judge": {
       "ready": true,
       "value": "5.0 / 5 (8/8)",
       "subtitle": "100.0% pass across brevity, tool grounding, privacy & tone"
+    },
+    "unit_economics": {
+      "ready": true,
+      "value": "EUR 0.00294 / check",
+      "subtitle": "3-yr TCO EUR 341.68 vs EUR 4,150.00 (84.0% adaptive video saved)"
     }
   },
   "artifacts": {
@@ -222,16 +324,327 @@
         }
       ]
     },
+    "results_batch2": {
+      "suite_id": "results_batch2",
+      "generated_at": "2026-11-14T14:11:03.830189+00:00",
+      "model": "gemini-3.8-flash",
+      "n_cases": 18,
+      "verdict_matches": 18,
+      "verdict_accuracy": 1.0,
+      "confident_wrong_dose_count": 0,
+      "clean_field_accuracy": 1.0,
+      "occluded_abstention_rate": 1.0,
+      "allergen_recall": 1.0,
+      "false_safe_allergen_count": 0,
+      "comma_decimal_matched": null,
+      "latency_ms": {
+        "p50": 3413.6,
+        "p95": 4379.3,
+        "mean": 3447.9
+      },
+      "tokens_in": 44730.0,
+      "tokens_out": 2169.0,
+      "rows": [
+        {
+          "id": "b2_01",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3497.1
+        },
+        {
+          "id": "b2_02",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3192.6
+        },
+        {
+          "id": "b2_03",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3567.8
+        },
+        {
+          "id": "b2_04",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3045.0
+        },
+        {
+          "id": "b2_05",
+          "expected_level": "info",
+          "predicted_level": "info",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3728.6
+        },
+        {
+          "id": "b2_06",
+          "expected_level": "info",
+          "predicted_level": "info",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 4122.1
+        },
+        {
+          "id": "b2_07",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 2773.8
+        },
+        {
+          "id": "b2_08",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 2864.8
+        },
+        {
+          "id": "b2_09",
+          "expected_level": "info",
+          "predicted_level": "info",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3029.5
+        },
+        {
+          "id": "b2_10",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 5836.5
+        },
+        {
+          "id": "b2_11",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3424.0
+        },
+        {
+          "id": "b2_12",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3403.1
+        },
+        {
+          "id": "b2_13",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3454.6
+        },
+        {
+          "id": "b2_14",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3006.6
+        },
+        {
+          "id": "b2_15",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "1000 IU",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3169.3
+        },
+        {
+          "id": "b2_16",
+          "expected_level": "info",
+          "predicted_level": "info",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.1,
+          "confident_wrong_dose": false,
+          "latency_ms": 3445.7
+        },
+        {
+          "id": "b2_17",
+          "expected_level": "info",
+          "predicted_level": "info",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3069.6
+        },
+        {
+          "id": "b2_18",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 3430.8
+        }
+      ]
+    },
+    "demo_fixtures_results": {
+      "suite_id": "demo_fixtures_results",
+      "generated_at": "2026-11-14T14:06:10.081447+00:00",
+      "model": "gemini-3.8-flash",
+      "n_cases": 7,
+      "verdict_matches": 7,
+      "verdict_accuracy": 1.0,
+      "confident_wrong_dose_count": 0,
+      "clean_field_accuracy": 1.0,
+      "occluded_abstention_rate": 1.0,
+      "allergen_recall": null,
+      "false_safe_allergen_count": null,
+      "comma_decimal_matched": null,
+      "latency_ms": {
+        "p50": 3817.2,
+        "p95": 4696.5,
+        "mean": 3660.4
+      },
+      "tokens_in": 17454.0,
+      "tokens_out": 838.0,
+      "rows": [
+        {
+          "id": "amlodipine_match",
+          "expected_level": "match",
+          "predicted_level": "match",
+          "verdict_match": true,
+          "strength_value": "5 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3817.2
+        },
+        {
+          "id": "ibuprofen_nsaid",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "400 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 3414.3
+        },
+        {
+          "id": "blurry_strength",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.2,
+          "confident_wrong_dose": false,
+          "latency_ms": 4011.1
+        },
+        {
+          "id": "hazelnut_allergy",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 2676.0
+        },
+        {
+          "id": "oat_milk_safe",
+          "expected_level": "info",
+          "predicted_level": "info",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 4299.1
+        },
+        {
+          "id": "expired_med",
+          "expected_level": "warning",
+          "predicted_level": "warning",
+          "verdict_match": true,
+          "strength_value": "500 mg",
+          "strength_confidence": 0.99,
+          "confident_wrong_dose": false,
+          "latency_ms": 2538.6
+        },
+        {
+          "id": "back_of_box",
+          "expected_level": "unsure",
+          "predicted_level": "unsure",
+          "verdict_match": true,
+          "strength_value": null,
+          "strength_confidence": 0.0,
+          "confident_wrong_dose": false,
+          "latency_ms": 4866.8
+        }
+      ]
+    },
     "calibration_curve": {
       "generated_at": "2026-11-14T13:41:47.342092+00:00",
       "model": "gemini-3.8-flash",
+      "thinking_level": "LOW",
       "n_items": 16,
+      "readable_items": 8,
+      "unreadable_items": 8,
       "ece": 0.0138,
+      "brier_score": 0.0005,
+      "latency_ms": {
+        "p50": 3424.9,
+        "mean": 3718.5,
+        "max": 5888.3
+      },
+      "mean_strength_confidence_by_tier": {
+        "tier_0_clean": 0.9875,
+        "tier_1_mild": 0.9575,
+        "tier_2_heavy": 0.0,
+        "tier_3_occluded": 0.0
+      },
       "tier_mean_confidence": {
-        "tier_0_clean": null,
-        "tier_1_mild": null,
-        "tier_2_heavy": null,
-        "tier_3_occluded": null
+        "tier_0_clean": 0.9875,
+        "tier_1_mild": 0.9575,
+        "tier_2_heavy": 0.0,
+        "tier_3_occluded": 0.0
       },
       "confident_wrong_dose_at_080": 0,
       "threshold_curve": [
@@ -239,39 +652,299 @@
           "threshold": 0.5,
           "clean_recall": 1.0,
           "unreadable_abstention_rate": 1.0,
-          "confident_wrong_dose_count": 0
+          "confident_wrong_dose_count": 0,
+          "accepted_count": 8,
+          "coverage": 0.5,
+          "selective_risk": 0.0
         },
         {
           "threshold": 0.6,
           "clean_recall": 1.0,
           "unreadable_abstention_rate": 1.0,
-          "confident_wrong_dose_count": 0
+          "confident_wrong_dose_count": 0,
+          "accepted_count": 8,
+          "coverage": 0.5,
+          "selective_risk": 0.0
         },
         {
           "threshold": 0.7,
           "clean_recall": 1.0,
           "unreadable_abstention_rate": 1.0,
-          "confident_wrong_dose_count": 0
+          "confident_wrong_dose_count": 0,
+          "accepted_count": 8,
+          "coverage": 0.5,
+          "selective_risk": 0.0
         },
         {
           "threshold": 0.8,
           "clean_recall": 1.0,
           "unreadable_abstention_rate": 1.0,
-          "confident_wrong_dose_count": 0
+          "confident_wrong_dose_count": 0,
+          "accepted_count": 8,
+          "coverage": 0.5,
+          "selective_risk": 0.0
         },
         {
           "threshold": 0.9,
           "clean_recall": 1.0,
           "unreadable_abstention_rate": 1.0,
-          "confident_wrong_dose_count": 0
+          "confident_wrong_dose_count": 0,
+          "accepted_count": 8,
+          "coverage": 0.5,
+          "selective_risk": 0.0
         },
         {
           "threshold": 0.95,
           "clean_recall": 1.0,
           "unreadable_abstention_rate": 1.0,
-          "confident_wrong_dose_count": 0
+          "confident_wrong_dose_count": 0,
+          "accepted_count": 8,
+          "coverage": 0.5,
+          "selective_risk": 0.0
         }
       ]
+    },
+    "model_comparison": {
+      "generated_at": "2026-11-14T14:14:33.049816+00:00",
+      "n_cards": 12,
+      "models": [
+        {
+          "model": "gemini-3.8-flash",
+          "n_cards": 12,
+          "verdict_accuracy": 1.0,
+          "clean_field_accuracy": 1.0,
+          "occluded_abstention_rate": 1.0,
+          "confident_wrong_dose_count": 0,
+          "latency_p50_ms": 3530.9,
+          "latency_p95_ms": 4527.1,
+          "mean_tokens_in": 2485.0,
+          "mean_tokens_out": 146.1,
+          "mean_tokens_thinking": 24.0
+        },
+        {
+          "model": "gemini-3.5-flash",
+          "n_cards": 12,
+          "verdict_accuracy": 1.0,
+          "clean_field_accuracy": 1.0,
+          "occluded_abstention_rate": 1.0,
+          "confident_wrong_dose_count": 0,
+          "latency_p50_ms": 1946.0,
+          "latency_p95_ms": 4094.2,
+          "mean_tokens_in": 2485.0,
+          "mean_tokens_out": 127.2,
+          "mean_tokens_thinking": 38.3
+        },
+        {
+          "model": "gemini-3-flash-preview",
+          "n_cards": 12,
+          "verdict_accuracy": 1.0,
+          "clean_field_accuracy": 1.0,
+          "occluded_abstention_rate": 1.0,
+          "confident_wrong_dose_count": 0,
+          "latency_p50_ms": 1310.4,
+          "latency_p95_ms": 1403.8,
+          "mean_tokens_in": 2485.0,
+          "mean_tokens_out": 126.6,
+          "mean_tokens_thinking": 0.0
+        }
+      ]
+    },
+    "live_models_probe": {
+      "tested_at": "2026-11-14T14:08:37.455Z",
+      "primary_model": "gemini-3.8-live",
+      "primary_connect_ms": 706.0,
+      "primary_first_audio_ms": 582.0,
+      "models": [
+        {
+          "model": "gemini-3.8-live",
+          "ok": true,
+          "connect_ms": 706.0,
+          "first_audio_ms": 582.0,
+          "kinds": [
+            "setupComplete",
+            "sessionResumptionUpdate",
+            "serverContent",
+            "serverContent+sc.modelTurn+sc.outputTranscription",
+            "serverContent+sc.modelTurn",
+            "serverContent+sc.generationComplete",
+            "serverContent+usageMetadata+sc.turnComplete"
+          ],
+          "error": null
+        },
+        {
+          "model": "gemini-3.1-flash-live-preview",
+          "ok": true,
+          "connect_ms": 222.0,
+          "first_audio_ms": 489.0,
+          "kinds": [
+            "setupComplete",
+            "serverContent",
+            "serverContent+sc.modelTurn+sc.outputTranscription",
+            "serverContent+sc.modelTurn",
+            "sessionResumptionUpdate",
+            "serverContent+sc.generationComplete",
+            "serverContent+usageMetadata+sc.turnComplete"
+          ],
+          "error": null
+        },
+        {
+          "model": "gemini-2.5-flash-native-audio-latest",
+          "ok": true,
+          "connect_ms": 244.0,
+          "first_audio_ms": 3126.0,
+          "kinds": [
+            "setupComplete",
+            "sessionResumptionUpdate",
+            "serverContent+sc.modelTurn",
+            "serverContent+sc.outputTranscription",
+            "serverContent+sc.generationComplete",
+            "serverContent+usageMetadata+sc.turnComplete"
+          ],
+          "error": null
+        }
+      ]
+    },
+    "unit_economics": {
+      "generated_at": "2026-11-14T13:42:28.068925+00:00",
+      "measured_fixture_count": 7,
+      "measured_fixture_mean_bytes": 60386.71,
+      "measured_fixture_mean_kb": 60.39,
+      "measured_adaptive_512px_q50_mean_bytes": 19337.43,
+      "measured_adaptive_512px_q50_mean_kb": 19.34,
+      "check_duration_s": 12.0,
+      "normal_1fps_check_bandwidth_kb": 1348.64,
+      "slow_network_adaptive_0_5fps_check_bandwidth_kb": 740.02,
+      "video_bandwidth_saved_in_adaptive_mode_pct": 84.0,
+      "total_bandwidth_saved_in_adaptive_mode_pct": 45.1,
+      "per_check_gemini_cost_eur_standard": 0.00294,
+      "per_check_gemini_cost_usd_standard": 0.00319,
+      "monthly_120_checks_gemini_cost_eur_standard": 0.35,
+      "annual_1440_checks_cloud_eur_pilot_band": "2.48 to 4.23 EUR/year (uncached native-audio ceiling: 10.79 EUR/year)",
+      "tco_3yr_holdup_rayban_meta_gen2_eur": 341.68,
+      "tco_3yr_orcam_myeye_midpoint_eur": 4150.0,
+      "tco_3yr_aira_paid_daily_plan_eur": 2340.0,
+      "tco_savings_vs_orcam_midpoint_pct": 91.8,
+      "tco_cost_reduction_multiple_vs_orcam": 12.1,
+      "bandwidth_modes": {
+        "normal_1fps_768px": {
+          "fps": 1.0,
+          "max_dim_px": 768,
+          "jpeg_quality": 0.78,
+          "frames_sent_in_12s": 12,
+          "jpeg_frames_kb": 724.64,
+          "pcm16_uplink_kb": 384.0,
+          "pcm16_downlink_typical_kb": 240.0,
+          "total_raw_typical_kb": 1348.64,
+          "ws_wire_typical_kb": 1805.27,
+          "avg_bitrate_kbps": 899.1,
+          "monthly_120_checks_mb": 161.84,
+          "client_extra_verify_upload_kb": 0.0
+        },
+        "adaptive_0_5fps_512px": {
+          "fps": 0.5,
+          "max_dim_px": 512,
+          "jpeg_quality": 0.5,
+          "frames_sent_in_12s": 6,
+          "rtt_trigger_threshold_ms": 650,
+          "jpeg_frames_kb": 116.02,
+          "pcm16_uplink_kb": 384.0,
+          "pcm16_downlink_typical_kb": 240.0,
+          "total_raw_typical_kb": 740.02,
+          "ws_wire_typical_kb": 993.55,
+          "avg_bitrate_kbps": 493.3,
+          "monthly_120_checks_mb": 88.8,
+          "video_reduction_pct": 84.0,
+          "total_reduction_pct": 45.1
+        },
+        "snapshot_http_fallback": {
+          "raw_kb": 38.67,
+          "json_wire_kb": 51.99,
+          "monthly_120_checks_mb": 6.24
+        },
+        "offline_barcode_fallback": {
+          "raw_kb": 0.0,
+          "monthly_120_checks_mb": 0.0
+        }
+      },
+      "usage_and_tokens": {
+        "checks_per_day": 4,
+        "checks_per_month": 120,
+        "checks_per_year": 1440,
+        "checks_over_3_years": 4320,
+        "total_tokens_normal_1fps": 7488,
+        "total_tokens_adaptive_0_5fps": 5940
+      },
+      "pricing_tiers": {
+        "standard_cached": {
+          "per_check_eur_normal": 0.00294,
+          "per_check_eur_adaptive": 0.00251,
+          "per_check_usd_normal": 0.00319,
+          "monthly_120_eur": 0.35,
+          "monthly_120_adaptive_eur": 0.3,
+          "annual_1440_eur": 4.23,
+          "annual_1440_blended_barcode_eur": 2.96,
+          "three_year_4320_eur": 12.68
+        },
+        "economy_2_0_live": {
+          "per_check_eur_normal": 0.00172,
+          "per_check_eur_adaptive": 0.00151,
+          "per_check_usd_normal": 0.001873,
+          "monthly_120_eur": 0.21,
+          "monthly_120_adaptive_eur": 0.18,
+          "annual_1440_eur": 2.48,
+          "annual_1440_blended_barcode_eur": 1.74,
+          "three_year_4320_eur": 7.44
+        },
+        "uncached_native_audio_ceiling": {
+          "per_check_eur_normal": 0.00749,
+          "per_check_eur_adaptive": 0.00607,
+          "per_check_usd_normal": 0.008142,
+          "monthly_120_eur": 0.9,
+          "monthly_120_adaptive_eur": 0.73,
+          "annual_1440_eur": 10.79,
+          "annual_1440_blended_barcode_eur": 7.55,
+          "three_year_4320_eur": 32.36
+        }
+      },
+      "three_year_tco": {
+        "horizon_years": 3,
+        "total_checks": 4320,
+        "holdup_rayban_meta_gen2": {
+          "hardware_upfront_eur": 329.0,
+          "annual_cloud_standard_eur": 4.23,
+          "annual_cloud_economy_eur": 2.48,
+          "annual_cloud_blended_barcode_eur": 2.96,
+          "annual_cloud_ceiling_eur": 10.79,
+          "three_year_tco_standard_eur": 341.68,
+          "three_year_tco_economy_eur": 336.44,
+          "three_year_tco_ceiling_eur": 361.36,
+          "effective_monthly_tco_standard_eur": 9.49,
+          "all_in_cost_per_check_standard_eur": 0.0791
+        },
+        "orcam_myeye_class": {
+          "hardware_upfront_eur_midpoint": 4150.0,
+          "annual_subscription_eur": 0.0,
+          "three_year_tco_eur_midpoint": 4150.0,
+          "effective_monthly_tco_midpoint_eur": 115.28,
+          "all_in_cost_per_check_midpoint_eur": 0.9606,
+          "holdup_savings_eur": 3808.32,
+          "holdup_savings_pct": 91.8,
+          "holdup_cost_reduction_multiple": 12.1
+        },
+        "aira_paid_daily_class": {
+          "daily_plan_monthly_eur": 65.0,
+          "three_year_tco_phone_only_eur": 2340.0,
+          "three_year_tco_with_glasses_eur": 2669.0,
+          "holdup_savings_vs_daily_plan_pct": 85.4
+        },
+        "rehabilitation_pilot_100_users_3yr": {
+          "cohort_size_users": 100,
+          "holdup_total_eur": 34168.0,
+          "orcam_midpoint_total_eur": 415000.0,
+          "public_budget_saved_eur": 380832.0,
+          "users_served_per_100_orcam_budget": 1214
+        }
+      }
     }
   }
 }

@@ -74,7 +74,7 @@ ARTIFACT_SPECS = [
         "filename": "model_comparison.json",
         "title": "Multi-Model Verify Fallback Chain Benchmark",
         "category": "model_comparison",
-        "primary_model": "gemini-3.8-flash / gemini-3.5-flash / gemini-2.5-flash",
+        "primary_model": "gemini-3.8-flash / gemini-3.5-flash / gemini-3-flash-preview",
         "repro_cmd": "/venv/bin/python3 eval/benchmark_models.py",
     },
     {
@@ -84,6 +84,14 @@ ARTIFACT_SPECS = [
         "category": "live_probe",
         "primary_model": "gemini-3.8-live / fallback chain",
         "repro_cmd": "npx tsx server/scripts/probe-live.ts --out eval/live_models_probe.json",
+    },
+    {
+        "id": "unit_economics",
+        "filename": "unit_economics.json",
+        "title": "Bandwidth & Pilot Unit Economics",
+        "category": "unit_economics",
+        "primary_model": "gemini-3.8-live + gemini-3.8-flash",
+        "repro_cmd": "/venv/bin/python3 eval/unit_economics.py",
     },
 ]
 
@@ -393,25 +401,88 @@ def normalize_coaching(data: dict[str, Any]) -> dict[str, Any]:
 def normalize_calibration(data: dict[str, Any]) -> dict[str, Any]:
     s = data.get("summary") if isinstance(data.get("summary"), dict) else data
     items = extract_items(data)
-    n_items = to_int(first_val(s, ["n_items", "total_items", "total", "count"])) or len(items)
-    ece = to_num(first_val(s, ["ece", "expected_calibration_error"])) or to_num(data.get("ece"))
+    n_items = to_int(first_val(s, ["total_items", "n_items", "total", "count"]))
+    if n_items is None:
+        n_items = len(items)
+    readable_items = to_int(first_val(s, ["readable_items", "n_readable"]))
+    unreadable_items = to_int(first_val(s, ["unreadable_items", "n_unreadable"]))
 
-    tier_container = (
-        s.get("tier_mean_confidence")
-        if isinstance(s.get("tier_mean_confidence"), dict)
-        else (s.get("tiers") if isinstance(s.get("tiers"), dict) else (data.get("tiers") if isinstance(data.get("tiers"), dict) else s))
-    )
-    tiers = {
+    ece = to_num(first_val(s, ["ece", "expected_calibration_error"]))
+    if ece is None:
+        ece = to_num(data.get("ece"))
+    brier_score = to_num(first_val(s, ["brier_score", "brier"]))
+    if brier_score is None:
+        brier_score = to_num(first_val(data, ["brier_score", "brier"]))
+
+    tier_container = s
+    for cand in (
+        s.get("mean_strength_confidence_by_tier"),
+        s.get("tier_mean_confidence"),
+        s.get("tiers"),
+        data.get("mean_strength_confidence_by_tier"),
+        data.get("tier_mean_confidence"),
+        data.get("tiers"),
+    ):
+        if isinstance(cand, dict):
+            tier_container = cand
+            break
+
+    tiers: dict[str, float | None] = {
         "tier_0_clean": to_num(first_val(tier_container, ["tier_0_clean", "clean", "tier_0", "0"])),
         "tier_1_mild": to_num(first_val(tier_container, ["tier_1_mild", "mild_blur", "tier_1", "1"])),
         "tier_2_heavy": to_num(first_val(tier_container, ["tier_2_heavy", "heavy_blur_glare", "tier_2", "2"])),
         "tier_3_occluded": to_num(first_val(tier_container, ["tier_3_occluded", "severe_occlusion", "tier_3", "3"])),
     }
 
-    raw_curve = (
-        first_val(data, ["threshold_curve", "thresholds", "curve", "sweep", "risk_coverage"])
-        or first_val(s, ["threshold_curve", "thresholds", "curve", "sweep", "risk_coverage"])
+    if items and any(v is None for v in tiers.values()):
+        for t_idx, t_key in enumerate(("tier_0_clean", "tier_1_mild", "tier_2_heavy", "tier_3_occluded")):
+            if tiers[t_key] is None:
+                t_confs = [
+                    c
+                    for it in items
+                    if (it.get("tier") == t_key or it.get("tier_index") == t_idx)
+                    and (c := to_num(first_val(it, ["strength_confidence", "raw_strength_confidence"]))) is not None
+                ]
+                if t_confs:
+                    tiers[t_key] = round(statistics.mean(t_confs), 4)
+
+    lat_raw = (
+        s.get("latency_ms")
+        if isinstance(s.get("latency_ms"), dict)
+        else (data.get("latency_ms") if isinstance(data.get("latency_ms"), dict) else {})
     )
+    item_lats = [
+        v
+        for it in items
+        if (v := to_num(first_val(it, ["latency_ms", "latencyMs", "ms", "elapsed_ms"]))) is not None
+    ]
+    lat_p50 = to_num(first_val(lat_raw, ["p50", "median"]))
+    if lat_p50 is None:
+        lat_p50 = to_num(first_val(s, ["latency_p50_ms", "p50_latency_ms", "p50_ms"]))
+    if lat_p50 is None and item_lats:
+        lat_p50 = percentile(item_lats, 0.50)
+
+    lat_mean = to_num(first_val(lat_raw, ["mean", "avg"]))
+    if lat_mean is None:
+        lat_mean = to_num(first_val(s, ["latency_mean_ms", "mean_latency_ms", "mean_ms"]))
+    if lat_mean is None and item_lats:
+        lat_mean = round(statistics.mean(item_lats), 1)
+
+    lat_max = to_num(first_val(lat_raw, ["max"]))
+    if lat_max is None:
+        lat_max = to_num(first_val(s, ["latency_max_ms", "max_latency_ms", "max_ms"]))
+    if lat_max is None and item_lats:
+        lat_max = round(max(item_lats), 1)
+
+    latency_ms = {
+        "p50": round(lat_p50, 1) if lat_p50 is not None else None,
+        "mean": round(lat_mean, 1) if lat_mean is not None else None,
+        "max": round(lat_max, 1) if lat_max is not None else None,
+    }
+
+    raw_curve = first_val(data, ["threshold_curve", "threshold_sweep", "thresholds", "curve", "sweep", "risk_coverage"])
+    if raw_curve is None:
+        raw_curve = first_val(s, ["threshold_curve", "threshold_sweep", "thresholds", "curve", "sweep", "risk_coverage"])
     curve_rows: list[dict[str, Any]] = []
     if isinstance(raw_curve, list):
         for entry in raw_curve:
@@ -426,6 +497,9 @@ def normalize_calibration(data: dict[str, Any]) -> dict[str, Any]:
                     "clean_recall": to_rate(first_val(entry, ["clean_recall", "readable_recall", "recall"])),
                     "unreadable_abstention_rate": to_rate(first_val(entry, ["unreadable_abstention_rate", "occluded_abstention_rate", "abstention_rate"])),
                     "confident_wrong_dose_count": to_int(first_val(entry, ["confident_wrong_dose_count", "confident_wrong_doses"])),
+                    "accepted_count": to_int(entry.get("accepted_count")),
+                    "coverage": to_rate(entry.get("coverage")),
+                    "selective_risk": to_rate(entry.get("selective_risk")),
                 }
             )
     elif isinstance(raw_curve, dict):
@@ -444,19 +518,38 @@ def normalize_calibration(data: dict[str, Any]) -> dict[str, Any]:
                     "clean_recall": to_rate(first_val(entry, ["clean_recall", "readable_recall", "recall"])),
                     "unreadable_abstention_rate": to_rate(first_val(entry, ["unreadable_abstention_rate", "occluded_abstention_rate", "abstention_rate"])),
                     "confident_wrong_dose_count": to_int(first_val(entry, ["confident_wrong_dose_count", "confident_wrong_doses"])),
+                    "accepted_count": to_int(entry.get("accepted_count")),
+                    "coverage": to_rate(entry.get("coverage")),
+                    "selective_risk": to_rate(entry.get("selective_risk")),
                 }
             )
     curve_rows.sort(key=lambda r: r["threshold"])
 
     gate_row = next((r for r in curve_rows if abs(r["threshold"] - STRENGTH_MIN_CONF) < 1e-6), None)
-    cwd_at_080 = gate_row["confident_wrong_dose_count"] if gate_row and gate_row["confident_wrong_dose_count"] is not None else to_int(first_val(s, ["confident_wrong_dose_count", "confident_wrong_dose_at_080"]))
+    at_080_obj = s.get("at_production_threshold_0_80") if isinstance(s.get("at_production_threshold_0_80"), dict) else {}
+    cwd_at_080 = (
+        gate_row["confident_wrong_dose_count"]
+        if gate_row and gate_row["confident_wrong_dose_count"] is not None
+        else to_int(first_val(at_080_obj, ["confident_wrong_dose_count"]))
+    )
+    if cwd_at_080 is None:
+        cwd_at_080 = to_int(first_val(s, ["confident_wrong_dose_count", "confident_wrong_dose_at_080"]))
+
+    normalized_tiers = {k: round(v, 4) if v is not None else None for k, v in tiers.items()}
+    thinking_lvl = clean_text(s.get("thinking_level", ""))
 
     return {
         "generated_at": clean_text(data.get("generated_at", "")),
         "model": clean_text(first_val(s, ["model"]) or data.get("model") or "gemini-3.8-flash"),
+        "thinking_level": thinking_lvl if thinking_lvl else None,
         "n_items": n_items,
+        "readable_items": readable_items,
+        "unreadable_items": unreadable_items,
         "ece": round(ece, 4) if ece is not None else None,
-        "tier_mean_confidence": {k: round(v, 4) if v is not None else None for k, v in tiers.items()},
+        "brier_score": round(brier_score, 4) if brier_score is not None else None,
+        "latency_ms": latency_ms,
+        "mean_strength_confidence_by_tier": normalized_tiers,
+        "tier_mean_confidence": dict(normalized_tiers),
         "confident_wrong_dose_at_080": cwd_at_080,
         "threshold_curve": curve_rows,
     }
@@ -536,6 +629,179 @@ def normalize_live_probe(data: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def normalize_unit_economics(data: dict[str, Any]) -> dict[str, Any]:
+    hs = data.get("headline_summary") if isinstance(data.get("headline_summary"), dict) else {}
+    bw = data.get("bandwidth_per_12s_check") if isinstance(data.get("bandwidth_per_12s_check"), dict) else {}
+    norm_bw = bw.get("normal_mode") if isinstance(bw.get("normal_mode"), dict) else {}
+    adap_bw = bw.get("slow_network_adaptive_mode") if isinstance(bw.get("slow_network_adaptive_mode"), dict) else {}
+    deg_bw = bw.get("degraded_fallbacks") if isinstance(bw.get("degraded_fallbacks"), dict) else {}
+    snap_bw = deg_bw.get("snapshot_http_verify_2_adaptive_frames") if isinstance(deg_bw.get("snapshot_http_verify_2_adaptive_frames"), dict) else {}
+    off_bw = deg_bw.get("offline_barcode_detector") if isinstance(deg_bw.get("offline_barcode_detector"), dict) else {}
+
+    tcm = data.get("token_and_cost_model") if isinstance(data.get("token_and_cost_model"), dict) else {}
+    cadence = tcm.get("usage_cadence") if isinstance(tcm.get("usage_cadence"), dict) else {}
+    pct = tcm.get("per_check_tokens") if isinstance(tcm.get("per_check_tokens"), dict) else {}
+    tiers_raw = tcm.get("published_pricing_tiers") if isinstance(tcm.get("published_pricing_tiers"), dict) else {}
+
+    def extract_pricing_tier(t_obj: Any) -> dict[str, float | None]:
+        d = t_obj if isinstance(t_obj, dict) else {}
+        pce = d.get("per_check_eur") if isinstance(d.get("per_check_eur"), dict) else {}
+        pcu = d.get("per_check_breakdown_usd") if isinstance(d.get("per_check_breakdown_usd"), dict) else {}
+        m120 = d.get("monthly_120_checks") if isinstance(d.get("monthly_120_checks"), dict) else {}
+        a1440 = d.get("annual_1440_checks") if isinstance(d.get("annual_1440_checks"), dict) else {}
+        y3 = d.get("three_year_4320_checks_cloud_eur") if isinstance(d.get("three_year_4320_checks_cloud_eur"), dict) else {}
+        return {
+            "per_check_eur_normal": to_num(pce.get("normal_1fps")),
+            "per_check_eur_adaptive": to_num(pce.get("adaptive_0_5fps")),
+            "per_check_usd_normal": to_num(pcu.get("total_normal_1fps")),
+            "monthly_120_eur": to_num(m120.get("normal_eur")),
+            "monthly_120_adaptive_eur": to_num(m120.get("adaptive_eur")),
+            "annual_1440_eur": to_num(a1440.get("normal_eur")),
+            "annual_1440_blended_barcode_eur": to_num(a1440.get("blended_30pct_local_barcode_eur")),
+            "three_year_4320_eur": to_num(y3.get("normal_all_cloud")),
+        }
+
+    tco = data.get("three_year_tco_comparison") if isinstance(data.get("three_year_tco_comparison"), dict) else {}
+    opts = tco.get("options") if isinstance(tco.get("options"), dict) else {}
+    hu_opt = opts.get("holdup_consumer_rayban_meta_gen2") if isinstance(opts.get("holdup_consumer_rayban_meta_gen2"), dict) else {}
+    hu_ann = hu_opt.get("annual_cloud_inference_eur") if isinstance(hu_opt.get("annual_cloud_inference_eur"), dict) else {}
+    hu_3yr = hu_opt.get("three_year_tco_eur") if isinstance(hu_opt.get("three_year_tco_eur"), dict) else {}
+
+    orcam_opt = opts.get("dedicated_assistive_camera_orcam_class") if isinstance(opts.get("dedicated_assistive_camera_orcam_class"), dict) else {}
+    aira_opt = opts.get("human_video_volunteer_or_paid_agent_aira_class") if isinstance(opts.get("human_video_volunteer_or_paid_agent_aira_class"), dict) else {}
+    aira_paid = aira_opt.get("paid_agent_subscription") if isinstance(aira_opt.get("paid_agent_subscription"), dict) else {}
+    pilot_100 = tco.get("rehabilitation_pilot_100_users_3yr") if isinstance(tco.get("rehabilitation_pilot_100_users_3yr"), dict) else {}
+
+    normal_bw_kb = to_num(first_val(hs, ["normal_1fps_check_bandwidth_kb"]))
+    if normal_bw_kb is None:
+        normal_bw_kb = to_num(norm_bw.get("total_raw_media_typical_kb"))
+    adap_bw_kb = to_num(first_val(hs, ["slow_network_adaptive_0_5fps_check_bandwidth_kb"]))
+    if adap_bw_kb is None:
+        adap_bw_kb = to_num(adap_bw.get("total_raw_media_typical_kb"))
+    vid_saved_pct = to_num(first_val(hs, ["video_bandwidth_saved_in_adaptive_mode_pct"]))
+    if vid_saved_pct is None:
+        vid_saved_pct = to_num(adap_bw.get("video_bandwidth_reduction_vs_normal_pct"))
+    tot_saved_pct = to_num(first_val(hs, ["total_bandwidth_saved_in_adaptive_mode_pct"]))
+    if tot_saved_pct is None:
+        tot_saved_pct = to_num(adap_bw.get("total_typical_bandwidth_reduction_vs_normal_pct"))
+
+    return {
+        "generated_at": clean_text(data.get("generated_at", "")),
+        "measured_fixture_count": to_int(data.get("measured_fixture_count")),
+        "measured_fixture_mean_bytes": to_num(data.get("measured_fixture_mean_bytes")),
+        "measured_fixture_mean_kb": to_num(data.get("measured_fixture_mean_kb")),
+        "measured_adaptive_512px_q50_mean_bytes": to_num(data.get("measured_adaptive_512px_q50_mean_bytes")),
+        "measured_adaptive_512px_q50_mean_kb": to_num(data.get("measured_adaptive_512px_q50_mean_kb")),
+        "check_duration_s": to_num(first_val(hs, ["check_duration_s"])),
+        "normal_1fps_check_bandwidth_kb": normal_bw_kb,
+        "slow_network_adaptive_0_5fps_check_bandwidth_kb": adap_bw_kb,
+        "video_bandwidth_saved_in_adaptive_mode_pct": vid_saved_pct,
+        "total_bandwidth_saved_in_adaptive_mode_pct": tot_saved_pct,
+        "per_check_gemini_cost_eur_standard": to_num(hs.get("per_check_gemini_cost_eur_standard")),
+        "per_check_gemini_cost_usd_standard": to_num(hs.get("per_check_gemini_cost_usd_standard")),
+        "monthly_120_checks_gemini_cost_eur_standard": to_num(hs.get("monthly_120_checks_gemini_cost_eur_standard")),
+        "annual_1440_checks_cloud_eur_pilot_band": clean_text(hs.get("annual_1440_checks_cloud_eur_pilot_band", "")),
+        "tco_3yr_holdup_rayban_meta_gen2_eur": to_num(hs.get("tco_3yr_holdup_rayban_meta_gen2_eur")),
+        "tco_3yr_orcam_myeye_midpoint_eur": to_num(hs.get("tco_3yr_orcam_myeye_midpoint_eur")),
+        "tco_3yr_aira_paid_daily_plan_eur": to_num(hs.get("tco_3yr_aira_paid_daily_plan_eur")),
+        "tco_savings_vs_orcam_midpoint_pct": to_num(hs.get("tco_savings_vs_orcam_midpoint_pct")),
+        "tco_cost_reduction_multiple_vs_orcam": to_num(hs.get("tco_cost_reduction_multiple_vs_orcam")),
+        "bandwidth_modes": {
+            "normal_1fps_768px": {
+                "fps": to_num(norm_bw.get("fps")),
+                "max_dim_px": to_int(norm_bw.get("max_dim_px")),
+                "jpeg_quality": to_num(norm_bw.get("jpeg_quality")),
+                "frames_sent_in_12s": to_int(norm_bw.get("frames_sent_in_12s")),
+                "jpeg_frames_kb": to_num(norm_bw.get("jpeg_frames_kb")),
+                "pcm16_uplink_kb": to_num(norm_bw.get("pcm16_16khz_uplink_12s_kb")),
+                "pcm16_downlink_typical_kb": to_num(norm_bw.get("pcm16_24khz_downlink_typical_5s_kb")),
+                "total_raw_typical_kb": to_num(norm_bw.get("total_raw_media_typical_kb")),
+                "ws_wire_typical_kb": to_num(norm_bw.get("websocket_base64_wire_typical_kb")),
+                "avg_bitrate_kbps": to_num(norm_bw.get("average_raw_bitrate_typical_kbps")),
+                "monthly_120_checks_mb": to_num(norm_bw.get("monthly_120_checks_raw_typical_mb")),
+                "client_extra_verify_upload_kb": to_num(norm_bw.get("client_extra_verify_upload_kb")),
+            },
+            "adaptive_0_5fps_512px": {
+                "fps": to_num(adap_bw.get("fps")),
+                "max_dim_px": to_int(adap_bw.get("max_dim_px")),
+                "jpeg_quality": to_num(adap_bw.get("jpeg_quality")),
+                "frames_sent_in_12s": to_int(adap_bw.get("frames_sent_in_12s")),
+                "rtt_trigger_threshold_ms": to_int(adap_bw.get("rtt_trigger_threshold_ms")),
+                "jpeg_frames_kb": to_num(adap_bw.get("jpeg_frames_kb")),
+                "pcm16_uplink_kb": to_num(adap_bw.get("pcm16_16khz_uplink_12s_kb")),
+                "pcm16_downlink_typical_kb": to_num(adap_bw.get("pcm16_24khz_downlink_typical_5s_kb")),
+                "total_raw_typical_kb": to_num(adap_bw.get("total_raw_media_typical_kb")),
+                "ws_wire_typical_kb": to_num(adap_bw.get("websocket_base64_wire_typical_kb")),
+                "avg_bitrate_kbps": to_num(adap_bw.get("average_raw_bitrate_typical_kbps")),
+                "monthly_120_checks_mb": to_num(adap_bw.get("monthly_120_checks_raw_typical_mb")),
+                "video_reduction_pct": to_num(adap_bw.get("video_bandwidth_reduction_vs_normal_pct")),
+                "total_reduction_pct": to_num(adap_bw.get("total_typical_bandwidth_reduction_vs_normal_pct")),
+            },
+            "snapshot_http_fallback": {
+                "raw_kb": to_num(snap_bw.get("raw_kb")),
+                "json_wire_kb": to_num(snap_bw.get("json_wire_kb")),
+                "monthly_120_checks_mb": to_num(snap_bw.get("monthly_120_checks_mb")),
+            },
+            "offline_barcode_fallback": {
+                "raw_kb": to_num(off_bw.get("raw_kb")),
+                "monthly_120_checks_mb": to_num(off_bw.get("monthly_120_checks_mb")),
+            },
+        },
+        "usage_and_tokens": {
+            "checks_per_day": to_int(cadence.get("checks_per_day")),
+            "checks_per_month": to_int(cadence.get("checks_per_month")),
+            "checks_per_year": to_int(cadence.get("checks_per_year")),
+            "checks_over_3_years": to_int(cadence.get("checks_over_3_years")),
+            "total_tokens_normal_1fps": to_int(pct.get("total_tokens_per_check_normal_1fps")),
+            "total_tokens_adaptive_0_5fps": to_int(pct.get("total_tokens_per_check_adaptive_0_5fps")),
+        },
+        "pricing_tiers": {
+            "standard_cached": extract_pricing_tier(tiers_raw.get("gemini_flash_standard_cached")),
+            "economy_2_0_live": extract_pricing_tier(tiers_raw.get("gemini_flash_economy_2_0_live")),
+            "uncached_native_audio_ceiling": extract_pricing_tier(tiers_raw.get("gemini_live_native_audio_uncached_ceiling")),
+        },
+        "three_year_tco": {
+            "horizon_years": to_int(tco.get("horizon_years")),
+            "total_checks": to_int(tco.get("total_checks_over_horizon")),
+            "holdup_rayban_meta_gen2": {
+                "hardware_upfront_eur": to_num(hu_opt.get("hardware_upfront_eur")),
+                "annual_cloud_standard_eur": to_num(hu_ann.get("standard_cached_100pct_cloud")),
+                "annual_cloud_economy_eur": to_num(hu_ann.get("economy_flash_live")),
+                "annual_cloud_blended_barcode_eur": to_num(hu_ann.get("blended_daily_pilot_with_barcode")),
+                "annual_cloud_ceiling_eur": to_num(hu_ann.get("uncached_native_audio_ceiling")),
+                "three_year_tco_standard_eur": to_num(hu_3yr.get("standard_cached_100pct_cloud")),
+                "three_year_tco_economy_eur": to_num(hu_3yr.get("economy_flash_live")),
+                "three_year_tco_ceiling_eur": to_num(hu_3yr.get("uncached_native_audio_ceiling")),
+                "effective_monthly_tco_standard_eur": to_num(hu_opt.get("effective_monthly_tco_standard_eur")),
+                "all_in_cost_per_check_standard_eur": to_num(hu_opt.get("all_in_cost_per_check_standard_eur")),
+            },
+            "orcam_myeye_class": {
+                "hardware_upfront_eur_midpoint": to_num(orcam_opt.get("hardware_upfront_eur_midpoint")),
+                "annual_subscription_eur": to_num(orcam_opt.get("annual_subscription_eur")),
+                "three_year_tco_eur_midpoint": to_num(orcam_opt.get("three_year_tco_eur_midpoint")),
+                "effective_monthly_tco_midpoint_eur": to_num(orcam_opt.get("effective_monthly_tco_midpoint_eur")),
+                "all_in_cost_per_check_midpoint_eur": to_num(orcam_opt.get("all_in_cost_per_check_midpoint_eur")),
+                "holdup_savings_eur": to_num(orcam_opt.get("holdup_savings_vs_midpoint_eur")),
+                "holdup_savings_pct": to_num(orcam_opt.get("holdup_savings_vs_midpoint_pct")),
+                "holdup_cost_reduction_multiple": to_num(orcam_opt.get("holdup_cost_reduction_multiple")),
+            },
+            "aira_paid_daily_class": {
+                "daily_plan_monthly_eur": to_num(aira_paid.get("daily_meds_180min_plan_monthly_eur")),
+                "three_year_tco_phone_only_eur": to_num(aira_paid.get("three_year_tco_daily_phone_only_eur")),
+                "three_year_tco_with_glasses_eur": to_num(aira_paid.get("three_year_tco_daily_with_glasses_eur")),
+                "holdup_savings_vs_daily_plan_pct": to_num(aira_paid.get("holdup_savings_vs_daily_plan_pct")),
+            },
+            "rehabilitation_pilot_100_users_3yr": {
+                "cohort_size_users": to_int(pilot_100.get("cohort_size_users")),
+                "holdup_total_eur": to_num(pilot_100.get("holdup_plus_rayban_gen2_total_eur")),
+                "orcam_midpoint_total_eur": to_num(pilot_100.get("orcam_class_midpoint_total_eur")),
+                "public_budget_saved_eur": to_num(pilot_100.get("public_budget_saved_eur")),
+                "users_served_per_100_orcam_budget": to_int(pilot_100.get("users_served_per_100_orcam_budget")),
+            },
+        },
+    }
+
+
 def fmt_pct(rate: float | None) -> str:
     if rate is None:
         return "n/a"
@@ -554,6 +820,14 @@ def fmt_num(val: float | int | None, digits: int = 2) -> str:
     if isinstance(val, int):
         return str(val)
     return f"{val:.{digits}f}"
+
+
+def fmt_comma(val: float | int | None, digits: int = 2) -> str:
+    if val is None:
+        return "n/a"
+    if isinstance(val, int) or digits == 0:
+        return f"{int(round(val)):,}"
+    return f"{val:,.{digits}f}"
 
 
 def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
@@ -579,6 +853,8 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
             artifacts[sid] = normalize_model_comparison(raw)
         elif sid == "live_models_probe":
             artifacts[sid] = normalize_live_probe(raw)
+        elif sid == "unit_economics":
+            artifacts[sid] = normalize_unit_economics(raw)
 
     label_suites_present = [sid for sid in LABEL_SUITE_IDS if sid in artifacts]
     total_label_cases = sum(artifacts[sid]["n_cases"] for sid in label_suites_present)
@@ -682,6 +958,44 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
 
     live_summary = artifacts.get("live_models_probe")
 
+    calibration_summary = None
+    if "calibration_curve" in artifacts:
+        cal = artifacts["calibration_curve"]
+        calibration_summary = {
+            "model": cal["model"],
+            "thinking_level": cal["thinking_level"],
+            "n_items": cal["n_items"],
+            "readable_items": cal["readable_items"],
+            "unreadable_items": cal["unreadable_items"],
+            "ece": cal["ece"],
+            "brier_score": cal["brier_score"],
+            "latency_ms": cal["latency_ms"],
+            "mean_strength_confidence_by_tier": cal["mean_strength_confidence_by_tier"],
+            "confident_wrong_dose_at_080": cal["confident_wrong_dose_at_080"],
+        }
+
+    unit_econ_summary = None
+    if "unit_economics" in artifacts:
+        ue = artifacts["unit_economics"]
+        unit_econ_summary = {
+            "measured_fixture_count": ue["measured_fixture_count"],
+            "measured_fixture_mean_bytes": ue["measured_fixture_mean_bytes"],
+            "measured_adaptive_512px_q50_mean_bytes": ue["measured_adaptive_512px_q50_mean_bytes"],
+            "check_duration_s": ue["check_duration_s"],
+            "normal_1fps_check_bandwidth_kb": ue["normal_1fps_check_bandwidth_kb"],
+            "slow_network_adaptive_0_5fps_check_bandwidth_kb": ue["slow_network_adaptive_0_5fps_check_bandwidth_kb"],
+            "video_bandwidth_saved_in_adaptive_mode_pct": ue["video_bandwidth_saved_in_adaptive_mode_pct"],
+            "total_bandwidth_saved_in_adaptive_mode_pct": ue["total_bandwidth_saved_in_adaptive_mode_pct"],
+            "per_check_gemini_cost_eur_standard": ue["per_check_gemini_cost_eur_standard"],
+            "monthly_120_checks_gemini_cost_eur_standard": ue["monthly_120_checks_gemini_cost_eur_standard"],
+            "annual_1440_checks_cloud_eur_pilot_band": ue["annual_1440_checks_cloud_eur_pilot_band"],
+            "tco_3yr_holdup_rayban_meta_gen2_eur": ue["tco_3yr_holdup_rayban_meta_gen2_eur"],
+            "tco_3yr_orcam_myeye_midpoint_eur": ue["tco_3yr_orcam_myeye_midpoint_eur"],
+            "tco_3yr_aira_paid_daily_plan_eur": ue["tco_3yr_aira_paid_daily_plan_eur"],
+            "tco_savings_vs_orcam_midpoint_pct": ue["tco_savings_vs_orcam_midpoint_pct"],
+            "tco_cost_reduction_multiple_vs_orcam": ue["tco_cost_reduction_multiple_vs_orcam"],
+        }
+
     deck_cards = {
         "verify_accuracy": {
             "ready": overall_verdict_accuracy is not None,
@@ -757,6 +1071,19 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
                 else "Pending coaching_eval.json"
             ),
         },
+        "unit_economics": {
+            "ready": unit_econ_summary is not None,
+            "value": (
+                f"EUR {unit_econ_summary['per_check_gemini_cost_eur_standard']:.5f} / check"
+                if unit_econ_summary is not None and unit_econ_summary["per_check_gemini_cost_eur_standard"] is not None
+                else None
+            ),
+            "subtitle": (
+                f"3-yr TCO EUR {fmt_comma(unit_econ_summary['tco_3yr_holdup_rayban_meta_gen2_eur'], 2)} vs EUR {fmt_comma(unit_econ_summary['tco_3yr_orcam_myeye_midpoint_eur'], 2)} ({fmt_num(unit_econ_summary['video_bandwidth_saved_in_adaptive_mode_pct'], 1)}% adaptive video saved)"
+                if unit_econ_summary is not None
+                else "Pending unit_economics.json"
+            ),
+        },
     }
 
     return {
@@ -778,8 +1105,10 @@ def compile_summary(eval_dir: pathlib.Path) -> dict[str, Any]:
         "clean_field_accuracy": clean_field_accuracy,
         "occluded_abstention_rate": occluded_abstention_rate,
         "verify_latency_ms": verify_latency_ms,
+        "calibration": calibration_summary,
         "coaching_judge": coaching_summary,
         "live_probe": live_summary,
+        "unit_economics": unit_econ_summary,
         "deck_cards": deck_cards,
         "artifacts": artifacts,
     }
@@ -807,7 +1136,7 @@ def artifact_headline(sid: str, artifacts: dict[str, Any]) -> tuple[str, str]:
     if sid == "calibration_curve":
         return (
             f"{a['n_items']} reads",
-            f"ECE {fmt_num(a['ece'], 4)}, {fmt_num(a['confident_wrong_dose_at_080'], 0)} confident-wrong doses at 0.80 gate",
+            f"ECE {fmt_num(a['ece'], 4)}, Brier {fmt_num(a['brier_score'], 4)}, {fmt_num(a['confident_wrong_dose_at_080'], 0)} confident-wrong doses at 0.80 gate, p50 {fmt_ms(a['latency_ms']['p50'])}",
         )
     if sid == "model_comparison":
         m_count = len(a["models"])
@@ -824,6 +1153,11 @@ def artifact_headline(sid: str, artifacts: dict[str, Any]) -> tuple[str, str]:
         return (
             f"{len(a['models'])} Live models",
             f"{ok_cnt}/{len(a['models'])} reachable, primary connect {fmt_ms(a['primary_connect_ms'])}, 1st audio {fmt_ms(a['primary_first_audio_ms'])}",
+        )
+    if sid == "unit_economics":
+        return (
+            f"{a['measured_fixture_count']} fixtures, 3-yr TCO",
+            f"{fmt_comma(a['normal_1fps_check_bandwidth_kb'], 2)} KB -> {fmt_comma(a['slow_network_adaptive_0_5fps_check_bandwidth_kb'], 2)} KB ({fmt_num(a['video_bandwidth_saved_in_adaptive_mode_pct'], 1)}% video saved), EUR {fmt_num(a['per_check_gemini_cost_eur_standard'], 5)}/check, 3-yr TCO EUR {fmt_comma(a['tco_3yr_holdup_rayban_meta_gen2_eur'], 2)} vs EUR {fmt_comma(a['tco_3yr_orcam_myeye_midpoint_eur'], 2)}",
         )
     return ("present", "Loaded")
 
@@ -879,7 +1213,8 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         "Finnish/Swedish pharmacy dosing stickers with comma decimals (`nordic_stickers_results.json`), controlled "
         "4-tier optical blur/glare/occlusion sweeps (`calibration_curve.json`), 3-model Gemini Flash fallback comparisons "
         "(`model_comparison.json`), Gemini Live WebSocket connect and first-audio probes (`live_models_probe.json`), "
-        "and structured LLM-as-a-Judge coaching and bystander privacy transcripts (`coaching_eval.json`)."
+        "structured LLM-as-a-Judge coaching and bystander privacy transcripts (`coaching_eval.json`), and measured "
+        "JPEG payload, adaptive bandwidth, and 3-year assistive TCO modeling (`unit_economics.json`)."
     )
     lines.append("")
     lines.append("---")
@@ -969,6 +1304,22 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         )
     else:
         lines.append("| Coaching & bystander privacy judge (`coaching_eval.json`) | Pending merge |")
+    if compiled["calibration"] is not None:
+        cal_s = compiled["calibration"]
+        lines.append(
+            f"| Strength confidence calibration (`calibration_curve.json`) | "
+            f"`{cal_s['n_items']}` reads, `ECE = {fmt_num(cal_s['ece'], 4)}`, `Brier = {fmt_num(cal_s['brier_score'], 4)}`, "
+            f"latency p50 `{fmt_ms(cal_s['latency_ms']['p50'])}` / mean `{fmt_ms(cal_s['latency_ms']['mean'])}` / max `{fmt_ms(cal_s['latency_ms']['max'])}` |"
+        )
+    if compiled["unit_economics"] is not None:
+        ue_s = compiled["unit_economics"]
+        lines.append(
+            f"| Bandwidth & pilot unit economics (`unit_economics.json`) | "
+            f"`{fmt_comma(ue_s['normal_1fps_check_bandwidth_kb'], 2)} KB -> {fmt_comma(ue_s['slow_network_adaptive_0_5fps_check_bandwidth_kb'], 2)} KB` "
+            f"(`{fmt_num(ue_s['video_bandwidth_saved_in_adaptive_mode_pct'], 1)}%` adaptive video reduction), "
+            f"`EUR {fmt_num(ue_s['per_check_gemini_cost_eur_standard'], 5)}` / check, "
+            f"3-yr TCO `EUR {fmt_comma(ue_s['tco_3yr_holdup_rayban_meta_gen2_eur'], 2)}` vs `EUR {fmt_comma(ue_s['tco_3yr_orcam_myeye_midpoint_eur'], 2)}` |"
+        )
     lines.append("")
 
     lines.append(f"{H3} Artifact Status Matrix")
@@ -1001,7 +1352,7 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         lines.append("")
         lines.append(
             f"Evaluates `{ce['model']}` loaded with the production `server/src/prompts/live.md` system instruction, "
-            f"user medication/allergy profile appendix (`server/src/live.ts`), and the 3 Live function declarations "
+            f"user medication and allergy profile appendix (`server/src/live.ts`), and the 3 Live function declarations "
             f"(`verify_label`, `show_cue`, `log_dose`) across `{ce['total_scenarios']}` visual + spoken scenarios, "
             f"scored by a schema-constrained `{ce['judge_model']}` accessibility and clinical-safety judge."
         )
@@ -1085,30 +1436,69 @@ def render_markdown(compiled: dict[str, Any]) -> str:
     if "calibration_curve" in artifacts:
         section_num += 1
         cal = artifacts["calibration_curve"]
-        tiers = cal["tier_mean_confidence"]
+        tiers = cal["mean_strength_confidence_by_tier"]
+        cal_lat = cal["latency_ms"]
+        think_note = f" (`thinking_level = {cal['thinking_level']}`)" if cal["thinking_level"] else ""
+        split_note = (
+            f" (`{cal['readable_items']}` readable, `{cal['unreadable_items']}` unreadable)"
+            if cal["readable_items"] is not None and cal["unreadable_items"] is not None
+            else ""
+        )
         lines.append(f"{H3} 4.{section_num} Strength Confidence Calibration & Threshold Sweep (`eval/calibration_curve.json`)")
         lines.append("")
         lines.append(
-            f"Evaluates `{cal['model']}` across `{cal['n_items']}` progressive optical degradation frames "
-            f"(Expected Calibration Error `ECE = {fmt_num(cal['ece'], 4)}`)."
+            f"Evaluates `{cal['model']}`{think_note} across `{cal['n_items']}` progressive optical degradation frames"
+            f"{split_note}, measuring Expected Calibration Error `ECE = {fmt_num(cal['ece'], 4)}`, "
+            f"Brier score `{fmt_num(cal['brier_score'], 4)}`, and extraction latency "
+            f"`p50 = {fmt_ms(cal_lat['p50'])}` (`mean = {fmt_ms(cal_lat['mean'])}`, `max = {fmt_ms(cal_lat['max'])}`)."
+        )
+        lines.append("")
+        lines.append("| Calibration Metric | Measured Value |")
+        lines.append("|---|---|")
+        model_display = f"`{cal['model']}` (`{cal['thinking_level']}`)" if cal["thinking_level"] else f"`{cal['model']}`"
+        items_display = (
+            f"`{cal['n_items']}` (`{cal['readable_items']}` readable / `{cal['unreadable_items']}` unreadable)"
+            if cal["readable_items"] is not None and cal["unreadable_items"] is not None
+            else f"`{cal['n_items']}`"
+        )
+        lines.append(f"| Model (thinking level) | {model_display} |")
+        lines.append(f"| Evaluated frames (`total_items`) | {items_display} |")
+        lines.append(f"| Expected Calibration Error (`ece`) | `{fmt_num(cal['ece'], 4)}` |")
+        lines.append(f"| Brier score (`brier_score`) | `{fmt_num(cal['brier_score'], 4)}` |")
+        lines.append(f"| Confident-wrong dose count at `STRENGTH_MIN_CONF = 0.80` | `{fmt_num(cal['confident_wrong_dose_at_080'], 0)}` |")
+        lines.append(
+            f"| Extraction latency (`p50` / `mean` / `max`) | "
+            f"`{fmt_ms(cal_lat['p50'])}` / `{fmt_ms(cal_lat['mean'])}` / `{fmt_ms(cal_lat['max'])}` |"
         )
         lines.append("")
         lines.append("| Degradation Tier | Ground-Truth Strength Legibility | Mean Reported `strength.confidence` |")
         lines.append("|---|---|---|")
-        lines.append(f"| Tier 0 (`clean`) | Readable (`True`) | `{fmt_num(tiers['tier_0_clean'], 3)}` |")
-        lines.append(f"| Tier 1 (`mild_blur`) | Readable (`True`) | `{fmt_num(tiers['tier_1_mild'], 3)}` |")
-        lines.append(f"| Tier 2 (`heavy_blur_glare`) | Unreadable (`False`) | `{fmt_num(tiers['tier_2_heavy'], 3)}` |")
-        lines.append(f"| Tier 3 (`severe_occlusion`) | Unreadable (`False`) | `{fmt_num(tiers['tier_3_occluded'], 3)}` |")
+        lines.append(f"| Tier 0 (`tier_0_clean` / `clean`) | Readable (`True`) | `{fmt_num(tiers['tier_0_clean'], 4)}` |")
+        lines.append(f"| Tier 1 (`tier_1_mild` / `mild_blur`) | Readable (`True`) | `{fmt_num(tiers['tier_1_mild'], 4)}` |")
+        lines.append(f"| Tier 2 (`tier_2_heavy` / `heavy_blur_glare`) | Unreadable (`False`) | `{fmt_num(tiers['tier_2_heavy'], 4)}` |")
+        lines.append(f"| Tier 3 (`tier_3_occluded` / `severe_occlusion`) | Unreadable (`False`) | `{fmt_num(tiers['tier_3_occluded'], 4)}` |")
         lines.append("")
         if cal["threshold_curve"]:
-            lines.append("| Confidence Gate Threshold | Clean Readable Recall | Unreadable Abstention Rate | Confident-Wrong Dose Count |")
-            lines.append("|---|---|---|---|")
-            for row in cal["threshold_curve"]:
-                marker = " **(production gate)**" if abs(row["threshold"] - STRENGTH_MIN_CONF) < 1e-6 else ""
-                lines.append(
-                    f"| `{row['threshold']:.2f}`{marker} | `{fmt_pct(row['clean_recall'])}` | "
-                    f"`{fmt_pct(row['unreadable_abstention_rate'])}` | `{fmt_num(row['confident_wrong_dose_count'], 0)}` |"
-                )
+            has_cov = all(r.get("coverage") is not None and r.get("selective_risk") is not None for r in cal["threshold_curve"])
+            if has_cov:
+                lines.append("| Confidence Gate Threshold | Clean Readable Recall | Unreadable Abstention Rate | Selective Coverage | Selective Risk | Confident-Wrong Dose Count |")
+                lines.append("|---|---|---|---|---|---|")
+                for row in cal["threshold_curve"]:
+                    marker = " **(production gate)**" if abs(row["threshold"] - STRENGTH_MIN_CONF) < 1e-6 else ""
+                    lines.append(
+                        f"| `{row['threshold']:.2f}`{marker} | `{fmt_pct(row['clean_recall'])}` | "
+                        f"`{fmt_pct(row['unreadable_abstention_rate'])}` | `{fmt_pct(row['coverage'])}` | "
+                        f"`{fmt_pct(row['selective_risk'])}` | `{fmt_num(row['confident_wrong_dose_count'], 0)}` |"
+                    )
+            else:
+                lines.append("| Confidence Gate Threshold | Clean Readable Recall | Unreadable Abstention Rate | Confident-Wrong Dose Count |")
+                lines.append("|---|---|---|---|")
+                for row in cal["threshold_curve"]:
+                    marker = " **(production gate)**" if abs(row["threshold"] - STRENGTH_MIN_CONF) < 1e-6 else ""
+                    lines.append(
+                        f"| `{row['threshold']:.2f}`{marker} | `{fmt_pct(row['clean_recall'])}` | "
+                        f"`{fmt_pct(row['unreadable_abstention_rate'])}` | `{fmt_num(row['confident_wrong_dose_count'], 0)}` |"
+                    )
             lines.append("")
 
     if "model_comparison" in artifacts:
@@ -1141,11 +1531,122 @@ def render_markdown(compiled: dict[str, Any]) -> str:
         lines.append("| Live Model | Reachable (`ok`) | WebSocket Connect (`connectMs`) | First Audio (`firstAudioMs`) | Stream Kinds | Error |")
         lines.append("|---|---|---|---|---|---|")
         for m in lp["models"]:
-            kinds_str = ", ".join(m["kinds"]) if m["kinds"] else "n/a"
+            kinds_str = ", ".join(m["kinds"]) if m["kinds"] else "none"
             lines.append(
                 f"| `{md_cell(m['model'])}` | `{m['ok']}` | `{fmt_ms(m['connect_ms'])}` | "
                 f"`{fmt_ms(m['first_audio_ms'])}` | {md_cell(kinds_str)} | {md_cell(m['error'] or 'none')} |"
             )
+        lines.append("")
+
+    if "unit_economics" in artifacts:
+        section_num += 1
+        ue = artifacts["unit_economics"]
+        bw_norm = ue["bandwidth_modes"]["normal_1fps_768px"]
+        bw_adap = ue["bandwidth_modes"]["adaptive_0_5fps_512px"]
+        bw_snap = ue["bandwidth_modes"]["snapshot_http_fallback"]
+        bw_off = ue["bandwidth_modes"]["offline_barcode_fallback"]
+        utok = ue["usage_and_tokens"]
+        pt_std = ue["pricing_tiers"]["standard_cached"]
+        pt_eco = ue["pricing_tiers"]["economy_2_0_live"]
+        pt_ceil = ue["pricing_tiers"]["uncached_native_audio_ceiling"]
+        tco = ue["three_year_tco"]
+        hu_tco = tco["holdup_rayban_meta_gen2"]
+        orc_tco = tco["orcam_myeye_class"]
+        aira_tco = tco["aira_paid_daily_class"]
+        pilot_100 = tco["rehabilitation_pilot_100_users_3yr"]
+
+        lines.append(f"{H3} 4.{section_num} Bandwidth & Pilot Unit Economics (`eval/unit_economics.json`)")
+        lines.append("")
+        lines.append(
+            f"Measures exact JPEG frame byte sizes across all `{ue['measured_fixture_count']}` production demo fixtures "
+            f"(`{fmt_comma(ue['measured_fixture_mean_bytes'], 2)} B` / `{fmt_num(ue['measured_fixture_mean_kb'], 2)} KB` at normal "
+            f"`{bw_norm['max_dim_px']}x{bw_norm['max_dim_px']}` vs `{fmt_comma(ue['measured_adaptive_512px_q50_mean_bytes'], 2)} B` / "
+            f"`{fmt_num(ue['measured_adaptive_512px_q50_mean_kb'], 2)} KB` at RTT-adaptive `{bw_adap['max_dim_px']}x{bw_adap['max_dim_px']}` "
+            f"`q={fmt_num(bw_adap['jpeg_quality'], 2)}`), per-check (`{fmt_num(ue['check_duration_s'], 1)} s`) media bandwidth "
+            f"(with `{fmt_num(bw_norm['client_extra_verify_upload_kb'], 1)} KB` extra client upload on `verify_label` via server-RAM `Hub.ring`), "
+            f"published Gemini token pricing (`{utok['checks_per_day']}` checks/day = `{fmt_comma(utok['checks_per_month'], 0)}` checks/month = "
+            f"`{fmt_comma(utok['checks_per_year'], 0)}` checks/year), and `{tco['horizon_years']}`-year assistive TCO (`{fmt_comma(tco['total_checks'], 0)}` checks)."
+        )
+        lines.append("")
+        lines.append("| Capture / Transport Mode | Resolution & Rate | Mean Frame Size | Video (`12.0 s`) | Total Media / Check | WebSocket / HTTP Wire | Monthly (`120` checks) |")
+        lines.append("|---|---|---|---|---|---|---|")
+        lines.append(
+            f"| Normal Live (`normal_1fps_768px`) | `{bw_norm['max_dim_px']} px @ {fmt_num(bw_norm['fps'], 1)} fps` (`{bw_norm['frames_sent_in_12s']}` frames) | "
+            f"`{fmt_comma(ue['measured_fixture_mean_bytes'], 2)} B` (`{fmt_num(ue['measured_fixture_mean_kb'], 2)} KB`) | "
+            f"`{fmt_comma(bw_norm['jpeg_frames_kb'], 2)} KB` | "
+            f"`{fmt_comma(ue['normal_1fps_check_bandwidth_kb'], 2)} KB` (`{fmt_num(bw_norm['avg_bitrate_kbps'], 1)} kbps`) | "
+            f"`{fmt_comma(bw_norm['ws_wire_typical_kb'], 2)} KB` | `{fmt_num(bw_norm['monthly_120_checks_mb'], 2)} MB` |"
+        )
+        lines.append(
+            f"| Slow-Network Adaptive (`RTT > {bw_adap['rtt_trigger_threshold_ms']} ms`) | `{bw_adap['max_dim_px']} px @ {fmt_num(bw_adap['fps'], 1)} fps` (`{bw_adap['frames_sent_in_12s']}` frames) | "
+            f"`{fmt_comma(ue['measured_adaptive_512px_q50_mean_bytes'], 2)} B` (`{fmt_num(ue['measured_adaptive_512px_q50_mean_kb'], 2)} KB`) | "
+            f"`{fmt_comma(bw_adap['jpeg_frames_kb'], 2)} KB` (**`-{fmt_num(ue['video_bandwidth_saved_in_adaptive_mode_pct'], 1)}%`**) | "
+            f"`{fmt_comma(ue['slow_network_adaptive_0_5fps_check_bandwidth_kb'], 2)} KB` (**`-{fmt_num(ue['total_bandwidth_saved_in_adaptive_mode_pct'], 1)}%`**, `{fmt_num(bw_adap['avg_bitrate_kbps'], 1)} kbps`) | "
+            f"`{fmt_comma(bw_adap['ws_wire_typical_kb'], 2)} KB` | `{fmt_num(bw_adap['monthly_120_checks_mb'], 2)} MB` |"
+        )
+        lines.append(
+            f"| Degraded HTTP Snapshot (`POST /api/verify`) | `2` adaptive `{bw_adap['max_dim_px']} px` frames | "
+            f"`{fmt_comma(ue['measured_adaptive_512px_q50_mean_bytes'], 2)} B` (`{fmt_num(ue['measured_adaptive_512px_q50_mean_kb'], 2)} KB`) | "
+            f"`{fmt_num(bw_snap['raw_kb'], 2)} KB` | `{fmt_num(bw_snap['raw_kb'], 2)} KB` (local TTS) | "
+            f"`{fmt_num(bw_snap['json_wire_kb'], 2)} KB` | `{fmt_num(bw_snap['monthly_120_checks_mb'], 2)} MB` |"
+        )
+        lines.append(
+            f"| Complete Offline (`BarcodeDetector`) | Local EAN/UPC/QR lookup | `0 B` | `0.00 KB` | "
+            f"`{fmt_num(bw_off['raw_kb'], 2)} KB` (local TTS) | `0.00 KB` | `{fmt_num(bw_off['monthly_120_checks_mb'], 2)} MB` |"
+        )
+        lines.append("")
+        lines.append(
+            f"| Gemini Cloud Pricing Tier (`{fmt_comma(utok['total_tokens_normal_1fps'], 0)}` normal / `{fmt_comma(utok['total_tokens_adaptive_0_5fps'], 0)}` adaptive tokens/check) | "
+            "Per-Check (`1.0 fps` Normal) | Per-Check (`0.5 fps` Adaptive) | Monthly (`120` checks) | Annual (`1,440` checks) | 3-Year Cloud (`4,320` checks) |"
+        )
+        lines.append("|---|---|---|---|---|---|")
+        lines.append(
+            f"| Standard Gemini 2.5 Flash Paid (`75%` implicit prompt cache) | "
+            f"`EUR {fmt_num(pt_std['per_check_eur_normal'], 5)}` (`${fmt_num(pt_std['per_check_usd_normal'], 5)}`) | "
+            f"`EUR {fmt_num(pt_std['per_check_eur_adaptive'], 5)}` | `EUR {fmt_num(pt_std['monthly_120_eur'], 2)}` | "
+            f"`EUR {fmt_num(pt_std['annual_1440_eur'], 2)}` | `EUR {fmt_num(pt_std['three_year_4320_eur'], 2)}` |"
+        )
+        lines.append(
+            f"| Economy Gemini 2.0 Flash Live Paid | "
+            f"`EUR {fmt_num(pt_eco['per_check_eur_normal'], 5)}` (`${fmt_num(pt_eco['per_check_usd_normal'], 5)}`) | "
+            f"`EUR {fmt_num(pt_eco['per_check_eur_adaptive'], 5)}` | `EUR {fmt_num(pt_eco['monthly_120_eur'], 2)}` | "
+            f"`EUR {fmt_num(pt_eco['annual_1440_eur'], 2)}` | `EUR {fmt_num(pt_eco['three_year_4320_eur'], 2)}` |"
+        )
+        lines.append(
+            f"| Conservative Uncached Native-Audio Ceiling | "
+            f"`EUR {fmt_num(pt_ceil['per_check_eur_normal'], 5)}` (`${fmt_num(pt_ceil['per_check_usd_normal'], 5)}`) | "
+            f"`EUR {fmt_num(pt_ceil['per_check_eur_adaptive'], 5)}` | `EUR {fmt_num(pt_ceil['monthly_120_eur'], 2)}` | "
+            f"`EUR {fmt_num(pt_ceil['annual_1440_eur'], 2)}` | `EUR {fmt_num(pt_ceil['three_year_4320_eur'], 2)}` |"
+        )
+        lines.append("")
+        lines.append("| 3-Year Assistive TCO Option (`4,320` checks) | Upfront Hardware | Annual Cloud / Subscription | 3-Year Total TCO | Effective Monthly TCO | All-In Cost / Check | HoldUp Relative Savings |")
+        lines.append("|---|---|---|---|---|---|---|")
+        lines.append(
+            f"| **HoldUp + Consumer Ray-Ban Meta Gen 2** (standard cached) | `EUR {fmt_comma(hu_tco['hardware_upfront_eur'], 2)}` | "
+            f"`EUR {fmt_num(hu_tco['annual_cloud_standard_eur'], 2)} / yr` (pilot band `{ue['annual_1440_checks_cloud_eur_pilot_band']}`) | "
+            f"**`EUR {fmt_comma(hu_tco['three_year_tco_standard_eur'], 2)}`** | `EUR {fmt_num(hu_tco['effective_monthly_tco_standard_eur'], 2)} / mo` | "
+            f"`EUR {fmt_num(hu_tco['all_in_cost_per_check_standard_eur'], 4)}` | "
+            f"Baseline (`{pilot_100['cohort_size_users']}`-user 3-yr pilot: `EUR {fmt_comma(pilot_100['holdup_total_eur'], 2)}`, `{fmt_comma(pilot_100['users_served_per_100_orcam_budget'], 0)}` users per 100-OrCam budget) |"
+        )
+        lines.append(
+            f"| **Dedicated Assistive Camera (OrCam MyEye class midpoint)** | `EUR {fmt_comma(orc_tco['hardware_upfront_eur_midpoint'], 2)}` | "
+            f"`EUR {fmt_num(orc_tco['annual_subscription_eur'], 2)} / yr` | `EUR {fmt_comma(orc_tco['three_year_tco_eur_midpoint'], 2)}` | "
+            f"`EUR {fmt_num(orc_tco['effective_monthly_tco_midpoint_eur'], 2)} / mo` | `EUR {fmt_num(orc_tco['all_in_cost_per_check_midpoint_eur'], 4)}` | "
+            f"**`{fmt_num(orc_tco['holdup_savings_pct'], 1)}%` lower (`{fmt_num(orc_tco['holdup_cost_reduction_multiple'], 1)}x` cost reduction, saves `EUR {fmt_comma(orc_tco['holdup_savings_eur'], 2)}` / user)** |"
+        )
+        aira_ann = round(aira_tco["daily_plan_monthly_eur"] * 12.0, 2) if aira_tco["daily_plan_monthly_eur"] is not None else None
+        aira_per_chk = (
+            round(aira_tco["three_year_tco_phone_only_eur"] / tco["total_checks"], 4)
+            if aira_tco["three_year_tco_phone_only_eur"] is not None and tco["total_checks"]
+            else None
+        )
+        lines.append(
+            f"| **Paid Visual Interpreter (Aira daily meds plan, phone / with glasses)** | `EUR 0.00` / `EUR {fmt_comma(hu_tco['hardware_upfront_eur'], 2)}` | "
+            f"`EUR {fmt_comma(aira_ann, 2)} / yr` (`EUR {fmt_num(aira_tco['daily_plan_monthly_eur'], 2)} / mo`) | "
+            f"`EUR {fmt_comma(aira_tco['three_year_tco_phone_only_eur'], 2)}` / `EUR {fmt_comma(aira_tco['three_year_tco_with_glasses_eur'], 2)}` | "
+            f"`EUR {fmt_num(aira_tco['daily_plan_monthly_eur'], 2)} / mo` | `EUR {fmt_num(aira_per_chk, 4)}` | "
+            f"**`{fmt_num(aira_tco['holdup_savings_vs_daily_plan_pct'], 1)}%` lower** + zero stranger prescription exposure |"
+        )
         lines.append("")
 
     if section_num == 0:
