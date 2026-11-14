@@ -1,0 +1,674 @@
+{
+ "suite": "dat_optics",
+ "generated_at": "2026-11-14T18:23:56Z",
+ "eval_now_iso": "2026-11-14T12:00:00+02:00",
+ "model": "gemini-3.8-flash",
+ "thinking_level": "low",
+ "prompt_source": "shared/verify_prompt.md+shared/label_schema.json",
+ "prompt_sha256_12": "814770315c42",
+ "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+ "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+ "safety_module": "server/src/safety.ts",
+ "n": 12,
+ "errors": 0,
+ "timeouts": 0,
+ "pass_count": 12,
+ "pass_rate": 1.0,
+ "pass_ci95_wilson": [
+  0.7575,
+  1.0
+ ],
+ "confident_wrong_dose_count": 0,
+ "confident_wrong_dose_rate": 0.0,
+ "confident_wrong_dose_ci95_wilson": [
+  0.0,
+  0.2425
+ ],
+ "rule_of_three_95_upper": 0.25,
+ "profile": {
+  "meds": [
+   {
+    "id": "med_amlo",
+    "name": "Norvasc",
+    "ingredient": "amlodipine",
+    "strength": "5 mg",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "med_met",
+    "name": "Glucophage",
+    "ingredient": "metformin",
+    "strength": "500 mg",
+    "schedule": [
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id": "med_levo",
+    "name": "Thyroxin",
+    "ingredient": "levothyroxine",
+    "strength": "50 mcg",
+    "schedule": [
+     "morning"
+    ]
+   }
+  ],
+  "allergies": [
+   "peanut",
+   "hazelnut"
+  ],
+  "avoid": [
+   "NSAIDs"
+  ],
+  "doseLog": [],
+  "lang": "en"
+ },
+ "summary": {
+  "n_cases": 12,
+  "errors": 0,
+  "timeouts": 0,
+  "verdict_matches": 12,
+  "verdict_accuracy": 1.0,
+  "verdict_accuracy_ci95": [
+   0.7575,
+   1.0
+  ],
+  "confident_wrong_count": 0,
+  "confident_wrong_dose_count": 0,
+  "confident_wrong_rate": 0.0,
+  "confident_wrong_ci95": [
+   0.0,
+   0.2425
+  ],
+  "false_match_count": 0,
+  "unsafe_reassurance_count": 0,
+  "abstain_or_unsure_count": 3,
+  "latency_p50_ms": 2807.6,
+  "latency_p95_ms": 4477.0
+ },
+ "cases": [
+  {
+   "id": "dat_01_q80_match",
+   "category": "jpeg_q80_baseline",
+   "description": "720x1280 DAT Q80 YUV420 close hold of Norvasc 5 mg.",
+   "question": "Is this my evening pill?",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2668.9,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "NORVASC",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "5 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet once daily",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-08",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "matches med_amlo",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id": "dat_02_q80_gray_match",
+   "category": "yuv_gray_fallback",
+   "description": "720x1280 YuvJpeg.Layout.GRAY luma-only Q80 Glucophage 500 mg.",
+   "question": "Check this tablet box.",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3872.4,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "GLUCOPHAGE",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "metformin",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": "500 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet twice daily",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "matches med_met",
+    "taken today: 0/2"
+   ]
+  },
+  {
+   "id": "dat_03_q55_dose_warn",
+   "category": "jpeg_q55_lookalike_dose",
+   "description": "720x1280 Q55 YUV420 Norvasc 10 mg vs saved 5 mg dose.",
+   "question": "Is this my 5 mg pill?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2841.6,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "NORVASC",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "10 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet once daily",
+     "confidence": 0.99
+    },
+    "expiry": {
+     "value": "2027-09",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "strength 10 mg differs from your 5 mg"
+   ]
+  },
+  {
+   "id": "dat_04_q40_nsaid_warn",
+   "category": "jpeg_q40_avoid_class",
+   "description": "720x1280 Q40 YUV420 Finnish Burana 400 mg hitting NSAID avoid.",
+   "question": "Can I take this for pain?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2695.7,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "BURANA",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "ibuprofen",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "400 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": "2027-05",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "ibuprofen is an NSAID, on your avoid list",
+    "not on your medication list"
+   ]
+  },
+  {
+   "id": "dat_05_q10_blocks_unsure",
+   "category": "jpeg_q10_severe_quantization",
+   "description": "720x1280 defocus plus Q10 macroblocks destroying Thyroxin dose.",
+   "question": "Is this my morning thyroid pill?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2499.6,
+   "read": {
+    "kind": "unreadable",
+    "product": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "ingredient": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.0,
+    "guidance": "Move the item much closer and hold it steady."
+   },
+   "reasons": [
+    "label not readable"
+   ]
+  },
+  {
+   "id": "dat_06_far_fov_unsure",
+   "category": "wide_fov_far_distance",
+   "description": "Wide-FOV 720x1280 carton at 95 cm (64x42 px), sub-Nyquist dose.",
+   "question": "Is that my pill on the table?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4177.7,
+   "read": {
+    "kind": "unreadable",
+    "product": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "ingredient": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.0,
+    "guidance": "Move the item much closer to read it."
+   },
+   "reasons": [
+    "label not readable"
+   ]
+  },
+  {
+   "id": "dat_07_parallax_clip_unsure",
+   "category": "temple_parallax_edge_clip",
+   "description": "Left-temple parallax clips strength past right 720 px border.",
+   "question": "Is this my Amlodipine 5 mg?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4842.8,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "AMLODIPINE",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": "1 tablet daily",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.6,
+    "guidance": "Show the rest of the label to find the strength."
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "dat_08_arms_len_match",
+   "category": "wide_fov_arms_length_q80",
+   "description": "Wide-FOV 720x1280 arm's-length hold with barrel distortion Q80.",
+   "question": "Is this my morning Thyroxin?",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2637.3,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "THYROXIN",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "levothyroxine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "50 mcg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet each morning",
+     "confidence": 0.99
+    },
+    "expiry": {
+     "value": "2028-02",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "matches med_levo",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id": "dat_09_yuv420_allergen_warn",
+   "category": "yuv420_food_allergen",
+   "description": "720x1280 Q65 YUV420 granola panel with hazelnut and peanut.",
+   "question": "Is this safe with nut allergies?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2706.7,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "NORDIC GRANOLA CRUNCH",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "Wholegrain breakfast cereal",
+     "confidence": 0.95
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": "2027-04-15",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": [
+      "hazelnut",
+      "gluten",
+      "may contain: peanut"
+     ],
+     "confidence": 0.98
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "may contain peanut (allergy: peanut)",
+    "contains hazelnut (allergy: hazelnut)"
+   ]
+  },
+  {
+   "id": "dat_10_q75_safe_food_info",
+   "category": "jpeg_q75_safe_food",
+   "description": "720x1280 Q75 YUV420 oat drink without user's nut allergens.",
+   "question": "Any of my allergens here?",
+   "expected_level": "info",
+   "predicted_level": "info",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2773.5,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "OATLY OAT DRINK BARISTA",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "oat drink",
+     "confidence": 0.95
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": "2027-06-20",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": [
+      "oats",
+      "gluten"
+     ],
+     "confidence": 0.99
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "no listed allergen matches your profile"
+   ]
+  },
+  {
+   "id": "dat_11_q70_expired_warn",
+   "category": "jpeg_q70_expired_med",
+   "description": "720x1280 Q70 YUV420 Glucophage 500 mg expired EXP 2025-04.",
+   "question": "Is this Metformin box in date?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4107.0,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "GLUCOPHAGE",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "metformin",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "500 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet twice daily",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2025-04",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "expired 2025-04"
+   ]
+  },
+  {
+   "id": "dat_12_two_frame_match",
+   "category": "dat_1fps_two_frame_fusion",
+   "description": "Two-frame 1 fps DAT burst (blurred raise plus sharp Q80 frame).",
+   "question": "Held steady, is this my evening pill?",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3368.4,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "NORVASC",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "5 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet once daily",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2028-01",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "matches med_amlo",
+    "taken today: 0/1"
+   ]
+  }
+ ]
+}

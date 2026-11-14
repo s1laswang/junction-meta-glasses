@@ -1,0 +1,653 @@
+{
+ "suite": "liquid_ophthalmic",
+ "generated_at": "2026-11-14T18:56:42.934681+00:00",
+ "eval_now_iso": "2026-11-14T12:00:00+02:00",
+ "model": "gemini-3.8-flash",
+ "thinking_level": "low",
+ "prompt_source": "shared/verify_prompt.md+shared/label_schema.json",
+ "prompt_sha256_12": "814770315c42",
+ "safety_module": "server/src/safety.ts",
+ "profile": {
+  "meds": [
+   {
+    "id": "latanoprost",
+    "name": "Xalatan",
+    "ingredient": "latanoprost",
+    "strength": "50 mcg/ml",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "timolol",
+    "name": "Oftan Timolol",
+    "ingredient": "timolol",
+    "strength": "5 mg/ml",
+    "schedule": [
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id": "paracetamol_susp",
+    "name": "Panadol",
+    "ingredient": "paracetamol",
+    "strength": "24 mg/ml",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "insulin_glargine",
+    "name": "Lantus",
+    "ingredient": "insulin glargine",
+    "strength": "100 IU/ml",
+    "schedule": [
+     "evening"
+    ]
+   }
+  ],
+  "allergies": [
+   "penicillin"
+  ],
+  "avoid": [
+   "NSAIDs"
+  ],
+  "doseLog": [],
+  "lang": "en"
+ },
+ "summary": {
+  "n_cases": 12,
+  "verdict_matches": 12,
+  "verdict_accuracy": 1.0,
+  "verdict_accuracy_ci95": [
+   0.7575,
+   1.0
+  ],
+  "confident_wrong_count": 0,
+  "confident_wrong_rate": 0.0,
+  "confident_wrong_ci95": [
+   0.0,
+   0.2425
+  ],
+  "false_match_count": 0,
+  "unsafe_reassurance_count": 0,
+  "abstain_or_unsure_count": 5,
+  "latency_p50_ms": 3381.5,
+  "latency_p95_ms": 4708.7,
+  "readable_liquid_accuracy": 1.0,
+  "degraded_abstention_rate": 1.0
+ },
+ "cases": [
+  {
+   "id": "lo_01",
+   "category": "readable_liquid_ophthalmic",
+   "description": "Ophthalmic squeeze-dropper bottle Xalatan (latanoprost) 50 mcg/ml EXP 2027-10 evening match",
+   "question": "Are these my evening glaucoma eye drops?",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3218.3,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Xalatan",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "latanoprost",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "50 mcg/ml",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 drop in the affected eye in the evening",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "matches latanoprost",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id": "lo_02",
+   "category": "readable_liquid_ophthalmic",
+   "description": "Amber oral suspension bottle Panadol (paracetamol) 24 mg/ml EXP 2027-11 match",
+   "question": "Is this my Panadol oral suspension?",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3804.6,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Panadol",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "paracetamol",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": "24 mg/ml",
+     "confidence": 0.98
+    },
+    "dosing": {
+     "value": "Shake well before oral dosing",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "matches paracetamol_susp",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id": "lo_03",
+   "category": "readable_liquid_ophthalmic",
+   "description": "Prefilled disposable injection pen Lantus (insulin glargine) 100 IU/ml EXP 2027-09 match",
+   "question": "Is this my evening Lantus insulin pen?",
+   "expected_level": "match",
+   "predicted_level": "match",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4602.2,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Lantus",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "insulin glargine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "100 IU/ml",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "Subcutaneous injection once daily in the evening",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-09",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "matches insulin_glargine",
+    "taken today: 0/1"
+   ]
+  },
+  {
+   "id": "lo_04",
+   "category": "readable_liquid_ophthalmic",
+   "description": "Wrong-concentration Oftan Timolol (timolol) 2.5 mg/ml eye-drop bottle vs 5 mg/ml profile",
+   "question": "Are these my Oftan Timolol eye drops?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3299.3,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Oftan Timolol",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "timolol",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "2.5 mg/ml",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 drop twice daily",
+     "confidence": 0.99
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.98
+   },
+   "reasons": [
+    "strength 2.5 mg/ml differs from your 5 mg/ml"
+   ]
+  },
+  {
+   "id": "lo_05",
+   "category": "readable_liquid_ophthalmic",
+   "description": "High-concentration Toujeo (insulin glargine) 300 IU/ml pen vs 100 IU/ml profile warning",
+   "question": "Is this my evening basal insulin pen?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4084.5,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Toujeo",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "insulin glargine",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": "300 IU/ml",
+     "confidence": 0.98
+    },
+    "dosing": {
+     "value": "Subcutaneous injection once daily",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "strength 300 IU/ml differs from your 100 IU/ml"
+   ]
+  },
+  {
+   "id": "lo_06",
+   "category": "readable_liquid_ophthalmic",
+   "description": "Look-alike otic squeeze-dropper bottle Otipax (phenazone, lidocaine ear drops) mistaken for eye drops",
+   "question": "Can I put these drops in my eyes?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 4838.8,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Otipax",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "phenazone, lidocaine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "40 mg/g + 10 mg/g",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "Auricular use only, do not use in eyes",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-08",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 1
+   },
+   "reasons": [
+    "not on your medication list"
+   ]
+  },
+  {
+   "id": "lo_07",
+   "category": "readable_liquid_ophthalmic",
+   "description": "NSAID ophthalmic dropper bottle Voltaren Ophtha (diclofenac) 1 mg/ml triggering avoid warning",
+   "question": "Can I use these Voltaren Ophtha eye drops?",
+   "expected_level": "warning",
+   "predicted_level": "warning",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3463.7,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Voltaren Ophtha",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "diclofenac",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "1 mg/ml",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 drop 3 to 4 times daily",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-09",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.95
+   },
+   "reasons": [
+    "diclofenac is an NSAID, on your avoid list",
+    "not on your medication list"
+   ]
+  },
+  {
+   "id": "lo_08",
+   "category": "finger_grip_occluded",
+   "description": "Thumb gripping across the micro-printed concentration band on a tiny Xalatan dropper bottle",
+   "question": "Are these my evening glaucoma eye drops?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3059.2,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Xalatan",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "latanoprost",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": "1 drop in the evening",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.85,
+    "guidance": "Move your finger to reveal covered text."
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "lo_09",
+   "category": "saline_crust_glare",
+   "description": "Dried crystalline saline residue and specular highlight obliterating Oftan Timolol mg/ml concentration",
+   "question": "Are these my Oftan Timolol eye drops?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 3521.5,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Oftan Timolol",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "timolol",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": "1 drop twice daily",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.9
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "lo_10",
+   "category": "syrup_drip_occluded",
+   "description": "Opaque crusted pink suspension drip covering the mg/ml concentration badge on an amber Panadol bottle",
+   "question": "Is this my Panadol oral suspension?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2804.7,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Panadol",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "paracetamol",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": "Shake well before oral dosing",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.85
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "lo_11",
+   "category": "torn_pipette_tab",
+   "description": "Single-dose ophthalmic pipette card for Xalatan with the bottom concentration tab torn off",
+   "question": "Are these my evening glaucoma drops?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2918.2,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Xalatan",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "latanoprost",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": null,
+     "confidence": 0
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0.75
+   },
+   "reasons": [
+    "strength not readable"
+   ]
+  },
+  {
+   "id": "lo_12",
+   "category": "uninked_ldpe_ampoule",
+   "description": "Bare translucent blow-fill-seal LDPE plastic ampoule with clear-on-clear uninked embossing and defocus",
+   "question": "What eye-drop pipette is this?",
+   "expected_level": "unsure",
+   "predicted_level": "unsure",
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "false_match": false,
+   "latency_ms": 2696.7,
+   "read": {
+    "kind": "unreadable",
+    "product": {
+     "value": null,
+     "confidence": 0
+    },
+    "ingredient": {
+     "value": null,
+     "confidence": 0
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0
+    },
+    "expiry": {
+     "value": null,
+     "confidence": 0
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0
+    },
+    "readability": 0,
+    "guidance": "Hold still and bring the pipette closer to focus."
+   },
+   "reasons": [
+    "label not readable"
+   ]
+  }
+ ]
+}

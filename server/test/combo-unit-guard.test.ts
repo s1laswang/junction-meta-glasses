@@ -311,3 +311,244 @@ test("combo brands expand in ingredientsOf so opioid, NSAID, and penicillin chec
   const vimovoRead = makeRead({ product: f("Vimovo 500/20 mg"), strength: f("500/20 mg") });
   assert.equal(avoidHits(vimovoRead, ["NSAIDs"]).length, 1);
 });
+
+test("bilingual FI/SV/EU slash-separated single-ingredient packs coalesce while true combinations still reject", () => {
+  const profile = makeProfile([
+    { id: "aml", name: "Norvasc", ingredient: "amlodipine", strength: "5 mg", schedule: ["evening"] },
+    { id: "par", name: "Panadol", ingredient: "paracetamol", strength: "500 mg", schedule: ["morning"] },
+    { id: "met", name: "Metformin", ingredient: "metformin", strength: "500 mg", schedule: ["morning", "evening"] },
+  ]);
+
+  const ml11Occluded = makeRead({
+    product: f("AMLODIPIN / AMLODIPINE", 0.98),
+    ingredient: f("amlodipine", 0.98),
+    strength: f(null, 0.1),
+    readability: 0.6,
+    guidance: "Move your thumb away from the text.",
+  });
+  const vOccluded = checkLabel(ml11Occluded, profile, NOW);
+  assert.equal(vOccluded.level, "unsure");
+  assert.equal(vOccluded.matchedMedId, "aml");
+  assert.ok(vOccluded.reasons.includes("strength not readable"));
+  assert.ok(!vOccluded.reasons.includes("not on your medication list"));
+  assertVerdictBounds(vOccluded.headline, vOccluded.speech, "ml11-occluded");
+
+  const bilingualMatches: Array<{ tag: string; read: LabelRead; expectedId: string }> = [
+    {
+      tag: "AMLODIPIN / AMLODIPINE 5 mg",
+      read: makeRead({ product: f("AMLODIPIN / AMLODIPINE"), ingredient: f("amlodipine"), strength: f("5 mg") }),
+      expectedId: "aml",
+    },
+    {
+      tag: "amlodipiini / amlodipin FI/SV",
+      read: makeRead({ product: f("Amlodipiini / Amlodipin Orion 5 mg"), ingredient: f("amlodipiini / amlodipin"), strength: f("5 mg") }),
+      expectedId: "aml",
+    },
+    {
+      tag: "Active substance / Wirkstoff multilingual header",
+      read: makeRead({
+        product: f("AMLODIPIN / AMLODIPINE 5 mg"),
+        ingredient: f("Active substance: amlodipine / Wirkstoff: Amlodipin"),
+        strength: f("5 mg"),
+      }),
+      expectedId: "aml",
+    },
+    {
+      tag: "Vaikuttava aine / Aktiv substans FI/SV header",
+      read: makeRead({
+        product: f("Metformiini / Metformin 500 mg"),
+        ingredient: f("Vaikuttava aine: metformiini / Aktiv substans: metformin"),
+        strength: f("500 mg"),
+      }),
+      expectedId: "met",
+    },
+    {
+      tag: "parasetamoli / paracetamol FI/SV",
+      read: makeRead({ product: f("Parasetamoli / Paracetamol 500 mg"), ingredient: f("parasetamoli / paracetamol"), strength: f("500 mg") }),
+      expectedId: "par",
+    },
+  ];
+
+  for (const bm of bilingualMatches) {
+    const v = checkLabel(bm.read, profile, NOW);
+    assert.equal(v.level, "match", bm.tag);
+    assert.equal(v.matchedMedId, bm.expectedId, bm.tag);
+    assertVerdictBounds(v.headline, v.speech, bm.tag);
+  }
+
+  for (const comboIng of ["amlodipine / valsartan", "paracetamol / codeine", "amoxicillin / clavulanic acid"]) {
+    const cr = makeRead({ product: f(comboIng), ingredient: f(comboIng), strength: f("5 mg") });
+    assert.equal(matchMed(cr, profile.meds), undefined, comboIng);
+    const cv = checkLabel(cr, profile, NOW);
+    assert.equal(cv.level, "warning", comboIng);
+    assert.ok(cv.reasons.includes("not on your medication list"), comboIng);
+  }
+});
+
+test("bare-denominator liquid concentrations parse 1 ml and compare concentration ratios", () => {
+  for (const v5 of [
+    "5 mg/ml",
+    "5 mg / ml",
+    "5mg/ml",
+    "5 mg per ml",
+    "5 mg per milliliter",
+    "5 mg per millilitre",
+    "5 mg/millilitra",
+    "5 mg/millilitraa",
+  ]) {
+    assert.deepEqual(parseStrength(v5), [{ amount: 5, unit: "mg" }, { amount: 1, unit: "ml" }], v5);
+    assert.equal(sameStrength(v5, "5 mg/1 ml"), true, v5);
+    assert.equal(sameStrength(v5, "5 mg/5 ml"), false, v5);
+  }
+
+  for (const ins100 of ["100 IU/ml", "100 IU / ml", "100 KY/ml", "100 IE/ml", "100 iu per ml"]) {
+    assert.deepEqual(parseStrength(ins100), [{ amount: 100, unit: "iu" }, { amount: 1, unit: "ml" }], ins100);
+    assert.equal(sameStrength(ins100, "100 IU/1 ml"), true, ins100);
+    assert.equal(sameStrength(ins100, "200 IU/ml"), false, ins100);
+    assert.equal(sameStrength(ins100, "100 IU/5 ml"), false, ins100);
+  }
+
+  assert.deepEqual(parseStrength("500 mg"), [{ amount: 500, unit: "mg" }]);
+  assert.equal(sameStrength("500 mg/5 ml", "500 mg"), true);
+  assert.equal(sameStrength("500 mg", "500 mg/5 ml"), true);
+
+  assert.equal(sameStrength("120 mg/5 ml", "24 mg/ml"), true);
+  assert.equal(sameStrength("24 mg/ml", "120 mg / 5 ml"), true);
+  assert.equal(sameStrength("250 mcg/5 ml", "50 mikrog/ml"), true);
+  assert.equal(sameStrength("400/80 mg/5 ml", "80/16 mg/ml"), true);
+  assert.equal(sameStrength("400 mg/5 ml + 80 mg/5 ml", "80/16 mg/ml"), true);
+
+  assert.equal(sameStrength("5 mg/ml", "5 mg/5 ml"), false);
+  assert.equal(sameStrength("5 mg/5 ml", "5 mg/ml"), false);
+  assert.equal(sameStrength("100 mg/ml", "100 mg/5 ml"), false);
+  assert.equal(sameStrength("20 mg/ml", "20 mg/5 ml"), false);
+  assert.equal(sameStrength("100 IU/ml", "200 IU/ml"), false);
+  assert.equal(sameStrength("200 KY/ml", "100 IU/ml"), false);
+  assert.equal(sameStrength("80/16 mg/ml", "80/16 mg/5 ml"), false);
+});
+
+test("transdermal patch rate denominators (/h, /hr, /hour, /tunti, /tim, /24 h, /24h) match rates and reject solid tablets", () => {
+  for (const patch25 of [
+    "25 mcg/h",
+    "25 \u03bcg/h",
+    "25 \u00b5g/h",
+    "25 mcg / h",
+    "25 mcg/hr",
+    "25 mcg/hour",
+    "25 mcg per hour",
+    "25 mikrog/tunti",
+    "25 mikrog / tunti",
+    "25 mikrog/tim",
+    "25 mikrogram/timme",
+  ]) {
+    assert.deepEqual(parseStrength(patch25), [{ amount: 0.025, unit: "mg" }, { amount: 1, unit: "h" }], patch25);
+    assert.equal(sameStrength(patch25, "25 mcg/h"), true, patch25);
+    assert.equal(sameStrength(patch25, "25 mikrog/tunti"), true, patch25);
+    assert.equal(sameStrength(patch25, "50 mcg/h"), false, patch25);
+    assert.equal(sameStrength(patch25, "25 mcg"), false, patch25);
+    assert.equal(sameStrength("25 mcg", patch25), false, patch25);
+    assert.equal(sameStrength(patch25, "25 mcg/ml"), false, patch25);
+  }
+
+  for (const patch24h of ["4.6 mg/24 h", "4.6 mg/24h", "4,6 mg/24 h", "4,6 mg/24 tuntia", "4,6 mg/24 tim", "4,6 mg/24 timmar", "4.6 mg per 24 hours"]) {
+    assert.deepEqual(parseStrength(patch24h), [{ amount: 4.6, unit: "mg" }, { amount: 24, unit: "h" }], patch24h);
+    assert.equal(sameStrength(patch24h, "4.6 mg/24 h"), true, patch24h);
+    assert.equal(sameStrength(patch24h, "4.6 mg/24h"), true, patch24h);
+    assert.equal(sameStrength(patch24h, "9.5 mg/24 h"), false, patch24h);
+    assert.equal(sameStrength(patch24h, "4.6 mg/h"), false, patch24h);
+    assert.equal(sameStrength(patch24h, "4.6 mg"), false, patch24h);
+  }
+
+  assert.equal(sameStrength("50 mikrog/24 tuntia", "50 mcg/24h"), true);
+  assert.equal(sameStrength("50 mikrog/24 tuntia", "50 mcg/h"), false);
+  assert.equal(sameStrength("50 mikrog/24 tuntia", "50 mcg"), false);
+});
+
+test("checkLabel flags 5 mg/ml vs 5 mg/5 ml, 200 IU/ml vs 100 IU/ml, and patch-vs-tablet mismatches end to end", () => {
+  const profile = makeProfile([
+    { id: "mor", name: "Oramorph", ingredient: "morphine", strength: "5 mg/5 ml", schedule: ["morning"] },
+    { id: "ins", name: "Humalog", ingredient: "insulin lispro", strength: "100 IU/ml", schedule: ["morning"] },
+    { id: "par", name: "Pamol", ingredient: "paracetamol", strength: "24 mg/ml", schedule: ["evening"] },
+    { id: "fen", name: "Matrifen", ingredient: "fentanyl", strength: "25 mcg/h", schedule: ["morning"] },
+  ]);
+
+  const concOverdose = checkLabel(
+    makeRead({ product: f("Oramorph concentrated oral solution"), ingredient: f("morphine sulfate"), strength: f("5 mg/ml") }),
+    profile,
+    NOW,
+  );
+  assert.equal(concOverdose.level, "warning");
+  assert.equal(concOverdose.matchedMedId, "mor");
+  assert.match(concOverdose.headline, /wrong strength/);
+  assertVerdictBounds(concOverdose.headline, concOverdose.speech, "5mg-per-ml-vs-5mg-per-5ml");
+
+  const reverseProfile = makeProfile([
+    { id: "mor1", name: "Oramorph", ingredient: "morphine", strength: "5 mg/ml", schedule: ["morning"] },
+  ]);
+  const concUnderdose = checkLabel(
+    makeRead({ product: f("Oramorph oral solution"), ingredient: f("morphine"), strength: f("5 mg/5 ml") }),
+    reverseProfile,
+    NOW,
+  );
+  assert.equal(concUnderdose.level, "warning");
+  assert.equal(concUnderdose.matchedMedId, "mor1");
+  assert.match(concUnderdose.headline, /wrong strength/);
+  assertVerdictBounds(concUnderdose.headline, concUnderdose.speech, "5mg-per-5ml-vs-5mg-per-ml");
+
+  const insulinOverdose = checkLabel(
+    makeRead({ product: f("Humalog KwikPen 200 IU/ml"), ingredient: f("insulin lispro"), strength: f("200 IU/ml") }),
+    profile,
+    NOW,
+  );
+  assert.equal(insulinOverdose.level, "warning");
+  assert.equal(insulinOverdose.matchedMedId, "ins");
+  assert.match(insulinOverdose.headline, /wrong strength/);
+  assertVerdictBounds(insulinOverdose.headline, insulinOverdose.speech, "200iu-vs-100iu");
+
+  const insulinKyMatch = checkLabel(
+    makeRead({ product: f("Humalog 100 KY/ml"), ingredient: f("insulin lispro"), strength: f("100 KY/ml") }),
+    profile,
+    NOW,
+  );
+  assert.equal(insulinKyMatch.level, "match");
+  assert.equal(insulinKyMatch.matchedMedId, "ins");
+  assertVerdictBounds(insulinKyMatch.headline, insulinKyMatch.speech, "100ky-vs-100iu");
+
+  const paracetamolRatioMatch = checkLabel(
+    makeRead({ product: f("Panadol 120 mg/5 ml"), ingredient: f("paracetamol"), strength: f("120 mg/5 ml") }),
+    profile,
+    NOW,
+  );
+  assert.equal(paracetamolRatioMatch.level, "match");
+  assert.equal(paracetamolRatioMatch.matchedMedId, "par");
+  assertVerdictBounds(paracetamolRatioMatch.headline, paracetamolRatioMatch.speech, "120mg-5ml-vs-24mg-ml");
+
+  const patchFiMatch = checkLabel(
+    makeRead({ product: f("Matrifen 25 mikrog/tunti"), ingredient: f("fentanyl"), strength: f("25 mikrog/tunti") }),
+    profile,
+    NOW,
+  );
+  assert.equal(patchFiMatch.level, "match");
+  assert.equal(patchFiMatch.matchedMedId, "fen");
+  assertVerdictBounds(patchFiMatch.headline, patchFiMatch.speech, "patch-fi-match");
+
+  const patchWrongRate = checkLabel(
+    makeRead({ product: f("Matrifen 50 mikrog/tunti"), ingredient: f("fentanyl"), strength: f("50 mikrog/tunti") }),
+    profile,
+    NOW,
+  );
+  assert.equal(patchWrongRate.level, "warning");
+  assert.equal(patchWrongRate.matchedMedId, "fen");
+  assert.match(patchWrongRate.headline, /wrong strength/);
+  assertVerdictBounds(patchWrongRate.headline, patchWrongRate.speech, "patch-wrong-rate");
+
+  const patchVsSolid = checkLabel(
+    makeRead({ product: f("Fentanyl 25 mcg"), ingredient: f("fentanyl"), strength: f("25 mcg") }),
+    profile,
+    NOW,
+  );
+  assert.equal(patchVsSolid.level, "warning");
+  assert.equal(patchVsSolid.matchedMedId, "fen");
+  assert.match(patchVsSolid.headline, /wrong strength/);
+  assertVerdictBounds(patchVsSolid.headline, patchVsSolid.speech, "patch-vs-solid");
+});
