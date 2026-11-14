@@ -1,0 +1,65 @@
+{
+ "images": {
+  "train": 1392,
+  "val": 348
+ },
+ "boxes": {
+  "train": {
+   "product": 1256,
+   "strength": 904,
+   "expiry": 1197,
+   "allergens": 281
+  },
+  "val": {
+   "product": 309,
+   "strength": 186,
+   "expiry": 303,
+   "allergens": 98
+  }
+ },
+ "val_src_ids": [
+  "food002",
+  "food003",
+  "food005",
+  "food015",
+  "food017",
+  "food023",
+  "food032",
+  "food038",
+  "food039",
+  "food044",
+  "food047",
+  "food049",
+  "med001",
+  "med009",
+  "med009_back",
+  "med011_back",
+  "med015",
+  "med017_back",
+  "med023",
+  "med027_back",
+  "med030",
+  "med040",
+  "med043",
+  "med050",
+  "med059",
+  "med060",
+  "med072",
+  "med080_back",
+  "med087",
+  "med092",
+  "med094",
+  "med095",
+  "med096",
+  "med100",
+  "med101",
+  "med105",
+  "med115_back",
+  "med116",
+  "med121",
+  "med121_back",
+  "med123_back",
+  "med126"
+ ],
+ "split": "by src_id, 80/20, seed 42"
+}
