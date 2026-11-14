@@ -98,11 +98,21 @@ class Uploader {
       return s
     }
 
-    /** Session is optional: without it the server uses the most recent live session. */
+    /**
+     * Session is optional: without it the server uses the most recent live session.
+     * The server field may carry a query, e.g. "https://abc.trycloudflare.com/?key=XYZ" when the server
+     * runs with HOLDUP_KEY; that query is kept on every request.
+     */
     fun endpoint(server: String, path: String, session: String): String {
-      val base = normalizeServer(server) + path
+      val raw = server.trim()
+      val q = raw.indexOf('?')
+      val host = if (q >= 0) raw.substring(0, q) else raw
+      val params = mutableListOf<String>()
+      if (q >= 0) raw.substring(q + 1).split('&').filter { it.isNotBlank() }.forEach { params.add(it) }
       val s = session.trim()
-      return if (s.isEmpty()) base else base + "?session=" + URLEncoder.encode(s, "UTF-8")
+      if (s.isNotEmpty()) params.add("session=" + URLEncoder.encode(s, "UTF-8"))
+      val base = normalizeServer(host) + path
+      return if (params.isEmpty()) base else base + "?" + params.joinToString("&")
     }
   }
 }
