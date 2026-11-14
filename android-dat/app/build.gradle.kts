@@ -90,5 +90,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.okhttp)
     implementation(libs.androidx.core.ktx)
+    testImplementation(libs.junit)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
