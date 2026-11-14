@@ -1,3 +1,4 @@
+// Redacting logger: only event names, ids, enums, numbers and timings. Never content.
 const DENY = /^(text|data|transcript|image|frame|frames|audio|profile|speech|headline|question|args|prompt|body|key|apikey|api_key|value)$/i;
 
 export type LogMeta = Record<string, string | number | boolean | null | undefined>;
@@ -8,6 +9,8 @@ export function redact(meta: LogMeta = {}): LogMeta {
     if (v === undefined) continue;
     if (DENY.test(k)) { out[k] = "[redacted]"; continue; }
     if (typeof v === "string") {
+      // short tokens only (ids, enums, model names); anything long could be content
+      // `err` carries errSummary() output (already trimmed and key-free)
       out[k] = v.length > (k === "err" ? 160 : 48) ? `[redacted:${v.length}ch]` : v.replace(/AIza[0-9A-Za-z_-]{10,}/g, "[key]");
     } else out[k] = v;
   }
@@ -23,6 +26,7 @@ export function log(event: string, meta?: LogMeta) {
 
 export const shortId = (id: string) => id.slice(0, 8);
 
+/** Error messages can echo request content; keep only a short, key-free summary. */
 export function errSummary(e: unknown): string {
   const s = e instanceof Error ? e.message : String(e);
   return s.replace(/AIza[0-9A-Za-z_-]{10,}/g, "[key]").replace(/\s+/g, " ").slice(0, 160);

@@ -1,3 +1,5 @@
+// One-off: generate a synthetic medicine-box photo for the smoke test (server/fixtures/*.jpg).
+// Usage: tsx scripts/make-fixture.ts <out.png> "<prompt>"
 import fs from "node:fs";
 import { ai } from "../src/gemini.ts";
 
