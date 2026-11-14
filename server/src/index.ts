@@ -10,6 +10,7 @@ import { env, REPO_ROOT } from "./env.ts";
 import { ai, unaryGate } from "./gemini.ts";
 import { addHud, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
 import { ledger, stats } from "./ledger.ts";
+import { requireKey, wsKeyOk } from "./auth.ts";
 import { LiveProxy } from "./live.ts";
 import { errSummary, log, shortId } from "./log.ts";
 import { jpegSharpness, toProfile, verify } from "./verify.ts";
@@ -19,6 +20,8 @@ const MAX_WS_MSG = 4 * 1024 * 1024;
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
+  // optional access key (HOLDUP_KEY); /api/health and static files stay public
+  app.use(["/api", "/ingest"], requireKey);
 
   // ---------- health (Gemini reachability cached 30 s) ----------
   let healthCache: { at: number; ok: boolean } | undefined;
@@ -44,12 +47,26 @@ export function createApp() {
   // ---------- snapshot verify ----------
   app.post("/api/verify", express.json({ limit: "12mb" }), async (req, res) => {
     const frames = Array.isArray(req.body?.frames) ? (req.body.frames as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 100) : [];
-    if (!frames.length) { res.status(400).json({ type: "error", code: "bad_input", message: "frames[] (base64 JPEG) required", recoverable: true }); return; }
-    // without client sharpness, prefer the largest JPEGs (more detail) among the last 3
-    const picked = frames.slice(-3).map((f, i) => ({ f, i, s: f.length })).sort((a, b) => b.s - a.s).slice(0, 2).map((x) => x.f);
+    const hub = typeof req.body?.session === "string" && req.body.session ? getHub(req.body.session) : undefined;
+    let picked: string[];
+    let src: string;
+    if (frames.length) {
+      // without client sharpness, prefer the largest JPEGs (more detail) among the last 3
+      picked = frames.slice(-3).map((f, i) => ({ f, i, s: f.length })).sort((a, b) => b.s - a.s).slice(0, 2).map((x) => x.f);
+      src = "body";
+    } else if (hub) {
+      // snapshot mode with the glasses camera: use the session's ring buffer (2 sharpest recent frames)
+      picked = hub.ring.pick(2).map((f) => f.data);
+      src = "ring";
+      if (!picked.length) { res.status(409).json({ type: "error", code: "no_frames", message: "no recent frames for this session", recoverable: true }); return; }
+    } else {
+      res.status(400).json({ type: "error", code: "bad_input", message: "frames[] (base64 JPEG) or an active session required", recoverable: true });
+      return;
+    }
+    const profile = req.body?.profile ? toProfile(req.body.profile) : hub?.profile ?? toProfile(undefined);
     const t = Date.now();
-    const r = await verify(picked, toProfile(req.body?.profile), typeof req.body?.question === "string" ? req.body.question : undefined);
-    log("api.verify", { level: r.verdict.level, model: r.model ?? "none", ms: Date.now() - t, n_frames: picked.length });
+    const r = await verify(picked, profile, typeof req.body?.question === "string" ? req.body.question : undefined);
+    log("api.verify", { level: r.verdict.level, model: r.model ?? "none", ms: Date.now() - t, n_frames: picked.length, src });
     res.json(r.verdict);
   });
 
@@ -241,12 +258,18 @@ export function startServer(port = env.port): Promise<http.Server> {
   server.on("upgrade", (req, socket, head) => {
     const url = new URL(req.url ?? "/", "http://x");
     const session = url.searchParams.get("session");
+    if ((url.pathname === "/live" || url.pathname === "/hud-ws") && !wsKeyOk(req, url)) {
+      // complete the handshake so the client sees a proper close code (4401) instead of a network error
+      const wss = url.pathname === "/live" ? wssLive : wssHud;
+      wss.handleUpgrade(req, socket, head, (ws) => ws.close(4401, "unauthorized"));
+      return;
+    }
     if (url.pathname === "/live") wssLive.handleUpgrade(req, socket, head, (ws) => onLive(ws, session));
     else if (url.pathname === "/hud-ws") wssHud.handleUpgrade(req, socket, head, (ws) => onHud(ws, session));
     else socket.destroy();
   });
   return new Promise((resolve) => server.listen(port, () => {
-    log("server.listening", { port: (server.address() as any)?.port ?? port, gemini_key: !!env.apiKey, live: env.liveModels[0], verify: env.verifyModels[0] });
+    log("server.listening", { port: (server.address() as any)?.port ?? port, gemini_key: !!env.apiKey, access_key: !!process.env.HOLDUP_KEY, live: env.liveModels[0], verify: env.verifyModels[0] });
     resolve(server);
   }));
 }

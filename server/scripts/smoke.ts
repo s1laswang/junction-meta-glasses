@@ -29,12 +29,14 @@ const ms = () => Date.now() - t0;
 let fail = false;
 
 // HUD first, without session: it must get the verdict of the latest live session
-const hud = new WebSocket(`ws://localhost:${port}/hud-ws`);
+const KQ = process.env.HOLDUP_KEY ? `key=${encodeURIComponent(process.env.HOLDUP_KEY)}` : "";
+const KH: Record<string, string> = process.env.HOLDUP_KEY ? { "x-holdup-key": process.env.HOLDUP_KEY } : {};
+const hud = new WebSocket(`ws://localhost:${port}/hud-ws${KQ ? "?" + KQ : ""}`);
 const hudTypes: string[] = [];
 hud.on("message", (d) => hudTypes.push(JSON.parse(d.toString()).type));
 
 const session = "smoke-" + Math.random().toString(36).slice(2, 8);
-const ws = new WebSocket(`ws://localhost:${port}/live?session=${session}`);
+const ws = new WebSocket(`ws://localhost:${port}/live?session=${session}${KQ ? "&" + KQ : ""}`);
 const counts: Record<string, number> = {};
 const timeline: string[] = [];
 let tQuestion = 0, tFirstAudio = 0, tVerdict = 0, verdict: any, model = "", audioBytes = 0, finalAssistant = "";
@@ -79,7 +81,7 @@ const done = new Promise<void>((resolve) => {
 await done;
 clearInterval(frameTimer);
 // give the HUD a moment, then test ingest/state fan-out
-await fetch(`${base}/ingest/state`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connected: true, worn: true, battery: 0.8, streaming: true }) });
+await fetch(`${base}/ingest/state`, { method: "POST", headers: { "content-type": "application/json", ...KH }, body: JSON.stringify({ connected: true, worn: true, battery: 0.8, streaming: true }) });
 await new Promise((r) => setTimeout(r, 300));
 ws.send(JSON.stringify({ type: "event", name: "stop" }));
 await new Promise((r) => setTimeout(r, 300));
@@ -98,7 +100,7 @@ console.log("== /hud-ws (no session) ==\n types:", JSON.stringify(hudTypes));
 
 // snapshot path
 const tv = Date.now();
-const vr = await fetch(`${base}/api/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ frames: [jpeg], profile, question }) });
+const vr = await fetch(`${base}/api/verify`, { method: "POST", headers: { "content-type": "application/json", ...KH }, body: JSON.stringify({ frames: [jpeg], profile, question }) });
 const vj: any = await vr.json();
 console.log("== /api/verify ==\n", vr.status, `${Date.now() - tv} ms`, JSON.stringify({ level: vj.level, headline: vj.headline }));
 const h = await (await fetch(`${base}/api/health`)).json();

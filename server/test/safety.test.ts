@@ -59,6 +59,13 @@ test("legible past expiry (EXP 11/2024) on a matching med is a warning", () => {
   assert.ok(v.reasons.some((r) => r.startsWith("expired")));
 });
 
+test("spoken name drops the salt form (amlodipine besilate -> Amlodipine)", () => {
+  const p = { ...profile, meds: [{ ...profile.meds[0], ingredient: "amlodipine besilate" }] };
+  const v = checkLabel(read({ ingredient: f("amlodipine"), strength: f("5 mg"), expiry: f("2027-08") }), p, NOW);
+  assert.equal(v.level, "match");
+  assert.match(v.speech, /^Yes, Amlodipine 5 mg, your evening pill\./);
+});
+
 test("match via brand name in product only (Norvasc)", () => {
   const v = checkLabel(read({ product: f("Norvasc"), strength: f("5mg", 0.9) }), profile, NOW);
   assert.equal(v.level, "match");

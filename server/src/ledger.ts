@@ -10,10 +10,16 @@ export type LedgerLine = {
 };
 
 let dirReady = false;
+let writes = 0;
+const LEDGER_MAX_BYTES = 5 * 1024 * 1024;
 export function ledger(line: Omit<LedgerLine, "ts"> & { ts?: number }) {
   const row = { ts: Date.now(), ...line };
   try {
     if (!dirReady) { fs.mkdirSync(path.dirname(env.ledgerPath), { recursive: true }); dirReady = true; }
+    // retention: keep at most ~2 x 5 MB (current + one rotated file)
+    if (++writes % 200 === 1) {
+      try { if (fs.statSync(env.ledgerPath).size > LEDGER_MAX_BYTES) fs.renameSync(env.ledgerPath, env.ledgerPath + ".1"); } catch { /* no file yet */ }
+    }
     fs.appendFile(env.ledgerPath, JSON.stringify(row) + "\n", () => {});
   } catch { /* ledger must never break the product */ }
 }

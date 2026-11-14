@@ -1,5 +1,5 @@
 // Robustness checks against real Gemini (each case is short). Usage: tsx scripts/robust.ts [case...]
-// cases: audio fallback idle drop reconnect input
+// cases: audio fallback idle drop reconnect hud input auth snapshot
 import fs from "node:fs";
 import path from "node:path";
 import WebSocket from "ws";
@@ -10,6 +10,9 @@ process.env.HOLDUP_QUIET ??= "1";
 const only = process.argv.slice(2);
 if (!only.length || only.includes("fallback")) process.env.LIVE_MODEL = "gemini-does-not-exist-live";
 if (!only.length || only.includes("idle")) process.env.IDLE_STOP_MS = "5000";
+// every case runs with an access key, so the key path is exercised everywhere
+const KEY = (process.env.HOLDUP_KEY = "robust-test-key-123");
+const KH = { "x-holdup-key": KEY };
 const { SERVER_DIR } = await import("../src/env.ts");
 const { startServer, getHub } = await import("../src/index.ts");
 const { ai } = await import("../src/gemini.ts");
@@ -27,13 +30,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 class Client {
   ws: WebSocket; msgs: (ServerMsg & { at: number })[] = []; t0 = Date.now(); frameTimer?: NodeJS.Timeout;
   constructor(readonly session: string) {
-    this.ws = new WebSocket(`ws://localhost:${port}/live?session=${session}`);
+    this.ws = new WebSocket(`ws://localhost:${port}/live?session=${session}&key=${KEY}`);
     this.ws.on("message", (d) => this.msgs.push({ ...JSON.parse(d.toString()), at: Date.now() - this.t0 }));
   }
   open() { return new Promise<void>((r) => this.ws.once("open", () => r())); }
   send(m: unknown) { this.ws.send(JSON.stringify(m)); }
-  start(frames = true) {
-    this.send({ type: "start", profile, lang: "en", voice: true, source: "phone" });
+  start(frames = true, source: "phone" | "glasses" = "phone") {
+    this.send({ type: "start", profile, lang: "en", voice: true, source });
     if (frames) { const f = () => this.ws.readyState === 1 && this.send({ type: "frame", data: jpeg, w: 768, h: 768, sharpness: 0.85, ts: Date.now() }); f(); this.frameTimer = setInterval(f, 1000); }
   }
   async waitFor(pred: (m: ServerMsg) => boolean, ms: number, from = 0) {
@@ -141,8 +144,8 @@ await run("hud", async () => {
   const c = new Client("rb-hud"); await c.open(); c.start(false);
   await c.waitFor((m) => m.type === "ready", 15000);
   // device state with unknown `worn` must stay null
-  await fetch(`http://localhost:${port}/ingest/state`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connected: true, worn: null, battery: null, streaming: true }) });
-  const hud = new WebSocket(`ws://localhost:${port}/hud-ws`); // no session -> latest
+  await fetch(`http://localhost:${port}/ingest/state`, { method: "POST", headers: { "content-type": "application/json", ...KH }, body: JSON.stringify({ connected: true, worn: null, battery: null, streaming: true }) });
+  const hud = new WebSocket(`ws://localhost:${port}/hud-ws?key=${KEY}`); // no session -> latest
   const hudMsgs: any[] = [];
   hud.on("message", (d) => hudMsgs.push(JSON.parse(d.toString())));
   await new Promise((r) => hud.once("open", r));
@@ -164,12 +167,53 @@ await run("input", async () => {
   c.send({ type: "event", name: "log_dose" });
   await sleep(500);
   const errs = c.msgs.filter((m) => m.type === "error").map((m: any) => m.code);
-  const r1 = await fetch(`http://localhost:${port}/ingest/frame?session=does-not-exist`, { method: "POST", headers: { "content-type": "image/jpeg" }, body: Buffer.from(jpeg, "base64") });
-  const r2 = await fetch(`http://localhost:${port}/api/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: "{bad" });
+  const r1 = await fetch(`http://localhost:${port}/ingest/frame?session=does-not-exist`, { method: "POST", headers: { "content-type": "image/jpeg", ...KH }, body: Buffer.from(jpeg, "base64") });
+  const r2 = await fetch(`http://localhost:${port}/api/verify`, { method: "POST", headers: { "content-type": "application/json", ...KH }, body: "{bad" });
   c.send({ type: "event", name: "stop" });
   const closed = await c.waitFor((m) => m.type === "status" && m.live === "closed", 3000);
   c.close();
   return [errs.length >= 4 && r1.status === 204 && r2.status === 400 && !!closed, `errors=${errs.join(",")} ingest(unknown)=${r1.status} verify(bad json)=${r2.status} stop->closed=${!!closed}`];
+});
+
+await run("auth", async () => {
+  const base = `http://localhost:${port}`;
+  const st = async (p: string, init: RequestInit = {}) => (await fetch(base + p, init)).status;
+  const json = { "content-type": "application/json" };
+  const checks: Record<string, boolean> = {
+    health_public: (await st("/api/health")) === 200,
+    stats_nokey_401: (await st("/api/stats")) === 401,
+    stats_wrongkey_401: (await st("/api/stats?key=nope")) === 401,
+    stats_query_200: (await st(`/api/stats?key=${KEY}`)) === 200,
+    stats_header_200: (await st("/api/stats", { headers: KH })) === 200,
+    verify_nokey_401: (await st("/api/verify", { method: "POST", headers: json, body: "{}" })) === 401,
+    ingest_state_nokey_401: (await st("/ingest/state", { method: "POST", headers: json, body: "{}" })) === 401,
+    ingest_frame_nokey_401: (await st("/ingest/frame", { method: "POST", headers: { "content-type": "image/jpeg" }, body: Buffer.from(jpeg, "base64") })) === 401,
+  };
+  const wsClose = (p: string) => new Promise<number>((r) => {
+    const w = new WebSocket(`ws://localhost:${port}${p}`);
+    w.on("close", (code) => r(code)); w.on("error", () => r(-1));
+  });
+  checks.live_nokey_4401 = (await wsClose("/live?session=rb-auth")) === 4401;
+  checks.hud_wrongkey_4401 = (await wsClose("/hud-ws?key=wrong")) === 4401;
+  const failed = Object.entries(checks).filter(([, v]) => !v).map(([k]) => k);
+  return [!failed.length, failed.length ? `failed: ${failed.join(",")}` : `${Object.keys(checks).length} checks ok`];
+});
+
+await run("snapshot", async () => {
+  // glasses mode: frames only arrive via /ingest/frame; snapshot verify uses the session ring buffer
+  const c = new Client("rb-snap"); await c.open(); c.start(false, "glasses");
+  await c.waitFor((m) => m.type === "ready", 15000);
+  const post = (p: string, body: string | Buffer, type: string) => fetch(`http://localhost:${port}${p}`, { method: "POST", headers: { "content-type": type, ...KH }, body });
+  const fr = await post("/ingest/frame?session=rb-snap", Buffer.from(jpeg, "base64"), "image/jpeg");
+  const t = Date.now();
+  const v = await post("/api/verify", JSON.stringify({ session: "rb-snap", question: "is this my evening pill?" }), "application/json");
+  const vj: any = await v.json();
+  const ms = Date.now() - t;
+  const none = await post("/api/verify", JSON.stringify({ profile }), "application/json");
+  const unknown = await post("/api/verify", JSON.stringify({ session: "no-such-session" }), "application/json");
+  c.close();
+  return [fr.status === 204 && v.status === 200 && vj.level === "match" && none.status === 400 && unknown.status === 400,
+    `ingest=${fr.status} verify(session, no frames)=${v.status} ${vj.level} in ${ms} ms (hub profile used); no frames+no session=${none.status}; unknown session=${unknown.status}`];
 });
 
 server.close();

@@ -225,6 +225,12 @@ export function sayDate(iso: string): string {
   return `${m[3] ? +m[3] + " " : ""}${MONTHS[+m[2] - 1]} ${m[1]}`;
 }
 
+/** "amlodipine besilate" -> "amlodipine": salt forms are on the box in small print, people say the base name. */
+const SALTS = /\s+(besilate|besylate|maleate|mesilate|mesylate|hydrochloride|hcl|sodium|potassium|calcium|magnesium|tartrate|succinate|fumarate|citrate|sulfate|sulphate|phosphate|acetate|bromide|dihydrate|monohydrate|trihydrate)\b/gi;
+export function spokenIngredient(s: string | null | undefined): string {
+  return (s ?? "").replace(SALTS, "").replace(/\s+/g, " ").trim();
+}
+
 /** "2024-11" / "2024-11-30" -> "November 2024" */
 export function monthYear(iso: string): string {
   const m = /^(\d{4})-(\d{2})/.exec(iso);
@@ -287,7 +293,7 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
     const readName = read.ingredient.value && read.ingredient.confidence >= NAME_MIN_CONF
       ? read.ingredient.value.split(",")[0].trim()
       : productName.replace(/\d+(?:[.,]\d+)?\s*(mg|g|mcg|µg|ml|iu)\b.*$/i, "").trim();
-    const name = cap(med ? (med.ingredient || med.name) : readName || "this medicine");
+    const name = cap(med ? spokenIngredient(med.ingredient) || med.name : readName || "this medicine");
     const label = strengthOk ? `${name} ${fmtStrength(read.strength.value!)}` : name;
 
     if (allergyHits.length) {
