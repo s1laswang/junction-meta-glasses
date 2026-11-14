@@ -59,8 +59,11 @@ def client():
         if _client is None:
             load_env()
             from google import genai
+            from google.genai import types
 
-            _client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+            # Per-request timeout so a dropped connection (venue network) can't hang a worker forever.
+            _client = genai.Client(api_key=os.environ["GEMINI_API_KEY"],
+                                   http_options=types.HttpOptions(timeout=int(os.environ.get("HOLDUP_HTTP_TIMEOUT_MS", "150000"))))
     return _client
 
 
@@ -78,7 +81,9 @@ def is_retryable(e: Exception) -> bool:
         return True
     return any(t in s for t in ("429", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "503", "500",
                                  "INTERNAL", "DEADLINE", "timed out", "Timeout",
-                                 "Connection", "overloaded", "empty response"))
+                                 "Connection", "overloaded", "empty response", "SSL", "EOF",
+                                 "disconnected", "reset by peer", "Temporary failure", "nodename",
+                                 "Expecting", "Unterminated", "Extra data"))  # truncated JSON
 
 
 def with_retries(fn: Callable[[], Any], tries: int = 6, base: float = 2.0, label: str = "") -> Any:
