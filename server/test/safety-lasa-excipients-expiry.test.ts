@@ -450,8 +450,17 @@ test("food kind verdicts with and without allergies, avoid list, and expiry", ()
   assert.equal(foodUnreadableAllergens.headline, "Can't read the allergens yet");
   assert.ok(foodUnreadableAllergens.reasons.includes("allergen panel not readable"));
 
-  const foodSafeWithAllergies = checkLabel(
+  const foodIncompleteAllergens = checkLabel(
     makeRead({ kind: "food", product: f("Oat drink"), allergens: f(["oats"], 0.9), expiry: f("2026-12-10", 0.9) }),
+    allergyProfile,
+    NOW,
+  );
+  assert.equal(foodIncompleteAllergens.level, "unsure");
+  assert.equal(foodIncompleteAllergens.headline, "Not sure it's free of your allergens");
+  assert.ok(foodIncompleteAllergens.reasons.includes("allergen panel may be incomplete"));
+
+  const foodSafeWithAllergies = checkLabel(
+    makeRead({ kind: "food", product: f("Oat drink"), allergens: f(["oats"], 0.95), expiry: f("2026-12-10", 0.9) }),
     allergyProfile,
     NOW,
   );
@@ -489,7 +498,17 @@ test("other kind verdicts with and without allergies, avoid list, and expiry", (
   );
   assert.equal(otherUnreadableAllergens.level, "info");
   assert.equal(otherUnreadableAllergens.headline, "Hand soap");
-  assert.equal(otherUnreadableAllergens.speech, "This is Hand soap.");
+  assert.equal(otherUnreadableAllergens.speech, "This is Hand soap. I can't see an allergen list.");
+  assert.ok(otherUnreadableAllergens.reasons.includes("no allergen list seen"));
+
+  const otherBlurryWithAllergies = checkLabel(
+    makeRead({ kind: "other", product: f("Recovery Gel"), allergens: f<string[]>(null, 0), readability: 0.49 }),
+    allergyProfile,
+    NOW,
+  );
+  assert.equal(otherBlurryWithAllergies.level, "unsure");
+  assert.equal(otherBlurryWithAllergies.headline, "Can't see it clearly");
+  assert.ok(otherBlurryWithAllergies.reasons.includes("low readability"));
 
   const otherWithFutureDate = checkLabel(
     makeRead({ kind: "other", product: f("Eye drops"), expiry: f("2027-03-15", 0.9), allergens: f<string[]>(null, 0) }),
@@ -532,5 +551,5 @@ test("other kind verdicts with and without allergies, avoid list, and expiry", (
   );
   assert.equal(anonymousOther.level, "info");
   assert.equal(anonymousOther.headline, "This item");
-  assert.equal(anonymousOther.speech, "This is this item.");
+  assert.equal(anonymousOther.speech, "This is this item. I can't see an allergen list.");
 });

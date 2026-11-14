@@ -94,12 +94,12 @@ test("FrameRing: empty state, FIFO eviction at capacity, and clear", () => {
   assert.deepEqual(small.pick(), []);
 });
 
-test("FrameRing: sharpness windowing, boundary inclusion, tie-breaking, and stale fallback", () => {
+test("FrameRing: sharpness windowing, PICK_SAME_ITEM_MS boundary, tie-breaking, and box-swap isolation", () => {
   const ring = new FrameRing(8);
   const now = 20_000;
-  ring.push(makeFrame({ data: "too-old-sharp", sharpness: 0.99, ts: now - 5001 }));
-  ring.push(makeFrame({ data: "on-boundary", sharpness: 0.8, ts: now - 5000 }));
-  ring.push(makeFrame({ data: "tie-older", sharpness: 0.75, ts: now - 2000 }));
+  ring.push(makeFrame({ data: "too-old-sharp", sharpness: 0.99, ts: now - 2001 }));
+  ring.push(makeFrame({ data: "on-boundary", sharpness: 0.8, ts: now - 2000 }));
+  ring.push(makeFrame({ data: "tie-older", sharpness: 0.75, ts: now - 1500 }));
   ring.push(makeFrame({ data: "tie-newer", sharpness: 0.75, ts: now - 1000 }));
   ring.push(makeFrame({ data: "recent-blurry", sharpness: 0.2, ts: now - 500 }));
 
@@ -108,13 +108,13 @@ test("FrameRing: sharpness windowing, boundary inclusion, tie-breaking, and stal
   assert.equal(ring.lastTs, now - 500);
 
   const staleNow = 50_000;
-  const fallback = ring.pick(2, 5000, staleNow);
-  assert.deepEqual(fallback.map((f) => f.data), ["tie-newer", "tie-older"]);
+  const sameItemTop2 = ring.pick(2, 5000, staleNow);
+  assert.deepEqual(sameItemTop2.map((f) => f.data), ["on-boundary", "tie-newer"]);
 
-  const twoOnly = new FrameRing(4);
-  twoOnly.push(makeFrame({ data: "old-low", sharpness: 0.3, ts: 100 }));
-  twoOnly.push(makeFrame({ data: "old-high", sharpness: 0.85, ts: 200 }));
-  assert.deepEqual(twoOnly.pick(2, 5000, 99_000).map((f) => f.data), ["old-high", "old-low"]);
+  const boxSwap = new FrameRing(4);
+  boxSwap.push(makeFrame({ data: "old-box-sharp", sharpness: 0.99, ts: 100 }));
+  boxSwap.push(makeFrame({ data: "new-box", sharpness: 0.4, ts: 2000 }));
+  assert.deepEqual(boxSwap.pick(2, 5000, 2100).map((f) => f.data), ["new-box"]);
 });
 
 test("jpegSize: baseline and progressive SOF markers, skipped non-SOF segments, and truncated inputs", () => {

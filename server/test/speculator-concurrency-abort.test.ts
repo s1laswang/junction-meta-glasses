@@ -147,7 +147,7 @@ after(() => {
   else process.env.HOLDUP_QUIET = origQuiet;
 });
 
-test("SPEC.sceneDelta (0.12) cliff: <= 0.12 keeps cache usable up to 10,000ms while > 0.12 expires cache at 2500ms", async (t) => {
+test("SPEC.sceneDelta (0.06) cliff: <= 0.06 keeps cache usable up to 10,000ms while > 0.06 invalidates cache immediately", async (t) => {
   useTempLedger("scene-delta");
   t.mock.timers.enable({ apis: ["Date", "setTimeout"], now: 100_000 });
 
@@ -170,12 +170,12 @@ test("SPEC.sceneDelta (0.12) cliff: <= 0.12 keeps cache usable up to 10,000ms wh
     assert.equal(calls, 1);
 
     t.mock.timers.tick(650);
-    const fUpExact = makeFrame({ ts: Date.now(), bytes: 1120, sharpness: 0.5 });
+    const fUpExact = makeFrame({ ts: Date.now(), bytes: 1060, sharpness: 0.5 });
     ringStable.push(fUpExact);
     specStable.onFrame(fUpExact);
 
     t.mock.timers.tick(500);
-    const fDownExact = makeFrame({ ts: Date.now(), bytes: 880, sharpness: 0.5 });
+    const fDownExact = makeFrame({ ts: Date.now(), bytes: 940, sharpness: 0.5 });
     ringStable.push(fDownExact);
     specStable.onFrame(fDownExact);
 
@@ -207,18 +207,12 @@ test("SPEC.sceneDelta (0.12) cliff: <= 0.12 keeps cache usable up to 10,000ms wh
     t.mock.timers.tick(2050);
     assert.equal(Date.now() - baseTs, 2400);
     product = "Metformin";
-    const cOverCliff = makeFrame({ ts: Date.now(), bytes: 1121, sharpness: 0.5 });
+    const cOverCliff = makeFrame({ ts: Date.now(), bytes: 1061, sharpness: 0.5 });
     ringChanged.push(cOverCliff);
     specChanged.onFrame(cOverCliff);
 
     t.mock.timers.tick(99);
     assert.equal(Date.now() - baseTs, SPEC.freshMs - 1);
-    const stillFresh = await specChanged.get();
-    assert.equal(stillFresh?.source, "cache");
-    assert.equal(stillFresh?.read.product.value, "Norvasc");
-
-    t.mock.timers.tick(1);
-    assert.equal(Date.now() - baseTs, SPEC.freshMs);
     assert.equal(await specChanged.get(), undefined);
 
     t.mock.timers.tick(300);
@@ -238,12 +232,11 @@ test("SPEC.sceneDelta (0.12) cliff: <= 0.12 keeps cache usable up to 10,000ms wh
     await flushMicrotasks();
     assert.equal(calls, 4);
 
-    t.mock.timers.tick(2050);
-    const sUnderCliff = makeFrame({ ts: Date.now(), bytes: 879, sharpness: 0.5 });
+    t.mock.timers.tick(100);
+    const sUnderCliff = makeFrame({ ts: Date.now(), bytes: 939, sharpness: 0.5 });
     ringShrink.push(sUnderCliff);
     specShrink.onFrame(sUnderCliff);
-    t.mock.timers.tick(100);
-    assert.equal(Date.now() - baseShrinkTs, SPEC.freshMs);
+    assert.ok(Date.now() - baseShrinkTs < SPEC.freshMs);
     assert.equal(await specShrink.get(), undefined);
   } finally {
     t.mock.timers.reset();
@@ -497,6 +490,7 @@ test("Speculator.kick() out-of-order frameTs guard prevents older reads from ove
     assert.equal(resolvers.length, 4);
     resolvers[3](modelReply({ product: { value: "LatestSceneMed", confidence: 0.99 } }));
     await flushMicrotasks();
+    assert.equal((await spec.get())?.read.product.value, "LatestSceneMed");
 
     ring.clear();
     const outOfOrderChangedScene = makeFrame({
@@ -509,17 +503,25 @@ test("Speculator.kick() out-of-order frameTs guard prevents older reads from ove
     spec.onFrame(outOfOrderChangedScene);
     t.mock.timers.tick(SPEC.minGapMs);
     await flushMicrotasks();
-    assert.equal(resolvers.length, 5);
-    resolvers[4](modelReply({ product: { value: "StaleChangedMed", confidence: 0.99 } }));
-    await flushMicrotasks();
-
+    assert.equal(resolvers.length, 4);
     assert.equal(Date.now() - freshSceneBaseTs, 2350);
-    const beforeFreshCliff = await spec.get();
-    assert.equal(beforeFreshCliff?.source, "cache");
-    assert.equal(beforeFreshCliff?.read.product.value, "LatestSceneMed");
+    assert.equal(await spec.get(), undefined);
 
-    t.mock.timers.tick(150);
-    assert.equal(Date.now() - freshSceneBaseTs, SPEC.freshMs);
+    ring.clear();
+    const preSwapTs = Date.now();
+    const preSwapFrame = makeFrame({ ts: preSwapTs, sharpness: 0.99, bytes: 5000, data: "pre-swap" });
+    ring.push(preSwapFrame);
+    spec.onFrame(preSwapFrame);
+    t.mock.timers.tick(SPEC.debounceMs);
+    await flushMicrotasks();
+    assert.equal(resolvers.length, 5);
+
+    t.mock.timers.tick(100);
+    const postSwapFrame = makeFrame({ ts: Date.now(), sharpness: 0.99, bytes: 8000, data: "post-swap" });
+    ring.push(postSwapFrame);
+    spec.onFrame(postSwapFrame);
+    resolvers[4](modelReply({ product: { value: "StalePreSwapMed", confidence: 0.99 } }));
+    await flushMicrotasks();
     assert.equal(await spec.get(), undefined);
   } finally {
     for (const r of resolvers) r(modelReply());
