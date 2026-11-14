@@ -1,0 +1,242 @@
+{
+ "suite": "model_comparison",
+ "generated_at": "2026-11-14T19:08:43.175787+00:00",
+ "eval_now_iso": "2026-11-14T12:00:00+02:00",
+ "prompt_source": "shared/verify_prompt.md+shared/label_schema.json",
+ "prompt_sha256_12": "814770315c42",
+ "safety_module": "server/src/safety.ts",
+ "models": [{"model":"gemini-3.8-flash","thinking_level":"low","schema_mode":"responseJsonSchema","fallback_count":0},{"model":"gemini-3.5-flash","thinking_level":"low","schema_mode":"responseJsonSchema","fallback_count":0},{"model":"gemma-4-31b-it","thinking_level":"none","schema_mode":"responseJsonSchema+json_prompt_fallback","fallback_count":1}],
+ "profile": {"meds":[{"id":"amlodipine","name":"Amlodipine","ingredient":"amlodipine","strength":"5 mg","schedule":["evening"]},{"id":"thyroxin","name":"Thyroxin","ingredient":"levothyroxine","strength":"100 mcg","schedule":["morning"]},{"id":"bisoprolol","name":"Bisoprolol","ingredient":"bisoprolol","strength":"2.5 mg","schedule":["morning"]},{"id":"marevan","name":"Marevan","ingredient":"warfarin","strength":"3 mg","schedule":["evening"]}],"allergies":["tree nuts","peanut"],"avoid":["NSAIDs"],"doseLog":[],"lang":"en"},
+ "per_model": {
+  "gemini-3.8-flash": {
+    "thinking_level": "low",
+    "schema_mode": "responseJsonSchema",
+    "fallback_count": 0,
+    "n": 12,
+    "verdict_matches": 12,
+    "verdict_accuracy": 1.0,
+    "verdict_accuracy_ci95": [
+      0.7575,
+      1.0
+    ],
+    "confident_wrong_count": 0,
+    "confident_wrong_rate": 0.0,
+    "confident_wrong_ci95": [
+      0.0,
+      0.2425
+    ],
+    "rule_of_three_upper_95": 0.25,
+    "false_match_count": 0,
+    "unsafe_reassurance_count": 0,
+    "abstain_or_unsure_count": 4,
+    "latency_p50_ms": 3191.6,
+    "latency_p95_ms": 9158.3
+  },
+  "gemini-3.5-flash": {
+    "thinking_level": "low",
+    "schema_mode": "responseJsonSchema",
+    "fallback_count": 0,
+    "n": 12,
+    "verdict_matches": 12,
+    "verdict_accuracy": 1.0,
+    "verdict_accuracy_ci95": [
+      0.7575,
+      1.0
+    ],
+    "confident_wrong_count": 0,
+    "confident_wrong_rate": 0.0,
+    "confident_wrong_ci95": [
+      0.0,
+      0.2425
+    ],
+    "rule_of_three_upper_95": 0.25,
+    "false_match_count": 0,
+    "unsafe_reassurance_count": 0,
+    "abstain_or_unsure_count": 4,
+    "latency_p50_ms": 2808.9,
+    "latency_p95_ms": 6107.4
+  },
+  "gemma-4-31b-it": {
+    "thinking_level": "none",
+    "schema_mode": "responseJsonSchema+json_prompt_fallback",
+    "fallback_count": 1,
+    "n": 12,
+    "verdict_matches": 11,
+    "verdict_accuracy": 0.9167,
+    "verdict_accuracy_ci95": [
+      0.6461,
+      0.9851
+    ],
+    "confident_wrong_count": 1,
+    "confident_wrong_rate": 0.0833,
+    "confident_wrong_ci95": [
+      0.0149,
+      0.3539
+    ],
+    "rule_of_three_upper_95": null,
+    "false_match_count": 1,
+    "unsafe_reassurance_count": 0,
+    "abstain_or_unsure_count": 3,
+    "latency_p50_ms": 5579.6,
+    "latency_p95_ms": 19033.1
+  }
+ },
+ "cases": [
+  {
+   "id": "mc_01",
+   "category": "med_match",
+   "description": "Sharp Amlodipine 5 mg box matching evening pill on profile",
+   "question": "Is this my evening pill?",
+   "expected_level": "match",
+   "image_sha256_12": "e998cb04b54f",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2845.3,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.99},"strength":{"value":"5 mg","confidence":0.99},"expiry":{"value":"2027-10","confidence":0.99},"allergens":{"value":null,"confidence":0.1},"readability":0.95},"reasons":["matches amlodipine","taken today: 0/1"]},
+    "gemini-3.5-flash": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2255.4,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"5 mg","confidence":0.98},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.98},"reasons":["matches amlodipine","taken today: 0/1"]},
+    "gemma-4-31b-it": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5671.4,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"5 mg","confidence":0.98},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.98},"reasons":["matches amlodipine","taken today: 0/1"]}
+   }
+  },
+  {
+   "id": "mc_02",
+   "category": "med_wrong_strength",
+   "description": "Sharp Amlodipine 10 mg wrong-strength box against 5 mg profile",
+   "question": "Is this my evening pill?",
+   "expected_level": "warning",
+   "image_sha256_12": "81f919e1f78e",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":4711.6,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.99},"ingredient":{"value":"amlodipine","confidence":0.99},"strength":{"value":"10 mg","confidence":0.99},"expiry":{"value":"2027-10","confidence":0.99},"allergens":{"value":null,"confidence":0},"readability":0.99},"reasons":["strength 10 mg differs from your 5 mg"]},
+    "gemini-3.5-flash": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2473.5,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"10 mg","confidence":0.98},"expiry":{"value":"2027-10","confidence":0.95},"allergens":{"value":null,"confidence":0},"readability":0.95},"reasons":["strength 10 mg differs from your 5 mg"]},
+    "gemma-4-31b-it": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5320.3,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"10 mg","confidence":0.98},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.98},"reasons":["strength 10 mg differs from your 5 mg"]}
+   }
+  },
+  {
+   "id": "mc_03",
+   "category": "med_avoid_nsaid",
+   "description": "Sharp Burana ibuprofen 400 mg box triggering NSAID avoid warning",
+   "question": "Can I take this for pain?",
+   "expected_level": "warning",
+   "image_sha256_12": "a2c495bb5cd4",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2857.6,"read":{"kind":"medication","product":{"value":"BURANA","confidence":0.99},"ingredient":{"value":"ibuprofen","confidence":0.99},"strength":{"value":"400 mg","confidence":0.99},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0},"readability":0.95},"reasons":["ibuprofen is an NSAID, on your avoid list","not on your medication list"]},
+    "gemini-3.5-flash": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":8984.8,"read":{"kind":"medication","product":{"value":"BURANA","confidence":0.98},"ingredient":{"value":"ibuprofen","confidence":0.98},"strength":{"value":"400 mg","confidence":0.98},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.95},"reasons":["ibuprofen is an NSAID, on your avoid list","not on your medication list"]},
+    "gemma-4-31b-it": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":31630.3,"read":{"kind":"medication","product":{"value":"BURANA","confidence":0.98},"ingredient":{"value":"ibuprofen","confidence":0.98},"strength":{"value":"400 mg","confidence":0.98},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.98},"reasons":["ibuprofen is an NSAID, on your avoid list","not on your medication list"],"schema_mode":"json_prompt_fallback"}
+   }
+  },
+  {
+   "id": "mc_04",
+   "category": "med_mikrog_match",
+   "description": "Sharp Thyroxin 100 mikrog Nordic unit box matching 100 mcg profile",
+   "question": "Is this my morning thyroid pill?",
+   "expected_level": "match",
+   "image_sha256_12": "3945701218af",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3218.1,"read":{"kind":"medication","product":{"value":"THYROXIN","confidence":0.99},"ingredient":{"value":"levothyroxine","confidence":0.99},"strength":{"value":"100 mikrog","confidence":0.98},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0},"readability":0.95},"reasons":["matches thyroxin","taken today: 0/1"]},
+    "gemini-3.5-flash": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3144.4,"read":{"kind":"medication","product":{"value":"THYROXIN","confidence":0.98},"ingredient":{"value":"levothyroxine","confidence":0.98},"strength":{"value":"100 mcg","confidence":0.95},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0},"readability":0.95},"reasons":["matches thyroxin","taken today: 0/1"]},
+    "gemma-4-31b-it": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5483.7,"read":{"kind":"medication","product":{"value":"THYROXIN","confidence":0.98},"ingredient":{"value":"levothyroxine","confidence":0.98},"strength":{"value":"100 mcg","confidence":0.9},"expiry":{"value":"2027-09","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.95},"reasons":["matches thyroxin","taken today: 0/1"]}
+   }
+  },
+  {
+   "id": "mc_05",
+   "category": "med_comma_decimal",
+   "description": "Sharp Bisoprolol 2,5 mg Nordic comma-decimal box matching 2.5 mg profile",
+   "question": "Is this my morning Bisoprolol?",
+   "expected_level": "match",
+   "image_sha256_12": "12727007aa21",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3780.4,"read":{"kind":"medication","product":{"value":"BISOPROLOL","confidence":0.99},"ingredient":{"value":"bisoprolol","confidence":0.99},"strength":{"value":"2.5 mg","confidence":0.99},"expiry":{"value":"2027-08","confidence":0.99},"allergens":{"value":null,"confidence":0},"readability":1},"reasons":["matches bisoprolol","taken today: 0/1"]},
+    "gemini-3.5-flash": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2053.6,"read":{"kind":"medication","product":{"value":"BISOPROLOL","confidence":0.98},"ingredient":{"value":"bisoprolol","confidence":0.98},"strength":{"value":"2.5 mg","confidence":0.98},"expiry":{"value":"2027-08","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.95},"reasons":["matches bisoprolol","taken today: 0/1"]},
+    "gemma-4-31b-it": {"predicted_level":"match","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5509.8,"read":{"kind":"medication","product":{"value":"BISOPROLOL","confidence":0.98},"ingredient":{"value":"bisoprolol","confidence":0.98},"strength":{"value":"2.5 mg","confidence":0.98},"expiry":{"value":"2027-08","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.98},"reasons":["matches bisoprolol","taken today: 0/1"]}
+   }
+  },
+  {
+   "id": "mc_06",
+   "category": "med_expired",
+   "description": "Sharp Marevan warfarin 3 mg box expired in 2025-04",
+   "question": "Can I take this Marevan?",
+   "expected_level": "warning",
+   "image_sha256_12": "9ecac81f88ca",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":11164.8,"read":{"kind":"medication","product":{"value":"MAREVAN","confidence":0.98},"ingredient":{"value":"warfarin","confidence":0.98},"strength":{"value":"3 mg","confidence":0.98},"expiry":{"value":"2025-04","confidence":0.98},"allergens":{"value":null,"confidence":0},"readability":0.95},"reasons":["expired 2025-04"]},
+    "gemini-3.5-flash": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":1693.9,"read":{"kind":"medication","product":{"value":"MAREVAN","confidence":0.98},"ingredient":{"value":"warfarin","confidence":0.98},"strength":{"value":"3 mg","confidence":0.98},"expiry":{"value":"2025-04","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.95},"reasons":["expired 2025-04"]},
+    "gemma-4-31b-it": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5649.4,"read":{"kind":"medication","product":{"value":"MAREVAN","confidence":0.98},"ingredient":{"value":"warfarin","confidence":0.98},"strength":{"value":"3 mg","confidence":0.98},"expiry":{"value":"2025-04","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.95},"reasons":["expired 2025-04"]}
+   }
+  },
+  {
+   "id": "mc_07",
+   "category": "med_thumb_occluded",
+   "description": "Amlodipine box with thumb completely occluding the strength badge",
+   "question": "Is this my evening pill?",
+   "expected_level": "unsure",
+   "image_sha256_12": "e6b7f95f3f73",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3936.8,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":null,"confidence":0.1},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.1},"readability":0.9},"reasons":["strength not readable"]},
+    "gemini-3.5-flash": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3753.1,"read":{"kind":"medication","product":{"value":"Amlodipine","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":null,"confidence":0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0},"readability":0.75,"guidance":"Move your fingers to reveal the dosage strength."},"reasons":["strength not readable"]},
+    "gemma-4-31b-it": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":8726.3,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":null,"confidence":0.3},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.85,"guidance":"Turn the box to find the strength of the medication."},"reasons":["strength not readable"]}
+   }
+  },
+  {
+   "id": "mc_08",
+   "category": "med_motion_blur",
+   "description": "Severely motion-blurred medicine box with illegible text and strength",
+   "question": "Is this my evening pill?",
+   "expected_level": "unsure",
+   "image_sha256_12": "fb254fe4a32d",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3165.0,"read":{"kind":"unreadable","product":{"value":null,"confidence":0},"ingredient":{"value":null,"confidence":0},"strength":{"value":null,"confidence":0},"expiry":{"value":null,"confidence":0},"allergens":{"value":null,"confidence":0},"readability":0,"guidance":"Hold still and bring it into focus."},"reasons":["label not readable"]},
+    "gemini-3.5-flash": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2175.3,"read":{"kind":"unreadable","product":{"value":null,"confidence":0},"ingredient":{"value":null,"confidence":0},"strength":{"value":null,"confidence":0},"expiry":{"value":null,"confidence":0},"allergens":{"value":null,"confidence":0},"readability":0,"guidance":"Hold still for a second."},"reasons":["label not readable"]},
+    "gemma-4-31b-it": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5083.2,"read":{"kind":"unreadable","product":{"value":null,"confidence":0.3},"ingredient":{"value":null,"confidence":0.3},"strength":{"value":null,"confidence":0.3},"expiry":{"value":null,"confidence":0.3},"allergens":{"value":null,"confidence":0.3},"readability":0.1,"guidance":"Hold still and move the item closer to be readable."},"reasons":["label not readable"]}
+   }
+  },
+  {
+   "id": "mc_09",
+   "category": "med_coplanar_twins",
+   "description": "Co-planar Amlodipine 5 mg and 10 mg boxes held side-by-side equally sharp",
+   "question": "Is this my evening pill?",
+   "expected_level": "unsure",
+   "image_sha256_12": "e0416aa939d8",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":7516.6,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.7},"ingredient":{"value":"amlodipine","confidence":0.7},"strength":{"value":"5 mg","confidence":0.7},"expiry":{"value":"2027-10","confidence":0.7},"allergens":{"value":null,"confidence":0},"readability":0.6,"guidance":"Hold only one box at a time."},"reasons":["identity not confident (name 0.70, readability 0.60)"]},
+    "gemini-3.5-flash": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3744.7,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.75},"ingredient":{"value":"amlodipine","confidence":0.75},"strength":{"value":"5 mg","confidence":0.75},"expiry":{"value":"2027-10","confidence":0.75},"allergens":{"value":null,"confidence":0.3},"readability":0.75,"guidance":"Show only one box closely to clear up any confusion."},"reasons":["identity not confident (name 0.75, readability 0.75)"]},
+    "gemma-4-31b-it": {"predicted_level":"match","verdict_ok":false,"confident_wrong":true,"false_match":true,"latency_ms":5725.3,"read":{"kind":"medication","product":{"value":"AMLODIPINE","confidence":0.98},"ingredient":{"value":"amlodipine","confidence":0.98},"strength":{"value":"5 mg + 10 mg","confidence":0.98},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.3},"readability":0.98},"reasons":["matches amlodipine","taken today: 0/1"]}
+   }
+  },
+  {
+   "id": "mc_10",
+   "category": "food_allergen_warning",
+   "description": "Sharp Peanut and Hazelnut Bar carton triggering nut allergy warning",
+   "question": "Does this contain peanuts or tree nuts?",
+   "expected_level": "warning",
+   "image_sha256_12": "1547a42011ce",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2996.9,"read":{"kind":"food","product":{"value":"Peanut & Hazelnut Bar","confidence":0.98},"ingredient":{"value":"oats, roasted peanuts, hazelnuts","confidence":0.95},"strength":{"value":null,"confidence":0},"expiry":{"value":"2027-09-18","confidence":0.98},"allergens":{"value":["peanut","hazelnut","oats"],"confidence":0.98},"readability":0.98},"reasons":["contains hazelnut (allergy: tree nuts)","contains peanut (allergy: peanut)"]},
+    "gemini-3.5-flash": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":1796.9,"read":{"kind":"food","product":{"value":"Peanut & Hazelnut Bar","confidence":0.98},"ingredient":{"value":"snack bar","confidence":0.95},"strength":{"value":null,"confidence":0},"expiry":{"value":"2027-09-18","confidence":0.98},"allergens":{"value":["peanut","hazelnut","gluten"],"confidence":0.98},"readability":0.98},"reasons":["contains hazelnut (allergy: tree nuts)","contains peanut (allergy: peanut)"]},
+    "gemma-4-31b-it": {"predicted_level":"warning","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5430.8,"read":{"kind":"food","product":{"value":"Nordic Bakery Peanut & Hazelnut Bar","confidence":0.98},"ingredient":{"value":"nut bar","confidence":0.95},"strength":{"value":null,"confidence":0.3},"expiry":{"value":"2027-09-18","confidence":0.98},"allergens":{"value":["peanut","hazelnut"],"confidence":0.98},"readability":1},"reasons":["contains hazelnut (allergy: tree nuts)","contains peanut (allergy: peanut)"]}
+   }
+  },
+  {
+   "id": "mc_11",
+   "category": "food_safe_info",
+   "description": "Sharp Nordic Oat Drink carton with legible nut-free oat ingredient panel",
+   "question": "Is this safe with my nut allergies?",
+   "expected_level": "info",
+   "image_sha256_12": "0f7eecba6cb6",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"info","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2567.9,"read":{"kind":"food","product":{"value":"Nordic Oat Drink","confidence":0.99},"ingredient":{"value":"oat drink","confidence":0.95},"strength":{"value":null,"confidence":0},"expiry":{"value":"2027-11-24","confidence":0.99},"allergens":{"value":["gluten"],"confidence":0.98},"readability":0.98},"reasons":["no listed allergen matches your profile"]},
+    "gemini-3.5-flash": {"predicted_level":"info","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3216.7,"read":{"kind":"food","product":{"value":"Nordic Oat Drink","confidence":0.98},"ingredient":{"value":"oat drink","confidence":0.95},"strength":{"value":null,"confidence":0},"expiry":{"value":"2027-11-24","confidence":0.98},"allergens":{"value":["oats","gluten"],"confidence":0.98},"readability":0.98},"reasons":["no listed allergen matches your profile"]},
+    "gemma-4-31b-it": {"predicted_level":"info","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5499.1,"read":{"kind":"food","product":{"value":"Nordic Oat Drink","confidence":0.98},"ingredient":{"value":"oat drink","confidence":0.98},"strength":{"value":null,"confidence":0.3},"expiry":{"value":"2027-11-24","confidence":0.98},"allergens":{"value":["oats","gluten"],"confidence":0.98},"readability":0.98},"reasons":["no listed allergen matches your profile"]}
+   }
+  },
+  {
+   "id": "mc_12",
+   "category": "food_unreadable_allergens",
+   "description": "Food carton with ingredients and allergen panel occluded by hand and glare",
+   "question": "Does this contain peanuts or tree nuts?",
+   "expected_level": "unsure",
+   "image_sha256_12": "dda629c82633",
+   "results": {
+    "gemini-3.8-flash": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":2659.9,"read":{"kind":"food","product":{"value":"Nordic Berry Biscuit","confidence":0.98},"ingredient":{"value":"biscuit","confidence":0.85},"strength":{"value":null,"confidence":0},"expiry":{"value":"2027-10-15","confidence":0.99},"allergens":{"value":null,"confidence":0},"readability":0.55,"guidance":"Turn the box around to show the ingredient list."},"reasons":["allergen panel not readable"]},
+    "gemini-3.5-flash": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":3399.6,"read":{"kind":"food","product":{"value":"Nordic Berry Biscuit","confidence":0.98},"ingredient":{"value":"biscuit","confidence":0.9},"strength":{"value":null,"confidence":0},"expiry":{"value":"2027-10-15","confidence":0.98},"allergens":{"value":null,"confidence":0},"readability":0.5,"guidance":"Turn the package around to show the ingredient list."},"reasons":["allergen panel not readable"]},
+    "gemma-4-31b-it": {"predicted_level":"unsure","verdict_ok":true,"confident_wrong":false,"false_match":false,"latency_ms":5799.1,"read":{"kind":"food","product":{"value":"Nordic Berry Biscuit","confidence":0.95},"ingredient":{"value":"biscuit","confidence":0.8},"strength":{"value":null,"confidence":0.3},"expiry":{"value":"2027-10-15","confidence":0.95},"allergens":{"value":null,"confidence":0.3},"readability":0.6,"guidance":"Turn the package to show the ingredients list."},"reasons":["allergen panel not readable"]}
+   }
+  }
+ ]
+}
