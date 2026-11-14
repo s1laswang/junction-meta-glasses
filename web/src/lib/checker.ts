@@ -425,10 +425,17 @@ export class Checker {
         if (m.connected !== this.s.hudConnected) announce(m.connected ? "Display connected." : "Display disconnected.");
         this.set({ hudConnected: m.connected });
         break;
-      default: {
-        // tolerate contract additions: HUD actions forwarded to the phone (proposal)
-        const x = m as { type?: string; name?: string };
-        if (x.type === "hud_event") this.onHudEvent(x.name ?? "");
+      case "hud_event":
+        this.onHudEvent(m.name);
+        break;
+      case "dose_logged": {
+        // the user logged a dose by voice (Gemini log_dose tool): mirror it into the on-device log, no echo
+        const p = logDose(loadProfile(), m.medId);
+        this.onProfileChange?.(p);
+        const v = this.s.verdict;
+        if (v?.matchedMedId === m.medId) this.set({ verdict: { ...v, takenToday: true } });
+        earcon.ok();
+        break;
       }
     }
   }
@@ -532,21 +539,22 @@ export class Checker {
     else if (name === "dismiss") this.dismissVerdict();
   }
 
-  /** fromHud: the server already handled the HUD's repeat (it forwards hud_event to us), so don't echo it back. */
-  repeat(fromHud = false) {
+  /** The server only forwards HUD events as hud_event (contract Sat 16:40); the phone always sends the event to /live. */
+  repeat(_fromHud = false) {
     const v = this.s.verdict;
     if (this.s.mode === "live" && this.live?.isOpen && !IS_MOCK) {
-      if (!fromHud) this.live.send({ type: "event", name: "repeat" });
+      this.live.send({ type: "event", name: "repeat" });
     } else if (v) speak(v.speech);
     if (v) announce(v.speech, "assertive");
   }
 
-  logDose(fromHud = false) {
+  logDose(_fromHud = false) {
     const v = this.s.verdict;
     if (!v?.matchedMedId) return announce("There is no matched medicine to log.", "assertive");
     const p = logDose(loadProfile(), v.matchedMedId);
     this.onProfileChange?.(p);
-    if (!fromHud) this.live?.send({ type: "event", name: "log_dose" });
+    // always tell the server, so its in-memory profile knows (else a 2nd check says "not taken today")
+    if (this.live?.isOpen) this.live.send({ type: "event", name: "log_dose" });
     const med = p.meds.find((m) => m.id === v.matchedMedId);
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const msg = `Logged ${med?.name ?? "dose"} at ${time}. Saved on this phone only.`;

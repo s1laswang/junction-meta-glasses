@@ -251,7 +251,10 @@ export class LiveProxy implements LiveLike {
         this.send({ type: "coach", cue, text: String(args.text ?? "").slice(0, 60) });
         this.respond(fc, { shown: true }, true);
       } else if (fc.name === "log_dose") {
-        const r = this.logDose(String(args.medId ?? ""));
+        const medId = String(args.medId ?? "");
+        const r = this.logDose(medId);
+        // the dose log lives on the phone: mirror voice-logged doses there
+        if (r.ok) this.send({ type: "dose_logged", medId, ts: Date.now() });
         this.respond(fc, r);
       } else if (fc.name === "verify_label") {
         const question = typeof args.question === "string" ? args.question : undefined;

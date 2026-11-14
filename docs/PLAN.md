@@ -16,7 +16,7 @@ Also entered for Google DeepMind "Best Use of Gemini API".
 
 ## 1. Problem and audience
 
-**Audience.** Blind and low-vision people. There are about 2.2 billion people with vision impairment worldwide, about 80,000 in Finland, and most of them are over 65. The second audience is older adults with declining sight who manage several medications.
+**Audience.** Blind and low-vision people. There are about 2.2 billion people with vision impairment worldwide, about 55,000 in Finland (NKL/THL register), about 45,000 of them aged 65 or over. The second audience is older adults with declining sight who manage several medications.
 
 **Everyday problem.** *"Is this the right one?"* Several times a day you hold a box, bottle or package you can't read. Is this the blood-pressure pill or the sleeping pill? Is this oat milk the one without nuts? Has it expired? Today the options are:
 - Ask someone. This costs independence and isn't always possible.

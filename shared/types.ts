@@ -53,4 +53,6 @@ export type ServerMsg =
   // added Sat 15:40 (CEO): HUD connection state, so the phone device panel can show "HUD connected"
   | { type: "hud"; connected: boolean }
   // added Sat 16:40 (CEO): HUD/Neural Band events forwarded to phone sockets (dose log lives on the phone)
-  | { type: "hud_event"; name: "log_dose" | "repeat" | "dismiss" };
+  | { type: "hud_event"; name: "log_dose" | "repeat" | "dismiss" }
+  // added Sat 18:30 (CEO): a dose logged by voice (Gemini log_dose tool); phone mirrors it into its on-device log
+  | { type: "dose_logged"; medId: string; ts: number };
