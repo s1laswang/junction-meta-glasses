@@ -1,6 +1,6 @@
 (function () {
   var DEFAULT_EVAL_DATA = {
-    generated_at: "2026-11-14T14:43:28Z",
+    generated_at: "2026-11-14T15:17:35Z",
     model: "gemini-3.8-flash",
     strength_min_conf: 0.80,
     ece: 0.0138,
@@ -24,10 +24,10 @@
     bystander_refusal_ms: 2574.8,
     calibration_p50_ms: 3424.9,
     verify_p50_ms: 3537.1,
-    unit_tests_passing: "404 / 404",
-    server_tests_passing: 154,
-    web_tests_passing: 240,
-    eval_tests_passing: 10,
+    unit_tests_passing: "475 / 475",
+    server_tests_passing: 176,
+    web_tests_passing: 285,
+    eval_tests_passing: 14,
     overall_verdict_accuracy: 0.9811,
     overall_verdict_summary: "98.1% (52 / 53)",
     total_label_cases_evaluated: 53,
@@ -37,6 +37,28 @@
     extended_verdict_matches: 60,
     extended_verdict_accuracy: 1.0,
     extended_verdict_summary: "100% (60 / 60)",
+    wave6_suites_count: 6,
+    wave6_cases_evaluated: 29,
+    wave6_verdict_matches: 29,
+    wave6_verdict_accuracy: 1.0,
+    wave6_verdict_summary: "100% (29 / 29)",
+    combined_stress_cases_evaluated: 89,
+    combined_stress_verdict_matches: 89,
+    combined_stress_verdict_accuracy: 1.0,
+    combined_stress_verdict_summary: "100% (89 / 89)",
+    total_suites_compiled: 21,
+    e2e_verify_to_hud_p50_ms: 2738.8,
+    e2e_live_first_event_ms: 1175.3,
+    loopback_ingest_frame_p50_ms: 1.17,
+    loopback_hud_replay_p50_ms: 1.78,
+    ring_max_observed_len: 8,
+    tts_valid_wav_count: 6,
+    tts_n_utterances: 6,
+    tts_wav_summary: "6 / 6",
+    tts_latency_p50_ms: 3910.9,
+    multiframe_paired_verdict_accuracy: 1.0,
+    multiframe_single_abstention_rate: 1.0,
+    expired_catch_recall: 1.0,
     clean_field_accuracy: 1.0,
     suites_present: [
       "coaching_eval",
@@ -56,6 +78,14 @@
       "multilingual_labels_results",
       "bystander_privacy_results",
       "polypharmacy_confusion_results"
+    ],
+    wave6_suites_present: [
+      "multiframe_recovery_results",
+      "allergen_adversarial_results",
+      "expiry_formats_results",
+      "e2e_websocket_live",
+      "hud_latency_bandwidth",
+      "tts_multilingual_audio"
     ]
   };
 
@@ -128,17 +158,109 @@
           out.extended_verdict_summary = extPct + " (" + out.extended_verdict_matches + " / " + out.extended_cases_evaluated + ")";
         }
       }
-      if (typeof es.confident_wrong_dose_count === "number") {
-        var baseWrong = typeof incoming.total_confident_wrong_dose_count === "number" ? incoming.total_confident_wrong_dose_count : Number(out.confident_wrong_dose_count || 0);
-        out.confident_wrong_dose_count = baseWrong + es.confident_wrong_dose_count;
+      if (
+        typeof es.confident_wrong_dose_count === "number" &&
+        typeof incoming.total_confident_wrong_dose_count !== "number" &&
+        typeof incoming.confident_wrong_dose_count !== "number"
+      ) {
+        out.confident_wrong_dose_count = Number(out.confident_wrong_dose_count || 0) + es.confident_wrong_dose_count;
       }
-      if (typeof es.false_safe_allergen_count === "number") {
-        var baseAllergen = typeof incoming.total_false_safe_allergen_count === "number" ? incoming.total_false_safe_allergen_count : Number(out.false_safe_allergen_count || 0);
-        out.false_safe_allergen_count = baseAllergen + es.false_safe_allergen_count;
+      if (
+        typeof es.false_safe_allergen_count === "number" &&
+        typeof incoming.total_false_safe_allergen_count !== "number" &&
+        typeof incoming.false_safe_allergen_count !== "number"
+      ) {
+        out.false_safe_allergen_count = Number(out.false_safe_allergen_count || 0) + es.false_safe_allergen_count;
       }
-      if (typeof es.pii_or_bystander_leak_count === "number") {
+      if (typeof es.pii_or_bystander_leak_count === "number" && typeof incoming.pii_leak_count !== "number") {
         out.pii_leak_count = es.pii_or_bystander_leak_count;
       }
+    }
+    if (incoming.wave6_summary && typeof incoming.wave6_summary === "object") {
+      var w6 = incoming.wave6_summary;
+      if (typeof w6.suites_count === "number") {
+        out.wave6_suites_count = w6.suites_count;
+      }
+      if (typeof w6.label_and_fusion_cases_evaluated === "number") {
+        out.wave6_cases_evaluated = w6.label_and_fusion_cases_evaluated;
+      }
+      if (typeof w6.label_and_fusion_verdict_matches === "number") {
+        out.wave6_verdict_matches = w6.label_and_fusion_verdict_matches;
+      }
+      if (typeof w6.label_and_fusion_verdict_accuracy === "number") {
+        out.wave6_verdict_accuracy = w6.label_and_fusion_verdict_accuracy;
+        var w6Pct = w6.label_and_fusion_verdict_accuracy === 1 ? "100%" : (w6.label_and_fusion_verdict_accuracy * 100).toFixed(1) + "%";
+        if (typeof out.wave6_verdict_matches === "number" && typeof out.wave6_cases_evaluated === "number") {
+          out.wave6_verdict_summary = w6Pct + " (" + out.wave6_verdict_matches + " / " + out.wave6_cases_evaluated + ")";
+        }
+      }
+      if (
+        typeof w6.confident_wrong_dose_count === "number" &&
+        typeof incoming.total_confident_wrong_dose_count !== "number" &&
+        typeof incoming.confident_wrong_dose_count !== "number"
+      ) {
+        out.confident_wrong_dose_count = Number(out.confident_wrong_dose_count || 0) + w6.confident_wrong_dose_count;
+      }
+      if (
+        typeof w6.false_safe_allergen_count === "number" &&
+        typeof incoming.total_false_safe_allergen_count !== "number" &&
+        typeof incoming.false_safe_allergen_count !== "number"
+      ) {
+        out.false_safe_allergen_count = Number(out.false_safe_allergen_count || 0) + w6.false_safe_allergen_count;
+      }
+      if (typeof w6.e2e_verify_to_hud_p50_ms === "number" && typeof incoming.e2e_verify_to_hud_p50_ms !== "number") {
+        out.e2e_verify_to_hud_p50_ms = w6.e2e_verify_to_hud_p50_ms;
+      }
+      if (typeof w6.e2e_live_first_event_ms === "number" && typeof incoming.e2e_live_first_event_ms !== "number") {
+        out.e2e_live_first_event_ms = w6.e2e_live_first_event_ms;
+      }
+      if (typeof w6.loopback_ingest_frame_p50_ms === "number" && typeof incoming.loopback_ingest_frame_p50_ms !== "number") {
+        out.loopback_ingest_frame_p50_ms = w6.loopback_ingest_frame_p50_ms;
+      }
+      if (typeof w6.loopback_hud_replay_p50_ms === "number" && typeof incoming.loopback_hud_replay_p50_ms !== "number") {
+        out.loopback_hud_replay_p50_ms = w6.loopback_hud_replay_p50_ms;
+      }
+      if (typeof w6.ring_max_observed_len === "number" && typeof incoming.ring_max_observed_len !== "number") {
+        out.ring_max_observed_len = w6.ring_max_observed_len;
+      }
+      if (typeof w6.tts_valid_wav_count === "number" && typeof incoming.tts_valid_wav_count !== "number") {
+        out.tts_valid_wav_count = w6.tts_valid_wav_count;
+      }
+      if (typeof w6.tts_n_utterances === "number" && typeof incoming.tts_n_utterances !== "number") {
+        out.tts_n_utterances = w6.tts_n_utterances;
+      }
+      if (typeof w6.tts_latency_p50_ms === "number" && typeof incoming.tts_latency_p50_ms !== "number") {
+        out.tts_latency_p50_ms = w6.tts_latency_p50_ms;
+      }
+      if (typeof w6.multiframe_paired_verdict_accuracy === "number" && typeof incoming.multiframe_paired_verdict_accuracy !== "number") {
+        out.multiframe_paired_verdict_accuracy = w6.multiframe_paired_verdict_accuracy;
+      }
+      if (typeof w6.multiframe_single_abstention_rate === "number" && typeof incoming.multiframe_single_abstention_rate !== "number") {
+        out.multiframe_single_abstention_rate = w6.multiframe_single_abstention_rate;
+      }
+      if (typeof w6.expired_catch_recall === "number" && typeof incoming.expired_catch_recall !== "number") {
+        out.expired_catch_recall = w6.expired_catch_recall;
+      }
+    }
+    if (typeof out.tts_valid_wav_count === "number" && typeof out.tts_n_utterances === "number" && typeof incoming.tts_wav_summary !== "string") {
+      out.tts_wav_summary = out.tts_valid_wav_count + " / " + out.tts_n_utterances;
+    }
+    if (typeof incoming.combined_stress_cases_evaluated !== "number") {
+      out.combined_stress_cases_evaluated = Number(out.extended_cases_evaluated || 0) + Number(out.wave6_cases_evaluated || 0);
+    }
+    if (typeof incoming.combined_stress_verdict_matches !== "number") {
+      out.combined_stress_verdict_matches = Number(out.extended_verdict_matches || 0) + Number(out.wave6_verdict_matches || 0);
+    }
+    if (typeof out.combined_stress_cases_evaluated === "number" && out.combined_stress_cases_evaluated > 0 && typeof incoming.combined_stress_verdict_summary !== "string") {
+      out.combined_stress_verdict_accuracy = out.combined_stress_verdict_matches / out.combined_stress_cases_evaluated;
+      var csPct = out.combined_stress_verdict_accuracy === 1 ? "100%" : (out.combined_stress_verdict_accuracy * 100).toFixed(1) + "%";
+      out.combined_stress_verdict_summary = csPct + " (" + out.combined_stress_verdict_matches + " / " + out.combined_stress_cases_evaluated + ")";
+    }
+    var mCore = Array.isArray(out.suites_present) ? out.suites_present.length : 9;
+    var mExt = Array.isArray(out.extended_suites_present) ? out.extended_suites_present.length : Number(out.extended_suites_count || 0);
+    var mW6 = Array.isArray(out.wave6_suites_present) ? out.wave6_suites_present.length : Number(out.wave6_suites_count || 0);
+    if (typeof incoming.total_suites_compiled !== "number") {
+      out.total_suites_compiled = mCore + mExt + mW6;
     }
     if (incoming.artifacts && incoming.artifacts.calibration_curve) {
       var cc = incoming.artifacts.calibration_curve;
@@ -256,6 +378,15 @@
     setEvalField("total_label_cases_evaluated", data.total_label_cases_evaluated);
     setEvalField("extended_cases_evaluated", data.extended_cases_evaluated);
     setEvalField("extended_verdict_summary", data.extended_verdict_summary);
+    setEvalField("wave6_cases_evaluated", data.wave6_cases_evaluated);
+    setEvalField("wave6_verdict_summary", data.wave6_verdict_summary);
+    setEvalField("combined_stress_cases_evaluated", data.combined_stress_cases_evaluated);
+    setEvalField("combined_stress_verdict_summary", data.combined_stress_verdict_summary);
+    setEvalField("total_suites_compiled", data.total_suites_compiled);
+    setEvalField("e2e_verify_to_hud_p50_ms", Number(data.e2e_verify_to_hud_p50_ms).toFixed(1) + " ms");
+    setEvalField("loopback_ingest_frame_p50_ms", Number(data.loopback_ingest_frame_p50_ms).toFixed(2) + " ms");
+    setEvalField("loopback_hud_replay_p50_ms", Number(data.loopback_hud_replay_p50_ms).toFixed(2) + " ms");
+    setEvalField("tts_wav_summary", data.tts_wav_summary);
     setEvalField("demo_fixtures_pass", data.demo_fixtures_pass);
     setEvalField("live_models_online", data.live_models_online);
     setEvalField("live_first_audio_ms", Math.round(Number(data.live_first_audio_ms)) + " ms");
@@ -268,11 +399,17 @@
 
     var coreCount = Array.isArray(data.suites_present) ? data.suites_present.length : 9;
     var extCount = Array.isArray(data.extended_suites_present) ? data.extended_suites_present.length : Number(data.extended_suites_count || 0);
-    var totalSuites = coreCount + extCount;
+    var w6Count = Array.isArray(data.wave6_suites_present) ? data.wave6_suites_present.length : Number(data.wave6_suites_count || 0);
+    var totalSuites = coreCount + extCount + w6Count;
 
     if (typeof data.overall_verdict_accuracy === "number" && data.total_label_cases_evaluated > 0) {
       var accPct = (data.overall_verdict_accuracy * 100).toFixed(1) + "%";
-      if (Number(data.extended_cases_evaluated) > 0) {
+      if (Number(data.wave6_cases_evaluated) > 0) {
+        setEvalField(
+          "suite_sync_status",
+          "HOLDUP_EVAL_DATA synced: " + accPct + " core (" + data.total_verdict_matches + "/" + data.total_label_cases_evaluated + ") + " + data.combined_stress_verdict_summary + " stress/Wave-6 (" + totalSuites + " suites)"
+        );
+      } else if (Number(data.extended_cases_evaluated) > 0) {
         setEvalField(
           "suite_sync_status",
           "HOLDUP_EVAL_DATA synced: " + accPct + " core (" + data.total_verdict_matches + "/" + data.total_label_cases_evaluated + ") + " + data.extended_verdict_summary + " stress (" + totalSuites + " suites)"
