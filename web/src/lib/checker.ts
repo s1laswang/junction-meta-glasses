@@ -527,14 +527,16 @@ export class Checker {
 
   private onHudEvent(name: string) {
     if (name === "log_dose") this.logDose(true);
-    else if (name === "repeat") this.repeat();
+    else if (name === "repeat") this.repeat(true);
     else if (name === "dismiss") this.dismissVerdict();
   }
 
-  repeat() {
+  /** fromHud: the server already handled the HUD's repeat (it forwards hud_event to us), so don't echo it back. */
+  repeat(fromHud = false) {
     const v = this.s.verdict;
-    if (this.s.mode === "live" && this.live?.isOpen && !IS_MOCK) this.live.send({ type: "event", name: "repeat" });
-    else if (v) speak(v.speech);
+    if (this.s.mode === "live" && this.live?.isOpen && !IS_MOCK) {
+      if (!fromHud) this.live.send({ type: "event", name: "repeat" });
+    } else if (v) speak(v.speech);
     if (v) announce(v.speech, "assertive");
   }
 
