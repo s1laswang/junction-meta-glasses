@@ -1,142 +1,181 @@
-# HoldUp: "Hold it up. Know it's the right one."
+# HoldUp: "Hold it up. Know it is the right one."
 
 Junction 2026 · Meta "AI Glasses for Everyone, Everyday" · deadline **Sun 15 Nov 10:00 Helsinki**
 Also entered for Google DeepMind "Best Use of Gemini API".
 
-## Questions for Silas
+---
 
-1. **Phones for the demo.** The glasses camera path (Device Access Toolkit) needs an **Android phone** paired to the loaned glasses through the Meta AI app with developer mode on. Which teammate has an Android phone (Android 10+) and Android Studio? If nobody does, we demo the glasses as a Bluetooth audio headset (mic and speaker) with the **phone camera** as the eye, and show the DAT bridge as code plus a recorded clip. Default if you don't answer: **Momin010's phone**.
-2. **Hosting.** Default: the backend runs on the demo laptop behind a `cloudflared` quick tunnel (gives HTTPS, which phone camera and mic require). Can we deploy to Google Cloud Run? The gcloud config on this laptop points to project `fixera-502707` (account fonora.eu), so I have **not** touched it. Cloud Run would help the Gemini prize story. Reply "use fixera" or name another project.
-3. **Gemini API tier.** Is the key in `.env` on a paid (billing-enabled) project? Under the paid tier, Google does not use prompts to train its models. That lets us state the data claim on the privacy slide. If it isn't paid, the slide will be worded more weakly.
-4. **Overnight loan.** Can we keep the glasses overnight? Ask Amanda Le at pickup. If not, see the hardware plan for two test slots instead.
+## 1. Problem and Audience
+
+**Audience.** Roughly **2.2 billion people worldwide** live with vision impairment (**~80,000 in Finland**, with **>80% aged 65+**). The second core audience is older adults managing daily polypharmacy with declining sight.
+
+**Everyday high-stakes problem.** *"Is this the right one? Did I take my pills today?"* Several times a day, nearly identical white Nordic pharmacy boxes or fine-print food packages create an urgent question: is this Amlodipine 5 mg or Ibuprofen 400 mg? Was my evening tablet already logged? Has this pack expired? Does this snack bar contain hazelnuts or peanut oil? Today the options force unacceptable trade-offs:
+- **Ask someone nearby.** Costs independence and privacy, and fails when living alone.
+- **Smartphone OCR apps (Seeing AI and similar).** Require **three hands** (two hands to hold and rotate a curved bottle or steady a cane and water glass, plus a third hand to blind-aim a phone). Single snapshots read raw unprioritized text with zero physical guidance when the barcode or blank side faces the lens, and zero awareness of *your* prescriptions or allergies.
+- **Video-call a volunteer (Be My Eyes).** Slow, requires another person, and exposes private medication routines.
+
+**Why Meta AI Glasses beat a phone here.**
+- **Hands-free first-person framing.** The head-mounted camera already points where proprioception naturally holds an item at chest height, keeping both hands free.
+- **Private open-ear audio.** Bluetooth HFP open-ear speakers deliver clear 2-sentence answers privately while keeping ears open to the room.
+- **Streaming body-relative coaching.** Continuous ~1 fps frames let Gemini Live coach hand position in real time (*"Turn it left... move closer... hold still"*) and support instant voice barge-in.
+- **Synchronized waveguide confirmation.** On **Meta Ray-Ban Display**, a pure-black `#000000` `600x600` additive waveguide card (`MATCH`, `WARNING`, `UNSURE`, `INFO`) pairs geometric shapes, icons, uppercase badges, and high-luminance colors with **Meta Neural Band** spatial gestures (`Arrow*` / `Enter`).
 
 ---
 
-## 1. Problem and audience
+## 2. The Product & Shipped UI Surfaces
 
-**Audience.** Blind and low-vision people. There are about 2.2 billion people with vision impairment worldwide, about 80,000 in Finland, and most of them are over 65. The second audience is older adults with declining sight who manage several medications.
+HoldUp is a hands-free medication and allergen label assistant powered by **Gemini Live** (`gemini-3.8-live`) and **Gemini 3.8 Flash** (`gemini-3.8-flash`).
 
-**Everyday problem.** *"Is this the right one?"* Several times a day you hold a box, bottle or package you can't read. Is this the blood-pressure pill or the sleeping pill? Is this oat milk the one without nuts? Has it expired? Today the options are:
-- Ask someone. This costs independence and isn't always possible.
-- Phone OCR apps (Seeing AI and similar). You need **two hands for the item and a third for the phone**. You aim blind, and the app reads whatever text it finds with no idea whether it matters to *you*.
-- Video call a volunteer (Be My Eyes). It's slow, needs another person, and medication is private.
+### End-to-End Interaction Loop
+1. **Ask naturally.** *"Is this my evening pill?"*, *"Did I take my pills?"*, or *"Does this contain nuts?"* via the glasses open-ear mic, capture button, keyboard (`Space`), or Meta Neural Band.
+2. **Guided capture (`gemini-3.8-live`, streaming).** Watches ~1 fps frames and speaks short body-relative cues (`other_side`, `rotate`, `closer`, `more_light`, `hold_still`) until text is sharp, while `VoiceActivityPill` tracks open-ear mic RMS and supports mid-sentence barge-in.
+3. **Multi-frame verified read (`verify_label` -> `gemini-3.8-flash`).** Selects the 1-3 sharpest frames from the bounded 8-slot RAM `FrameRing` (`FrameRing.pick`) and runs schema-constrained extraction (`shared/label_schema.json`) with `[0, 1]` confidence per field and **zero user profile attached** (preventing confirmation bias).
+4. **Deterministic personal safety check (`server/src/safety.ts`).** Enforces 6 deterministic guardrails against the user's **on-device** profile behind a hard **`STRENGTH_MIN_CONF = 0.80` never-guess gate**:
+   - `MATCH`: *"Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today."*
+   - `WARNING`: *"This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs."* (Also catches wrong strengths, double doses, expired packs, and EU-14 food allergen synonyms such as `arachis oil` -> `peanut`).
+   - `UNSURE`: *"It looks like Amlodipine, but I can't read the strength confidently. Turn the label toward the light or check with a pharmacist."* **HoldUp never guesses a dose.**
+5. **Confirm, log, and alert family.** Speaks a concise 2-sentence verdict, updates `/hud` on Ray-Ban Display, logs taken doses into on-device `localStorage` by voice (*"I took it"*) or Neural Band pinch, updates the daily adherence checklist, and formats 1-tap SMS/email/clipboard caregiver summaries (`CaregiverAlertCard`).
 
-**Why glasses beat a phone here.**
-- The camera **is already pointing at what your hands hold**, so you don't have to aim. Both hands stay free for the bottle and the cane, or the pill and the glass of water.
-- Audio goes to the open-ear speakers, so it's private and your ears stay open to the room.
-- **Active guidance.** Because the frames stream continuously, the assistant can coach you: *"Turn it left… a bit closer… got it."* A single snapshot can't do that.
-- On Ray-Ban Display a large high-contrast card shows the verdict, so low-vision users get audio *and* a visual confirmation.
+### Shipped Client & Booth Surfaces
+- **`JudgeDemoTour` (`web/src/components/JudgeDemoTour.tsx`)**: Docked 60-second interactive judge walkthrough at the top of the PWA running all 5 core safety and resilience beats (`1. Right Evening Pill`, `2. NSAID Safety Catch`, `3. Covered Dose (Zero Guess)`, `4. Hidden Nut Allergen`, `5. Wi-Fi Off Barcode Fallback`) in one click without requiring physical props.
+- **`ScheduleChecklistCard` (`web/src/components/ScheduleChecklistCard.tsx`, *"Did I Take My Pills?"*)**: Real-time daily adherence checklist grouping saved medications by local dose window (`morning`, `noon`, `evening`, `bedtime`, `as_needed`), showing `takenToday / requiredToday` counts, `HH:MM` timestamps, and `>= 48 px` `Check Label` / `Log Taken` buttons across `en`, `fi`, and `sv`.
+- **`ConfidenceBreakdownCard` (`web/src/components/ConfidenceBreakdownCard.tsx`)**: Per-field `[0, 100%]` confidence inspector rendered directly beneath `VerdictCard`, displaying a visual **`80%` `STRENGTH_MIN_CONF = 0.80` threshold bar** (`80% Dose Gate: PASSED >= 80%` vs `BLOCKED < 80%`), overall readability badge, and the deterministic safety audit trail.
+- **`SafetyRuleExplainerCard` (`web/src/components/SafetyRuleExplainerCard.tsx`)**: Personalized inspection of all 6 active deterministic guardrails (`80% Never-Guess Dose Gate`, `Prescription Ingredient & Strength Match`, `Drug-Class & Avoid Rules`, `Allergen & Excipient Synonym Catch`, `Expiry Month & Date Guard`, `Same-Day Double-Dose Prevention`) plus the EU MDR Art. 2(1) non-medical assistive-reader boundary.
+- **`VoiceActivityPill` (`web/src/components/VoiceActivityPill.tsx`)**: Open-ear voice status bar resolving 6 deterministic states (`MIC LISTENING`, `HOLDUP SPEAKING`, `SNAPSHOT AUDIO`, `OFFLINE LOCAL`, `AUDIO MUTED`, `MIC STANDBY`) with a 5-bar RMS meter and `>= 48 px` `Interrupt Speech` barge-in button.
+- **`PharmacyImportModal` (`web/src/components/PharmacyImportModal.tsx`)**: Zero-cloud `holdup://rx` counter QR onboarding supporting **live environment-camera QR scanning** (`Scan QR with Camera` via `getUserMedia` + `BarcodeDetector`, stopping camera tracks immediately on capture), smart guidance if a DAT bridge QR or retail EAN barcode is scanned instead, 1-click Finnish *Yliopiston Apteekki* sample loading, and idempotent local profile merge.
+- **`ViewfinderStage`, `DeviceResiliencePanel`, `EvalProofCard`, `HudPreviewFrame`, `DoseTimelineCard` & `CaregiverAlertCard`**: Explicit `CAMERA OFF` / `CAMERA ON` + 45s auto-stop indicator, 3-source switcher (`Phone Camera`, `Glasses DAT`, `7 Demo Props`), live RTT/DAT telemetry + 4 chaos fault simulators + SVG QR pairing codes, live `/api/stats` ledger card, interactive `600x600` `#000000` Ray-Ban Display simulator, 7-day dose timeline, and caregiver alert links.
+- **Single-Origin Pitch & Booth Artifacts (`:8787`)**:
+  - `/deck` ([`deck/index.html`](../deck/index.html)): Self-contained 12-slide 16:9 HTML pitch deck with presenter notes, slide overview grid, and live `/api/eval-summary` hydration.
+  - `/judge-handout.html` ([`docs/judge-handout.html`](judge-handout.html)): Printable A4 portrait judge and mentor quick-start handout with inline SVG waveguide diagrams, controls, and verified metrics.
+  - `/printable-props.html` ([`docs/printable-props.html`](printable-props.html)): Printable A4 stage prop wraps (*Amlodipin 5 mg*, *Burana 400 mg*, expired *Metformin 500 mg*, *Nordic Oat & Hazelnut Bar*) with scannable GS1 EAN-13 / Code-128 barcodes and a zero-PII Finnish `holdup://rx` pharmacy QR counter sticker.
 
-## 2. The product
+### Trust, Privacy, and Graceful Degradation Principles
+- **No silent guessing**: `STRENGTH_MIN_CONF = 0.80` blocks any uncertain medication dose and routes to a coaching cue or pharmacist handoff.
+- **Active check only + 45s auto-stop**: Capture starts only on explicit user action, plays `camera_on`/`camera_off` earcons, throttles live frames to `<= 1 fps` (`>= 900 ms`), and auto-stops after `45 s` (`IDLE_STOP_MS = 45000`).
+- **Zero server retention**: Frames stay in an 8-slot RAM `FrameRing` cleared on WebSocket close (`hub.ring.clear()`); audio streams in RAM only; `server/src/log.ts` redacts `DENY` keys and scrubs `AIza...` secrets; health profiles and `doseLog` stay strictly in phone `localStorage` (`holdup.*`, 1-tap `wipeAllLocalData()`); `/hud` writes zero browser storage.
+- **Hardware LED + Bystander Face-Ignore**: Meta DAT SDK `1.0.1` + firmware `V128+` lock the front capture LED ON during streaming, while prompts and JSON schema forbid describing people or faces.
 
-HoldUp is a hands-free label assistant powered by Gemini Live.
-
-1. **Ask naturally.** "Hey, is this my evening pill?" Or press the glasses' capture button, or tap the Neural Band.
-2. **Guided capture (Gemini Live, streaming).** The assistant watches the frames and speaks short coaching cues until the label is readable: rotate, move closer, more light, the barcode side is facing you.
-3. **Verified read (Gemini structured extraction).** Once the frame is good, a tool call sends the 1–3 sharpest frames to a strong model with a strict JSON schema: product, active ingredient, strength, dosing, expiry, allergens and a **confidence for each field**. The model must leave a field out when it can't read it.
-4. **Personal safety check.** The read is matched against the user's own profile, which is stored **on the device only**: their medication list with schedule, and their allergies. The verdict is one of three:
-   - ✅ *"Yes. Amlodipine 5 mg, your evening pill. You haven't taken it today."*
-   - ⚠️ *"This is Ibuprofen 400 mg. It isn't on your list, and your list says to avoid NSAIDs."*
-   - ❓ *"I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist."* **It never guesses on doses.**
-5. **Log it** (optional). "I took it." The dose goes into an on-device log, so the next time you ask, it can say "you already took this today".
-
-**Second scenario for the demo:** food. *"Does this contain nuts?"* reads the allergen panel, checks it against your allergies and gives the expiry date.
-
-### Trust and safety principles (visible in the UI and the deck)
-- **No silent guessing.** Every field has a confidence. Low confidence becomes a coaching cue or an "I'm not sure" answer, never a hallucinated dose. Doses and strengths need a confident read from two frames.
-- **The camera runs only during an active check.** The user starts it explicitly, it auto-stops after 45 s of no label, and an on-screen and audio "camera on" indicator shows while it runs. Frames go at 1 fps and are cut to the region of interest when possible.
-- **Nothing stored on a server.** Frames and audio are processed in memory, then dropped. The server keeps no image logs and redacts transcripts from its logs. The profile and dose log live in the phone's local storage. One button deletes everything.
-- **Consent first.** Onboarding explains what is captured, where it goes (Google Gemini API) and what is kept. Camera and mic permissions are requested *in context* with a plain explanation and a recovery path if they are denied.
-- **Bystanders.** The glasses' capture LED is on while streaming. The model is told to ignore people and never describe faces.
-- **Not a medical device.** For anything uncertain it hands off to a pharmacist. This is the adoption path, not a weakness.
-
-### Graceful degradation (a judged requirement, shown live in the demo)
-| Condition | Behaviour |
-|---|---|
-| Camera or mic permission denied | Plain-language explanation, a "how to enable" step and a text or snapshot mode that needs only the camera |
-| Live WebSocket drops | Auto-reconnect with backoff; meanwhile switch to **Snapshot mode** (HTTP verify per frame, browser TTS) |
-| Offline completely | **Offline mode**: barcode match (BarcodeDetector) against the user's own saved medications works without network, and it says clearly that it can't read new labels |
-| Slow network | Adaptive frame rate and JPEG quality, so live latency stays under 1.5 s |
-| Glasses disconnect, battery low or doffed (DAT state) | Announces it and falls back to the phone camera without losing the session |
-| Gemini error or quota | Retry, then a fallback model chain (`gemini-3.8-live` → `gemini-3.1-flash-live-preview` → `gemini-2.5-flash-native-audio-latest`) |
-
-A **device state panel** (developer and demo view) shows camera source, mic, network RTT, Live session state, glasses state and battery. Judges can watch the system react.
-
-## 3. Platform decision
-
-Research result (Meta dev blog, May 2026): **Ray-Ban Display Web Apps have no camera access** (only motion, GPS, Neural Band input and local storage). **The camera is available only through the Device Access Toolkit (DAT), the native iOS and Android SDK.**
-
-**Decision:** one backend and three thin clients, built in order of demo robustness.
-
-1. **P0: phone web app (PWA)**, the core product. It uses the phone camera through `getUserMedia` (this is the *phone-camera fallback*, and it unblocks development immediately). Audio goes through whatever the phone is connected to. **Paired Ray-Ban Meta glasses act as a Bluetooth headset**, so mic and speaker are already on the glasses with zero extra code.
-2. **P1: DAT Android bridge** (`android-dat/`). A thin Kotlin app streams **glasses-camera frames** to the backend and reports glasses state (connected, doffed, battery). The web app then switches its "eye" to *Glasses*. This is the true first-person camera.
-3. **P1: Ray-Ban Display HUD Web App** (`/hud` route). A large-type verdict card on the in-lens display, driven by the same session over WebSocket, with Neural Band input to confirm, repeat or log.
-
-The judges get a robust demo even if the hardware misbehaves, and the full glasses story when it works.
-
-## 4. Architecture
-
-```
- Ray-Ban Meta / Display glasses
-   │  camera (DAT)      │ mic+speaker (Bluetooth HFP)     ▲ HUD (Display Web App)
-   ▼                    ▼                                  │
- android-dat bridge ── frames ──►┐                         │
- phone PWA (React) ─ audio PCM16 + frames (phone cam) ─► server (Node/TS, ws)
-                    ◄─ audio 24k + captions + verdicts ──┤   ├─ Gemini Live (gemini-3.8-live): conversation + coaching + tool calls
-                                                         │   ├─ verify_label tool → gemini-3.8-flash (JSON schema, per-field confidence)
-                                                         │   ├─ safety check vs profile (deterministic TS rules + model explanation)
-                                                         └──►└─ /hud ws fan-out
- eval/ (Python, runs on freighter via Slurm): synthetic label images (gemini-3.1-flash-image)
-   → accuracy and calibration eval of verify_label → results table for the deck
-```
-
-- **Server**: Node 24, TypeScript (tsx), Express and `ws`, `@google/genai`. The API key stays on the server and is never sent to the browser.
-- **Web**: Vite, React and TypeScript, installable PWA, WCAG 2.2 AA, built screen-reader-first (VoiceOver and TalkBack), large type, earcons and haptics.
-- **Repo layout**: `server/`, `web/` (includes `/hud`), `android-dat/`, `eval/`, `deck/`, `docs/`.
-- **Run**: `npm install && npm run dev` from the repo root starts the server and web together. `npm run tunnel` gives an HTTPS URL for phones.
-
-## 5. Demo script (3 minutes)
-
-1. **(20 s) Hook.** Video of a real low-vision user's kitchen counter with three nearly identical white pill boxes. "Which one is the evening pill?"
-2. **(20 s) Consent onboarding.** It shows what is captured, where it goes and what is kept. The profile has 3 meds and a nut allergy, stored on the device only.
-3. **(60 s) Live on the glasses.** The presenter wears the glasses and picks up a box *with the label facing away*. HoldUp: "I can see a box, the label is on the other side. Turn it around… a bit closer… got it." Then: "Amlodipine 5 mg, your evening pill, not taken today." The Display HUD shows a green card. "I took it" logs the dose.
-4. **(30 s) Safety catch.** They pick up ibuprofen. ⚠️ "Not on your list, and your profile says to avoid NSAIDs." Then a box with a blurry or covered strength: ❓ "I can't read the strength confidently." It refuses to guess.
-5. **(25 s) Resilience.** Turn Wi-Fi off live: "Connection lost, snapshot mode… now offline: I can still recognise *your* meds by barcode." Turn Wi-Fi on and it auto-recovers. Take the glasses off and the panel shows "glasses doffed, using phone camera".
-6. **(25 s) Proof and path.** Eval numbers: field accuracy and **0 confident-wrong dose reads** on N synthetic plus real labels. Privacy architecture. Pilot plan with the Finnish Federation of the Visually Impaired (Näkövammaisten liitto) and a pharmacy chain.
-
-## 6. Hardware plan (glasses on loan at the Meta booth, mentor Amanda Le)
-
-| When (Helsinki) | Who | What |
+| Failure / Constraint | Runtime Detection | Automatic HoldUp Behavior |
 |---|---|---|
-| **Sat 15:30** | **Momin010** (backup: Chintufp) | Go to the Meta booth. Ask Amanda Le about DAT developer mode and Display Web App sideloading. Borrow **1× Ray-Ban Meta Gen 2** (camera and DAT) and **1× Ray-Ban Display + Neural Band** if available. Ask: overnight loan? Return times? Pre-registered dev app IDs? Then pair them to the Android demo phone in the Meta AI app and enable developer mode. |
-| Sat 16:00–18:00 | Momin010 + glasses agent | Install the DAT sample app, confirm the camera stream works, then install our bridge. Log every finding in `docs/HARDWARE_NOTES.md`. |
-| **Sat 19:30–20:30** | Momin010, ivarakerholm-wq | **Test slot 1**: end-to-end on the glasses (Bluetooth audio, DAT frames, HUD). Note bugs. |
-| Sat 23:00 (if no overnight loan) | Momin010 | Return the glasses and book a morning pickup. |
-| **Sun 06:30–08:30** | Momin010 (glasses), Chintufp (filming), Silas (presenter) | **Test slot 2, final rehearsal**: 3 full demo runs on the hardware, and record a backup demo video. |
-| Sun after judging | Momin010 | Return all hardware to the booth. |
+| **Permission Denied** (Camera or Mic) | `PermissionStateSummary` (`denied`) | Plain-language Chrome/Safari recovery banner; mic denial runs camera-only **Snapshot Mode** (`POST /api/verify` + typed input + `/api/tts`); camera denial unlocks **Demo Prop Mode**. |
+| **Live WebSocket Drop** | `/live` WS `close`/`error` or `degraded` | Exponential-backoff reconnect (`300 ms` to `8000 ms`) + Gemini `sessionResumption` handle; seamlessly switches to **Snapshot Mode** (`POST /api/verify` + `/api/tts` or `speechSynthesis`). |
+| **Complete Offline** | `navigator.onLine === false` | **Offline Mode**: local `BarcodeDetector` matches EAN/UPC barcodes against saved `localStorage` `meds[].barcode` and `doseLog` at `0 B` network traffic, stating clearly that unsaved labels cannot be read offline. |
+| **Slow Venue Wi-Fi** | 5s WebSocket `ping` / `pong` RTT probe | Dynamically adapts capture from `1.0 fps` `768 px` (`<= 250 ms` RTT) down to `0.75 fps` `640 px` (`<= 650 ms`) and `0.5 fps` `512 px` JPEG `0.50` (`> 650 ms`), cutting video bandwidth by `84.0%`. |
+| **Glasses Doffed / Low Battery** | DAT `/ingest/state` (`!connected`, `!worn`, `battery < 15%`) | Announces transition aloud and hot-swaps active eye from `"glasses"` to `"phone"` mid-session without losing transcripts or profile state. |
+| **Gemini Error or Quota (`429`/`5xx`)** | Retry + 3-model fallback chains | Live (`gemini-3.8-live` -> `gemini-3.1-flash-live-preview` -> `gemini-2.5-flash-native-audio-latest`) and Verify (`gemini-3.8-flash` -> `gemini-3.5-flash` -> `gemini-3-flash-preview`). |
 
-**Read before the pickup: [HARDWARE_NOTES.md](HARDWARE_NOTES.md).**
-- No GitHub token or Developer Center registration is needed (DAT 1.0.1 is on Maven Central; in developer mode the app ID is 0).
-- Needs the Meta AI app V292 or later and glasses firmware V128 or later. **Reboot the glasses after the update**, or the camera stays dead.
-- Only one third-party app can be registered in developer mode.
-- The Display Web App is added in the Meta AI app under Apps → Web Apps → Connect Web App and needs an HTTPS URL. Web Apps are limited by region and age, so ask Amanda Le whether Finland is enabled and set a birthday on the account.
-- The Web App URL must stay the same between sessions. The HUD and the bridge therefore attach to the **latest active session** by default, with no code to enter, and we need a stable host (see question 2).
+---
 
-**Fallback if there's no hardware or DAT is blocked:** the phone camera plus glasses as a Bluetooth headset, which still gives hands-free audio, plus the phone on a neck lanyard or chest clip. The bridge code and the HUD page are shown separately.
+## 3. Platform Decision: One Backend, Three Thin Clients
 
-## 7. Timeline
+Meta Ray-Ban Display Web Apps run inside an on-glasses Chromium container with **no camera or raw microphone API** (`getUserMedia` is unavailable on-lens), whereas first-person camera access runs through the native **Meta Wearables Device Access Toolkit (DAT) SDK `1.0.1`** ([`docs/HARDWARE_NOTES.md`](HARDWARE_NOTES.md), [`docs/IOS_DAT_PARITY.md`](IOS_DAT_PARITY.md)). HoldUp unifies **one Node.js TypeScript backend** with **three thin clients**:
 
-| Helsinki time | Milestone |
-|---|---|
-| Sat 14:00–15:00 | Plan, team docs, scaffold and agents spawned (**M0**) |
-| Sat 15:00–19:00 | **M1, vertical slice on the phone**: consent → live session → coaching → verify_label → verdict spoken. Pushed to main. |
-| Sat 19:00–23:00 | **M2, robustness**: snapshot and offline modes, device panel, reconnect, permission flows, HUD, DAT bridge, eval v1 on freighter |
-| Sat 23:00–Sun 03:00 | **M3, polish**: accessibility pass (VoiceOver and TalkBack), latency tuning, eval v2 with real photos, deck draft |
-| Sun 03:00–06:00 | Deck final, README, demo video script, bug bash |
-| **Sun 06:00** | **Submission-ready freeze on main.** Fixes go through PR only. |
-| Sun 06:30–08:30 | Hardware rehearsal and backup video |
-| **Sun 09:30** | Submit (repo, deck, video). Deadline 10:00. |
+1. **Phone / Laptop PWA (`web/`, P0 core)**: Screen-reader-first React 19 + Vite 6 client (WCAG 2.2 AA/AAA across `dark`, `light`, and `high-contrast` themes), 16 kHz / 24 kHz PCM16 Web Audio streaming, `getUserMedia` phone-camera fallback, 7-fixture Demo Prop Mode, and offline `BarcodeDetector`. Paired Ray-Ban Meta glasses act immediately as a hands-free Bluetooth HFP mic and open-ear speaker.
+2. **Android DAT Camera Bridge (`android-dat/`, P1 hardware eye)**: Thin Kotlin app built on `com.meta.wearable:mwdat-core:1.0.1` and `mwdat-camera:1.0.1` (Developer Mode app ID `0`), streaming `720x1280` frames throttled to ~1 fps JPEG (`POST /ingest/frame`) plus `connected` / `worn` / `battery` / `streaming` telemetry (`POST /ingest/state`), paired in one scan via `holdupbridge://connect`.
+3. **Meta Ray-Ban Display Web App (`/hud`, P1 waveguide lens)**: Pure `#000000` `600x600` additive waveguide HUD (`<= 65%` lit pixel fill budget, `<= 8` word headline cap, 4-channel redundant encoding) with Neural Band `Arrow*` / `Enter` focus and zero-code session attach over `WSS /hud-ws`.
 
-## 8. Gemini usage (for the DeepMind prize)
-- **In the product**: Gemini Live (bidirectional audio and video, native audio voice, tool calling) for coaching and conversation; Gemini 3.8 Flash for schema-constrained label extraction with per-field confidence; Gemini model explanations for safety verdicts; a fallback model chain.
-- **As a workforce**: Gemini image models generate a synthetic dataset of medication and food labels with known ground truth and realistic degradations (blur, glare, rotation, partial view). A Gemini judge scores the coaching quality of transcripts. Gemini generates the drug-interaction and allergen synonym tables (for example "arachis oil" means peanut) that we then review.
+---
+
+## 4. System Architecture & Single-Origin Endpoints
+
+```text
++-----------------------------------------------------------------------------------+
+| META AI GLASSES (Ray-Ban Meta Gen 2 + Meta Ray-Ban Display + Neural Band)         |
+|  - First-person camera (DAT 1.0.1)   - Open-ear mic/speaker (BT HFP)              |
+|  - Hardware Capture LED (firmware)   - 600x600 additive waveguide HUD (/hud)      |
++-----------------+----------------------------------+----------------------+-------+
+                  | 720x1280 @ 2fps                  | BT HFP audio         ^
+                  v                                  v                      |
++----------------------------------+  +----------------------------------+  |
+| 1. ANDROID DAT BRIDGE            |  | 2. PHONE / LAPTOP PWA (web/)     |  |
+|    (android-dat/, Kotlin)        |  |  - ScheduleChecklistCard & Tour  |  |
+|  - mwdat-core & mwdat-camera     |  |  - ConfidenceBreakdownCard (80%) |  |
+|  - Throttles <= ~1 fps JPEG      |  |  - VoiceActivityPill (barge-in)  |  |
+|  - Reports worn/battery state    |  |  - PharmacyImportModal (cam QR)  |  |
++-----------------+----------------+  +-----------------+----------------+  |
+                  | POST /ingest/frame                  | WSS /live         | WSS /hud-ws
+                  | POST /ingest/state                  | POST /api/verify  | (zero-code
+                  v                                     v                   |  floatingHuds
++------------------------------------------------------------------------+  |  attach +
+| SINGLE-ORIGIN NODE/TS SERVER (:8787 local / :8080 Cloud Run, Express 5)|--+  1.78ms p50
+|  - Static & Booth: /, /hud, /deck (12 slides), /judge-handout.html,    |     replay)
+|    /printable-props.html, /.well-known/meta-wearables-manifest.json    |
+|  - Hub & FrameRing(8): RAM-only sharpness-ranked frame ring + fan-out  |
+|  - LiveProxy (gemini-3.8-live): 2-way voice coaching, barge-in & tools |
+|  - verify_label (gemini-3.8-flash): 1-3 sharpest frames -> JSON schema |
+|  - Safety Engine (server/src/safety.ts): 6 deterministic guardrails    |
+|  - HTTP APIs (no-store): /api/health, /api/stats, /api/eval-summary,   |
+|    /api/verify, /api/tts (24 kHz WAV via gemini-3.8-flash-tts)         |
++------------------------------------------------------------------------+
+```
+
+- **Server (`server/`)**: Node `>= 20` (`22`/`24`), TypeScript (`tsx`), Express 5, `ws`, `@google/genai`. `GEMINI_API_KEY` stays strictly in server RAM (`server/src/env.ts`).
+- **Frontend Bundle (`web/`)**: Vite 6 splits `node_modules` into `vendor-<hash>.js` (`~223 kB`) and app code into `index-<hash>.js` (`~430 kB`), keeping every chunk under `500 kB` ([`docs/DEPLOY.md`](DEPLOY.md)).
+- **Run & Deploy**: `npm install && npm run dev` starts `:8787` + `:5173`; `npm start` + `npm run tunnel` (or `Dockerfile` on Cloud Run `europe-north1`) serves the entire stack from a single HTTPS origin.
+
+---
+
+## 5. Measured Benchmarks & Automated Verification
+
+All metrics below come from committed real-model and loopback benchmark artifacts in `eval/*.json` (`27` JSON files; full methodology in [`docs/EVAL.md`](EVAL.md)) and automated test suites:
+
+| Benchmark / Gate | Source Artifact / Suite | Measured Result |
+|---|---|---|
+| **Never-Guess Dose Safety Invariant (`STRENGTH_MIN_CONF = 0.80`)** | All `19` label-reading suites (`228` real-model reads across `27` `eval/*.json` files) | **`0` confident-wrong dose reads** and **`0` false-safe allergen verdicts** across clean, thumb-occluded, curved-bottle, blister-glare, low-light, motion-blurred, partial-view, upside-down/sideways, thermal-faded/worn, debossed-expiry, prompt-injected, bystander-PII, LASA, and 6-language labels |
+| **Live End-to-End Glass-to-HUD Verdict Latency** | `eval/e2e_websocket_live.json`, `eval/live_models_probe.json` | **`2738.8 ms` live frame-to-HUD verdict `p50`** (`3/3` verdict accuracy across `amlodipine.jpg`, `ibuprofen.jpg`, `blurry_amlodipine.jpg`), **`431.6 ms` `/live` startup-to-ready**, **`1175.3 ms` first coaching event**, **`582 ms` `gemini-3.8-live` first-audio latency** |
+| **DAT Frame Ingest, `/hud-ws` Replay & Concurrency** | `eval/hud_latency_bandwidth.json`, `eval/concurrent_sessions_results.json` | **`1.17 ms` `POST /ingest/frame` `p50`** (`100` frames, `8`-slot bounded `FrameRing` cleared to `0` on disconnect), **`1.78 ms` `/hud-ws` late-join replay `p50`** (`50` joins, `674 B` verdict wire), **`0` cross-session leaks across `25` concurrent sessions (`50` WebSockets)** |
+| **Core 4-Suite Accuracy & Calibration (`53` + `16` reads)** | `eval/combined_summary.json`, `eval/calibration_curve.json` | **`98.1%` (`52/53`) overall verdict accuracy**, **`100.0%` clean field accuracy**, **`98.2%` occluded abstention** (`p50 = 3537.1 ms`); **`ECE = 0.0138`**, **`Brier = 0.0005`** (`100.0%` clean recall & `100.0%` unreadable abstention at `0.80`) |
+| **Multi-Frame Recovery, Adversarial Allergens & Expiry** | `eval/multiframe_recovery_results.json`, `eval/allergen_adversarial_results.json`, `eval/expiry_formats_results.json` | **`6/6` (`100.0%`) single-frame partial-view abstentions -> `6/6` (`100.0%`) paired-frame `FrameRing.pick(2)` recovery** (`p50 = 3519.0 ms`); **`10/10` (`100.0%`) botanical/Nordic allergen catches** (`p50 = 3545.8 ms`); **`10/10` (`100.0%`) Nordic/debossed expiry normalization & `8/8` expired catches** (`p50 = 3367.2 ms`) |
+| **Optical Stress, Prompt-Injection, Privacy & `/api/tts`** | `eval/curved_blister_results.json`, `eval/lighting_motion_results.json`, `eval/orientation_robustness_results.json`, `eval/thermal_fade_wear_results.json`, `eval/prompt_injection_labels_results.json`, `eval/bystander_privacy_results.json`, `eval/tts_multilingual_audio.json` | **`100.0%` verdict accuracy** on curved/blister (`10/10`), lighting/tremor (`12/12`), rotated `90/180/270 deg` (`10/10`), thermal-faded/worn (`10/10`), and visual prompt-injection (`8/8`, `0` hijacks) packs; **`0` bystander/PII leaks (`8/8` scenes)**; **`6/6` (`100.0%`) valid `24 kHz` WAVs on `/api/tts`** (`en`/`fi`/`sv`, `p50 = 3910.9 ms`) |
+| **Bandwidth Savings & 3-Year Assistive TCO** | `eval/unit_economics.json` | **`84.0%` slow-network video savings** (`724.64 KB -> 116.02 KB` above `650 ms` RTT), **`EUR 0.00294`/check** (`EUR 0.35/mo`), **`EUR 341.68` vs `EUR 4,150.00` 3-year TCO = `91.8%` savings** (`12.1x` lower than OrCam midpoint) |
+| **Automated Test & Production Smoke Gate** | `scripts/verify-all.mjs`, `scripts/verify-submission.mjs`, `scripts/smoke-production.mjs` | **`510/510` automated tests passing across `74` suites** (`190` server tests in `24` suites + `320` web tests in `50` suites), **`19` live single-origin production routes verified**, `0` broken relative links across `20` docs, `0` leaked keys, `0` em dashes |
+
+---
+
+## 6. Three-Minute Live Stage Demo Summary
+
+Full second-by-second runbook, pre-flight checklist, and 3-tier hardware contingency plan in [`docs/DEMO_SCRIPT.md`](DEMO_SCRIPT.md):
+
+1. **`0:00 - 0:20` (20 s) Hook**: Three nearly identical white Nordic pharmacy boxes + water glass in hand; why smartphone OCR demands three hands while first-person Meta AI Glasses keep both hands free.
+2. **`0:20 - 0:40` (20 s) Consent & Live Pharmacy QR Scan**: Accept `ConsentOnboarding`, open `PharmacyImportModal`, tap **`Scan QR with Camera`**, and scan the zero-PII Finnish *Yliopiston Apteekki* `holdup://rx` QR slip from [`docs/printable-props.html`](printable-props.html) into local-only `ScheduleChecklistCard` (*"Did I Take My Pills?"*).
+3. **`0:40 - 1:40` (60 s) Guided Capture, Barge-In, Match & Dose Log**: Pick up *Amlodipin 5 mg* backwards; `gemini-3.8-live` coaches rotation while `VoiceActivityPill` demonstrates live barge-in (`Interrupt Speech`); `MATCH` appears on Ray-Ban Display `/hud` with `ConfidenceBreakdownCard` `80% Dose Gate: PASSED`; voice or Neural Band logs the dose into `ScheduleChecklistCard`.
+4. **`1:40 - 2:10` (30 s) Three Safety Catches**: *Burana 400 mg* triggers NSAID `WARNING`; thumb-covered *Amlodipin* triggers `UNSURE` with `ConfidenceBreakdownCard` `BLOCKED < 80%` threshold bar (**never guesses a dose**); *Nordic Oat & Hazelnut Bar* catches `hazelnuts` + `arachis oil` (`peanut`).
+5. **`2:10 - 2:35` (25 s) Live Fault & Hardware Resilience**: Trigger WS drop (`Snapshot Mode`), complete offline (`BarcodeDetector` matches `6432100012345` on-device and flags `Taken today`), and glasses doff (`Glasses DAT` -> `Phone Camera`), plus highlight the 5-step `JudgeDemoTour`.
+6. **`2:35 - 3:00` (25 s) Measured Proof & Pilot Close**: Present `0` confident-wrong doses across `228` reads, `2738.8 ms` live glass-to-HUD `p50`, `EUR 341.68` 3-year TCO (`91.8%` savings), `/deck` 12-slide deck, `/judge-handout.html`, and the 12-week Helsinki pilot with **Nakovammaisten liitto** ([`docs/PILOT_PLAN.md`](PILOT_PLAN.md)).
+
+---
+
+## 7. Hardware Plan & Booth Runbook
+
+Complete pairing, firmware, and troubleshooting details in [`docs/HARDWARE_NOTES.md`](HARDWARE_NOTES.md) and [`docs/MENTOR_QA.md`](MENTOR_QA.md):
+
+| Window (Helsinki) | Owners | Action |
+|---|---|---|
+| **Sat 15:30** | Momin010 (backup: Chintufp) | Borrow **Ray-Ban Meta Gen 2** (DAT camera + BT HFP) and **Meta Ray-Ban Display + Neural Band** at the Meta booth; pair to Android 12+ (`minSdk 31`) demo phone in Meta AI `V292+` with Developer Mode ON (`0`/`0` credentials) and account DOB set. |
+| **Sat 16:00 - 20:30** | Momin010 + ivarakerholm-wq | Install `android-dat/` bridge, verify `POST /ingest/frame` (`1.17 ms` `p50`) + `POST /ingest/state`, register `https://<host>/hud` via `Meta AI -> Apps -> Web Apps -> Connect Web App`, and confirm zero-code `/hud-ws` session binding. |
+| **Sun 06:30 - 08:30** | Momin010, Chintufp, Silas | Print [`docs/printable-props.html`](printable-props.html) and [`docs/judge-handout.html`](judge-handout.html) at `100%` A4 scale, run 3 full hardware rehearsals, and capture the 3-pane backup video ([`docs/VIDEO_PRODUCTION.md`](VIDEO_PRODUCTION.md)). |
+| **Sun 09:30** | Full team | Final submission check (`node scripts/verify-all.mjs && node scripts/verify-submission.mjs && node scripts/smoke-production.mjs`) ahead of the **Sun 15 Nov 10:00** deadline; return loaned hardware after judging. |
+
+---
+
+## 8. Milestones & Delivery Status
+
+| Milestone | Scope | Status |
+|---|---|---|
+| **M0: Architecture & Contracts** | Shared TypeScript wire contracts (`shared/types.ts`, `shared/label_schema.json`), privacy & HUD specs | Completed |
+| **M1: End-to-End Vertical Slice** | Consent -> `/live` `gemini-3.8-live` coaching -> `verify_label` `gemini-3.8-flash` -> `safety.ts` -> spoken verdict | Completed |
+| **M2: Hardware & Resilience** | `android-dat/` DAT `1.0.1` bridge, `/hud` Ray-Ban Display waveguide Web App, Snapshot/Offline modes, `DeviceResiliencePanel` | Completed |
+| **M3: Inclusive UX & Booth Polish** | WCAG 2.2 AA/AAA (`dark`/`light`/`high-contrast`), `ScheduleChecklistCard`, `ConfidenceBreakdownCard`, `SafetyRuleExplainerCard`, `VoiceActivityPill`, `PharmacyImportModal` camera QR, `JudgeDemoTour` | Completed |
+| **M4: Benchmarks, Deck & Freeze** | `27` `eval/*.json` artifacts (`0` confident-wrong doses), 12-slide `/deck`, `/judge-handout.html`, `/printable-props.html`, `510/510` automated tests | Completed |
+
+---
+
+## 9. Gemini API & Workforce Usage (Google DeepMind Prize)
+
+- **In the live runtime**:
+  - **Gemini Live (`gemini-3.8-live`)**: Bidirectional 16 kHz / 24 kHz PCM16 voice + ~1 fps video coaching, native barge-in (`interrupted`), sliding-window context compression, `sessionResumption`, and tool calling (`show_cue`, `verify_label`, `log_dose`) with 3-model live fallback (`gemini-3.8-live` -> `gemini-3.1-flash-live-preview` -> `gemini-2.5-flash-native-audio-latest`).
+  - **Gemini 3.8 Flash (`gemini-3.8-flash`)**: Multi-frame schema-constrained packaging extraction (`ThinkingLevel.LOW`, `shared/label_schema.json`) with per-field `[0, 1]` confidence and 3-model verify fallback (`gemini-3.8-flash` -> `gemini-3.5-flash` -> `gemini-3-flash-preview`).
+  - **Gemini Flash TTS (`gemini-3.8-flash-tts`)**: Multilingual (`en`/`fi`/`sv`) `24 kHz` WAV synthesis on `POST /api/tts` (`Kore` voice, fallback `gemini-2.5-flash-preview-tts` -> browser `speechSynthesis`).
+- **Offline evaluation & fixture workforce**:
+  - Generates realistic clean and degraded packaging test suites (`server/scripts/generate-demo-fixtures.ts`, `eval/generate_synthetic.py`, `eval/eval_*.py`) across blur, glare, thumb occlusion, curved bottles, rotations, thermal fade, and 6 European languages.
+  - Scores multi-turn coaching brevity, tool discipline, Finnish switching, medical-boundary handoff, and bystander face/PII refusal via an automated LLM-as-judge rubric (`eval/judge_coaching.py`, `8/8` scenarios passed at `5.00/5`).
