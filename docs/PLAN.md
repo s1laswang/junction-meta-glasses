@@ -40,6 +40,33 @@ Self-score at 18:45: **7.3/10** (Creativity 8, Technical execution 6.5, Real-wor
 
 Hosting: **one locked cloudflared tunnel** on the demo laptop from Sun 06:00. Contract: `shared/types.ts` (Sat 19:00 additions).
 
+## 0c. FieldSpotter: our own model on Verda GPUs (Sun 01:00, Silas asked for more ambition)
+**Headline demo moment:** the wearer holds the box with a thumb over the strength. Before Gemini has said anything, the glasses say *"Your thumb is on the dose, slide it down"*, and the HUD shows a live box around where the dose is. The readiness tone rises only when the **strength itself** is in view.
+
+**What we build:**
+- **The model:** PaliGemma 2 3B (Gemma family), LoRA-fine-tuned to `detect strength ; expiry ; allergens ; product`.
+- **Training data:** our 1,740 Gemini-generated, ground-truthed label images, with per-field boxes on clean *and* degraded images (product 1,700, strength 1,240, expiry 1,670, allergens 440).
+- **Gemini-made data distilled into an open model:** Gemini stays the reader of record (safety decisions unchanged), and FieldSpotter is the fast spatial coach.
+- **Fallback:** YOLOv8n on the same boxes, phone-sized; it's also the on-device/offline path.
+
+**Where it runs:** Verda A100-40G. Training is about 2 h on 1 GPU. Serving is a small HTTP endpoint on Verda until 11:00. The total is ≤ 10 A100-hours (about €15–20).
+
+**Integration:** an optional `FIELDSPOTTER_URL`. The server sends each frame (≤ 5 fps) there and gets boxes back. From those it:
+- (a) computes the readiness value from the strength box (the tone);
+- (b) gives deterministic spatial cues: thumb or occlusion over the strength box, the label off the frame edge, or turn the box;
+- (c) optionally sends Gemini a crop of the strength region.
+
+It's flag `spotter`. Off means no behaviour change.
+
+**Evidence:**
+- mAP@0.5 per field on a held-out split, plus "strength visible" precision and recall with n and Wilson CIs;
+- latency p50/p95 on Verda;
+- training logs, instance id and cost.
+
+These go in `GEMMA.md` (DeepMind "Best Use of Gemma") and are passed to the Arena CEO for VERDA.md.
+
+**Cut line:** if mAP or latency aren't good by 04:30, FieldSpotter appears only as "trained and evaluated" (numbers), not in the live demo.
+
 ## 0b. Scoring checklist (official rubric, JUDGING.md: 4 criteria × 25%)
 The overall winner comes from peer review (top 5), then a 7-person grand jury, so the demo must land for non-experts too. A box is ticked only when the evidence is **visible in the demo or deck**, not just present in the code.
 
