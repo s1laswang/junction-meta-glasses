@@ -26,6 +26,7 @@ The words in quotes are spoken. **[Brackets]** are actions. Every step has a fal
 - [ ] Airplane-mode rehearsal: on Android, turn airplane mode on, **turn Bluetooth back on while in airplane mode** (Android remembers this), then turn airplane mode off. Now the offline step won't kill the glasses audio.
 
 **Server and network**
+- [ ] Set an access key in `.env`: `HOLDUP_KEY=<random 8+ chars>`. That blocks anyone else on the public tunnel from the live feed and the HUD. Every URL below then gets `?key=<k>` once: the phone at `https://<tunnel>/?key=<k>` (stored, then removed from the address bar), the Display Web App at `https://<tunnel>/hud/?key=<k>`, and the Bridge server field at `https://<tunnel>/?key=<k>`.
 - [ ] `npm start` (production build) on the laptop and **one** `npm run tunnel`. Write the tunnel URL here: `______________________`. Don't restart the tunnel after this point (the HUD URL depends on it).
 - [ ] `https://<tunnel>/api/health` shows `"gemini":"ok"`.
 - [ ] Open `https://<tunnel>/` on the phone. Consent is done and the mode chip says **Ready**.
