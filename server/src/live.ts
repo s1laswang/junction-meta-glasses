@@ -14,7 +14,8 @@ import { ledger } from "./ledger.ts";
 import { errSummary, log, shortId } from "./log.ts";
 import { readLabel, toProfile } from "./verify.ts";
 import { findItems } from "./find.ts";
-import { MATCH_NAME_MIN_CONF, STRENGTH_MIN_CONF, checkLabel, fmtStrength, ingredientsOf, sameStrength, spokenIngredient } from "./safety.ts";
+import { gtin14 } from "./gs1.ts";
+import { MATCH_NAME_MIN_CONF, STRENGTH_MIN_CONF, allergenHits, avoidHits, checkLabel, fmtStrength, isExpired, matchMed, sameStrength, spokenIngredient } from "./safety.ts";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -321,7 +322,8 @@ export class LiveProxy implements LiveLike {
           }
           if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
           if (this.stopped) return;
-          const v = checkLabel(read, this.hub.profile, new Date(), this.hub.freshCode());
+          const fresh = this.hub.freshCode();
+          const v = checkLabel(read, this.hub.profile, new Date(), fresh);
           if (!model) { v.level = "unsure"; v.reasons.push("reader unavailable"); }
           this.send({ type: "verdict", verdict: v });
           this.respond(fc, {
@@ -331,7 +333,8 @@ export class LiveProxy implements LiveLike {
             instruction: speakInstruction(this.opts.lang, "No disclaimer, add nothing."),
           });
           log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t, dm: !!v.crossCheck });
-          this.lastItemRead = { read, at: Date.now(), gtin: this.hub.freshCode()?.gtin };
+          const codeConflict = v.crossCheck?.agrees === false;
+          this.lastItemRead = { read, at: Date.now(), gtin: codeConflict ? undefined : fresh?.gtin, codeExpiry: fresh?.expiry, codeConflict };
         } finally {
           this.send({ type: "checking", phase: "end" });
         }
@@ -373,7 +376,7 @@ export class LiveProxy implements LiveLike {
   }
 
   // ---------- hold up to add (flag addmed) ----------
-  private lastItemRead?: { read: LabelRead; at: number; gtin?: string };
+  private lastItemRead?: { read: LabelRead; at: number; gtin?: string; codeExpiry?: string; codeConflict?: boolean };
   private proposals = new Map<string, { med: Med; timer: NodeJS.Timeout }>();
 
   /** Build a Med from the last confident held-item read + the spoken schedule and ask the phone to confirm. */
@@ -384,14 +387,32 @@ export class LiveProxy implements LiveLike {
     if (!read || read.kind !== "medication" || nameConf < MATCH_NAME_MIN_CONF || !read.strength.value || read.strength.confidence < STRENGTH_MIN_CONF) {
       return { ok: false, reason: "need_clear_read", instruction: "Call verify_label first and coach until the name and strength are read clearly. Do not add anything yet." };
     }
+    if (lr?.codeConflict) {
+      return { ok: false, reason: "code_conflict", speech: "The printed label and the pack's code disagree. Please ask a pharmacist before adding it." };
+    }
+    const aHits = allergenHits(read, this.hub.profile.allergies);
+    if (aHits.length) {
+      return { ok: false, reason: "allergy_warning", speech: `Warning: this medicine matches your ${aHits[0].allergy} allergy (${aHits[0].found}). Please check with a pharmacist before adding it.` };
+    }
+    const avHits = avoidHits(read, this.hub.profile.avoid);
+    if (avHits.length) {
+      return { ok: false, reason: "avoid_warning", speech: `Warning: ${avHits[0]}. Please check with a pharmacist before adding it.` };
+    }
+    const exp = (read.expiry.value && read.expiry.confidence >= 0.7 && isExpired(read.expiry.value)) || (lr?.codeExpiry && isExpired(lr.codeExpiry));
+    if (exp) {
+      return { ok: false, reason: "expired", speech: "This pack is expired. Please check an in-date pack before adding it to your list." };
+    }
     const schedule = (Array.isArray(args.schedule) ? args.schedule : []).filter((s): s is string => typeof s === "string" && !!s.trim()).map((s) => s.trim().slice(0, 40)).slice(0, 8);
     if (!schedule.length) return { ok: false, reason: "need_schedule", instruction: "Ask the user when they take it, then call add_medication again." };
-    const ingredient = read.ingredient.value && read.ingredient.confidence >= MATCH_NAME_MIN_CONF ? spokenIngredient(read.ingredient.value.toLowerCase()) : "";
-    const noStrength = (s: string) => s.replace(/\d+(?:[.,]\d+)?\s*(mg|g|mcg|µg|ml|iu)\b.*$/i, "").trim();
+    const ingredient = read.ingredient.value && read.ingredient.confidence >= MATCH_NAME_MIN_CONF
+      ? read.ingredient.value.toLowerCase().split(/\s*[,/+;&]\s*/).map((s) => spokenIngredient(s)).filter(Boolean).join(" / ")
+      : "";
+    const noStrength = (s: string) => s.replace(/\d+(?:[.,]\d+)?(?:\s*[+/]\s*\d+(?:[.,]\d+)?)*\s*(?:mg|g|mcg|ug|[\u00b5\u03bc]g|mikrog|mikrogram(?:maa|ma|m)?|micrograms?|milligram(?:maa|ma|s)?|gram(?:maa|ma|s)?|ml|iu|ky|ie|%)(?:\b|$).*$/i, "").trim();
     const product = read.product.value && read.product.confidence >= MATCH_NAME_MIN_CONF ? noStrength(read.product.value) : "";
     const name = (typeof args.name === "string" && noStrength(args.name).slice(0, 60)) || product || cap(ingredient);
     const strength = fmtStrength(read.strength.value.replace(/(\d),(\d)/g, "$1.$2"));
-    const dup = this.hub.profile.meds.find((m) => (ingredient && ingredientsOf(m.ingredient, m.name).has(ingredient)) && sameStrength(m.strength, strength));
+    const wantG = gtin14(lr?.gtin);
+    const dup = this.hub.profile.meds.find((m) => sameStrength(m.strength, strength) && (!!matchMed(read, [m]) || !!(wantG && (gtin14(m.gtin) ?? gtin14(m.barcode)) === wantG)));
     if (dup) return { ok: false, reason: "already_on_list", speech: `${cap(spokenIngredient(dup.ingredient) || dup.name)} ${dup.strength} is already on your list.` };
     const med: Med = {
       id: `${(ingredient || name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "med"}-${Math.random().toString(36).slice(2, 6)}`,
@@ -428,6 +449,7 @@ export class LiveProxy implements LiveLike {
     const list = this.hub.profile.meds;
     const i = list.findIndex((m) => m.id === med.id);
     if (i >= 0) list[i] = med; else list.push(med);
+    this.hub.lastCode = undefined;
     log("live.profile_add_accepted", { session: shortId(this.hub.id) });
     this.text(`(Saved on the phone: ${med.name} ${med.strength}, taken ${med.schedule.join(", ")}, is now on the user's list. Confirm in a few words.)`);
   }
@@ -487,6 +509,8 @@ export class LiveProxy implements LiveLike {
     if (this.stopped) return;
     this.stopped = true;
     clearInterval(this.idleTimer);
+    for (const p of this.proposals.values()) clearTimeout(p.timer);
+    this.proposals.clear();
     this.gen++;
     try { this.session?.close(); } catch { /* */ }
     this.session = null;
@@ -497,6 +521,8 @@ export class LiveProxy implements LiveLike {
   private finish(reason: string) {
     this.stopped = true;
     clearInterval(this.idleTimer);
+    for (const p of this.proposals.values()) clearTimeout(p.timer);
+    this.proposals.clear();
     const sorted = [...this.firstAudio].sort((a, b) => a - b);
     ledger({
       feature: "live", model: [...this.modelsUsed].join(",") || "none", latency_s: (Date.now() - this.t0) / 1000,
