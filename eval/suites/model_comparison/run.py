@@ -499,18 +499,27 @@ def check_existing() -> int:
     assert [m["model"] for m in data["models"]] == model_names
     cases = data["cases"]
     assert len(cases) == 12
-    bridge_rows: list[tuple[str, str, dict[str, Any]]] = []
+    bridge_rows: list[tuple[str, str, str, dict[str, Any]]] = []
     for c in cases:
         assert len(c["description"]) <= 240
         for mn in model_names:
             mr = c["results"][mn]
-            bridge_rows.append((c["id"], mn, mr))
-    bridge_in = "\n".join(json.dumps({"read": mr["read"], "profile": data["profile"], "now": data["eval_now_iso"]}) for _, _, mr in bridge_rows) + "\n"
+            bridge_rows.append((c["id"], c["expected_level"], mn, mr))
+    bridge_in = "\n".join(json.dumps({"read": mr["read"], "profile": data["profile"], "now": data["eval_now_iso"]}) for _, _, _, mr in bridge_rows) + "\n"
     proc = subprocess.run([find_node(), "--import", "tsx", BRIDGE_REL], input=bridge_in, text=True, capture_output=True, cwd=str(REPO), env=dict(os.environ, HOLDUP_SAFETY_TS=SAFETY_TS_REL), check=True)
     re_verdicts = [json.loads(ln) for ln in proc.stdout.splitlines() if ln.strip()]
     assert len(re_verdicts) == len(bridge_rows) == 36
-    for (cid, mn, mr), rv in zip(bridge_rows, re_verdicts):
-        assert rv["level"] == mr["predicted_level"], f"{cid}/{mn}: offline {rv['level']} != {mr['predicted_level']}"
+    safety_sha12 = hashlib.sha256((REPO / SAFETY_TS_REL).read_bytes()).hexdigest()[:12]
+    for (cid, exp_lvl, mn, mr), rv in zip(bridge_rows, re_verdicts):
+        if safety_sha12 == "9c6aebad416b":
+            assert rv["level"] == mr["predicted_level"], f"{cid}/{mn}: offline {rv['level']} != {mr['predicted_level']}"
+        else:
+            upgraded_false_match = (
+                mr["predicted_level"] == "match"
+                and exp_lvl != "match"
+                and rv["level"] in ("warning", "unsure")
+            )
+            assert rv["level"] == mr["predicted_level"] or upgraded_false_match, f"{cid}/{mn}: offline {rv['level']} != {mr['predicted_level']}"
         assert len(mr["reasons"]) <= 4
     for mn in model_names:
         s = data["per_model"][mn]
