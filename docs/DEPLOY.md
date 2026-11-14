@@ -1,6 +1,6 @@
 # HoldUp Deployment & Hardware Provisioning Guide (`docs/DEPLOY.md`)
 
-HoldUp serves the installable phone PWA (`/`), the Meta Ray-Ban Display in-lens Web App (`/hud`), the 12-slide submission pitch deck (`/deck`), printable judge and stage artifacts (`/judge-handout.html`, `/printable-props.html`), the Meta Wearables manifest (`/.well-known/meta-wearables-manifest.json`), HTTP API and DAT ingest endpoints (`/api/*`, `/ingest/*`), and bidirectional WebSockets (`/live`, `/hud-ws`) from a **single Node.js Express 5 + `ws` origin** (`:8787` locally, `:8080` in Cloud Run).
+HoldUp serves the installable phone PWA (`/`), the Meta Ray-Ban Display in-lens Web App (`/hud`), the 12-slide submission pitch deck (`/deck`), printable judge and stage artifacts (`/judge-handout.html`, `/printable-props.html`, `/architecture-poster.html`), the Meta Wearables manifest (`/.well-known/meta-wearables-manifest.json`), HTTP API and DAT ingest endpoints (`/api/*`, `/ingest/*`), and bidirectional WebSockets (`/live`, `/hud-ws`) from a **single Node.js Express 5 + `ws` origin** (`:8787` locally, `:8080` in Cloud Run).
 
 Both mobile `getUserMedia` (camera and microphone in Chrome/Safari) and Meta Ray-Ban Display Web Apps require a valid public **HTTPS** origin (`http://` URLs are rejected by the glasses runtime). HoldUp supports two production deployment topologies:
 
@@ -22,6 +22,7 @@ In production (`npm start` or Docker/Cloud Run), `server/src/index.ts` disables 
 | `/deck` (`/deck/`) | `GET` (`text/html`, CSS, JS) | `max-age=3600` | Self-contained 12-slide 16:9 HTML pitch deck ([`deck/index.html`](../deck/index.html)), live-hydrated via `/api/eval-summary` when served over HTTP/HTTPS. |
 | `/judge-handout.html` | `GET` (`text/html`) | Static file | Self-contained A4 portrait judge & mentor quick-start sheet ([`docs/judge-handout.html`](judge-handout.html)). |
 | `/printable-props.html` | `GET` (`text/html`) | Static file | Self-contained A4 stage prop carton wraps, scannable GS1 EAN-13 / Code-128 barcodes, and Finnish `holdup://rx` pharmacy QR counter sticker ([`docs/printable-props.html`](printable-props.html)). |
+| `/architecture-poster.html` | `GET` (`text/html`) | Static file | Self-contained A4/A3 landscape technical architecture & safety boundary poster with inline SVG diagram ([`docs/architecture-poster.html`](architecture-poster.html)). |
 | `/.well-known/meta-wearables-manifest.json` | `GET` (`application/json`) | `max-age=3600`, `dotfiles: "allow"` | Meta Ray-Ban Display Web App manifest (`"name": "HoldUp"`, `"start_url": "/hud"`, `"background_color": "#000000"`, `/icon.svg` `512x512`). |
 | `/manifest.webmanifest`, `/sw.js`, `/icon.svg`, `/fixtures/*.jpg` | `GET` | `max-age=3600` | Standard PWA manifest, offline shell service worker (explicitly bypassing `/api`, `/ingest`, `/live`, `/hud-ws`), vector icon, and `7` `768x768` demo prop JPEGs. |
 | `/api/health` | `GET` (`application/json`) | `Cache-Control: no-store` | Liveness probe, 30s cached Gemini model reachability (`"ok"` / `"down"`), configured 3-model fallback chains (`live`, `verify`, `tts`), and active `hubStats()`. |
@@ -36,8 +37,8 @@ In production (`npm start` or Docker/Cloud Run), `server/src/index.ts` disables 
 | Unmatched `/api/*` or HTML routes | Any | `404` (`application/json`) | Deterministic `{ "type": "error", "code": "not_found", "message": "not found", "recoverable": false }` with zero stack traces. |
 
 ### Vite Chunk Splitting & Dev Proxy Parity (`web/vite.config.ts`)
-- **Vendor + App JS Chunk Split**: `manualChunks` in `web/vite.config.ts` isolates `node_modules` (`react`, `react-dom`) into `dist/assets/vendor-<hash>.js` (`~223 kB`, `~69 kB` gzip) and application code into `dist/assets/index-<hash>.js` (`~430 kB`, `~116 kB` gzip), alongside `dist/assets/index-<hash>.css` (`~22 kB`) and `dist/assets/hud-<hash>.css` (`~8.2 kB`). Every JavaScript chunk stays cleanly below `500 kB`, keeping vendor caching stable across rapid UI rebuilds over `cloudflared` tunnels and the Ray-Ban Display WebView.
-- **Development Proxy Parity (`npm run dev`)**: When iterating locally on `:5173`, Vite proxies `/api`, `/ingest`, `/deck`, `/printable-props.html`, `/judge-handout.html`, `/live` (`ws: true`), and `/hud-ws` (`ws: true`) to `http://localhost:8787` so dev and single-origin production share identical relative URLs.
+- **Vendor + App JS Chunk Split (`vendor.js` + `index.js`)**: `manualChunks` in `web/vite.config.ts` isolates `node_modules` (`react`, `react-dom`) into `dist/assets/vendor-<hash>.js` (`223.08 kB`, `69.17 kB` gzip) and application code into `dist/assets/index-<hash>.js` (`484.58 kB`, `130.39 kB` gzip), alongside `dist/assets/index-<hash>.css` (`21.95 kB`, `5.00 kB` gzip), `dist/assets/hud-<hash>.css` (`8.24 kB`, `1.92 kB` gzip), and `dist/index.html` (`1.64 kB`, `0.78 kB` gzip). Every JavaScript chunk stays cleanly below `500 kB`, keeping vendor caching stable across rapid UI rebuilds over `cloudflared` tunnels and the Ray-Ban Display WebView.
+- **Development Proxy Parity (`npm run dev`)**: When iterating locally on `:5173`, Vite proxies `/api`, `/ingest`, `/deck`, `/printable-props.html`, `/judge-handout.html`, `/architecture-poster.html`, `/live` (`ws: true`), and `/hud-ws` (`ws: true`) to `http://localhost:8787` so dev and single-origin production share identical relative URLs.
 
 ---
 
@@ -66,7 +67,7 @@ Set `GEMINI_API_KEY=<your-key>` inside `.env` (never commit `.env`).
 npm start
 ```
 
-Unlike `npm run dev` (which runs Vite on `:5173` and Express on `:8787`), `npm start` compiles `web/dist` and serves `/`, `/hud`, `/deck`, `/judge-handout.html`, `/printable-props.html`, `/.well-known/meta-wearables-manifest.json`, `/api/*`, `/ingest/*`, `/live`, and `/hud-ws` from port `8787` so a single tunnel handles every client.
+Unlike `npm run dev` (which runs Vite on `:5173` and Express on `:8787`), `npm start` compiles `web/dist` and serves `/`, `/hud`, `/deck`, `/judge-handout.html`, `/printable-props.html`, `/architecture-poster.html`, `/.well-known/meta-wearables-manifest.json`, `/api/*`, `/ingest/*`, `/live`, and `/hud-ws` from port `8787` so a single tunnel handles every client.
 
 3. Open an HTTPS quick tunnel to `http://localhost:8787` in **Terminal 2**:
 
@@ -164,9 +165,10 @@ curl -fsS "$HOST/.well-known/meta-wearables-manifest.json"
 curl -fsSI "$HOST/deck/"
 curl -fsSI "$HOST/judge-handout.html"
 curl -fsSI "$HOST/printable-props.html"
+curl -fsSI "$HOST/architecture-poster.html"
 ```
 
-Confirm `/api/health` returns `200 OK` (`"ok": true`, `"gemini": "ok"`), `/api/eval-summary` returns `"ok": true`, `/.well-known/meta-wearables-manifest.json` returns `"start_url": "/hud"` with `"background_color": "#000000"`, and `/deck/`, `/judge-handout.html`, and `/printable-props.html` return `200 OK`.
+Confirm `/api/health` returns `200 OK` (`"ok": true`, `"gemini": "ok"`), `/api/eval-summary` returns `"ok": true`, `/.well-known/meta-wearables-manifest.json` returns `"start_url": "/hud"` with `"background_color": "#000000"`, and `/deck/`, `/judge-handout.html`, `/printable-props.html`, and `/architecture-poster.html` return `200 OK`.
 
 ---
 
@@ -180,9 +182,9 @@ node scripts/smoke-production.mjs
 node scripts/verify-submission.mjs
 ```
 
-- **`node scripts/verify-all.mjs`**: Runs full workspace `npm run typecheck`, `npm run build` (`vendor.js` + `index.js`), `server` unit & integration tests (`190` tests across `24` suites), `web` unit, SSR & accessibility tests (`320` tests across `50` suites; `510/510` total), `server/scripts/simulate-bridge.ts --self-test`, `android-dat/verify-structure.mjs`, `scripts/smoke-production.mjs`, `scripts/verify-submission.mjs`, an ephemeral `startServer(0)` HTTP probe (`/`, `/hud`, `/api/health`, `/api/nonexistent`), and a repository hygiene scan (`0` `AIza...` keys, `0` tracked `.env` files, `0` em dashes).
-- **`node scripts/smoke-production.mjs`**: Boots `startServer(0)` against `web/dist` and verifies all **`19` single-origin production HTTP routes**: `/`, `/hud`, `/printable-props.html`, `/judge-handout.html`, `/manifest.webmanifest`, `/sw.js`, `/.well-known/meta-wearables-manifest.json`, all `7` `/fixtures/*.jpg` JPEGs (`FFD8`/`FFD9` markers), `/api/health`, `/api/stats`, `/api/eval-summary`, `/api/unknown` (`404` JSON), and `/deck/`, enforcing `Cache-Control: no-store` on `/api/*` and `x-powered-by` removal everywhere.
-- **`node scripts/verify-submission.mjs`**: Checks all `20` Markdown documents (`README.md` + `docs/*.md`) for zero broken relative links, audits all `4` standalone HTML artifacts (`deck/index.html` `>= 12` slides, `docs/judge-handout.html`, `docs/printable-props.html`, `docs/architecture-poster.html`), validates all `27` `eval/*.json` artifacts (`total_confident_wrong_dose_count === 0`, `total_false_safe_allergen_count === 0`, zero embedded `data:image` base64 blobs or API keys), verifies all `7` `web/public/fixtures/*.jpg` byte bounds, and scans all tracked files for zero em dashes and zero co-author trailers.
+- **`node scripts/verify-all.mjs`**: Runs full workspace `npm run typecheck`, `npm run build` (`vendor.js` + `index.js`), `server` unit & integration tests (`209` tests across `28` suites), `web` unit, SSR & accessibility tests (`346` tests across `55` suites; `555/555` Node/TS tests across `83` suites, plus `23` Python `eval/` tests in `3` suites via `python3 -m unittest discover -s eval -p "test_*.py"` = `578/578` total), `server/scripts/simulate-bridge.ts --self-test`, `android-dat/verify-structure.mjs`, `scripts/smoke-production.mjs`, `scripts/verify-submission.mjs`, an ephemeral `startServer(0)` HTTP probe (`/`, `/hud`, `/api/health`, `/api/nonexistent`), and a repository hygiene scan across all `306` tracked files (`0` `AIza...` keys, `0` tracked `.env` files, `0` em dashes).
+- **`node scripts/smoke-production.mjs`**: Boots `startServer(0)` against `web/dist` and verifies all **`20` single-origin production HTTP routes**: `/`, `/hud`, `/printable-props.html`, `/judge-handout.html`, `/architecture-poster.html`, `/manifest.webmanifest`, `/sw.js`, `/.well-known/meta-wearables-manifest.json`, all `7` `/fixtures/*.jpg` JPEGs (`FFD8`/`FFD9` markers), `/api/health`, `/api/stats`, `/api/eval-summary`, `/api/unknown` (`404` JSON), and `/deck/`, enforcing `Cache-Control: no-store` on `/api/*` and `x-powered-by` removal everywhere.
+- **`node scripts/verify-submission.mjs`**: Checks all `20` Markdown documents (`README.md` + `docs/*.md`) for zero broken relative links, audits all `4` standalone HTML artifacts (`deck/index.html` `>= 12` slides, `docs/judge-handout.html`, `docs/printable-props.html`, `docs/architecture-poster.html` for zero HTML comments and zero external `<script>`/`<link>`/`<img>` URLs), validates all `32` `eval/*.json` artifacts (`total_confident_wrong_dose_count === 0`, `total_false_safe_allergen_count === 0`, zero embedded `data:image` base64 blobs or API keys), verifies all `7` `web/public/fixtures/*.jpg` byte bounds, and scans all `306` tracked files for zero em dashes and zero co-author trailers.
 - **Live Gemini API smoke check (optional, requires `GEMINI_API_KEY` in `.env`)**:
 
 ```bash
