@@ -23,7 +23,8 @@ test("scroll-padding keeps focused controls above the sticky tab bar and the Sta
 });
 
 test("AddSheet restores focus on close (React detaches the dialog before close(), so the browser can't)", () => {
-  assert.match(ADD, /const prev = document\.activeElement/);
+  assert.match(ADD, /const active = document\.activeElement/);
+  assert.doesNotMatch(ADD, /instanceof HTMLElement/, "must run in the tests' minimal DOM");
   assert.match(ADD, /if \(prev\?\.isConnected\) prev\.focus\(\);/);
-  assert.match(ADD, /querySelector<HTMLElement>\("#ask, h1\[tabindex\]"\)\?\.focus\(\)/, "fallback when the opener is gone");
+  assert.match(ADD, /querySelector\?\.<HTMLElement>\("#ask, h1\[tabindex\]"\)\?\.focus\?\.\(\)/, "fallback when the opener is gone");
 });

@@ -36,10 +36,50 @@ let hudChannel: BroadcastChannel | null = null;
 /** Mirror to a /stage?mock=1 tab, like /hud-ws?role=stage: captions, checking, readiness and metrics too. */
 export const MOCK_STAGE_CHANNEL = "holdup-stage-mock";
 let stageChannel: BroadcastChannel | null = null;
+let lastHudStatus: ServerMsg | null = null;
+let lastHudDevice: ServerMsg | null = null;
+let lastHudCoach: ServerMsg | null = null;
+let lastHudVerdict: Verdict | null = null;
+
+function attachDefaultHudListener(ch: BroadcastChannel) {
+  (ch as unknown as { unref?: () => void }).unref?.();
+  ch.onmessage = (e: MessageEvent<{ type?: string }>) => {
+    if (e.data?.type !== "hud_hello") return;
+    if (lastHudStatus) ch.postMessage(lastHudStatus);
+    if (lastHudDevice) ch.postMessage(lastHudDevice);
+    if (lastHudCoach) ch.postMessage(lastHudCoach);
+    if (lastHudVerdict) ch.postMessage({ type: "verdict", verdict: lastHudVerdict });
+  };
+}
+
+function ensureHudChannel() {
+  if (hudChannel || typeof BroadcastChannel === "undefined") return hudChannel;
+  try {
+    hudChannel = new BroadcastChannel(MOCK_HUD_CHANNEL);
+    attachDefaultHudListener(hudChannel);
+  } catch {
+    hudChannel = null;
+  }
+  return hudChannel;
+}
+
+/** Lazily opened like the HUD channel; unref'd so Node tests never hang on it. */
+function ensureStageChannel() {
+  if (stageChannel || typeof BroadcastChannel === "undefined") return stageChannel;
+  try {
+    stageChannel = new BroadcastChannel(MOCK_STAGE_CHANNEL);
+    (stageChannel as unknown as { unref?: () => void }).unref?.();
+  } catch {
+    stageChannel = null;
+  }
+  return stageChannel;
+}
+
 export function mockHudChannel() {
   try {
     hudChannel?.close();
     hudChannel = new BroadcastChannel(MOCK_HUD_CHANNEL);
+    attachDefaultHudListener(hudChannel);
   } catch {
     hudChannel = null;
   }
@@ -53,13 +93,22 @@ export function mockHudChannel() {
   return hudChannel;
 }
 function toHud(m: ServerMsg) {
-  if (m.type === "verdict" || m.type === "coach" || m.type === "status" || m.type === "device") hudChannel?.postMessage(m);
-  if (STAGE_MSG_TYPES.has(m.type)) stageChannel?.postMessage(m);
+  // the projector mirror gets more than the HUD (captions, checking, readiness); post before the HUD filter
+  if (STAGE_MSG_TYPES.has(m.type)) ensureStageChannel()?.postMessage(m);
+  if (m.type === "status") lastHudStatus = m;
+  else if (m.type === "device") lastHudDevice = m;
+  else if (m.type === "coach") lastHudCoach = m;
+  else if (m.type === "verdict") {
+    lastHudVerdict = m.verdict;
+    lastHudCoach = null;
+  } else return;
+  ensureHudChannel()?.postMessage(m);
 }
 /** Mock "under the hood" numbers for the stage (the real server measures these). */
 const stageStats = { hits: 0, misses: 0, firstAudio: [] as number[] };
 function toStageMetrics(m: Partial<StageMetrics>, features: FeatureFlag[]) {
-  if (!stageChannel) return;
+  const ch = ensureStageChannel();
+  if (!ch) return;
   const sorted = [...stageStats.firstAudio].sort((a, b) => a - b);
   const msg: StageMetrics = {
     type: "metrics",
@@ -77,7 +126,7 @@ function toStageMetrics(m: Partial<StageMetrics>, features: FeatureFlag[]) {
     frameKb: mockCtl.slow ? 22.1 : 41.7,
     ...m,
   };
-  stageChannel.postMessage(msg);
+  ch.postMessage(msg);
 }
 
 export class MockSocket {
@@ -97,6 +146,7 @@ export class MockSocket {
   private autoTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
+    ensureHudChannel();
     mockCtl.sockets.add(this);
     const fail = mockCtl.failConnects > 0 || mockCtl.offline;
     if (mockCtl.failConnects > 0) mockCtl.failConnects--;
@@ -104,7 +154,11 @@ export class MockSocket {
       if (fail) {
         this.readyState = 3;
         this.onerror?.(new Event("error"));
-        this.onclose?.(new CloseEvent("close", { code: 1006, reason: "Server unreachable (mock)" }));
+        const closeEv =
+          typeof CloseEvent !== "undefined"
+            ? new CloseEvent("close", { code: 1006, reason: "Server unreachable (mock)" })
+            : (Object.assign(new Event("close"), { code: 1006, reason: "Server unreachable (mock)", wasClean: false }) as CloseEvent);
+        this.onclose?.(closeEv);
         mockCtl.sockets.delete(this);
         return;
       }
@@ -179,7 +233,15 @@ export class MockSocket {
       }
       case "event":
         if (m.name === "repeat" && this.lastVerdict) this.emit({ type: "verdict", verdict: this.lastVerdict });
-        if (m.name === "log_dose") this.say(this.lastVerdict?.matchedMedId ? "Logged. I'll remember you took it today." : "There's no matched medicine to log.");
+        if (m.name === "log_dose") {
+          if (this.lastVerdict?.matchedMedId) {
+            this.lastVerdict = { ...this.lastVerdict, takenToday: true };
+            toHud({ type: "verdict", verdict: this.lastVerdict });
+            this.say("Logged. I'll remember you took it today.");
+          } else {
+            this.say("There's no matched medicine to log.");
+          }
+        }
         if (m.name === "stop") this.clear();
         break;
       case "audio":
@@ -274,12 +336,26 @@ export class MockSocket {
 
 export function mockSetDevice(d: Partial<DeviceState>) {
   mockCtl.device = { ...mockCtl.device, ...d };
-  for (const s of mockCtl.sockets) s.pushDevice(mockCtl.device);
+  let sent = false;
+  for (const s of mockCtl.sockets) {
+    if (s.readyState === 1) {
+      s.pushDevice(mockCtl.device);
+      sent = true;
+    }
+  }
+  if (!sent) toHud({ type: "device", device: mockCtl.device });
 }
 export function mockSetGeminiDown(down: boolean) {
   mockCtl.geminiDown = down;
-  for (const s of mockCtl.sockets)
-    s.pushStatus(down ? { type: "status", live: "degraded", detail: "Gemini Live is unavailable (simulated)" } : { type: "status", live: "open", detail: "Gemini Live is back" });
+  const m: ServerMsg = down ? { type: "status", live: "degraded", detail: "Gemini Live is unavailable (simulated)" } : { type: "status", live: "open", detail: "Gemini Live is back" };
+  let sent = false;
+  for (const s of mockCtl.sockets) {
+    if (s.readyState === 1) {
+      s.pushStatus(m);
+      sent = true;
+    }
+  }
+  if (!sent) toHud(m);
 }
 
 // ---- mock HTTP -------------------------------------------------------------------
@@ -291,7 +367,9 @@ export async function mockFetch(path: string, body?: unknown): Promise<unknown> 
     const p = (body as { profile?: Profile })?.profile ?? demoProfile();
     const amlo = p.meds.find((m) => /amlodipine/i.test(m.name)) ?? demoProfile().meds[0];
     const i = scenarioIndex++ % 3;
-    return i === 0 ? matchVerdict(p, amlo) : i === 1 ? mockWarningIbuprofen() : mockUnsureStrength();
+    const v = i === 0 ? matchVerdict(p, amlo) : i === 1 ? mockWarningIbuprofen() : mockUnsureStrength();
+    toHud({ type: "verdict", verdict: v });
+    return v;
   }
   throw new Error("mock: unknown path " + path);
 }

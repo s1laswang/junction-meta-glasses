@@ -442,6 +442,10 @@ export class LiveProxy implements LiveLike {
     const med = this.hub.profile.meds.find((m) => m.id === medId);
     if (!med) return { ok: false, error: "unknown medId" };
     this.hub.profile.doseLog.push({ medId, ts: Date.now() });
+    if (this.hub.lastVerdict?.matchedMedId === medId) {
+      this.hub.lastVerdict = { ...this.hub.lastVerdict, takenToday: true };
+      this.hub.emit({ type: "verdict", verdict: this.hub.lastVerdict }, { clients: false });
+    }
     return { ok: true, med: med.name };
   }
 

@@ -116,7 +116,10 @@ export class Hub {
   /** Send to the phone client(s) and, for HUD-relevant types, to HUDs (own + floating ones if this is the latest). */
   emit(msg: ServerMsg, opts: { clients?: boolean; hud?: boolean } = {}) {
     this.touchedAt = Date.now();
-    if (msg.type === "verdict") this.lastVerdict = msg.verdict;
+    if (msg.type === "verdict") {
+      this.lastVerdict = msg.verdict;
+      this.lastCoach = undefined;
+    }
     if (msg.type === "coach") this.lastCoach = msg;
     if (msg.type === "status") this.lastStatus = msg;
     if (msg.type === "device") this.device = msg.device;

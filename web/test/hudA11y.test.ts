@@ -1533,7 +1533,7 @@ test("Hud ?mock=1 mode cycles demo states, yields to BroadcastChannel phone even
   const phoneChannel = new FakeBroadcastChannel(MOCK_HUD_CHANNEL);
   const receivedFromHud: unknown[] = [];
   phoneChannel.onmessage = (ev) => {
-    receivedFromHud.push(ev.data);
+    if ((ev.data as { type?: string })?.type !== "hud_hello") receivedFromHud.push(ev.data);
   };
 
   const { Hud } = await importHudFresh();

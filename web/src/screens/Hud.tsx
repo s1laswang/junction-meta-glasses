@@ -215,12 +215,13 @@ export function Hud() {
       try {
         ch = new BroadcastChannel(MOCK_HUD_CHANNEL);
         ch.onmessage = (e) => {
-          gotPhone = true; // a phone tab in mock mode is driving us
-          onMsg(e.data as HudMsg);
+          const d = e.data as { type?: string } | undefined;
+          if (!d || (d.type !== "verdict" && d.type !== "coach" && d.type !== "status" && d.type !== "device")) return;
+          gotPhone = true;
+          onMsg(d as HudMsg);
         };
-      } catch {
-        /* no BroadcastChannel */
-      }
+        ch.postMessage({ type: "hud_hello" });
+      } catch {}
       sendRef.current = (name) => ch?.postMessage({ type: "hud_event", name });
       const p = demoProfile();
       const cycle: HudMsg[] = [

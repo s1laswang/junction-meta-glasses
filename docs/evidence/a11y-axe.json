@@ -1,0 +1,51 @@
+{
+  "tool": "axe-core via @axe-core/playwright",
+  "tags": "WCAG 2.0/2.1/2.2 A+AA",
+  "base": "http://localhost:8787",
+  "when": "2026-11-14T21:14:18.945Z",
+  "totalViolationNodes": 0,
+  "results": [
+    {
+      "label": "phone: first screen",
+      "url": "http://localhost:8787/?mock=1",
+      "violations": [],
+      "passes": 18,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: after step 1",
+      "url": "http://localhost:8787/?mock=1",
+      "violations": [],
+      "passes": 21,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: after step 2",
+      "url": "http://localhost:8787/?mock=1",
+      "violations": [],
+      "passes": 21,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: after step 3",
+      "url": "http://localhost:8787/?mock=1",
+      "violations": [],
+      "passes": 21,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: after step 4",
+      "url": "http://localhost:8787/?mock=1",
+      "violations": [],
+      "passes": 20,
+      "incomplete": 0
+    },
+    {
+      "label": "hud: verdict",
+      "url": "http://localhost:8787/hud/?mock=1",
+      "violations": [],
+      "passes": 16,
+      "incomplete": 1
+    }
+  ]
+}
