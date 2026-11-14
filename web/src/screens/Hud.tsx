@@ -230,7 +230,9 @@ export function Hud() {
 
   return (
     <div className="hud">
-      <main className="hud-main" aria-live="assertive" aria-atomic="true">
+      <main className="hud-main">
+        <h1 className="sr-only">HoldUp display</h1>
+        <div className="hud-live" aria-live="assertive" aria-atomic="true">
         {cue && !verdict ? (
           <section className="hud-card cue-card">
             <span className="hud-cue-glyph">
@@ -258,6 +260,7 @@ export function Hud() {
             <p className="hud-small">Ask: "Is this my evening pill?"</p>
           </section>
         )}
+        </div>
       </main>
 
       <div className="hud-acts">

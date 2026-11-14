@@ -300,7 +300,9 @@ export class Checker {
     } catch (e) {
       const perm = classifyError(e);
       this.set({ mic: "error", micPerm: perm, micMsg: explain("mic", perm) });
-      if (this.s.camera !== "error")
+      if (this.s.camera === "error")
+        this.set({ banner: { tone: "warn", title: "Camera and microphone not available", detail: "Type your question below, or take a photo with your camera app. Answers are still read out.", action: perm === "denied" || perm === "blocked" ? "settings" : "snapshot" } });
+      else
         this.set({ banner: { tone: "warn", title: "Microphone not available", detail: explain("mic", perm) + " Type your question below instead. Answers are still spoken.", action: perm === "denied" || perm === "blocked" ? "settings" : undefined } });
       announce("Microphone not available. You can type your question instead.", "assertive");
     }
@@ -386,6 +388,8 @@ export class Checker {
         if (m.cue === "ok") earcon.ok();
         else earcon.coach();
         haptic.coach(m.cue);
+        // with spoken answers off, the screen reader is the only voice: read the cue
+        if (!loadSettings().voice) announce(m.text);
         this.armAutoStop();
         break;
       case "verdict":

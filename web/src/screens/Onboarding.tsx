@@ -46,7 +46,7 @@ export function Consent({ onAgree, onNotNow }: { onAgree: () => void; onNotNow: 
   const h = useFocusHeading(i);
   if (i === -1)
     return (
-      <div className="onb">
+      <main className="onb">
         <Logo size={64} />
         <div className="body">
           <h1 ref={h} tabIndex={-1}>
@@ -61,12 +61,12 @@ export function Consent({ onAgree, onNotNow }: { onAgree: () => void; onNotNow: 
             Continue
           </button>
         </div>
-      </div>
+      </main>
     );
   const c = CARDS[i];
   const last = i === CARDS.length - 1;
   return (
-    <div className="onb">
+    <main className="onb">
       <div className="progress" role="progressbar" aria-label="Privacy explanation" aria-valuemin={1} aria-valuemax={CARDS.length} aria-valuenow={i + 1} aria-valuetext={`Card ${i + 1} of ${CARDS.length}`}>
         {CARDS.map((_, k) => (
           <span key={k} className={k <= i ? "on" : ""} />
@@ -110,7 +110,7 @@ export function Consent({ onAgree, onNotNow }: { onAgree: () => void; onNotNow: 
           </button>
         ) : null}
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -167,7 +167,7 @@ export function PermissionStep({ onDone }: { onDone: (r: PermResult) => void }) 
   }
 
   return (
-    <div className="onb">
+    <main className="onb">
       <div className="body">
         <div className="art">
           <Icon.camera size={56} />
@@ -196,7 +196,7 @@ export function PermissionStep({ onDone }: { onDone: (r: PermResult) => void }) 
           Not now
         </button>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -209,7 +209,7 @@ export function PermissionRecovery({ result, onRetry, onContinue }: { result: Pe
   const needsSettings = [result.camera, result.mic].some((s) => s === "denied" || s === "blocked");
   const insecure = [result.camera, result.mic].includes("insecure");
   return (
-    <div className="onb">
+    <main className="onb">
       <div className="body">
         <div className="art" style={{ borderColor: "var(--warning)", color: "var(--warning)" }}>
           <Icon.lock size={56} />
@@ -272,6 +272,6 @@ export function PermissionRecovery({ result, onRetry, onContinue }: { result: Pe
           Continue without {!camOk && !micOk ? "them" : !camOk ? "the camera" : "the microphone"}
         </button>
       </div>
-    </div>
+    </main>
   );
 }

@@ -429,6 +429,10 @@ main {
   gap: var(--s2);
   font-size: var(--t-md);
 }
+.onb ol li {
+  display: list-item;
+  font-size: var(--t-base);
+}
 .onb li svg {
   margin-top: 4px;
   color: var(--accent);
@@ -1064,6 +1068,9 @@ body.hud-body #root {
   align-items: center;
   justify-content: center;
   min-height: 0;
+}
+.hud-live {
+  width: 100%;
 }
 .hud-card {
   width: 100%;
