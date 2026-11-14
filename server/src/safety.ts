@@ -1,5 +1,6 @@
 // Deterministic safety check: LabelRead x Profile -> Verdict. No network, no model. Unit-tested.
-import type { LabelRead, Med, Profile, Verdict } from "../../shared/types.ts";
+import type { CrossCheck, Gs1Code, LabelRead, Med, Profile, Verdict } from "../../shared/types.ts";
+import { gtin14 } from "./gs1.ts";
 
 export const STRENGTH_MIN_CONF = 0.8;
 const NAME_MIN_CONF = 0.6;
@@ -87,41 +88,112 @@ function allergyBases(allergy: string): string[] {
 
 export type Strength = { amount: number; unit: string };
 const UNIT: Record<string, { unit: string; f: number }> = {
-  mg: { unit: "mg", f: 1 }, g: { unit: "mg", f: 1000 }, mcg: { unit: "mg", f: 0.001 }, ug: { unit: "mg", f: 0.001 },
-  "µg": { unit: "mg", f: 0.001 }, mikrog: { unit: "mg", f: 0.001 }, microgram: { unit: "mg", f: 0.001 },
-  ml: { unit: "ml", f: 1 }, iu: { unit: "iu", f: 1 }, ky: { unit: "iu", f: 1 }, "%": { unit: "%", f: 1 },
+  mg: { unit: "mg", f: 1 }, milligram: { unit: "mg", f: 1 }, milligrams: { unit: "mg", f: 1 },
+  milligramme: { unit: "mg", f: 1 }, milligrammes: { unit: "mg", f: 1 }, milligramm: { unit: "mg", f: 1 },
+  milligramma: { unit: "mg", f: 1 }, milligrammaa: { unit: "mg", f: 1 },
+  g: { unit: "mg", f: 1000 }, gram: { unit: "mg", f: 1000 }, grams: { unit: "mg", f: 1000 },
+  gramme: { unit: "mg", f: 1000 }, grammes: { unit: "mg", f: 1000 }, gramm: { unit: "mg", f: 1000 },
+  gramma: { unit: "mg", f: 1000 }, grammaa: { unit: "mg", f: 1000 },
+  mcg: { unit: "mg", f: 0.001 }, ug: { unit: "mg", f: 0.001 }, "\u00b5g": { unit: "mg", f: 0.001 }, "\u03bcg": { unit: "mg", f: 0.001 },
+  mikrog: { unit: "mg", f: 0.001 }, mikrogram: { unit: "mg", f: 0.001 }, mikrogramm: { unit: "mg", f: 0.001 },
+  mikrogramma: { unit: "mg", f: 0.001 }, mikrogrammaa: { unit: "mg", f: 0.001 },
+  microgram: { unit: "mg", f: 0.001 }, micrograms: { unit: "mg", f: 0.001 },
+  microgramme: { unit: "mg", f: 0.001 }, microgrammes: { unit: "mg", f: 0.001 },
+  ml: { unit: "ml", f: 1 }, milliliter: { unit: "ml", f: 1 }, milliliters: { unit: "ml", f: 1 },
+  millilitre: { unit: "ml", f: 1 }, millilitres: { unit: "ml", f: 1 }, millilitra: { unit: "ml", f: 1 }, millilitraa: { unit: "ml", f: 1 }, millilitrassa: { unit: "ml", f: 1 },
+  iu: { unit: "iu", f: 1 }, ky: { unit: "iu", f: 1 }, ie: { unit: "iu", f: 1 }, "%": { unit: "%", f: 1 },
 };
-/** "5mg" / "5 MG" / "2,5 mg" / "0.5 g" / "500 mg/5 ml" -> list of normalised amounts (mass in mg). */
+const UNIT_WORDS = Object.keys(UNIT).filter((k) => /^[a-z]+$/.test(k)).sort((a, b) => b.length - a.length);
+const VOL_WORDS = UNIT_WORDS.filter((k) => UNIT[k].unit === "ml");
+const RATE_WORDS = ["tunnissa", "stunden", "stunde", "timmar", "tuntia", "heures", "heure", "hours", "tunti", "timme", "hour", "hrs", "tim", "std", "hr", "h"];
+const STRENGTH_RE = new RegExp(
+  `(\\d+(?:\\.\\d+)?(?:\\s*[+/]\\s*\\d+(?:\\.\\d+)?)*)\\s*(${UNIT_WORDS.join("|")})\\b` +
+    `|(\\d+(?:\\.\\d+)?(?:\\s*[+/]\\s*\\d+(?:\\.\\d+)?)*)\\s*(%)` +
+    `|(?:\\/|\\bper\\b)\\s*(${VOL_WORDS.join("|")})\\b` +
+    `|(?:\\/|\\bper\\b)\\s*(\\d+(?:\\.\\d+)?)?\\s*(${RATE_WORDS.join("|")})\\b`,
+  "g",
+);
 export function parseStrength(s: string | null | undefined): Strength[] {
   if (!s) return [];
-  const t = s.toLowerCase().replace(/(\d),(\d)/g, "$1.$2").replace(/µ/g, "u");
+  const t = s.toLowerCase().replace(/(\d),(\d)/g, "$1.$2").replace(/[\u00b5\u03bc]/g, "u").replace(/[\u2044\u2215]/g, "/");
   const out: Strength[] = [];
-  for (const m of t.matchAll(/(\d+(?:\.\d+)?)\s*(mg|mcg|ug|g|ml|iu|ky|%|mikrog|microgram)s?\b|(\d+(?:\.\d+)?)\s*(%)/g)) {
-    const num = Number(m[1] ?? m[3]);
+  for (const m of t.matchAll(STRENGTH_RE)) {
+    if (m[5]) {
+      out.push({ amount: 1, unit: "ml" });
+      continue;
+    }
+    if (m[7]) {
+      const rateNum = m[6] ? Number(m[6]) : 1;
+      if (Number.isFinite(rateNum) && rateNum > 0) out.push({ amount: +rateNum.toFixed(6), unit: "h" });
+      continue;
+    }
+    const rawNums = m[1] ?? m[3];
     const u = UNIT[m[2] ?? m[4]];
-    if (!u || !Number.isFinite(num)) continue;
-    out.push({ amount: +(num * u.f).toFixed(6), unit: u.unit });
+    if (!u || !rawNums) continue;
+    for (const part of rawNums.split(/[+/]/)) {
+      const num = Number(part.trim());
+      if (Number.isFinite(num)) out.push({ amount: +(num * u.f).toFixed(6), unit: u.unit });
+    }
   }
   return out;
 }
+function sameRatioList(xs: Strength[], da: number, ys: Strength[], db: number): boolean {
+  if (xs.length !== ys.length || da <= 0 || db <= 0) return false;
+  const tol = 1e-6 * Math.min(da, db);
+  const used = new Array<boolean>(ys.length).fill(false);
+  return xs.every((x) => {
+    const idx = ys.findIndex((y, i) => !used[i] && y.unit === x.unit && Math.abs(x.amount * db - y.amount * da) < tol);
+    if (idx < 0) return false;
+    used[idx] = true;
+    return true;
+  });
+}
+const sameStrengthList = (xs: Strength[], ys: Strength[]) => sameRatioList(xs, 1, ys, 1);
+const commonDenom = (xs: Strength[]): number | undefined =>
+  xs.length && xs.every((x) => x.amount > 0 && Math.abs(x.amount - xs[0].amount) < 1e-6) ? xs[0].amount : undefined;
 export function sameStrength(a: string | null | undefined, b: string | null | undefined): boolean {
   const pa = parseStrength(a), pb = parseStrength(b);
   if (!pa.length || !pb.length) return false;
-  // compare the primary (first) amount; for combos require all of the shorter list to be present
-  const [short, long] = pa.length <= pb.length ? [pa, pb] : [pb, pa];
-  return short.every((x) => long.some((y) => y.unit === x.unit && Math.abs(y.amount - x.amount) < 1e-6));
+  const da = pa.filter((x) => x.unit !== "ml" && x.unit !== "h");
+  const db = pb.filter((x) => x.unit !== "ml" && x.unit !== "h");
+  const va = pa.filter((x) => x.unit === "ml"), vb = pb.filter((x) => x.unit === "ml");
+  const ha = pa.filter((x) => x.unit === "h"), hb = pb.filter((x) => x.unit === "h");
+  if (Boolean(ha.length) !== Boolean(hb.length)) return false;
+  if (ha.length) {
+    if (!da.length || !db.length) return false;
+    if (va.length || vb.length) return sameStrengthList(va, vb) && sameStrengthList(da, db) && sameStrengthList(ha, hb);
+    const ra = commonDenom(ha), rb = commonDenom(hb);
+    return ra !== undefined && rb !== undefined ? sameRatioList(da, ra, db, rb) : sameStrengthList(da, db) && sameStrengthList(ha, hb);
+  }
+  if (!da.length && !db.length) return sameStrengthList(va, vb);
+  if (!da.length || !db.length) return false;
+  if (!va.length || !vb.length) return sameStrengthList(da, db);
+  const cva = commonDenom(va), cvb = commonDenom(vb);
+  return cva !== undefined && cvb !== undefined ? sameRatioList(da, cva, db, cvb) : sameStrengthList(da, db) && sameStrengthList(va, vb);
 }
-export const fmtStrength = (s: string) => s.replace(/(\d)\s*(mg|g|mcg|ml|iu)\b/gi, "$1 $2");
+export const fmtStrength = (s: string) =>
+  s.replace(/(\d)\s*(mg|g|mcg|ug|[\u00b5\u03bc]g|mikrog|mikrogram(?:maa|ma|m)?|micrograms?|milligram(?:maa|ma|s)?|gram(?:maa|ma|s)?|ml|iu|ky|ie)\b/gi, "$1 $2");
 
-/** Resolve free text (product or ingredient) to a set of INN ingredient tokens. */
+const COMBO_BRANDS: Record<string, string[]> = {
+  panacod: ["paracetamol", "codeine"], "co-codamol": ["paracetamol", "codeine"], cocodamol: ["paracetamol", "codeine"],
+  exforge: ["amlodipine", "valsartan"], augmentin: ["amoxicillin", "clavulanic"], bioclavid: ["amoxicillin", "clavulanic"],
+  "co-amoxiclav": ["amoxicillin", "clavulanic"], coamoxiclav: ["amoxicillin", "clavulanic"],
+  janumet: ["sitagliptin", "metformin"], synjardy: ["empagliflozin", "metformin"], xigduo: ["dapagliflozin", "metformin"],
+  entresto: ["sacubitril", "valsartan"], vimovo: ["naproxen", "esomeprazole"], arthrotec: ["diclofenac", "misoprostol"],
+  symbicort: ["budesonide", "formoterol"], seretide: ["salmeterol", "fluticasone"],
+  sinemet: ["levodopa", "carbidopa"], stalevo: ["levodopa", "carbidopa", "entacapone"], duodart: ["dutasteride", "tamsulosin"],
+};
+const LABEL_META = new Set(("active substance substances substans aktiv aktiva vaikuttava vaikuttavat aine aineet wirkstoff wirkstoffe principio activo principe actif").split(" "));
 export function ingredientsOf(...texts: (string | null | undefined)[]): Set<string> {
   const out = new Set<string>();
   for (const t of texts) {
     const n = norm(t);
     if (!n) continue;
+    for (const [brand, inns] of Object.entries(COMBO_BRANDS)) if (hasWord(n, brand)) for (const inn of inns) out.add(inn);
     for (const [brand, inn] of Object.entries(BRANDS)) if (hasWord(n, brand)) out.add(inn);
     for (const w of words(n)) {
-      if (/^\d/.test(w) || w.length < 4 || STOP.has(w)) continue;
+      if (/^\d/.test(w) || w.length < 4 || STOP.has(w) || LABEL_META.has(w)) continue;
+      if (COMBO_BRANDS[w]) { for (const inn of COMBO_BRANDS[w]) out.add(inn); continue; }
       out.add(BRANDS[w] ?? w);
     }
   }
@@ -135,9 +207,8 @@ const STOP = new Set(("tablet tablets tabletti tabletit tablettia capsule capsul
 function hasWord(hay: string, needle: string): boolean {
   return new RegExp(`(^|[^a-z])${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z]|$)`).test(hay);
 }
-/** Levenshtein, small strings only. */
 function lev(a: string, b: string): number {
-  if (Math.abs(a.length - b.length) > 2) return 99;
+  if (Math.abs(a.length - b.length) > 1) return 99;
   const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
   for (let j = 1; j <= b.length; j++) d[0][j] = j;
   for (let i = 1; i <= a.length; i++)
@@ -145,7 +216,18 @@ function lev(a: string, b: string): number {
       d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
   return d[a.length][b.length];
 }
-const fuzzyEq = (a: string, b: string) => a === b || (a.length >= 6 && b.length >= 6 && lev(a, b) <= 2);
+const INN_STEM = /(dipine|zepam|zolam|prazole|statin|sartan|olol|pril|oxacin|cillin|cycline|mycin|conazole|nidazole|ciclovir|caine|fentanil|setron|triptan|gliptin|gliflozin|tidine|rubicin|platin|lukast|profen|methasone|olone|sone|barbital|citalopram|zopiclone)$/;
+const CHEM_SWAP = new Set(["ol:al", "al:ol", "ate:ite", "ite:ate", "one:ine", "ine:one"]);
+export function fuzzyEq(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (a.length < 7 || b.length < 7 || a.slice(0, 4) !== b.slice(0, 4) || lev(a, b) !== 1) return false;
+  for (const s of ["ol", "al", "ate", "ite", "one", "ine"])
+    for (const t of ["ol", "al", "ate", "ite", "one", "ine"])
+      if (CHEM_SWAP.has(`${s}:${t}`) && a.endsWith(s) && b.endsWith(t)) return false;
+  const sa = INN_STEM.exec(a)?.[0], sb = INN_STEM.exec(b)?.[0];
+  if (sa && sb) return sa === sb && a.length - sa.length >= 5 && b.length - sb.length >= 5;
+  return true;
+}
 
 function medIngredients(m: Med): Set<string> {
   return ingredientsOf(m.ingredient, m.name);
@@ -153,17 +235,94 @@ function medIngredients(m: Med): Set<string> {
 export function matchMed(read: LabelRead, meds: Med[]): Med | undefined {
   const got = ingredientsOf(read.ingredient.value, read.product.value);
   if (!got.size) return undefined;
+  const rc = activeComponents(read.ingredient.value, read.product.value);
+  if (!rc.length) return undefined;
   let best: { m: Med; score: number } | undefined;
   for (const m of meds) {
     const want = medIngredients(m);
-    let score = 0;
-    for (const w of want) for (const g of got) if (fuzzyEq(w, g)) score += w === norm(m.ingredient) ? 2 : 1;
-    // brand name printed exactly as saved
-    if (m.name && read.product.value && hasWord(norm(read.product.value), norm(m.name))) score += 1;
-    if (score && (!best || score > best.score || (score === best.score && sameStrength(m.strength, read.strength.value))))
+    if (!want.size) continue;
+    const mc = activeComponents(m.ingredient, m.name);
+    const primary = ingredientsOf(spokenIngredient(m.ingredient));
+    let score = matchComponentLists(mc, rc, primary);
+    const exactBrand = !!(m.name && read.product.value && hasWord(norm(read.product.value), norm(m.name)));
+    if (!score && exactBrand && !norm(read.ingredient.value)) {
+      const mnc = splitActiveComponents(m.name, true);
+      if (mnc.length === rc.length && mnc.length >= 2) {
+        score = matchComponentLists(mnc, rc, primary);
+      } else if (mnc.length === 1 && rc.length === 1 && mc.length > 1) {
+        const overlapsSingleInn = mc.some((c) => [...c].some((w) => [...mnc[0]].some((nw) => fuzzyEq(w, nw))));
+        if (!overlapsSingleInn) score = 2;
+      }
+    }
+    if (!score) continue;
+    if (exactBrand) score += 1;
+    if (!best || score > best.score || (score === best.score && sameStrength(m.strength, read.strength.value)))
       best = { m, score };
   }
   return best?.m;
+}
+const STRIP_STRENGTH_TAIL = new RegExp(
+  `\\d+(?:[.,]\\d+)?(?:\\s*[+/]\\s*\\d+(?:[.,]\\d+)?)*\\s*(?:${UNIT_WORDS.join("|")}|[\u00b5\u03bc]g|%)(?:\\b|$).*$`,
+  "i",
+);
+function stripStrengthTail(s: string): string {
+  return s.replace(STRIP_STRENGTH_TAIL, "").trim();
+}
+function splitActiveComponents(text: string | null | undefined, isProduct: boolean): Set<string>[] {
+  const raw = isProduct ? stripStrengthTail(text ?? "") : (text ?? "");
+  const n = norm(raw);
+  if (!n) return [];
+  for (const [brand, inns] of Object.entries(COMBO_BRANDS)) {
+    if (hasWord(n, brand)) return inns.map((inn) => new Set([inn]));
+  }
+  const rawParts = raw
+    .split(/[,/+;&]|\b(?:and|with|ja|och|med)\b/i)
+    .map((p) => ingredientsOf(spokenIngredient(p)))
+    .filter((s) => s.size > 0);
+  const parts: Set<string>[] = [];
+  for (const part of rawParts) {
+    const existing = parts.find((ex) => [...ex].some((a) => [...part].some((b) => fuzzyEq(a, b))));
+    if (existing) {
+      for (const tok of part) existing.add(tok);
+    } else {
+      parts.push(part);
+    }
+  }
+  if (isProduct && parts.length === 1) {
+    const mod = /\b(comp|plus|combo|duo)\b|\b(co-[a-z]{4,})\b/.exec(n);
+    if (mod) {
+      const token = mod[1] ?? mod[2];
+      if (parts[0].size > 1) parts[0].delete(token);
+      parts.push(new Set([`combo:${token}`]));
+    }
+  }
+  return parts;
+}
+function activeComponents(ingredient: string | null | undefined, product: string | null | undefined): Set<string>[] {
+  const ic = splitActiveComponents(ingredient, false);
+  const pc = splitActiveComponents(product, true);
+  if (!ic.length) return pc;
+  if (pc.length > ic.length) return pc;
+  if (ic.length === 1 && pc.length === 1) return [new Set([...ic[0], ...pc[0]])];
+  return ic;
+}
+function matchComponentLists(want: Set<string>[], got: Set<string>[], primary: Set<string>): number {
+  if (!want.length || want.length !== got.length) return 0;
+  const used = new Array<boolean>(got.length).fill(false);
+  let total = 0;
+  for (const ws of want) {
+    let bestIdx = -1, bestScore = 0;
+    for (let i = 0; i < got.length; i++) {
+      if (used[i]) continue;
+      let s = 0;
+      for (const w of ws) for (const g of got[i]) if (fuzzyEq(w, g)) s += primary.has(w) ? 2 : 1;
+      if (s > bestScore) { bestScore = s; bestIdx = i; }
+    }
+    if (bestIdx < 0) return 0;
+    used[bestIdx] = true;
+    total += bestScore;
+  }
+  return total;
 }
 
 export function avoidHits(read: LabelRead, avoid: string[]): string[] {
@@ -265,7 +424,8 @@ function scheduleWord(m: Med): string | undefined {
 }
 
 // ---------- main ----------
-export function checkLabel(read: LabelRead, profile: Profile, now = new Date()): Verdict {
+/** The text-only check (no machine code). `checkLabel` wraps it with the DataMatrix cross-check. */
+export function checkLabelText(read: LabelRead, profile: Profile, now = new Date()): Verdict {
   const reasons: string[] = [];
   const v = (level: Verdict["level"], headline: string, speech: string, extra: Partial<Verdict> = {}): Verdict => ({
     level, headline: clampHeadline(headline), speech: clampSpeech(speech), read, reasons, ...extra,
@@ -291,8 +451,8 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
     const med = nameOk ? matchMed(read, profile.meds) : undefined;
     const strengthOk = !!read.strength.value && read.strength.confidence >= STRENGTH_MIN_CONF;
     const readName = read.ingredient.value && read.ingredient.confidence >= NAME_MIN_CONF
-      ? read.ingredient.value.split(",")[0].trim()
-      : productName.replace(/\d+(?:[.,]\d+)?\s*(mg|g|mcg|µg|ml|iu)\b.*$/i, "").trim();
+      ? read.ingredient.value.split(/[,/+;&]/).map((s) => spokenIngredient(s)).filter(Boolean).join("/")
+      : stripStrengthTail(productName);
     const name = cap(med ? spokenIngredient(med.ingredient) || med.name : readName || "this medicine");
     const label = strengthOk ? `${name} ${fmtStrength(read.strength.value!)}` : name;
 
@@ -365,4 +525,81 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
     return v("info", `${cap(what)}: none of your allergens`, `${cap(what)}: no ${listAnd(profile.allergies)} listed.${expSpeech}`);
   }
   return v("info", cap(what), `This is ${what}.${expSpeech}`);
+}
+
+// ---------- EU FMD DataMatrix cross-check ----------
+const PHARMACIST = "The printed label and the pack's code disagree. Please ask a pharmacist.";
+const medGtin = (m: Med) => gtin14(m.gtin) ?? gtin14(m.barcode);
+
+/** Insert a short phrase into the first sentence so the speech stays <= 2 sentences. */
+function withPhrase(speech: string, phrase: string): string {
+  const parts = speech.trim().split(/(?<=[.!?])\s+/);
+  if (parts.length < 2) return `${speech.trim()} ${cap(phrase)}.`;
+  parts[0] = parts[0].replace(/[.!?]$/, `, ${phrase}.`);
+  return parts.join(" ");
+}
+
+/**
+ * Full check. Without a code (or a code with no usable fields) this is exactly checkLabelText().
+ * With a fresh DataMatrix code for the current item:
+ *  - printed expiry legible and different from the code, or the code's GTIN belongs to a different saved med than
+ *    the text match -> unsure (ask a pharmacist);
+ *  - code expiry in the past -> warning (exact, no confidence issue);
+ *  - code GTIN = a saved med's GTIN but no legible name -> still unsure (online we want both);
+ *  - agreement -> crossCheck.agrees=true and "double-checked with the pack's code" in the speech.
+ */
+export function checkLabel(read: LabelRead, profile: Profile, now = new Date(), code?: Gs1Code): Verdict {
+  if (!code || (!code.gtin && !code.expiry)) return checkLabelText(read, profile, now);
+  const details: string[] = [];
+  let agree = 0, conflict = false;
+
+  const nameOk = (read.ingredient.value && read.ingredient.confidence >= NAME_MIN_CONF) || (read.product.value && read.product.confidence >= NAME_MIN_CONF);
+  const textMed = nameOk ? matchMed(read, profile.meds) : undefined;
+  const codeG = gtin14(code.gtin);
+  const gtinMed = codeG ? profile.meds.find((m) => medGtin(m) === codeG) : undefined;
+  const medName = (m: Med) => cap(spokenIngredient(m.ingredient) || m.name);
+
+  // expiry
+  const printedOk = !!read.expiry.value && read.expiry.confidence >= 0.7;
+  if (code.expiry) {
+    if (printedOk) {
+      const a = code.expiry.slice(0, 7), b = read.expiry.value!.slice(0, 7);
+      if (a === b) { agree++; details.push(`expiry: code ${code.expiry} = print ${read.expiry.value}`); }
+      else { conflict = true; details.push(`expiry: code ${code.expiry} != print ${read.expiry.value}`); }
+    } else details.push(`expiry from code ${code.expiry} (print not legible)`);
+  }
+  // GTIN
+  if (codeG) {
+    const g = code.gtin;
+    if (gtinMed && textMed && gtinMed.id !== textMed.id) { conflict = true; details.push(`GTIN ${g} = your ${gtinMed.name}, but the print reads ${textMed.name}`); }
+    else if (gtinMed && !textMed && nameOk) { conflict = true; details.push(`GTIN ${g} = your ${gtinMed.name}, but the print reads a medicine not on your list`); }
+    else if (gtinMed && textMed) { agree++; details.push(`GTIN ${g} = your ${gtinMed.name}`); }
+    else if (gtinMed) details.push(`GTIN ${g} = your ${gtinMed.name} (print not legible)`);
+    else details.push(`GTIN ${g} not saved in your list`);
+  }
+  const crossCheck: CrossCheck = { source: "datamatrix", code, agrees: conflict ? false : agree > 0 ? true : null, details };
+  const mk = (level: Verdict["level"], headline: string, speech: string, extra: Partial<Verdict> = {}): Verdict => ({
+    level, headline: clampHeadline(headline), speech: clampSpeech(speech), read, reasons: [...details], crossCheck, ...extra,
+  });
+
+  if (conflict) return mk("unsure", "Label and pack code disagree", PHARMACIST, { matchedMedId: textMed?.id });
+
+  // the code's expiry is exact: a past date is a warning regardless of how well the print was read
+  if (code.expiry && isExpired(code.expiry, now)) {
+    const who = textMed ? `This is ${medName(textMed)}, but the` : "The";
+    return mk("warning", `Expired ${monthYear(code.expiry)} (pack code)`,
+      `${who} pack's code says it expired in ${monthYear(code.expiry)}. Don't take it, ask a pharmacist for a new one.`, { matchedMedId: textMed?.id });
+  }
+  if (gtinMed && !textMed) {
+    return mk("unsure", `Code says ${medName(gtinMed)}, label unreadable`,
+      `The pack's code matches your ${medName(gtinMed)}, but I can't read the label to confirm. ${read.guidance?.trim() ?? "Turn it so the front faces you."}`, { matchedMedId: gtinMed.id });
+  }
+  // text check, with the exact code expiry standing in for an illegible printed one
+  const eff: LabelRead = code.expiry && !printedOk ? { ...read, expiry: { value: code.expiry, confidence: 1 } } : read;
+  const v = checkLabelText(eff, profile, now);
+  v.read = read;
+  v.reasons = [...v.reasons, ...details];
+  v.crossCheck = crossCheck;
+  if (crossCheck.agrees) v.speech = clampSpeech(withPhrase(v.speech, "double-checked with the pack's code"));
+  return v;
 }

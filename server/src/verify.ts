@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { ThinkingLevel } from "@google/genai";
-import type { Field, LabelRead, Profile, Verdict } from "../../shared/types.ts";
+import type { Field, Gs1Code, LabelRead, Profile, Verdict } from "../../shared/types.ts";
 import { env, REPO_ROOT } from "./env.ts";
 import { ai, backoffMs, classify, sleep, unaryGate } from "./gemini.ts";
 import { ledger, usage } from "./ledger.ts";
@@ -97,11 +97,20 @@ export function toLabelRead(j: any): LabelRead {
 export type ReadResult = { read: LabelRead; model: string | null; latencyMs: number; attempts: number };
 
 export async function readLabel(frames: string[], question?: string, feature = "verify"): Promise<ReadResult> {
-  const t0 = Date.now();
   if (!frames.length) return { read: unreadable(), model: null, latencyMs: 0, attempts: 0 };
   const parts: any[] = frames.map((data) => ({ inlineData: { mimeType: "image/jpeg", data } }));
   parts.push({ text: question?.trim() ? `The person asked: "${question.trim().slice(0, 300)}"` : "Read this label." });
+  const r = await callJson(feature, VERIFY_PROMPT, LABEL_SCHEMA, parts, frames.length, (j) => toLabelRead(j));
+  return { read: r.value ?? unreadable("I couldn't reach the reader. Try again in a moment."), model: r.model, latencyMs: r.latencyMs, attempts: r.attempts };
+}
 
+/**
+ * Schema-constrained JSON call on the verify model chain (8 s timeout, one same-model retry on transient errors,
+ * then the fallbacks, 429 backoff, concurrency gate, ledger). `parse` validates/coerces; value null = all failed.
+ */
+export async function callJson<T>(feature: string, systemInstruction: string, schema: unknown, parts: any[], nFrames: number,
+  parse: (j: unknown) => T, timeoutMs = env.verifyTimeoutMs): Promise<{ value: T | null; model: string | null; latencyMs: number; attempts: number }> {
+  const t0 = Date.now();
   // Chain: primary, one retry (same model if transient, else next), then the remaining fallbacks.
   const chain = env.verifyModels;
   let attempts = 0, mi = 0, retried = false;
@@ -110,42 +119,42 @@ export async function readLabel(frames: string[], question?: string, feature = "
     attempts++;
     const ta = Date.now();
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), env.verifyTimeoutMs);
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
       const res = await unaryGate.run(() => ai.models.generateContent({
         model,
         contents: [{ role: "user", parts }],
         config: {
-          systemInstruction: VERIFY_PROMPT,
+          systemInstruction,
           responseMimeType: "application/json",
-          responseJsonSchema: LABEL_SCHEMA,
+          responseJsonSchema: schema,
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192,
           abortSignal: ctrl.signal,
         },
       }));
       const text = res.text;
       if (!text?.trim()) throw new Error("empty reply");
-      const read = toLabelRead(JSON.parse(text));
-      ledger({ feature, model, ...usage(res.usageMetadata), latency_s: (Date.now() - ta) / 1000, ok: true, n_frames: frames.length });
-      return { read, model, latencyMs: Date.now() - t0, attempts };
+      const value = parse(JSON.parse(text));
+      ledger({ feature, model, ...usage(res.usageMetadata), latency_s: (Date.now() - ta) / 1000, ok: true, n_frames: nFrames });
+      return { value, model, latencyMs: Date.now() - t0, attempts };
     } catch (e) {
       const kind = e instanceof SyntaxError ? "bad_json" : classify(e);
       ledger({ feature, model, latency_s: (Date.now() - ta) / 1000, ok: false, error: kind });
-      log("verify.attempt_failed", { model, kind, err: errSummary(e) });
+      log(`${feature}.attempt_failed`, { model, kind, err: errSummary(e) });
       if (kind === "quota") await sleep(backoffMs(attempts));
       // transient on primary -> one same-model retry; otherwise (or after retry) fall through to next model
       if (!retried && mi === 0 && (kind === "timeout" || kind === "empty" || kind === "server" || kind === "network" || kind === "bad_json")) retried = true;
       else mi++;
     } finally { clearTimeout(timer); }
   }
-  return { read: unreadable("I couldn't reach the reader. Try again in a moment."), model: null, latencyMs: Date.now() - t0, attempts };
+  return { value: null, model: null, latencyMs: Date.now() - t0, attempts };
 }
 
 export type VerifyResult = { verdict: Verdict; model: string | null; latencyMs: number; frames: number };
-export async function verify(frames: string[], profile: Profile, question?: string, feature = "verify"): Promise<VerifyResult> {
+export async function verify(frames: string[], profile: Profile, question?: string, feature = "verify", code?: Gs1Code): Promise<VerifyResult> {
   const r = await readLabel(frames.slice(0, 3), question, feature);
-  const verdict = checkLabel(r.read, profile);
+  const verdict = checkLabel(r.read, profile, new Date(), code);
   if (!r.model) { verdict.level = "unsure"; verdict.reasons.push("reader unavailable"); }
   return { verdict, model: r.model, latencyMs: r.latencyMs, frames: Math.min(3, frames.length) };
 }
@@ -162,6 +171,7 @@ export function toProfile(p: any): Profile {
       id: s(m?.id, 64) || `med${i}`, name: s(m?.name), ingredient: s(m?.ingredient), strength: s(m?.strength, 40),
       schedule: arr(m?.schedule).map((x) => s(x, 40)).filter(Boolean).slice(0, 8),
       ...(m?.barcode ? { barcode: s(m.barcode, 32) } : {}), ...(m?.notes ? { notes: s(m.notes, 200) } : {}),
+      ...(m?.gtin ? { gtin: s(m.gtin, 20) } : {}),
     })),
     allergies: arr(p?.allergies).map((x) => s(x, 60)).filter(Boolean).slice(0, 30),
     avoid: arr(p?.avoid).map((x) => s(x, 60)).filter(Boolean).slice(0, 30),

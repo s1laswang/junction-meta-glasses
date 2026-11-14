@@ -18,6 +18,8 @@ import { findByBarcode, findByGtin, matchVerdict, offlineUnknownBarcode, offline
 
 export type Mode = "live" | "snapshot" | "offline";
 
+/** Pre-rendered ElevenLabs clip when one is cached; otherwise speechSynthesis of the current line.
+ *  With no ELEVENLABS_API_KEY and no clips, this is the same as speak(fallback). */
 function speakPhrase(id: string, fallback: string, opts?: { interrupt?: boolean }) {
   if (!loadSettings().voice) return;
   void sayPhrase(id, loadProfile().lang, (t) => speak(t, opts), fallback);

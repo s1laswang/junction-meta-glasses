@@ -1,0 +1,108 @@
+{
+  "suite": "supplement_herbal_traps",
+  "model": "gemini-3.8-flash",
+  "thinking_level": "low",
+  "generated_at": "2026-11-14T19:19:33.190851+00:00",
+  "eval_now_iso": "2026-11-14T20:00:00Z",
+  "prompt_source": "shared/verify_prompt.md+shared/label_schema.json",
+  "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+  "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+  "prompt_sha256_12": "814770315c42",
+  "safety_module": "server/src/safety.ts",
+  "n": 12,
+  "errors": 0,
+  "timeouts": 0,
+  "pass_count": 12,
+  "pass_rate": 1.0,
+  "pass_ci95_wilson": [
+    0.7575,
+    1.0
+  ],
+  "confident_wrong_dose_count": 0,
+  "confident_wrong_dose_rate": 0.0,
+  "confident_wrong_dose_ci95_wilson": [
+    0.0,
+    0.2425
+  ],
+  "rule_of_three_95_upper": 0.25,
+  "profile": {
+    "lang": "en",
+    "meds": [
+      {
+        "id": "vitd",
+        "name": "Devisol",
+        "ingredient": "colecalciferol",
+        "strength": "1000 IU",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "mag",
+        "name": "Magnesium Citrate",
+        "ingredient": "magnesium",
+        "strength": "250 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "b12",
+        "name": "Betolvex",
+        "ingredient": "cyanocobalamin",
+        "strength": "1 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "shellfish",
+      "peanut",
+      "milk"
+    ],
+    "avoid": [
+      "NSAIDs",
+      "hypericum",
+      "ginkgo"
+    ],
+    "doseLog": []
+  },
+  "summary": {
+    "n_cases": 12,
+    "errors": 0,
+    "timeouts": 0,
+    "verdict_matches": 12,
+    "verdict_accuracy": 1.0,
+    "verdict_accuracy_ci95": [
+      0.7575,
+      1.0
+    ],
+    "confident_wrong_count": 0,
+    "confident_wrong_dose_count": 0,
+    "confident_wrong_rate": 0.0,
+    "confident_wrong_ci95": [
+      0.0,
+      0.2425
+    ],
+    "false_match_count": 0,
+    "unsafe_reassurance_count": 0,
+    "abstain_or_unsure_count": 2,
+    "latency_p50_ms": 3202.9,
+    "latency_p95_ms": 3459.1
+  },
+  "cases": [
+    {"id":"sh_01","scenario":"devisol_colecalciferol_1000iu_daily_match","category":"supplement_scheduled_match","description":"Daily Devisol colecalciferol 1000 IU supplement matches morning Vitamin D3 profile","question":"Read this label.","dose_log":[],"expected_level":"match","actual_level":"match","predicted_level":"match","passed":true,"verdict_ok":true,"strength_read":"1000 IU","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.293,"latency_ms":3292.9,"error":null,"reasons":["matches vitd","taken today: 0/1"],"read":{"kind":"medication","product":{"value":"Devisol","confidence":0.99},"ingredient":{"value":"colecalciferol","confidence":0.98},"strength":{"value":"1000 IU","confidence":0.99},"dosing":{"value":"1 tablet in the morning","confidence":0.98},"expiry":{"value":"2027-11","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"sh_02","scenario":"finnish_devisol_1000ky_iu_normalised_match","category":"nordic_ky_iu_unit_match","description":"Finnish DEVISOL 1000 KY pack normalises Nordic KY unit to 1000 IU and matches profile","question":"Read this label.","dose_log":[],"expected_level":"match","actual_level":"match","predicted_level":"match","passed":true,"verdict_ok":true,"strength_read":"1000 IU","strength_conf":0.95,"name_conf":0.98,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.239,"latency_ms":3239.3,"error":null,"reasons":["matches vitd","taken today: 0/1"],"read":{"kind":"medication","product":{"value":"DEVISOL","confidence":0.98},"ingredient":{"value":"colecalciferol","confidence":0.98},"strength":{"value":"1000 IU","confidence":0.95},"dosing":{"value":"1 tabletti aamulla","confidence":0.95},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"sh_03","scenario":"magnesium_citrate_250mg_evening_match","category":"supplement_scheduled_match","description":"Evening MAGNESIUM CITRATE 250 mg bottle matches saved magnesium supplement","question":"Read this label.","dose_log":[],"expected_level":"match","actual_level":"match","predicted_level":"match","passed":true,"verdict_ok":true,"strength_read":"250 mg","strength_conf":0.99,"name_conf":0.98,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.155,"latency_ms":3155.1,"error":null,"reasons":["matches mag","taken today: 0/1"],"read":{"kind":"medication","product":{"value":"VITABALANS MAGNESIUM CITRATE","confidence":0.98},"ingredient":{"value":"magnesium","confidence":0.98},"strength":{"value":"250 mg","confidence":0.99},"dosing":{"value":"1 tablet in the evening","confidence":0.98},"expiry":{"value":"2027-09","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"sh_04","scenario":"finnish_betolvex_1000mcg_to_1mg_match","category":"mcg_to_mg_unit_match","description":"Finnish BETOLVEX cyanocobalamin 1000 mcg pack normalises to 1 mg and matches profile","question":"Read this label.","dose_log":[],"expected_level":"match","actual_level":"match","predicted_level":"match","passed":true,"verdict_ok":true,"strength_read":"1000 mcg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.303,"latency_ms":3302.6,"error":null,"reasons":["matches b12","taken today: 0/1"],"read":{"kind":"medication","product":{"value":"BETOLVEX","confidence":0.99},"ingredient":{"value":"cyanocobalamin","confidence":0.99},"strength":{"value":"1000 mcg","confidence":0.99},"dosing":{"value":"1 tabletti aamulla","confidence":0.95},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.2},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"sh_05","scenario":"colecalciferol_5000iu_megadose_strength_warning","category":"megadose_strength_trap","description":"High-strength COLECALCIFEROL 5000 IU mega-dose bottle warns against saved 1000 IU strength","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"5000 IU","strength_conf":0.99,"name_conf":0.98,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.153,"latency_ms":3153.4,"error":null,"reasons":["strength 5000 IU differs from your 1000 IU"],"read":{"kind":"medication","product":{"value":"Nordic Vitamins High Strength D3 Colecalciferol","confidence":0.95},"ingredient":{"value":"colecalciferol","confidence":0.98},"strength":{"value":"5000 IU","confidence":0.99},"dosing":{"value":null,"confidence":0.1},"expiry":{"value":"2027-08","confidence":0.98},"allergens":{"value":null,"confidence":0.1},"barcode":{"value":null,"confidence":0.1},"readability":0.95}},
+    {"id":"sh_06","scenario":"hypericum_st_johns_wort_300mg_avoid_warning","category":"herbal_interaction_avoid","description":"Herbal St. John's Wort (hypericum 300 mg) triggers hypericum avoid-list interaction warning","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"300 mg","strength_conf":0.99,"name_conf":0.98,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":4.193,"latency_ms":4193.0,"error":null,"reasons":["hypericum is on your avoid list","not on your medication list"],"read":{"kind":"medication","product":{"value":"HYPERICUM ST JOHNS WORT","confidence":0.98},"ingredient":{"value":"hypericum","confidence":0.98},"strength":{"value":"300 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-06","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"sh_07","scenario":"ginkgo_biloba_extract_120mg_avoid_warning","category":"herbal_interaction_avoid","description":"GINKGO BILOBA EXTRACT 120 mg triggers ginkgo bleeding-risk avoid-list warning","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"120 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.459,"latency_ms":3459.1,"error":null,"reasons":["ginkgo is on your avoid list","not on your medication list"],"read":{"kind":"medication","product":{"value":"GINKGO BILOBA EXTRACT","confidence":0.99},"ingredient":{"value":"ginkgo","confidence":0.98},"strength":{"value":"120 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.1},"expiry":{"value":"2027-07","confidence":0.99},"allergens":{"value":null,"confidence":0.2},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"sh_08","scenario":"glucosamine_500mg_crustacean_shellfish_allergen_warning","category":"supplement_allergen_excipient","description":"GLUCOSAMINE 500 mg joint supplement with crustacean shellfish (shrimp) triggers shellfish allergy warning","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"500 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.155,"latency_ms":3155.2,"error":null,"reasons":["contains crustacean shellfish (allergy: shellfish)"],"read":{"kind":"medication","product":{"value":"GLUCOSAMINE","confidence":0.99},"ingredient":{"value":"glucosamine sulfate","confidence":0.99},"strength":{"value":"500 mg","confidence":0.99},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-09","confidence":0.99},"allergens":{"value":["crustacean shellfish","shrimp"],"confidence":0.99},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"sh_09","scenario":"melatonin_orion_3mg_unlisted_lookalike_warning","category":"unlisted_supplement_lookalike","description":"Unlisted MELATONIN ORION 3 mg sleep supplement look-alike bottle warns not on medication list","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"3 mg","strength_conf":0.99,"name_conf":0.99,"readability":0.98,"confident_wrong":false,"false_match":false,"latency_s":3.203,"latency_ms":3202.9,"error":null,"reasons":["not on your medication list"],"read":{"kind":"medication","product":{"value":"MELATONIN ORION","confidence":0.99},"ingredient":{"value":"melatonin","confidence":0.99},"strength":{"value":"3 mg","confidence":0.99},"dosing":{"value":"1 tablet before bedtime","confidence":0.99},"expiry":{"value":"2027-12","confidence":0.99},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.98}},
+    {"id":"sh_10","scenario":"expired_magnesium_citrate_250mg_bottle_warning","category":"expired_supplement_bottle","description":"Expired MAGNESIUM CITRATE 250 mg bottle from cabinet (EXP 02/2025) triggers expiry warning","question":"Read this label.","dose_log":[],"expected_level":"warning","actual_level":"warning","predicted_level":"warning","passed":true,"verdict_ok":true,"strength_read":"250 mg","strength_conf":0.99,"name_conf":0.98,"readability":0.95,"confident_wrong":false,"false_match":false,"latency_s":3.266,"latency_ms":3265.7,"error":null,"reasons":["expired 2025-02"],"read":{"kind":"medication","product":{"value":"Vitabalans Magnesium Citrate","confidence":0.98},"ingredient":{"value":"magnesium","confidence":0.98},"strength":{"value":"250 mg","confidence":0.99},"dosing":{"value":"1 tablet in the evening","confidence":0.98},"expiry":{"value":"2025-02","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.95}},
+    {"id":"sh_11","scenario":"cylindrical_devisol_thumb_occluded_iu_strength_unsure","category":"occluded_bottle_strength_abstention","description":"Cylindrical DEVISOL colecalciferol bottle with thumb hiding IU strength digits abstains to unsure","question":"Read this label.","dose_log":[],"expected_level":"unsure","actual_level":"unsure","predicted_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.7,"confident_wrong":false,"false_match":false,"latency_s":3.08,"latency_ms":3079.9,"error":null,"reasons":["strength not readable"],"read":{"kind":"medication","product":{"value":"DEVISOL","confidence":0.98},"ingredient":{"value":"colecalciferol","confidence":0.98},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-11","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.7,"guidance":"Move your finger away from the middle of the label."}},
+    {"id":"sh_12","scenario":"nordic_berry_wellness_shake_front_missing_allergens_unsure","category":"wellness_pouch_missing_allergens","description":"Wellness protein shake pouch front view without visible allergen panel abstains to unsure","question":"Read this label.","dose_log":[],"expected_level":"unsure","actual_level":"unsure","predicted_level":"unsure","passed":true,"verdict_ok":true,"strength_read":null,"strength_conf":0.0,"name_conf":0.98,"readability":0.9,"confident_wrong":false,"false_match":false,"latency_s":2.966,"latency_ms":2965.8,"error":null,"reasons":["allergen panel not readable"],"read":{"kind":"food","product":{"value":"Nordic Berry Wellness Shake","confidence":0.98},"ingredient":{"value":"berry smoothie drink powder","confidence":0.9},"strength":{"value":null,"confidence":0.0},"dosing":{"value":null,"confidence":0.0},"expiry":{"value":"2027-10","confidence":0.98},"allergens":{"value":null,"confidence":0.0},"barcode":{"value":null,"confidence":0.0},"readability":0.9,"guidance":"Turn it around, the label is on the back."}}
+  ]
+}
