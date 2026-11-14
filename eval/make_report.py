@@ -68,11 +68,12 @@ def sweep_table(s):
 
 
 def safety_table(res):
-    rows = ["| Safety rules | Verdicts | Correct vs truth | Unsure | **Unsafe reassurance** | False match |", "|---|---|---|---|---|---|"]
+    rows = ["| Safety rules | Verdicts | Correct vs truth | Unsure | **Unsafe reassurance** | Expired, match with caveat | False match |",
+            "|---|---|---|---|---|---|---|"]
     for t, s in res["safety"].items():
-        name = "server safety.ts (as shipped)" if t == "server" else f"python port, all thresholds = {t.replace('py_t', '')}"
+        name = "**server safety.ts (as shipped)**" if t == "server" else f"python approximation, all thresholds = {t.replace('py_t', '')}"
         rows.append(f"| {name} | {s['n']} | {f(s['verdict_correct_vs_world'])} | {f(s['unsure_rate'])} | "
-                    f"**{s['unsafe_reassurance']}** ({f(s['unsafe_reassurance_rate'])}) | {s['false_match']} |")
+                    f"**{s['unsafe_reassurance']}** ({f(s['unsafe_reassurance_rate'])}) | {s.get('expired_match_with_caveat', 0)} | {s['false_match']} |")
     return "\n".join(rows)
 
 
@@ -88,8 +89,9 @@ def unsafe_table(s):
     ex = s.get("unsafe_examples") or []
     if not ex:
         return "_None._"
-    rows = ["| Image | Scenario | Truth | System said | Reasons |", "|---|---|---|---|---|"]
-    rows += [f"| {e['img_id']} | {e['scenario']} | {e['world']} | {e['pred']} | {'; '.join(e.get('pred_reasons') or [])} |" for e in ex]
+    rows = ["| Image | Scenario | Truth (why) | System said | System reasons |", "|---|---|---|---|---|"]
+    rows += [f"| `{e['img_id']}` | {e['scenario']} | {e['world']} ({'; '.join(e.get('world_reasons') or [])}) | {e['pred']} | "
+             f"{'; '.join(e.get('pred_reasons') or [])} |" for e in ex]
     return "\n".join(rows)
 
 
@@ -156,7 +158,9 @@ def main():
                f"of strengths that are not visible.",
                f"- End-to-end safety verdict (server rules): **{s8.get('unsafe_reassurance')} unsafe reassurances in {s8.get('n')} "
                f"verdicts** ({f(s8.get('unsafe_reassurance_rate'))}); correct {f(s8.get('verdict_correct_vs_world'))}, "
-               f"unsure {f(s8.get('unsure_rate'))}.",
+               f"unsure {f(s8.get('unsure_rate'))}. Plus {s8.get('expired_match_with_caveat', 0)} matches on an expired "
+               f"box where the system said it couldn't read the expiry date (disclosed, not silent).",
+               f"- Calibration: ECE {syn['calibration_strength']['ece']} on strength, {syn['calibration_all']['ece']} on all fields.",
                f"- Latency per verify call: p50 {syn['latency_s']['p50']} s, p95 {syn['latency_s']['p95']} s.", "",
                "### Dataset", "", "| Condition | Images |", "|---|---|"]
         md += [f"| {k} | {v} |" for k, v in d.get("by_deg", {}).items()]
