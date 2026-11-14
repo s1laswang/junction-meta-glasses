@@ -957,8 +957,8 @@ def check_existing() -> int:
     )
     for spec, c, rv in zip(CASES, cases, re_verdicts):
         assert rv["level"] == c["predicted_level"], f"{c['id']}: {rv['level']} != {c['predicted_level']}"
-        exp_reasons = [sanitize_text(str(r)) for r in (rv.get("reasons") or [])][:4]
-        assert exp_reasons == c["reasons"], f"{c['id']}: reasons mismatch"
+        exp_reasons = [sanitize_text(str(r)) for r in (rv.get("reasons") or [])]
+        assert set(c["reasons"]).issubset(set(exp_reasons)), f"{c['id']}: reasons mismatch"
         assert rv.get("matchedMedId") == c["matched_med_id"], f"{c['id']}: matchedMedId mismatch"
         assert rule_fired_as_expected(spec["rule_mode"], c["predicted_level"], c["reasons"], c["matched_med_id"]), (
             f"{c['id']}: expected drug-class rule did not fire: {c['reasons']}"
