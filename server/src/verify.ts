@@ -88,42 +88,50 @@ export function toLabelRead(j: any): LabelRead {
     dosing: field(j.dosing, isStr), expiry: field(j.expiry, isStr), allergens: field(j.allergens, isStrArr),
     barcode: field(j.barcode, isStr), readability: clamp01(j.readability),
   };
+  if (read.strength.value) read.strength.value = read.strength.value.replace(/(\d),(?=\d)/g, "$1.").replace(/\s+/g, " ").trim();
   if (isStr(j.guidance)) read.guidance = j.guidance.trim().slice(0, 120);
   if (read.expiry.value && !/^\d{4}-\d{2}(-\d{2})?$/.test(read.expiry.value)) read.expiry.confidence = Math.min(read.expiry.confidence, 0.5);
   return read;
 }
 
-// ---------- the model call ----------
+export type ReadOpts = {
+  generateFn?: (model: string, parts: any[], signal: AbortSignal) => Promise<{ text?: string; usageMetadata?: any }>;
+  chain?: string[];
+  sleepFn?: (ms: number) => Promise<unknown>;
+  timeoutMs?: number;
+};
 export type ReadResult = { read: LabelRead; model: string | null; latencyMs: number; attempts: number };
 
-export async function readLabel(frames: string[], question?: string, feature = "verify"): Promise<ReadResult> {
+export async function readLabel(frames: string[], question?: string, feature = "verify", opts?: ReadOpts): Promise<ReadResult> {
   const t0 = Date.now();
   if (!frames.length) return { read: unreadable(), model: null, latencyMs: 0, attempts: 0 };
   const parts: any[] = frames.map((data) => ({ inlineData: { mimeType: "image/jpeg", data } }));
   parts.push({ text: question?.trim() ? `The person asked: "${question.trim().slice(0, 300)}"` : "Read this label." });
 
-  // Chain: primary, one retry (same model if transient, else next), then the remaining fallbacks.
-  const chain = env.verifyModels;
+  const chain = opts?.chain ?? env.verifyModels;
+  const sleepFn = opts?.sleepFn ?? sleep;
+  const timeoutMs = opts?.timeoutMs ?? env.verifyTimeoutMs;
+  const generateFn = opts?.generateFn ?? ((model: string, p: any[], signal: AbortSignal) => ai.models.generateContent({
+    model,
+    contents: [{ role: "user", parts: p }],
+    config: {
+      systemInstruction: VERIFY_PROMPT,
+      responseMimeType: "application/json",
+      responseJsonSchema: LABEL_SCHEMA,
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      maxOutputTokens: 4096,
+      abortSignal: signal,
+    },
+  }));
   let attempts = 0, mi = 0, retried = false;
   while (mi < chain.length && attempts < 4) {
     const model = chain[mi];
     attempts++;
     const ta = Date.now();
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), env.verifyTimeoutMs);
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const res = await unaryGate.run(() => ai.models.generateContent({
-        model,
-        contents: [{ role: "user", parts }],
-        config: {
-          systemInstruction: VERIFY_PROMPT,
-          responseMimeType: "application/json",
-          responseJsonSchema: LABEL_SCHEMA,
-          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-          maxOutputTokens: 4096,
-          abortSignal: ctrl.signal,
-        },
-      }));
+      const res = await unaryGate.run(() => generateFn(model, parts, ctrl.signal));
       const text = res.text;
       if (!text?.trim()) throw new Error("empty reply");
       const read = toLabelRead(JSON.parse(text));
@@ -133,8 +141,7 @@ export async function readLabel(frames: string[], question?: string, feature = "
       const kind = e instanceof SyntaxError ? "bad_json" : classify(e);
       ledger({ feature, model, latency_s: (Date.now() - ta) / 1000, ok: false, error: kind });
       log("verify.attempt_failed", { model, kind, err: errSummary(e) });
-      if (kind === "quota") await sleep(backoffMs(attempts));
-      // transient on primary -> one same-model retry; otherwise (or after retry) fall through to next model
+      if (kind === "quota") await sleepFn(backoffMs(attempts));
       if (!retried && mi === 0 && (kind === "timeout" || kind === "empty" || kind === "server" || kind === "network" || kind === "bad_json")) retried = true;
       else mi++;
     } finally { clearTimeout(timer); }
@@ -143,8 +150,8 @@ export async function readLabel(frames: string[], question?: string, feature = "
 }
 
 export type VerifyResult = { verdict: Verdict; model: string | null; latencyMs: number; frames: number };
-export async function verify(frames: string[], profile: Profile, question?: string, feature = "verify"): Promise<VerifyResult> {
-  const r = await readLabel(frames.slice(0, 3), question, feature);
+export async function verify(frames: string[], profile: Profile, question?: string, feature = "verify", opts?: ReadOpts): Promise<VerifyResult> {
+  const r = await readLabel(frames.slice(0, 3), question, feature, opts);
   const verdict = checkLabel(r.read, profile);
   if (!r.model) { verdict.level = "unsure"; verdict.reasons.push("reader unavailable"); }
   return { verdict, model: r.model, latencyMs: r.latencyMs, frames: Math.min(3, frames.length) };
