@@ -1,5 +1,6 @@
 // Deterministic safety check: LabelRead x Profile -> Verdict. No network, no model. Unit-tested.
-import type { LabelRead, Med, Profile, Verdict } from "../../shared/types.ts";
+import type { CrossCheck, Gs1Code, LabelRead, Med, Profile, Verdict } from "../../shared/types.ts";
+import { gtin14 } from "./gs1.ts";
 
 export const STRENGTH_MIN_CONF = 0.8;
 const NAME_MIN_CONF = 0.6;
@@ -265,7 +266,8 @@ function scheduleWord(m: Med): string | undefined {
 }
 
 // ---------- main ----------
-export function checkLabel(read: LabelRead, profile: Profile, now = new Date()): Verdict {
+/** The text-only check (no machine code). `checkLabel` wraps it with the DataMatrix cross-check. */
+export function checkLabelText(read: LabelRead, profile: Profile, now = new Date()): Verdict {
   const reasons: string[] = [];
   const v = (level: Verdict["level"], headline: string, speech: string, extra: Partial<Verdict> = {}): Verdict => ({
     level, headline: clampHeadline(headline), speech: clampSpeech(speech), read, reasons, ...extra,
@@ -365,4 +367,81 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
     return v("info", `${cap(what)}: none of your allergens`, `${cap(what)}: no ${listAnd(profile.allergies)} listed.${expSpeech}`);
   }
   return v("info", cap(what), `This is ${what}.${expSpeech}`);
+}
+
+// ---------- EU FMD DataMatrix cross-check ----------
+const PHARMACIST = "The printed label and the pack's code disagree. Please ask a pharmacist.";
+const medGtin = (m: Med) => gtin14(m.gtin) ?? gtin14(m.barcode);
+
+/** Insert a short phrase into the first sentence so the speech stays <= 2 sentences. */
+function withPhrase(speech: string, phrase: string): string {
+  const parts = speech.trim().split(/(?<=[.!?])\s+/);
+  if (parts.length < 2) return `${speech.trim()} ${cap(phrase)}.`;
+  parts[0] = parts[0].replace(/[.!?]$/, `, ${phrase}.`);
+  return parts.join(" ");
+}
+
+/**
+ * Full check. Without a code (or a code with no usable fields) this is exactly checkLabelText().
+ * With a fresh DataMatrix code for the current item:
+ *  - printed expiry legible and different from the code, or the code's GTIN belongs to a different saved med than
+ *    the text match -> unsure (ask a pharmacist);
+ *  - code expiry in the past -> warning (exact, no confidence issue);
+ *  - code GTIN = a saved med's GTIN but no legible name -> still unsure (online we want both);
+ *  - agreement -> crossCheck.agrees=true and "double-checked with the pack's code" in the speech.
+ */
+export function checkLabel(read: LabelRead, profile: Profile, now = new Date(), code?: Gs1Code): Verdict {
+  if (!code || (!code.gtin && !code.expiry)) return checkLabelText(read, profile, now);
+  const details: string[] = [];
+  let agree = 0, conflict = false;
+
+  const nameOk = (read.ingredient.value && read.ingredient.confidence >= NAME_MIN_CONF) || (read.product.value && read.product.confidence >= NAME_MIN_CONF);
+  const textMed = nameOk ? matchMed(read, profile.meds) : undefined;
+  const codeG = gtin14(code.gtin);
+  const gtinMed = codeG ? profile.meds.find((m) => medGtin(m) === codeG) : undefined;
+  const medName = (m: Med) => cap(spokenIngredient(m.ingredient) || m.name);
+
+  // expiry
+  const printedOk = !!read.expiry.value && read.expiry.confidence >= 0.7;
+  if (code.expiry) {
+    if (printedOk) {
+      const a = code.expiry.slice(0, 7), b = read.expiry.value!.slice(0, 7);
+      if (a === b) { agree++; details.push(`expiry: code ${code.expiry} = print ${read.expiry.value}`); }
+      else { conflict = true; details.push(`expiry: code ${code.expiry} != print ${read.expiry.value}`); }
+    } else details.push(`expiry from code ${code.expiry} (print not legible)`);
+  }
+  // GTIN
+  if (codeG) {
+    const g = code.gtin;
+    if (gtinMed && textMed && gtinMed.id !== textMed.id) { conflict = true; details.push(`GTIN ${g} = your ${gtinMed.name}, but the print reads ${textMed.name}`); }
+    else if (gtinMed && !textMed && nameOk) { conflict = true; details.push(`GTIN ${g} = your ${gtinMed.name}, but the print reads a medicine not on your list`); }
+    else if (gtinMed && textMed) { agree++; details.push(`GTIN ${g} = your ${gtinMed.name}`); }
+    else if (gtinMed) details.push(`GTIN ${g} = your ${gtinMed.name} (print not legible)`);
+    else details.push(`GTIN ${g} not saved in your list`);
+  }
+  const crossCheck: CrossCheck = { source: "datamatrix", code, agrees: conflict ? false : agree > 0 ? true : null, details };
+  const mk = (level: Verdict["level"], headline: string, speech: string, extra: Partial<Verdict> = {}): Verdict => ({
+    level, headline: clampHeadline(headline), speech: clampSpeech(speech), read, reasons: [...details], crossCheck, ...extra,
+  });
+
+  if (conflict) return mk("unsure", "Label and pack code disagree", PHARMACIST, { matchedMedId: textMed?.id });
+
+  // the code's expiry is exact: a past date is a warning regardless of how well the print was read
+  if (code.expiry && isExpired(code.expiry, now)) {
+    const who = textMed ? `This is ${medName(textMed)}, but the` : "The";
+    return mk("warning", `Expired ${monthYear(code.expiry)} (pack code)`,
+      `${who} pack's code says it expired in ${monthYear(code.expiry)}. Don't take it, ask a pharmacist for a new one.`, { matchedMedId: textMed?.id });
+  }
+  if (gtinMed && !textMed) {
+    return mk("unsure", `Code says ${medName(gtinMed)}, label unreadable`,
+      `The pack's code matches your ${medName(gtinMed)}, but I can't read the label to confirm. ${read.guidance?.trim() ?? "Turn it so the front faces you."}`, { matchedMedId: gtinMed.id });
+  }
+  // text check, with the exact code expiry standing in for an illegible printed one
+  const eff: LabelRead = code.expiry && !printedOk ? { ...read, expiry: { value: code.expiry, confidence: 1 } } : read;
+  const v = checkLabelText(eff, profile, now);
+  v.read = read;
+  v.reasons = [...v.reasons, ...details];
+  v.crossCheck = crossCheck;
+  if (crossCheck.agrees) v.speech = clampSpeech(withPhrase(v.speech, "double-checked with the pack's code"));
+  return v;
 }
