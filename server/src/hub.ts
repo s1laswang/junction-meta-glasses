@@ -3,10 +3,21 @@ import type { DeviceState, Profile, ServerMsg, Verdict } from "../../shared/type
 import { FrameRing, emptyProfile } from "./verify.ts";
 import { log, shortId } from "./log.ts";
 
+export const MAX_HUBS = 256;
+
 export interface LiveLike {
   handleEvent(name: string): void;
   stop(reason: string): void;
   readonly active: boolean;
+}
+
+export interface HubRetentionSnapshot {
+  sessions: number;
+  activeClients: number;
+  activeHuds: number;
+  floatingHuds: number;
+  bufferedFramesTotal: number;
+  bufferedFrameBytes: number;
 }
 
 const HUD_TYPES = new Set(["verdict", "coach", "status", "device"]);
@@ -49,13 +60,57 @@ export class Hub {
 }
 
 export function safeSend(ws: WebSocket, data: string) {
-  try { if (ws.readyState === 1) ws.send(data); } catch {}
+  try {
+    if (
+      ws.readyState === 1 &&
+      (typeof (ws as any).bufferedAmount !== "number" || (ws as any).bufferedAmount <= 2 * 1024 * 1024)
+    ) {
+      ws.send(data);
+    }
+  } catch {}
 }
 
 const hubs = new Map<string, Hub>();
 let latestId: string | undefined;
 const floatingHuds = new Set<WebSocket>();
 let orphanDevice: DeviceState | undefined;
+
+function isIdleHub(h: Hub): boolean {
+  return h.clients.size === 0 && h.huds.size === 0 && !h.live?.active;
+}
+
+function evictOldestIdleHub(): boolean {
+  let oldestId: string | undefined;
+  let oldestHub: Hub | undefined;
+  for (const [id, h] of hubs) {
+    if (!isIdleHub(h)) continue;
+    if (!oldestHub || h.touchedAt < oldestHub.touchedAt) {
+      oldestId = id;
+      oldestHub = h;
+    }
+  }
+  if (!oldestId || !oldestHub) return false;
+  oldestHub.ring.clear();
+  hubs.delete(oldestId);
+  if (latestId === oldestId) latestId = undefined;
+  return true;
+}
+
+function ringFrameBytes(ring: FrameRing): number {
+  const internal = (ring as unknown as { frames?: ReadonlyArray<{ bytes?: number; data?: string }> }).frames;
+  const frames = Array.isArray(internal)
+    ? internal
+    : ring.pick(ring.length, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER / 2);
+  let bytes = 0;
+  for (const f of frames) {
+    if (typeof f.bytes === "number" && Number.isFinite(f.bytes) && f.bytes >= 0) {
+      bytes += f.bytes;
+    } else if (typeof f.data === "string") {
+      bytes += Buffer.byteLength(f.data, "base64");
+    }
+  }
+  return bytes;
+}
 
 function hudsFor(h: Hub): WebSocket[] {
   return h.id === latestId ? [...h.huds, ...floatingHuds] : [...h.huds];
@@ -72,7 +127,13 @@ export function notifyHudState(h: Hub) {
 export const getHub = (id: string) => hubs.get(id);
 export function getOrCreateHub(id: string): Hub {
   let h = hubs.get(id);
-  if (!h) { h = new Hub(id); hubs.set(id, h); }
+  if (!h) {
+    while (hubs.size >= MAX_HUBS) {
+      if (!evictOldestIdleHub()) break;
+    }
+    h = new Hub(id);
+    hubs.set(id, h);
+  }
   h.touchedAt = Date.now();
   return h;
 }
@@ -129,20 +190,47 @@ export function setDevice(device: DeviceState, id?: string | null) {
   h.emit({ type: "device", device });
 }
 
-setInterval(() => {
-  const now = Date.now();
+export function sweepIdleHubs(now = Date.now(), maxIdleMs = 10 * 60_000): number {
+  let evicted = 0;
   for (const [id, h] of hubs) {
-    if (h.clients.size === 0 && !h.live?.active && now - h.touchedAt > 10 * 60_000) {
+    if (isIdleHub(h) && now - h.touchedAt > maxIdleMs) {
       h.ring.clear();
       hubs.delete(id);
       if (latestId === id) latestId = undefined;
+      evicted++;
       log("hub.gc", { session: shortId(id) });
     }
   }
+  return evicted;
+}
+
+setInterval(() => {
+  sweepIdleHubs();
 }, 60_000).unref();
 
 export function hubStats() {
   return { sessions: hubs.size, latest: latestId ? shortId(latestId) : null, floatingHuds: floatingHuds.size };
+}
+
+export function hubRetentionSnapshot(): HubRetentionSnapshot {
+  let activeClients = 0;
+  let activeHuds = 0;
+  let bufferedFramesTotal = 0;
+  let bufferedFrameBytes = 0;
+  for (const h of hubs.values()) {
+    activeClients += h.clients.size;
+    activeHuds += h.huds.size;
+    bufferedFramesTotal += h.ring.length;
+    bufferedFrameBytes += ringFrameBytes(h.ring);
+  }
+  return {
+    sessions: hubs.size,
+    activeClients,
+    activeHuds,
+    floatingHuds: floatingHuds.size,
+    bufferedFramesTotal,
+    bufferedFrameBytes,
+  };
 }
 
 export function resetHubsForTest() {
