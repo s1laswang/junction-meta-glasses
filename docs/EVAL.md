@@ -39,7 +39,7 @@ A separate, smaller fleet run (160 images, branch `fleet/jr1-eval-and-slide10`, 
 ## v2 (Sat night)
 
 ### 1. Safety re-score of the v1 predictions with main's `safety.ts`
-No new model calls: the same 1,740 `gemini-3.8-flash` reads (prompt `814770315c42`), the same 4,730 image × profile scenarios, now checked by main's `server/src/safety.ts` (last changed in `667312c`, the allergen gate: "none of your allergens" needs allergen confidence ≥ 0.95 and readability ≥ 0.8). Reproduce with `eval/rescore_safety.py`; results are in **`eval/results/v2_safety_rescore.json`**. As a sanity check, the same scorer with v1's `safety.ts` reproduces v1's 49 / 4,730 exactly.
+No new model calls: the same 1,740 `gemini-3.8-flash` reads (prompt `814770315c42`), the same 4,730 image × profile scenarios, now checked by main's `server/src/safety.ts` at `d404115`. The change that matters is the allergen gate from `667312c`: "none of your allergens" needs allergen confidence ≥ 0.95 and readability ≥ 0.8. The later hedge for a blurry non-medicine (`d404115`) changes none of these 4,730 verdicts; the numbers are identical at `667312c` and `d404115`. Reproduce with `eval/rescore_safety.py`; results are in **`eval/results/v2_safety_rescore.json`**. As a sanity check, the same scorer with v1's `safety.ts` reproduces v1's 49 / 4,730 exactly.
 
 | End to end (n = 4,730 verdicts) | v1 `safety.ts` | main `safety.ts` (v2) |
 |---|---|---|

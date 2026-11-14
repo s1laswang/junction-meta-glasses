@@ -1,6 +1,6 @@
 {
  "what": "v1 predictions (gemini-3.8-flash, prompt 814770315c42) re-scored with current safety.ts; no new model calls",
- "safety_ts_commit": "667312c",
+ "safety_ts_commit": "d404115",
  "images": 1740,
  "verdicts_n": 4730,
  "unsafe_reassurance_silent": {
