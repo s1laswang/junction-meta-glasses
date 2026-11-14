@@ -55,40 +55,90 @@ const CLASSES: Record<string, string[]> = {
 };
 const CLASS_ALIASES: Record<string, string> = {
   nsaid: "nsaid", nsaids: "nsaid", "anti-inflammatory": "nsaid", "anti-inflammatories": "nsaid", "anti inflammatories": "nsaid",
-  "tulehduskipulaake": "nsaid", "tulehduskipulaakkeet": "nsaid", "painkillers nsaid": "nsaid",
-  penicillin: "penicillin", penicillins: "penicillin", penisilliini: "penicillin",
-  benzodiazepine: "benzodiazepine", benzodiazepines: "benzodiazepine", opioid: "opioid", opioids: "opioid",
-  statin: "statin", statins: "statin",
+  "anti-inflammatorisk": "nsaid", "anti-inflammatoriska": "nsaid", antiinflammatorisk: "nsaid", antiinflammatoriska: "nsaid",
+  inflammationshammande: "nsaid", "tulehduskipulaake": "nsaid", "tulehduskipulaakkeet": "nsaid", "painkillers nsaid": "nsaid",
+  penicillin: "penicillin", penicillins: "penicillin", penisilliini: "penicillin", penisilliinit: "penicillin", penicilliner: "penicillin",
+  benzodiazepine: "benzodiazepine", benzodiazepines: "benzodiazepine",
+  bentsodiatsepiini: "benzodiazepine", bentsodiatsepiinit: "benzodiazepine", bensodiazepin: "benzodiazepine", bensodiazepiner: "benzodiazepine",
+  opioid: "opioid", opioids: "opioid", opioidi: "opioid", opioidit: "opioid", opioider: "opioid",
+  statin: "statin", statins: "statin", statiini: "statin", statiinit: "statin", statiner: "statin",
 };
 
 // Allergen synonyms (base allergen -> label terms). Matching is substring on normalised words.
 const ALLERGENS: Record<string, string[]> = {
-  peanut: ["peanut", "peanuts", "arachis", "groundnut", "groundnuts", "maapahkina", "jordnot"],
-  "tree nut": ["tree nut", "tree nuts", "hazelnut", "hazelnuts", "almond", "almonds", "cashew", "cashews", "walnut", "walnuts",
-    "pecan", "pistachio", "brazil nut", "macadamia", "hasselpahkina", "manteli", "cashewpahkina", "saksanpahkina",
-    "pekaanipahkina", "hasselnot", "mandel", "valnot", "nuts", "pahkina", "pahkinoita"],
-  milk: ["milk", "lactose", "whey", "casein", "caseinate", "butter", "cream", "maito", "laktoosi", "hera", "mjolk", "dairy"],
-  gluten: ["gluten", "wheat", "barley", "rye", "spelt", "vehna", "ohra", "ruis", "gluteeni", "vete", "wheat starch"],
-  egg: ["egg", "eggs", "albumin", "kananmuna", "muna", "agg"],
-  soy: ["soy", "soya", "soja", "soybean", "soya oil", "soijaoljy", "soija"],
-  sesame: ["sesame", "tahini", "seesami", "sesam"],
-  fish: ["fish", "kala", "fisk", "anchovy", "cod", "salmon"],
-  crustacean: ["shellfish", "crustacean", "crustaceans", "shrimp", "prawn", "crab", "lobster", "ayriaiset", "katkarapu"],
-  mustard: ["mustard", "sinappi", "senap"],
-  celery: ["celery", "selleri"],
-  lupin: ["lupin", "lupiini"],
-  sulphite: ["sulphite", "sulphites", "sulfite", "sulfites", "sulphur dioxide", "sulfur dioxide", "rikkidioksidi"],
+  peanut: [
+    "peanut", "peanuts", "arachis", "groundnut", "groundnuts",
+    "maapahkina", "maapahkinaa", "maapahkinat", "maapahkinoita", "maapahkinaoljy", "maapahkinaoljya", "maapahkinasta",
+    "jordnot", "jordnotter", "jordnotsolja",
+  ],
+  "tree nut": [
+    "tree nut", "tree nuts", "hazelnut", "hazelnuts", "almond", "almonds", "cashew", "cashews", "walnut", "walnuts",
+    "pecan", "pistachio", "brazil nut", "macadamia", "nuts",
+    "pahkina", "pahkinaa", "pahkinat", "pahkinoita", "pahkinasta", "pahkinoista",
+    "hasselpahkina", "hasselpahkinaa", "hasselpahkinat", "hasselpahkinoita", "hasselpahkinasta",
+    "manteli", "mantelia", "mantelit", "manteleita", "mantelista",
+    "cashewpahkina", "cashewpahkinaa", "cashewpahkinat", "cashewpahkinasta",
+    "saksanpahkina", "saksanpahkinaa", "saksanpahkinat", "saksanpahkinasta",
+    "pekaanipahkina", "pekaanipahkinaa", "pekaanipahkinat", "pekaanipahkinasta",
+    "pistaasi", "pistaasia", "pistaasipahkina", "pistaasipahkinaa", "pistaasipahkinat",
+    "parapahkina", "parapahkinaa", "parapahkinat",
+    "notter", "hasselnot", "hasselnotter", "mandel", "mandlar", "valnot", "valnotter",
+    "cashewnot", "cashewnotter", "pekannot", "pekannotter", "pistagenot", "pistagenotter", "paranot", "paranotter",
+  ],
+  milk: [
+    "milk", "lactose", "whey", "casein", "caseinate", "butter", "cream", "dairy",
+    "maito", "maitoa", "maidosta", "maitojauhe", "maitojauhetta",
+    "laktoosi", "laktoosia", "laktoosimonohydraatti", "laktoosimonohydraattia",
+    "hera", "heraa", "herajauhe", "herajauhetta", "kaseiini", "kaseiinia",
+    "mjolk", "mjolkpulver", "laktos", "laktosmonohydrat", "vassle", "vasslepulver", "kasein",
+  ],
+  gluten: [
+    "gluten", "wheat", "barley", "rye", "spelt", "wheat starch",
+    "vehna", "vehnaa", "vehnasta", "vehnajauho", "vehnajauhoa", "vehnatarkkelys", "vehnatarkkelysta",
+    "ohra", "ohraa", "ruis", "ruista", "speltti", "spelttia", "gluteeni", "gluteenia",
+    "vete", "vetemjol", "vetestarkelse", "korn", "rag", "dinkel",
+  ],
+  egg: [
+    "egg", "eggs", "albumin", "kananmuna", "kananmunaa", "kananmunasta", "kananmunajauhe", "kananmunajauhetta",
+    "muna", "munaa", "agg", "aggvita", "aggpulver",
+  ],
+  soy: [
+    "soy", "soya", "soja", "soybean", "soya oil", "sojaolja", "sojalecitin",
+    "soija", "soijaa", "soijasta", "soijaoljy", "soijaoljya", "soijalesitiini", "soijalesitiinia",
+  ],
+  sesame: [
+    "sesame", "tahini", "seesami", "seesamia", "seesamista", "seesaminsiemen", "seesaminsiemenia", "seesaminsiemenet", "seesaminsiemenista", "seesamioljy", "seesamioljya",
+    "sesam", "sesamfro", "sesamfron", "sesamolja",
+  ],
+  fish: ["fish", "anchovy", "cod", "salmon", "kala", "kalaa", "kalasta", "lohi", "lohta", "turska", "turskaa", "fisk", "lax", "torsk"],
+  crustacean: [
+    "shellfish", "crustacean", "crustaceans", "shrimp", "prawn", "crab", "lobster",
+    "ayriaiset", "ayriaisia", "ayriaisista", "katkarapu", "katkarapua", "katkarapuja", "katkaravut", "hummeri",
+    "skaldjur", "kraftdjur", "raka", "rakor", "krabba", "hummer",
+  ],
+  mustard: ["mustard", "sinappi", "sinappia", "sinapista", "senap"],
+  celery: ["celery", "selleri", "selleria", "sellerista"],
+  lupin: ["lupin", "lupiini", "lupiinia", "lupiinista"],
+  sulphite: [
+    "sulphite", "sulphites", "sulfite", "sulfites", "sulphur dioxide", "sulfur dioxide",
+    "rikkidioksidi", "rikkidioksidia", "sulfiitti", "sulfiitit", "sulfiitteja", "natriummetabisulfiitti", "natriummetabisulfiittia",
+    "svaveldioxid", "sulfit", "sulfiter", "natriummetabisulfit",
+  ],
 };
-// Profile allergy wording -> base allergens.
-function allergyBases(allergy: string): string[] {
-  const a = norm(allergy).replace(/\s*allerg(y|ic|ies)\s*/g, " ").trim();
-  if (/^(nut|nuts|pahkina|pahkinat)$/.test(a)) return ["peanut", "tree nut"]; // "nut allergy": be conservative
-  if (/^peanuts?$/.test(a)) return ["peanut"];
-  if (/^tree ?nuts?$/.test(a)) return ["tree nut"];
-  if (/^(lactose|dairy|milk|maito)$/.test(a)) return ["milk"];
-  if (/^(wheat|gluten|celiac|coeliac)$/.test(a)) return ["gluten"];
-  if (/^(shellfish|crustaceans?)$/.test(a)) return ["crustacean"];
-  for (const [base, syns] of Object.entries(ALLERGENS)) if (base === a || syns.includes(a)) return [base];
+const ALLERGY_SUFFIX = /[\s-]*(?:allerg(?:inen|iat|iaa|ia|isk|ier|ies|ic|y|i)|intoleranssi|intolerans|intolerance|intolerant|yliherkkyys|overkanslighet|overkanslig)\b/g;
+const stripAllergySuffix = (s: string) => norm(s).replace(ALLERGY_SUFFIX, " ").replace(/^[\s-]+|[\s-]+$/g, "").replace(/\s+/g, " ");
+export function allergyBases(allergy: string): string[] {
+  const a = stripAllergySuffix(allergy);
+  if (/^(nut|nuts|not|notter|pahkina|pahkinat|pahkinaa|pahkinoita)$/.test(a)) return ["peanut", "tree nut"];
+  if (/^(peanuts?|jordnots?)$/.test(a)) return ["peanut"];
+  if (/^(tree[\s-]?nuts?|tradnots?|tradnotter)$/.test(a)) return ["tree nut"];
+  if (/^(lactose|dairy|milk|maito|maitoproteiini|laktoosi|mjolk|mjolkprotein|laktos)$/.test(a)) return ["milk"];
+  if (/^(wheat|gluten|celiac|coeliac|keliakia|celiaki)$/.test(a)) return ["gluten"];
+  if (/^(shellfish|crustaceans?|skaldjurs?|kraftdjurs?|ayriais)$/.test(a)) return ["crustacean"];
+  for (const [base, syns] of Object.entries(ALLERGENS)) {
+    if (base === a || syns.includes(a)) return [base];
+    if (a.endsWith("s") && a.length > 4 && syns.includes(a.slice(0, -1))) return [base];
+  }
   return [];
 }
 
@@ -352,24 +402,28 @@ export function avoidHits(read: LabelRead, avoid: string[]): string[] {
 
 export type AllergenHit = { allergy: string; found: string; mayContain: boolean };
 export function allergenHits(read: LabelRead, allergies: string[]): AllergenHit[] {
-  const declared = (read.allergens.value ?? []).map((x) => ({ raw: x, n: norm(x), may: /may contain|voi sisaltaa|kan innehalla|traces?/.test(norm(x)) }));
-  // medication excipients / drug allergies via ingredient too
+  const declared = (read.allergens.value ?? []).map((x) => {
+    const n = norm(x);
+    return { raw: x, n, may: /may contain|voi sisaltaa|saattaa sisaltaa|kan innehalla|\bspar av\b|\bjaamia\b|traces?/.test(n) };
+  });
   const ingr = ingredientsOf(read.ingredient.value, read.product.value);
   const hits: AllergenHit[] = [];
   for (const allergy of allergies) {
     const bases = allergyBases(allergy);
-    const drugCls = CLASS_ALIASES[norm(allergy)] ?? (CLASSES[norm(allergy)] ? norm(allergy) : undefined);
+    const na = norm(allergy);
+    const sa = stripAllergySuffix(allergy);
+    const drugCls = CLASS_ALIASES[na] ?? CLASS_ALIASES[sa] ?? (CLASSES[na] ? na : CLASSES[sa] ? sa : undefined);
     if (drugCls) {
       const m = CLASSES[drugCls].find((d) => [...ingr].some((g) => fuzzyEq(g, d)));
       if (m) hits.push({ allergy, found: m, mayContain: false });
       continue;
     }
-    const terms = bases.length ? bases.flatMap((b) => ALLERGENS[b]) : [norm(allergy)];
+    const terms = bases.length ? bases.flatMap((b) => ALLERGENS[b]) : [na];
     for (const d of declared) {
       const t = terms.find((term) => hasWord(d.n, term) || d.n === term);
       if (t) { hits.push({ allergy, found: d.raw.replace(/^may contain:\s*/i, ""), mayContain: d.may }); break; }
     }
-    if (!bases.length && !hits.some((h) => h.allergy === allergy) && [...ingr].some((g) => fuzzyEq(g, norm(allergy))))
+    if (!bases.length && !hits.some((h) => h.allergy === allergy) && [...ingr].some((g) => fuzzyEq(g, na) || (sa.length >= 4 && fuzzyEq(g, BRANDS[sa] ?? sa))))
       hits.push({ allergy, found: allergy, mayContain: false });
   }
   return hits;
