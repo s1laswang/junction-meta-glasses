@@ -136,6 +136,7 @@ test("web/vite.config.ts manualChunks splits node_modules into vendor, web/src/c
     "/workspace/web/src/components/PilotOnboardingCard.tsx",
     "/workspace/web/src/components/WhyGlassesComparisonCard.tsx",
     "/workspace/web/src/components/CognitiveRoutineCard.tsx",
+    "/workspace/web/src/components/ReadingComfortBar.tsx",
     "C:\\repo\\web\\src\\components\\LanguageVoiceSupportCard.tsx",
     "src/components/OfflineReadinessCard.tsx",
     "\0/workspace/web/src/components/EmergencyMedCard.tsx?commonjs-es-import"

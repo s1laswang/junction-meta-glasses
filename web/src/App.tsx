@@ -7,6 +7,12 @@ import React, {
   type CSSProperties
 } from "react";
 import { ScreenReaderAnnouncer } from "./a11y/announcer.tsx";
+import {
+  DEFAULT_READING_COMFORT,
+  loadReadingComfort,
+  saveReadingComfort,
+  type ReadingComfortPrefs
+} from "./a11y/readingComfort.ts";
 import { createLiveAudioBridge } from "./audio/player.ts";
 import { cancelSpeech, speakFallback } from "./audio/tts.ts";
 import { estimateJpegByteSharpness } from "./camera/fixtureLoader.ts";
@@ -35,6 +41,7 @@ import { PharmacyImportModal } from "./components/PharmacyImportModal.tsx";
 import { PilotOnboardingCard } from "./components/PilotOnboardingCard.tsx";
 import { PrivacyFlowCard } from "./components/PrivacyFlowCard.tsx";
 import { ProfileManager } from "./components/ProfileManager.tsx";
+import { ReadingComfortBar } from "./components/ReadingComfortBar.tsx";
 import { SafetyRuleExplainerCard } from "./components/SafetyRuleExplainerCard.tsx";
 import { ScheduleChecklistCard } from "./components/ScheduleChecklistCard.tsx";
 import { ShortcutsModal } from "./components/ShortcutsModal.tsx";
@@ -256,6 +263,9 @@ function HoldUpPwaShell({
   );
   const [shortcutsOpen, setShortcutsOpen] = useState<boolean>(false);
   const [activeTourStep, setActiveTourStep] = useState<TourStepId | null>(null);
+  const [readingComfort, setReadingComfort] = useState<ReadingComfortPrefs>(() =>
+    loadReadingComfort(controllerOptions?.storage)
+  );
   const [micRms, setMicRms] = useState<number>(0);
   const [assistantSpeaking, setAssistantSpeaking] = useState<boolean>(false);
 
@@ -524,8 +534,26 @@ function HoldUpPwaShell({
   const hudPreviewVerdict = ctrl.hudDismissed ? null : effectiveVerdict;
   const hudPreviewCoach = ctrl.hudDismissed ? null : ctrl.snapshot.coach;
 
+  const handleChangeReadingComfort = useCallback(
+    (next: ReadingComfortPrefs): void => {
+      const saved = saveReadingComfort(next, controllerOptions?.storage);
+      setReadingComfort(saved);
+    },
+    [controllerOptions?.storage]
+  );
+
+  const handleWipeAllData = useCallback((): void => {
+    ctrl.wipeAllData();
+    setReadingComfort({ ...DEFAULT_READING_COMFORT });
+  }, [ctrl]);
+
   return (
-    <div data-theme={effectiveTheme} style={ROOT_WRAPPER_STYLE}>
+    <div
+      data-theme={effectiveTheme}
+      data-text-scale={readingComfort.textScale}
+      data-cognitive-density={readingComfort.density}
+      style={ROOT_WRAPPER_STYLE}
+    >
       <ScreenReaderAnnouncer
         politeMessage={ctrl.politeMessage}
         politeSeq={ctrl.politeSeq}
@@ -569,15 +597,24 @@ function HoldUpPwaShell({
               onResetDemoProfile={() => {
                 ctrl.resetDemoProfile();
               }}
-              onWipeAllData={ctrl.wipeAllData}
+              onWipeAllData={handleWipeAllData}
             />
           ) : null}
 
-          <JudgeDemoTour
+          <ReadingComfortBar
+            prefs={readingComfort}
             lang={effectiveLang}
-            activeStep={activeTourStep}
-            onRunStep={handleRunTourStep}
+            storage={controllerOptions?.storage}
+            onChange={handleChangeReadingComfort}
           />
+
+          <div className="cognitive-secondary">
+            <JudgeDemoTour
+              lang={effectiveLang}
+              activeStep={activeTourStep}
+              onRunStep={handleRunTourStep}
+            />
+          </div>
 
           <PermissionBanner
             permissions={ctrl.snapshot.permissions}
@@ -662,26 +699,30 @@ function HoldUpPwaShell({
                   onSubmitQuestion={handleSubmitConversation}
                 />
 
-                <VoiceCommandCheatSheetCard
-                  lang={effectiveLang}
-                  onRunPhrase={handleSubmitConversation}
-                  onTriggerHudGesture={(event) => {
-                    ctrl.triggerHudEvent(event);
-                  }}
-                />
+                <div className="cognitive-secondary">
+                  <VoiceCommandCheatSheetCard
+                    lang={effectiveLang}
+                    onRunPhrase={handleSubmitConversation}
+                    onTriggerHudGesture={(event) => {
+                      ctrl.triggerHudEvent(event);
+                    }}
+                  />
+                </div>
 
-                <TactileHandlingGuideCard
-                  lang={effectiveLang}
-                  activeCue={ctrl.snapshot.coach?.cue ?? null}
-                  onSpeakTip={(tip) => {
-                    if (!ctrl.muted) {
-                      void speakFallback(tip, {
-                        lang: effectiveLang,
-                        preferServerTts: false
-                      });
-                    }
-                  }}
-                />
+                <div className="cognitive-secondary">
+                  <TactileHandlingGuideCard
+                    lang={effectiveLang}
+                    activeCue={ctrl.snapshot.coach?.cue ?? null}
+                    onSpeakTip={(tip) => {
+                      if (!ctrl.muted) {
+                        void speakFallback(tip, {
+                          lang: effectiveLang,
+                          preferServerTts: false
+                        });
+                      }
+                    }}
+                  />
+                </div>
               </div>
 
               <div style={COLUMN_STACK_STYLE}>
@@ -696,10 +737,12 @@ function HoldUpPwaShell({
                   onRepeat={ctrl.repeatLastVerdict}
                 />
 
-                <ConfidenceBreakdownCard
-                  verdict={effectiveVerdict}
-                  lang={effectiveLang}
-                />
+                <div className="cognitive-secondary">
+                  <ConfidenceBreakdownCard
+                    verdict={effectiveVerdict}
+                    lang={effectiveLang}
+                  />
+                </div>
 
                 <ScheduleChecklistCard
                   profile={effectiveProfile}
@@ -712,16 +755,18 @@ function HoldUpPwaShell({
                   }}
                 />
 
-                <HudPreviewFrame
-                  verdict={hudPreviewVerdict}
-                  coach={hudPreviewCoach}
-                  checking={ctrl.snapshot.checking}
-                  device={ctrl.snapshot.device}
-                  hudSocketConnected={ctrl.snapshot.hudConnected}
-                  onTriggerHudEvent={(name) => {
-                    ctrl.triggerHudEvent(name);
-                  }}
-                />
+                <div className="cognitive-secondary">
+                  <HudPreviewFrame
+                    verdict={hudPreviewVerdict}
+                    coach={hudPreviewCoach}
+                    checking={ctrl.snapshot.checking}
+                    device={ctrl.snapshot.device}
+                    hudSocketConnected={ctrl.snapshot.hudConnected}
+                    onTriggerHudEvent={(name) => {
+                      ctrl.triggerHudEvent(name);
+                    }}
+                  />
+                </div>
 
                 <CaregiverAlertCard
                   profile={effectiveProfile}
@@ -870,7 +915,7 @@ function HoldUpPwaShell({
                 device={ctrl.snapshot.device}
                 lang={effectiveLang}
                 onOpenPrivacyModal={ctrl.openPrivacyModal}
-                onWipeAll={ctrl.wipeAllData}
+                onWipeAll={handleWipeAllData}
               />
 
               <DeviceResiliencePanel
@@ -959,7 +1004,7 @@ function HoldUpPwaShell({
           onResetDemoProfile={() => {
             ctrl.resetDemoProfile();
           }}
-          onWipeAllData={ctrl.wipeAllData}
+          onWipeAllData={handleWipeAllData}
         />
       ) : null}
 

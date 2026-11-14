@@ -262,6 +262,9 @@ test("App renders ConfidenceBreakdownCard between VerdictCard and HudPreviewFram
   });
 
   assert.ok(passedHtml.includes("Yes: Amlodipine 5 mg, your evening pill"));
+  assert.ok(passedHtml.includes('data-text-scale="100"'));
+  assert.ok(passedHtml.includes('data-cognitive-density="full"'));
+  assert.ok(passedHtml.includes("reading-comfort-status"));
   assert.ok(passedHtml.includes("confidence-breakdown-card"));
   assert.ok(passedHtml.includes('id="confidence-breakdown-heading"'));
   assert.ok(passedHtml.includes("80% Dose Gate: PASSED (93%)"));
