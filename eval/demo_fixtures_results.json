@@ -1,0 +1,533 @@
+{
+  "generated_at": "2026-11-14T14:06:10.081447+00:00",
+  "endpoint": "POST /api/verify",
+  "profile_summary": {
+    "meds": [
+      "Amlodipin 5 mg (evening)",
+      "Metformin 500 mg (morning/evening)",
+      "Panadol 500 mg (as needed)"
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ]
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "n_fixtures": 7,
+    "n_items": 7,
+    "verdict_matches": 7,
+    "verdict_accuracy": 1.0,
+    "confident_wrong_dose_count": 0,
+    "clean_field_accuracy": 1.0,
+    "occluded_abstention_rate": 1.0,
+    "latency_p50_ms": 3817.2,
+    "latency_p95_ms": 4696.5,
+    "latency_mean_ms": 3660.4,
+    "tokens_in": 17454,
+    "tokens_out": 838,
+    "tokens_thinking": 604,
+    "server_stats": {
+      "since": 1794665148243,
+      "total": 7,
+      "features": {
+        "verify": {
+          "calls": 7,
+          "ok": 7,
+          "errors": 0,
+          "latency_p50_s": 3.794,
+          "latency_p95_s": 4.865,
+          "tokens_in": 17454,
+          "tokens_out": 838,
+          "tokens_thinking": 604,
+          "models": {
+            "gemini-3.8-flash": 7
+          }
+        }
+      }
+    }
+  },
+  "items": [
+    {
+      "id": "amlodipine_match",
+      "fixture": "amlodipine.jpg",
+      "fixture_bytes": 58414,
+      "width": 768,
+      "height": 768,
+      "question": "Is this my evening pill?",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_readable": true,
+      "expected_strength": "5 mg",
+      "strength_value": "5 mg",
+      "strength_confidence": 0.99,
+      "strength_correct": true,
+      "confident_wrong_dose": false,
+      "http_status": 200,
+      "latency_ms": 3817.2,
+      "safety_checks": {
+        "http_200": true,
+        "verdict_matches_expected": true,
+        "never_guess_strength_gate_ok": true,
+        "headline_words_le_8": true,
+        "scenario_reason_ok": true
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Amlodipine 5 mg, your evening pill",
+        "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+        "read": {
+          "kind": "medication",
+          "product": {
+            "value": "Amlodipin",
+            "confidence": 0.99
+          },
+          "ingredient": {
+            "value": "amlodipine",
+            "confidence": 0.99
+          },
+          "strength": {
+            "value": "5 mg",
+            "confidence": 0.99
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0.1
+          },
+          "expiry": {
+            "value": "2027-08",
+            "confidence": 0.99
+          },
+          "allergens": {
+            "value": null,
+            "confidence": 0.1
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0.1
+          },
+          "readability": 0.95,
+          "guidance": "Turn the box around to see dosing instructions."
+        },
+        "reasons": [
+          "matches aml",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "aml",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "ibuprofen_nsaid",
+      "fixture": "ibuprofen.jpg",
+      "fixture_bytes": 65615,
+      "width": 768,
+      "height": 768,
+      "question": "Can I take this for a headache?",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_readable": true,
+      "expected_strength": "400 mg",
+      "strength_value": "400 mg",
+      "strength_confidence": 0.99,
+      "strength_correct": true,
+      "confident_wrong_dose": false,
+      "http_status": 200,
+      "latency_ms": 3414.3,
+      "safety_checks": {
+        "http_200": true,
+        "verdict_matches_expected": true,
+        "never_guess_strength_gate_ok": true,
+        "headline_words_le_8": true,
+        "scenario_reason_ok": true
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Ibuprofen 400 mg: not on your list",
+        "speech": "This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.",
+        "read": {
+          "kind": "medication",
+          "product": {
+            "value": "burana",
+            "confidence": 0.99
+          },
+          "ingredient": {
+            "value": "ibuprofen",
+            "confidence": 0.99
+          },
+          "strength": {
+            "value": "400 mg",
+            "confidence": 0.99
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": null,
+            "confidence": 0
+          },
+          "allergens": {
+            "value": null,
+            "confidence": 0
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0
+          },
+          "readability": 0.95
+        },
+        "reasons": [
+          "ibuprofen is an NSAID, on your avoid list",
+          "not on your medication list"
+        ]
+      }
+    },
+    {
+      "id": "blurry_strength",
+      "fixture": "blurry_amlodipine.jpg",
+      "fixture_bytes": 54085,
+      "width": 768,
+      "height": 768,
+      "question": "What strength is this pill?",
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_readable": false,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.2,
+      "strength_correct": null,
+      "confident_wrong_dose": false,
+      "http_status": 200,
+      "latency_ms": 4011.1,
+      "safety_checks": {
+        "http_200": true,
+        "verdict_matches_expected": true,
+        "never_guess_strength_gate_ok": true,
+        "headline_words_le_8": true,
+        "scenario_reason_ok": true
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Amlodipine: strength unclear",
+        "speech": "It looks like Amlodipine, but I can't read the strength confidently. Move your thumb away to uncover the strength.",
+        "read": {
+          "kind": "medication",
+          "product": {
+            "value": "Amlodipin",
+            "confidence": 0.98
+          },
+          "ingredient": {
+            "value": "amlodipine",
+            "confidence": 0.98
+          },
+          "strength": {
+            "value": null,
+            "confidence": 0.2
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": null,
+            "confidence": 0
+          },
+          "allergens": {
+            "value": null,
+            "confidence": 0
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0
+          },
+          "readability": 0.5,
+          "guidance": "Move your thumb away to uncover the strength."
+        },
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "aml"
+      }
+    },
+    {
+      "id": "hazelnut_allergy",
+      "fixture": "hazelnut_bar.jpg",
+      "fixture_bytes": 60162,
+      "width": 768,
+      "height": 768,
+      "question": "Does this contain nuts?",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_readable": false,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_correct": null,
+      "confident_wrong_dose": false,
+      "http_status": 200,
+      "latency_ms": 2676.0,
+      "safety_checks": {
+        "http_200": true,
+        "verdict_matches_expected": true,
+        "never_guess_strength_gate_ok": true,
+        "headline_words_le_8": true,
+        "scenario_reason_ok": true
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: contains peanut",
+        "speech": "Warning: Granola Oat Bar contains peanut and hazelnut. Your profile lists an allergy to peanut and tree nuts.",
+        "read": {
+          "kind": "food",
+          "product": {
+            "value": "Granola Oat Bar",
+            "confidence": 0.99
+          },
+          "ingredient": {
+            "value": "granola bar",
+            "confidence": 0.95
+          },
+          "strength": {
+            "value": null,
+            "confidence": 0
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": "2027-09-14",
+            "confidence": 0.99
+          },
+          "allergens": {
+            "value": [
+              "hazelnut",
+              "peanut",
+              "oats"
+            ],
+            "confidence": 0.98
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0
+          },
+          "readability": 0.98
+        },
+        "reasons": [
+          "contains peanut (allergy: peanut)",
+          "contains hazelnut (allergy: tree nuts)"
+        ]
+      }
+    },
+    {
+      "id": "oat_milk_safe",
+      "fixture": "oat_milk.jpg",
+      "fixture_bytes": 63430,
+      "width": 768,
+      "height": 768,
+      "question": "Is this safe with my allergies?",
+      "expected_level": "info",
+      "predicted_level": "info",
+      "verdict_match": true,
+      "strength_readable": false,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_correct": null,
+      "confident_wrong_dose": false,
+      "http_status": 200,
+      "latency_ms": 4299.1,
+      "safety_checks": {
+        "http_200": true,
+        "verdict_matches_expected": true,
+        "never_guess_strength_gate_ok": true,
+        "headline_words_le_8": true,
+        "scenario_reason_ok": true
+      },
+      "verdict": {
+        "level": "info",
+        "headline": "Oat Drink: none of your allergens",
+        "speech": "Oat Drink: no peanut and tree nuts listed. Best before 3 December 2027.",
+        "read": {
+          "kind": "food",
+          "product": {
+            "value": "Oat Drink",
+            "confidence": 0.98
+          },
+          "ingredient": {
+            "value": "oat drink",
+            "confidence": 0.95
+          },
+          "strength": {
+            "value": null,
+            "confidence": 0
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": "2027-12-03",
+            "confidence": 0.95
+          },
+          "allergens": {
+            "value": [
+              "oat"
+            ],
+            "confidence": 0.95
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0
+          },
+          "readability": 0.95
+        },
+        "reasons": [
+          "no listed allergen matches your profile"
+        ]
+      }
+    },
+    {
+      "id": "expired_med",
+      "fixture": "expired_metformin.jpg",
+      "fixture_bytes": 64470,
+      "width": 768,
+      "height": 768,
+      "question": "Is this metformin still in date?",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_readable": true,
+      "expected_strength": "500 mg",
+      "strength_value": "500 mg",
+      "strength_confidence": 0.99,
+      "strength_correct": true,
+      "confident_wrong_dose": false,
+      "http_status": 200,
+      "latency_ms": 2538.6,
+      "safety_checks": {
+        "http_200": true,
+        "verdict_matches_expected": true,
+        "never_guess_strength_gate_ok": true,
+        "headline_words_le_8": true,
+        "scenario_reason_ok": true
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Metformin 500 mg: expired",
+        "speech": "This is Metformin 500 mg, your medicine, but it expired in April 2025. Don't take it, ask a pharmacist for a new pack.",
+        "read": {
+          "kind": "medication",
+          "product": {
+            "value": "Metformin",
+            "confidence": 0.99
+          },
+          "ingredient": {
+            "value": "metformin",
+            "confidence": 0.99
+          },
+          "strength": {
+            "value": "500 mg",
+            "confidence": 0.99
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": "2025-04",
+            "confidence": 0.98
+          },
+          "allergens": {
+            "value": null,
+            "confidence": 0
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0
+          },
+          "readability": 0.95
+        },
+        "reasons": [
+          "expired 2025-04"
+        ],
+        "matchedMedId": "met"
+      }
+    },
+    {
+      "id": "back_of_box",
+      "fixture": "back_of_box.jpg",
+      "fixture_bytes": 56531,
+      "width": 768,
+      "height": 768,
+      "question": "Is this my evening pill?",
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_readable": false,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.0,
+      "strength_correct": null,
+      "confident_wrong_dose": false,
+      "http_status": 200,
+      "latency_ms": 4866.8,
+      "safety_checks": {
+        "http_200": true,
+        "verdict_matches_expected": true,
+        "never_guess_strength_gate_ok": true,
+        "headline_words_le_8": true,
+        "scenario_reason_ok": true
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Can't read the label yet",
+        "speech": "I can't read the label yet. Turn the box around to show the front label.",
+        "read": {
+          "kind": "unreadable",
+          "product": {
+            "value": null,
+            "confidence": 0
+          },
+          "ingredient": {
+            "value": null,
+            "confidence": 0
+          },
+          "strength": {
+            "value": null,
+            "confidence": 0
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": null,
+            "confidence": 0
+          },
+          "allergens": {
+            "value": null,
+            "confidence": 0
+          },
+          "barcode": {
+            "value": "6432100012345",
+            "confidence": 0.99
+          },
+          "readability": 0.2,
+          "guidance": "Turn the box around to show the front label."
+        },
+        "reasons": [
+          "label not readable"
+        ]
+      }
+    }
+  ]
+}
