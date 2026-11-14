@@ -46,6 +46,11 @@ export class Hub {
     if (this.lastCoach) safeSend(ws, JSON.stringify(this.lastCoach));
     if (this.lastVerdict) safeSend(ws, JSON.stringify({ type: "verdict", verdict: this.lastVerdict }));
   }
+
+  replayClient(ws: WebSocket) {
+    if (this.device) safeSend(ws, JSON.stringify({ type: "device", device: this.device }));
+    safeSend(ws, JSON.stringify({ type: "hud", connected: hasHud(this) }));
+  }
 }
 
 export function safeSend(ws: WebSocket, data: string) {
@@ -63,6 +68,14 @@ function hudsFor(h: Hub): WebSocket[] {
   return h.id === latestId ? [...h.huds, ...floatingHuds] : [...h.huds];
 }
 
+export function hasHud(h: Hub): boolean {
+  return h.huds.size > 0 || (h.id === latestId && floatingHuds.size > 0);
+}
+
+export function notifyHudState(h: Hub) {
+  h.emit({ type: "hud", connected: hasHud(h) }, { hud: false });
+}
+
 export const getHub = (id: string) => hubs.get(id);
 export function getOrCreateHub(id: string): Hub {
   let h = hubs.get(id);
@@ -78,9 +91,13 @@ export function resolveHub(id?: string | null): Hub | undefined {
 
 /** Called when a live session starts: this hub becomes the target for session-less HUDs and ingest. */
 export function markLatest(h: Hub) {
+  const prev = latestHub();
+  if (!hubs.has(h.id)) hubs.set(h.id, h);
   latestId = h.id;
   if (orphanDevice && !h.device) h.device = orphanDevice;
   for (const ws of floatingHuds) h.replay(ws);
+  if (prev && prev !== h && floatingHuds.size > 0) notifyHudState(prev);
+  notifyHudState(h);
 }
 
 export function addHud(ws: WebSocket, id?: string | null) {
@@ -88,14 +105,25 @@ export function addHud(ws: WebSocket, id?: string | null) {
     const h = getOrCreateHub(id);
     h.huds.add(ws);
     h.replay(ws);
-    ws.on("close", () => h.huds.delete(ws));
+    notifyHudState(h);
+    ws.on("close", () => {
+      if (h.huds.delete(ws)) notifyHudState(h);
+    });
     return;
   }
   floatingHuds.add(ws);
   const h = latestHub();
-  if (h) h.replay(ws);
-  else if (orphanDevice) safeSend(ws, JSON.stringify({ type: "device", device: orphanDevice }));
-  ws.on("close", () => floatingHuds.delete(ws));
+  if (h) {
+    h.replay(ws);
+    notifyHudState(h);
+  } else if (orphanDevice) {
+    safeSend(ws, JSON.stringify({ type: "device", device: orphanDevice }));
+  }
+  ws.on("close", () => {
+    if (!floatingHuds.delete(ws)) return;
+    const cur = latestHub();
+    if (cur) notifyHudState(cur);
+  });
 }
 /** The hub a HUD event should go to. */
 export function hudTarget(id?: string | null) { return resolveHub(id); }
@@ -126,4 +154,16 @@ setInterval(() => {
 
 export function hubStats() {
   return { sessions: hubs.size, latest: latestId ? shortId(latestId) : null, floatingHuds: floatingHuds.size };
+}
+
+export function resetHubsForTest() {
+  for (const h of hubs.values()) {
+    h.clients.clear();
+    h.huds.clear();
+    h.ring.clear();
+  }
+  hubs.clear();
+  floatingHuds.clear();
+  latestId = undefined;
+  orphanDevice = undefined;
 }
