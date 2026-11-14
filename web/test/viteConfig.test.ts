@@ -82,7 +82,7 @@ test("web/vite.config.ts proxies /api, /ingest, /deck, handouts, and WebSocket r
   assert.deepEqual(proxy["/hud-ws"], { target: WS_BACKEND, ws: true });
 });
 
-test("web/vite.config.ts manualChunks splits node_modules into vendor chunk and leaves app modules in default chunks", () => {
+test("web/vite.config.ts manualChunks splits node_modules into vendor, web/src/components into cards, and leaves app modules in default chunks", () => {
   const output = viteConfig.build?.rollupOptions?.output;
   assert.ok(output && !Array.isArray(output), "expected single rollupOptions.output object");
   assert.equal(typeof output.manualChunks, "function");
@@ -105,13 +105,29 @@ test("web/vite.config.ts manualChunks splits node_modules into vendor chunk and 
     assert.equal(chunkFn(id), "vendor", `expected vendor chunk for ${id}`);
   }
 
+  const cardsIds = [
+    "/workspace/web/src/components/FrameReadinessMeter.tsx",
+    "/workspace/web/src/components/EmergencyMedCard.tsx",
+    "/workspace/web/src/components/PrivacyFlowCard.tsx",
+    "/tmp/fleet-silas/wt/meta-w09/web/src/components/VerdictCard.tsx",
+    "C:\\repo\\web\\src\\components\\AppHeader.tsx",
+    "src/components/PrivacyFlowCard.tsx",
+    "\0/workspace/web/src/components/EmergencyMedCard.tsx?commonjs-es-import"
+  ];
+
+  for (const id of cardsIds) {
+    assert.equal(chunkFn(id), "cards", `expected cards chunk for ${id}`);
+  }
+
   const appIds = [
     "/workspace/web/src/main.tsx",
     "/workspace/web/src/App.tsx",
     "/workspace/web/src/hud/HudApp.tsx",
+    "/workspace/web/src/hud/HudPreviewFrame.tsx",
     "/workspace/shared/types.ts",
     "C:\\repo\\web\\src\\App.tsx",
     "/workspace/web/src/node_modules_helper.ts",
+    "/workspace/web/src/components_helper.ts",
     ""
   ];
 
@@ -155,6 +171,7 @@ test("dev proxy routes match server/src/index.ts backend endpoints and built JS 
   if (existsSync(distAssetsUrl)) {
     const jsFiles = readdirSync(distAssetsUrl).filter((file) => file.endsWith(".js"));
     if (jsFiles.some((file) => file.startsWith("vendor-"))) {
+      assert.ok(jsFiles.some((file) => file.startsWith("cards-")), "expected cards-*.js chunk alongside vendor-*.js");
       assert.ok(jsFiles.some((file) => file.startsWith("index-")), "expected index-*.js chunk alongside vendor-*.js");
       for (const file of jsFiles) {
         const sizeBytes = statSync(new URL(`../dist/assets/${file}`, import.meta.url)).size;

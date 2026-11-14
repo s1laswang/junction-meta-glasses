@@ -9,6 +9,7 @@ import React, {
 import { ScreenReaderAnnouncer } from "./a11y/announcer.tsx";
 import { createLiveAudioBridge } from "./audio/player.ts";
 import { cancelSpeech } from "./audio/tts.ts";
+import { estimateJpegByteSharpness } from "./camera/fixtureLoader.ts";
 import { AppHeader, type AppTab } from "./components/AppHeader.tsx";
 import { CaregiverAlertCard } from "./components/CaregiverAlertCard.tsx";
 import { ConfidenceBreakdownCard } from "./components/ConfidenceBreakdownCard.tsx";
@@ -16,7 +17,9 @@ import { ConsentOnboarding } from "./components/ConsentOnboarding.tsx";
 import { ConversationBar } from "./components/ConversationBar.tsx";
 import { DeviceResiliencePanel } from "./components/DeviceResiliencePanel.tsx";
 import { DoseTimelineCard } from "./components/DoseTimelineCard.tsx";
+import { EmergencyMedCard } from "./components/EmergencyMedCard.tsx";
 import { EvalProofCard } from "./components/EvalProofCard.tsx";
+import { FrameReadinessMeter } from "./components/FrameReadinessMeter.tsx";
 import { HardwareTelemetryCard } from "./components/HardwareTelemetryCard.tsx";
 import {
   JudgeDemoTour,
@@ -25,6 +28,7 @@ import {
 } from "./components/JudgeDemoTour.tsx";
 import { PermissionBanner } from "./components/PermissionBanner.tsx";
 import { PharmacyImportModal } from "./components/PharmacyImportModal.tsx";
+import { PrivacyFlowCard } from "./components/PrivacyFlowCard.tsx";
 import { ProfileManager } from "./components/ProfileManager.tsx";
 import { SafetyRuleExplainerCard } from "./components/SafetyRuleExplainerCard.tsx";
 import { ScheduleChecklistCard } from "./components/ScheduleChecklistCard.tsx";
@@ -162,6 +166,53 @@ const FOOTER_LINK_STYLE: CSSProperties = {
   textDecoration: "none",
   whiteSpace: "nowrap"
 };
+
+function decodeBase64BytesSafe(b64: string): Uint8Array {
+  const payload = b64.includes(",") ? b64.slice(b64.indexOf(",") + 1).trim() : b64.trim();
+  if (payload.length === 0) {
+    return new Uint8Array(0);
+  }
+  try {
+    const nodeBuffer = (
+      globalThis as unknown as {
+        Buffer?: { from(input: string, encoding: "base64"): Uint8Array };
+      }
+    ).Buffer;
+    if (nodeBuffer && typeof nodeBuffer.from === "function") {
+      const buf = nodeBuffer.from(payload, "base64");
+      return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    }
+    if (typeof globalThis.atob === "function") {
+      const bin = globalThis.atob(payload);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) {
+        out[i] = bin.charCodeAt(i);
+      }
+      return out;
+    }
+  } catch {
+    const approxLen = Math.floor((payload.length * 3) / 4);
+    return new Uint8Array(Math.max(0, approxLen));
+  }
+  const approxLen = Math.floor((payload.length * 3) / 4);
+  return new Uint8Array(Math.max(0, approxLen));
+}
+
+export function resolveLatestFrameSharpness(
+  bufferedFrames: readonly string[],
+  cameraActive: boolean,
+  source: string,
+  scenarioId: string
+): number | null {
+  if (bufferedFrames.length > 0) {
+    const latestFrame = bufferedFrames[bufferedFrames.length - 1];
+    return estimateJpegByteSharpness(decodeBase64BytesSafe(latestFrame));
+  }
+  if (cameraActive && source === "demo") {
+    return scenarioId === "blurry_strength" ? 0.14 : 0.85;
+  }
+  return null;
+}
 
 function toLocationLike(initialUrl?: string): { pathname: string; search: string } {
   const raw =
@@ -430,6 +481,25 @@ function HoldUpPwaShell({
     return { bridgeLink, hudUrl, bridgeQrSvg, hudQrSvg };
   }, [activeTab, ctrl.sessionId, serverOrigin]);
 
+  const bufferedFrames = ctrl.sessionManager.getBufferedFrames();
+  const latestBufferedFrame =
+    bufferedFrames.length > 0 ? bufferedFrames[bufferedFrames.length - 1] : null;
+  const latestSharpness = useMemo<number | null>(
+    () =>
+      resolveLatestFrameSharpness(
+        latestBufferedFrame !== null ? [latestBufferedFrame] : [],
+        ctrl.snapshot.cameraActive,
+        effectiveSource,
+        effectiveScenarioId
+      ),
+    [
+      ctrl.snapshot.cameraActive,
+      effectiveScenarioId,
+      effectiveSource,
+      latestBufferedFrame
+    ]
+  );
+
   const effectiveVerdict = ctrl.snapshot.verdict ?? initialVerdict ?? null;
   const hudPreviewVerdict = ctrl.hudDismissed ? null : effectiveVerdict;
   const hudPreviewCoach = ctrl.hudDismissed ? null : ctrl.snapshot.coach;
@@ -543,6 +613,15 @@ function HoldUpPwaShell({
                   onOfflineBarcodeScan={() => {
                     void ctrl.offlineBarcodeScan();
                   }}
+                  lang={effectiveLang}
+                />
+
+                <FrameReadinessMeter
+                  cameraActive={ctrl.snapshot.cameraActive}
+                  checking={ctrl.snapshot.checking}
+                  sharpness={latestSharpness}
+                  bufferedFrames={bufferedFrames.length}
+                  coach={ctrl.snapshot.coach}
                   lang={effectiveLang}
                 />
 
@@ -679,6 +758,11 @@ function HoldUpPwaShell({
                   ctrl.logDose(medId);
                 }}
               />
+
+              <EmergencyMedCard
+                profile={effectiveProfile}
+                lang={effectiveLang}
+              />
             </div>
           ) : null}
 
@@ -696,6 +780,17 @@ function HoldUpPwaShell({
                 rttMs={ctrl.snapshot.network.rttMs}
                 cameraActive={ctrl.snapshot.cameraActive}
                 lang={effectiveLang}
+              />
+
+              <PrivacyFlowCard
+                profile={effectiveProfile}
+                consent={ctrl.consent}
+                cameraActive={ctrl.snapshot.cameraActive}
+                autoStopRemainingSec={ctrl.snapshot.autoStopRemainingSec}
+                device={ctrl.snapshot.device}
+                lang={effectiveLang}
+                onOpenPrivacyModal={ctrl.openPrivacyModal}
+                onWipeAll={ctrl.wipeAllData}
               />
 
               <DeviceResiliencePanel
