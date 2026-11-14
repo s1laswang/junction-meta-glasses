@@ -67,6 +67,7 @@ fun BridgeScreen(
     BridgeScreen(
         uiState = uiState,
         onUpdateEndpoint = { serverUrl, sessionCode ->
+            BridgePreferences.saveEndpoint(activity.applicationContext, serverUrl, sessionCode)
             DatBridgeController.updateEndpoint(serverUrl, sessionCode)
         },
         onConnectGlasses = {
@@ -87,7 +88,11 @@ fun BridgeScreen(
         onOpenGlassesAppUpdate = {
             DatBridgeController.openGlassesAppUpdate(activity)
         },
-        modifier = modifier
+        modifier = modifier,
+        onForgetEndpoint = {
+            BridgePreferences.clearSavedEndpoint(activity.applicationContext)
+            DatBridgeController.updateEndpoint("", "")
+        }
     )
 }
 
@@ -101,7 +106,8 @@ fun BridgeScreen(
     onDisconnect: () -> Unit,
     onOpenFirmwareUpdate: () -> Unit,
     onOpenGlassesAppUpdate: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onForgetEndpoint: () -> Unit = {}
 ) {
     var serverInput by rememberSaveable { mutableStateOf(uiState.serverUrl) }
     var sessionInput by rememberSaveable { mutableStateOf(uiState.sessionCode) }
@@ -240,6 +246,32 @@ fun BridgeScreen(
                                 contentDescription = "Session Code input field, leave blank to follow latest active session"
                             }
                     )
+
+                    OutlinedButton(
+                        onClick = {
+                            serverInput = ""
+                            sessionInput = ""
+                            onForgetEndpoint()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .semantics {
+                                contentDescription = "Forget Saved Server and clear stored endpoint preferences"
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
+                    ) {
+                        Text(
+                            text = "Forget Saved Server",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
 

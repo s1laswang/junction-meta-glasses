@@ -30,6 +30,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         DatBridgeController.initialize(applicationContext)
+        val saved = BridgePreferences.loadSavedEndpoint(applicationContext)
+        if (saved.serverUrl.isNotEmpty()) {
+            DatBridgeController.updateEndpoint(saved.serverUrl, saved.sessionCode)
+        }
         requestRuntimePermissions()
         handleDeepLink(intent)
 
@@ -107,30 +111,40 @@ class MainActivity : ComponentActivity() {
         if (!path.isNullOrEmpty() && path != "/") return
 
         val currentState = DatBridgeController.uiState.value
-        val rawServer = data.getQueryParameter("server")?.trim()?.trimEnd('/')
+        val rawServer = data.getQueryParameter("server")?.trim()
         val resolvedServer = if (!rawServer.isNullOrEmpty()) {
-            val serverScheme = Uri.parse(rawServer).scheme?.lowercase()
-            if (serverScheme != "https" && serverScheme != "http") return
-            rawServer
+            val cleanServer = BridgePreferences.sanitizeServerUrl(rawServer)
+            if (cleanServer.isEmpty()) return
+            cleanServer
         } else {
-            currentState.serverUrl
+            BridgePreferences.sanitizeServerUrl(currentState.serverUrl)
         }
 
         val rawSession = data.getQueryParameter("session")?.trim()
         val resolvedSession = when {
-            rawSession == null -> if (!rawServer.isNullOrEmpty()) "" else currentState.sessionCode
+            rawSession == null -> {
+                if (!rawServer.isNullOrEmpty()) {
+                    ""
+                } else {
+                    BridgePreferences.sanitizeSessionCode(currentState.sessionCode)
+                }
+            }
             rawSession.isEmpty() -> ""
-            SESSION_CODE_PATTERN.matches(rawSession) -> rawSession
-            else -> return
+            else -> {
+                val cleanSession = BridgePreferences.sanitizeSessionCode(rawSession)
+                if (cleanSession.isEmpty()) return
+                cleanSession
+            }
         }
 
         if (resolvedServer.isEmpty() && resolvedSession.isEmpty()) return
-        DatBridgeController.updateEndpoint(resolvedServer, resolvedSession)
+        val saved = BridgePreferences.saveEndpoint(applicationContext, resolvedServer, resolvedSession)
+        DatBridgeController.updateEndpoint(saved.serverUrl, saved.sessionCode)
+        incomingIntent.setData(null)
     }
 
     companion object {
         private const val DEEP_LINK_SCHEME = "holdupbridge"
         private const val DEEP_LINK_HOST = "connect"
-        private val SESSION_CODE_PATTERN = Regex("^[A-Za-z0-9_-]{1,64}$")
     }
 }
