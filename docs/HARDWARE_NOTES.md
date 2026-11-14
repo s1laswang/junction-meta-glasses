@@ -24,7 +24,7 @@ Everything below was checked against the live docs on Sat 14 Nov 2026 (DAT SDK *
 ### Laptop (Momin's)
 - [ ] **Android Studio Narwhal (2025.1.1) or newer**, with **JDK 17** (the bundled JBR is fine). In the SDK Manager install **Android SDK Platform 36** and Build-Tools. (Sample prerequisites: [CameraAccess README](https://github.com/facebook/meta-wearables-dat-android/tree/main/samples/CameraAccess).)
 - [ ] `git clone https://github.com/facebook/meta-wearables-dat-android.git`
-- [ ] `git clone https://github.com/s1laswang/junction-meta-glasses.git` and check out branch `feat/glasses` (until it's merged to main).
+- [ ] `git clone https://github.com/s1laswang/junction-meta-glasses.git` on branch `main` (the bridge is merged).
 - [ ] Open `meta-wearables-dat-android/samples/CameraAccess` in Android Studio and let **Gradle sync finish**. That downloads Gradle 8.14.1, AGP 8.11.1, Kotlin 2.2.21 and the mwdat 1.0.1 AARs while you still have good wifi.
 - [ ] Create `samples/CameraAccess/local.properties` (Android Studio usually creates it with `sdk.dir=...`) and **add** these lines (Developer Mode values, not secrets):
   ```properties
@@ -85,14 +85,20 @@ If it fails, go to §7 Troubleshooting **before** trying our bridge.
 
 ## 5. Build and run HoldUp Bridge (`android-dat/`)
 
-What it does: connects to the glasses via DAT, starts a camera stream at **720×1280 (`VideoQuality.HIGH`) @ 2 fps** (the lowest the SDK allows; valid fps are 2/7/15/24/30). It JPEG-encodes **at most ~1 frame/s** and POSTs it to `{server}/ingest/frame?session=<id>` (`image/jpeg`). If a POST is still in flight, the frame is dropped. It also POSTs device state (`connected`, `worn`, `battery`, `streaming`) to `{server}/ingest/state?session=<id>` on every change.
+What it does: connects to the glasses via DAT, starts a camera stream at **720×1280 (`VideoQuality.HIGH`) @ 2 fps** (the lowest the SDK allows; valid fps are 2/7/15/24/30). It JPEG-encodes **at most ~1 frame/s** and POSTs it to `{server}/ingest/frame` (`image/jpeg`; `?session=<id>` only if a code is entered, otherwise the server uses the latest live session). If a POST is still in flight, the frame is dropped. It also POSTs device state (`connected`, `worn`, `battery`, `streaming`) to `{server}/ingest/state` on every change and every 10 s.
 
-1. The server and tunnel must be running on the demo laptop: `npm run dev` + `npm run tunnel`. Copy the printed `https://….trycloudflare.com` URL.
-2. Open the phone PWA (same tunnel URL) and note the **session code** shown there.
-3. Android Studio → open `junction-meta-glasses/android-dat` → sync → **Run ▶ app** on the phone. No `local.properties` edits are needed (Developer Mode IDs default to `0`).
+1. The server and tunnel must be running on the demo laptop: `npm start` + `npm run tunnel` (with `HOLDUP_KEY` set, put `?key=<k>` on the Server URL field). Copy the printed `https://….trycloudflare.com` URL.
+2. Open the phone PWA (same tunnel URL) and start a session there. A session code is **not needed**: the server attaches the bridge to the latest live session.
+3. **Install the prebuilt APK (fastest, no Android Studio needed).** It was built on freighter (Sat 19:03) from main `1557c0a` plus the unit test commit. File: `/tmp/holdup-bridge-debug.apk` on Silas' laptop, 60.5 MB, sha256 `164dea1bb474fbdbcb7bdeccd3270ccc42c46c2c1c5683f2a9bd2b894a3bfe20`. Copy it to the laptop the phone is plugged into (AirDrop/USB stick/`scp`), check the hash (`shasum -a 256 holdup-bridge-debug.apk`), then:
+   ```bash
+   adb devices                                   # phone listed as "device" (USB debugging on, RSA prompt accepted)
+   adb install -r /tmp/holdup-bridge-debug.apk   # -r keeps settings if a build is already installed
+   adb shell am start -n app.holdup.bridge/.MainActivity
+   ```
+   If you get `INSTALL_FAILED_UPDATE_INCOMPATIBLE` (an Android Studio build with another debug key is already installed): `adb uninstall app.holdup.bridge`, then install again. **Alternative:** Android Studio → open `junction-meta-glasses/android-dat` → sync → **Run ▶ app**. No `local.properties` edits are needed (Developer Mode IDs default to `0`).
 4. In **HoldUp Bridge**:
    - **Server URL**: paste the tunnel URL (no trailing slash needed).
-   - **Session code**: type it, or open a link `holdupbridge://connect?server=<url>&session=<code>` (for example from a QR code that the phone camera scans), which fills both fields.
+   - **Session code**: leave it **blank** (= latest session). Only fill it in if several phones run sessions at once. A link `holdupbridge://connect?server=<url>&session=<code>` (for example from a QR code) fills both fields.
    - Tap **Connect glasses**. The Meta AI app opens. Approve. **This unregisters the CameraAccess sample** (only one dev-mode app at a time). Status should read `Registered`, then `Device: <name> connected`.
    - Tap **Start streaming**. The first time, Meta AI opens for the camera permission. Choose **Allow always**.
    - Status shows `Streaming`, **frames sent / dropped / last HTTP code**, and the glasses' **battery and worn** state.
@@ -106,38 +112,6 @@ curl -i -X POST -H 'Content-Type: application/json' \
   -d '{"connected":true,"worn":true,"battery":80,"streaming":false}' \
   "$TUNNEL/ingest/state?session=TEST"
 ```
-
-### 5.1 Android Bridge Architecture, Trilingual TalkBack Localization & Automated Verification (`android-dat/`)
-
-- **`11` Kotlin Files (`package app.holdup.bridge`, verified by `node android-dat/verify-structure.mjs`)**:
-  - **7 Main App Sources (`android-dat/app/src/main/java/app/holdup/bridge/`)**:
-    - `MainActivity.kt`: handles `holdupbridge://connect?server=<url>&session=<code>` (`ACTION_VIEW` + `singleTop` `onNewIntent`) and scrubs consumed intent URIs.
-    - `BridgeScreen.kt`: Jetpack Compose screen-reader-first UI with `Modifier.semantics { heading() }`, `Modifier.heightIn(min = 56.dp)` on all `10` interactive inputs and buttons, `LiveRegionMode.Polite` on the active `CAMERA ON - CAPTURE LED ACTIVE` privacy card (`R.string.cd_streaming_active`) and live glasses status card (`R.string.cd_glasses_status`), and `LiveRegionMode.Assertive` on bridge error alerts (`R.string.cd_error_alert`).
-    - `DatBridgeController.kt`: drives `mwdat-core:1.0.1` and `mwdat-camera:1.0.1` (`STREAM_FPS = 2`, `MIN_ENCODE_INTERVAL_MS = 960L`, `SESSION_START_TIMEOUT_MS = 15_000L`, plus `openFirmwareUpdate` and `openGlassesAppUpdate`).
-    - `IngestClient.kt`: enforces `minFrameIntervalMs = 950L` (`<= ~1 fps`) and atomic `frameInFlight` drop gating across `POST /ingest/frame` (`image/jpeg`) and `POST /ingest/state` (`application/json; charset=utf-8`).
-    - `YuvJpegEncoder.kt`: converts uncompressed `720x1280` `VideoFrame.buffer` I420 planar frames via `i420ToNv21` chroma interleaving and encodes JPEG at `quality = 78`.
-    - `BridgePreferences.kt`: sanitizes server URLs (`<= 256` chars, `http`/`https` only) and session codes (`^[A-Za-z0-9_-]{4,64}$`), with 1-tap `clearSavedEndpoint()` erasure (`Forget Saved Server`).
-    - `StreamingForegroundService.kt`: `connectedDevice` foreground service keeping the DAT camera stream alive while Chrome/PWA is in the foreground.
-  - **4 JUnit4 Contract & State-Machine Test Suites (`android-dat/app/src/test/java/app/holdup/bridge/`)**:
-    - `IngestPayloadContractTest.kt`: verifies session-less and session-bound `/ingest/frame` and `/ingest/state` URL builders, exact 4-field `BridgeDeviceState` JSON serialization (`connected`, `worn`, `battery`, `streaming`), `<= 1 fps` frame throttling (`minFrameIntervalMs = 950L`, `MIN_ENCODE_INTERVAL_MS = 960L` across `2 fps` SDK arrivals) + `frameInFlight` drop lock, and low-battery (`< 15%`, `<= 10%` charge floor) and `DOFFED` -> phone-camera fallback transitions.
-    - `DatStateTransitionTest.kt`: verifies `YuvJpegEncoder.i420ToNv21` across minimal `2x2`, portrait/landscape, sliced/read-only/padded buffers, and full `720x1280` (`1,382,400 B`) direct buffers + odd-dimension guards, `BridgeUiState` registration/device/thermal/permission/session/stream (`STARTING -> STARTED -> STREAMING -> PAUSED -> STOPPING -> CLOSED`) state transitions, HTTP `204`/`503`/`502` ingest error precedence, and `28` hostile `holdupbridge://connect` deep-link rejection vectors.
-    - `BridgeContractTest.kt` & `BridgePreferencesTest.kt`: verify `i420ToNv21` luma/chroma invariants, `BridgePreferences` URL/session sanitizers, and deep-link parameter safety.
-- **Trilingual Android TalkBack Localization (`values`, `values-fi`, `values-sv`)**:
-  - `android-dat/app/src/main/res/values/strings.xml` (English default), `values-fi/strings.xml` (Finnish), and `values-sv/strings.xml` (Swedish) localize all `19` resource keys (`app_name`, `4` foreground streaming notification strings, and `14` `cd_*` TalkBack `contentDescription` templates with `%1$s..%4$s` positional placeholder parity).
-- **Offline CI Structure & Parity Gate**:
-  ```bash
-  node android-dat/verify-structure.mjs
-  ```
-  Verifies all `11` Kotlin files, balanced braces, zero comments/em-dashes, `AndroidManifest.xml`, `network_security_config.xml` (`cleartextTrafficPermitted="false"` base-config), vector launcher icon, dark `#0B0F17` theme, XML resources, JUnit4 suites, and `mwdat` `1.0.1` coordinates, complemented by `server/test/android-a11y-parity.test.ts`, `server/test/android-i18n-strings.test.ts`, `server/test/android-prefs-contract.test.ts`, and `server/test/android-res-security.test.ts`.
-
-### 5.2 Companion PWA Live Hardware Telemetry (`HardwareTelemetryCard.tsx`)
-
-On the companion phone/laptop PWA, **`<HardwareTelemetryCard />`** (`web/src/components/HardwareTelemetryCard.tsx`, `summarizeHardwareLink()`, verified in `web/test/hardwareTelemetryCard.test.ts` and `web/test/allComponentsA11yAudit.test.ts`) surfaces live trilingual (`en`, `fi`, `sv`) wearables telemetry with a `role="status"` `aria-live="polite"` summary pill and **4 real-time diagnostic tiles**:
-
-1. **`dat-camera` (*Ray-Ban Gen 2 DAT Camera*)**: Resolves `5` deterministic `GlassesLinkState` states (`streaming_glasses`, `standby_glasses`, `low_battery_fallback` below `LOW_BATTERY_THRESHOLD_PCT = 15` / `< 15%`, `doffed_fallback` when `worn === false`, and `phone_only`), displaying active eye (`"glasses"` vs `"phone"`), Bluetooth HFP open-ear audio readiness, and live battery percentage.
-2. **`capture-led` (*Firmware Capture LED Bystander Indicator*)**: Reflects `captureLedActive` (`device.connected && device.streaming && cameraActive`), distinguishing `LED LOCKED ON` (front Capture LED illuminated by DAT `1.0.1` + firmware `V128+`) from `LED OFF (IDLE)` (`45s` auto-stop + `FrameRing(8)` RAM clear).
-3. **`hud-waveguide` (*Ray-Ban Display `/hud-ws` Waveguide*)**: Shows live `/hud-ws` synchronization (`SYNCED /hud-ws` vs `WAITING /hud-ws` zero-code attach and state replay on the `600x600` `#000000` waveguide with Meta Neural Band `Arrow*` / `Enter` focus).
-4. **`adaptive-bandwidth` (*RTT-Adaptive Bandwidth Tier*)**: Maps live 5s WebSocket `ping`/`pong` RTT (`computeAdaptiveParams()`) across `4` `AdaptiveTier` steps: `high_768p` (`< 250 ms` RTT: `768 px` @ `1.0 fps`), `medium_640p` (`250..650 ms` RTT: `640 px` @ `0.75 fps`), `low_512p` (`> 650 ms` RTT: `512 px`, saving `~84%` video bandwidth), and `offline` (`0 fps` network stream, local `BarcodeDetector`).
 
 ---
 
@@ -155,8 +129,8 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 
 ### Steps to load the HUD on the glasses
 1. The server and tunnel are running. The web engineer has built `/hud` (spec in `docs/HUD_SPEC.md`).
-2. On the laptop, open `https://<tunnel>/hud/?session=<code>` in Chrome first. It must load with **no console or certificate errors**. Optional: preview with the [Meta Ray-Ban Display Simulator](https://chromewebstore.google.com/detail/jpjlmmodokemlepklkdbimceggpbjcll) Chrome extension (600×600 additive preview, arrow/Select buttons, and a **View on Glasses QR** generator).
-3. On the phone: **Meta AI app → App Settings (left panel) → Apps → Web Apps → Connect Web App** → enter `https://<tunnel>/hud/?session=<code>` → **Save**.
+2. On the laptop, open `https://<tunnel>/hud/` in Chrome first (no session param: the server attaches the HUD to the latest live session and replays the last verdict). It must load with **no console or certificate errors**. Optional: preview with the [Meta Ray-Ban Display Simulator](https://chromewebstore.google.com/detail/jpjlmmodokemlepklkdbimceggpbjcll) Chrome extension (600×600 additive preview, arrow/Select buttons, and a **View on Glasses QR** generator).
+3. On the phone: **Meta AI app → App Settings (left panel) → Apps → Web Apps → Connect Web App** → enter `https://<tunnel>/hud/` (with the trailing slash) → **Save**.
 4. On the glasses: the app appears at the **bottom of the app grid**. Pin it, then open it.
 5. Alternative: scan the **View on Glasses QR** from the simulator with the glasses, then confirm on the glasses. The QR encodes `fb-viewapp://web_app_deep_link?appName=HoldUp&appUrl=<https-url>`. A plain URL QR does **not** work.
 6. **Every time the cloudflared quick-tunnel URL changes**, you must edit the Web App URL again. So keep one tunnel process running for the whole demo, or ask the CEO for a named tunnel or stable host.
@@ -183,7 +157,7 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 | Stream stuck at `STARTING` / black | Camera broken after the V128 OTA → **reboot the glasses**. Too hot → let them cool (thermal level shown in the bridge). |
 | `CAPABILITY_DENIED` | The capability is server-gated for that account. Ask Amanda. Fallback: phone camera. |
 | Bridge says `HTTP 404` on /ingest | The server branch doesn't have the ingest routes yet. Tell the CEO. `HTTP 0 / network error` = wrong URL or the tunnel is down. |
-| Frames arrive but the PWA doesn't switch to the glasses | The session code is wrong. Copy it again from the PWA. |
+| Frames arrive but the PWA doesn't switch to the glasses | Clear the bridge's session code (blank = latest session), or the phone session started after a different one. Restart the session on the phone. |
 | Sample worked, now the bridge can't connect (or the other way round) | Only one dev-mode app can be registered: tap **Connect glasses** again in the app you want to use. |
 | Web App not visible on the Display | Web Apps are geo/age gated (see §2 Q5). Add a birthday to the account. Update the glasses and Meta AI. Fallback: DAT Display API from the bridge, or show the HUD on the phone. |
 | Web App shows an old version | Middle tap → **Restart**. Check the tunnel serves the new build. |
@@ -209,4 +183,8 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 | Time | Who | Finding |
 |---|---|---|
 | Sat 14:20 | glasses agent | Docs research done. SDK 1.0.1 is on Maven Central (no PAT). Dev Mode uses app ID `0`. Web Apps are loaded via Meta AI → Connect Web App. |
+| Sat 14:25 | glasses agent | ~~Bridge not compiled yet~~ (resolved 19:03, see below). freighter (FR8) is unreachable from the venue network (ports 22 and 443 time out), and building on Silas' laptop is off-limits. Every DAT call was checked with `javap` against the real `mwdat-core`/`mwdat-camera` 1.0.1 AARs from Maven Central, so the API names and signatures match. **Momin's first Android Studio sync and build of `android-dat/` is the compile check.** Send any compile error to the glasses agent (paste the first error line). |
+| Sat 14:25 | glasses agent | Uncompressed DAT frames are the raw MediaCodec output. The SDK requests color format 19 (I420, found in the AAR), but phone decoders can return NV12 or padded rows. `YuvJpeg.kt` auto-detects the layout. The bridge shows the detected layout next to the frame size. **If colours look wrong (blue/orange swapped) on the server, note it here.** Text stays readable either way. |
+| Sat 19:03 | glasses agent | **Bridge compiles.** On freighter, a Slurm job (`srun -p normal --time=00:45:00 --cpus-per-task=8 --mem=4G ./gradlew --no-daemon --offline assembleDebug testDebugUnitTest`) gave **BUILD SUCCESSFUL** with no code changes needed, and unit tests passed 4/4 (`UploaderTest`: server URL, `?key=`, session). APK: `app.holdup.bridge` 0.1, minSdk 31 / target 36, arm64-v8a + armeabi-v7a + x86 + x86_64, DAT `APPLICATION_ID`/`CLIENT_TOKEN` = 0. sha256 `164dea1bb474fbdbcb7bdeccd3270ccc42c46c2c1c5683f2a9bd2b894a3bfe20`, laptop copy `/tmp/holdup-bridge-debug.apk`. To rebuild, see `android-dat/README.md` → "Build on freighter". |
+| Sat 14:35 | glasses agent | The bridge sends `worn: null` / `battery: null` when the glasses report UNKNOWN (often the case before the first wear-detection event). `server/src/index.ts` currently maps `worn: !!b.worn`, so null becomes **false (doffed)**, which could trigger the "glasses doffed, use phone camera" fallback wrongly. Server fix requested: keep `null` as unknown. |
 | | | |
