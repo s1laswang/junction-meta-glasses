@@ -3,7 +3,7 @@
 import type { CoachCue, DeviceState, FeatureFlag, Gs1Code, LiveState, Med, Profile, ServerMsg, Verdict } from "../../../shared/types.ts";
 import { Sonar } from "./sonar.ts";
 import { MicCapture, PcmPlayer } from "./audio.ts";
-import { verify, health } from "./api.ts";
+import { verify, health, probeAuth } from "./api.ts";
 import { barcodeSupported, detectBarcode, detectCodes } from "./barcode.ts";
 import { parseGs1 } from "./gs1.ts";
 import { announce, earcon, earconForVerdict, haptic, primeSpeech, speak, stopSpeaking } from "./feedback.ts";
@@ -146,6 +146,7 @@ export class Checker {
   private routeKey = "";
   private sonar = new Sonar();
   private verdictAt = 0;
+  private authOk = false;
   private readableSaidAt = 0;
   private readinessTimer: ReturnType<typeof setTimeout> | null = null;
   private proposalTimer: ReturnType<typeof setTimeout> | null = null;
@@ -828,6 +829,14 @@ export class Checker {
   async checkHealth() {
     try {
       const h = await health();
+      if (!this.authOk) {
+        try {
+          await probeAuth(); // AuthError when the server wants a key we don't have
+          this.authOk = true;
+        } catch (e) {
+          if (e instanceof AuthError) throw e; // anything else: not an auth problem, ignore
+        }
+      }
       this.healthFails = 0;
       this.set({ health: h.gemini === "down" ? "down" : "ok", authNeeded: false });
       if (this.s.mode === "offline" && navigator.onLine && (!IS_MOCK || !mockCtl.offline)) {
@@ -855,6 +864,7 @@ export class Checker {
 
   /** After the user entered a key. */
   async retryKey() {
+    this.authOk = false;
     this.set({ authNeeded: false });
     await this.checkHealth();
   }

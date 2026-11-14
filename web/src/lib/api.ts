@@ -27,6 +27,15 @@ async function getJson<T>(path: string, init?: RequestInit, timeoutMs = 8000): P
   }
 }
 
+/**
+ * /api/health stays open even when the server has HOLDUP_KEY, so probe a key-protected endpoint to learn
+ * whether our key (or lack of one) is accepted. Throws AuthError on 401/403.
+ */
+export async function probeAuth(): Promise<void> {
+  if (IS_MOCK) return;
+  await getJson<unknown>("/api/stats", undefined, 4000);
+}
+
 export async function health(): Promise<Health> {
   if (IS_MOCK) return (await mockFetch("/api/health")) as Health;
   return getJson<Health>("/api/health", undefined, 4000);
