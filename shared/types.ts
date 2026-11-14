@@ -1,4 +1,3 @@
-// Shared contract between server/, web/ and the HUD. Change only via CEO (see docs/TEAM.md).
 export type Med = {
   id: string; name: string; ingredient: string; strength: string;
   schedule: string[]; barcode?: string; notes?: string;
@@ -7,7 +6,7 @@ export type Profile = {
   meds: Med[]; allergies: string[]; avoid: string[];
   doseLog: { medId: string; ts: number }[]; lang: string;
 };
-export type Field<T> = { value: T | null; confidence: number }; // 0..1; null when not readable
+export type Field<T> = { value: T | null; confidence: number };
 export type LabelRead = {
   kind: "medication" | "food" | "other" | "unreadable";
   product: Field<string>; ingredient: Field<string>; strength: Field<string>;
@@ -17,8 +16,8 @@ export type LabelRead = {
 export type VerdictLevel = "match" | "warning" | "unsure" | "info";
 export type Verdict = {
   level: VerdictLevel;
-  headline: string; // <= 8 words, HUD
-  speech: string;   // <= 2 sentences, spoken
+  headline: string;
+  speech: string;
   read: LabelRead; matchedMedId?: string; reasons: string[]; takenToday?: boolean;
 };
 export type CoachCue = "rotate_left" | "rotate_right" | "closer" | "farther" | "more_light" | "hold_still" | "other_side" | "ok";
@@ -43,10 +42,6 @@ export type ServerMsg =
   | { type: "device"; device: DeviceState }
   | { type: "error"; code: string; message: string; recoverable: boolean }
   | { type: "pong"; t: number }
-  // added Sat 15:40 (CEO): barge-in → client flushes queued playback immediately
   | { type: "interrupted" }
-  // added Sat 15:40 (CEO): emitted the instant verify_label starts/ends so the client can play a "checking" earcon
-  // and show a spinner; this hides the 2-4 s verify latency
   | { type: "checking"; phase: "start" | "end" }
-  // added Sat 15:40 (CEO): HUD connection state, so the phone device panel can show "HUD connected"
   | { type: "hud"; connected: boolean };
