@@ -69,6 +69,7 @@ export class LiveProxy implements LiveLike {
   private stopped = false;
   private reconnects = 0;
   private openedAt = 0;
+  private openGen = -1;
   private connecting = false;
   private idleTimer?: NodeJS.Timeout;
   private lastFrameAt = Date.now();
@@ -99,7 +100,7 @@ export class LiveProxy implements LiveLike {
     this.idleTimer = setInterval(() => {
       if (!this.stopped && Date.now() - this.lastFrameAt > env.idleStopMs) {
         this.send({ type: "coach", cue: "ok", text: "Camera stopped" });
-        this.stop("auto-stopped: no camera frames for 45 s");
+        this.stop(`auto-stopped: no camera frames for ${Math.round(env.idleStopMs / 1000)} s`);
       }
     }, 2000);
     await this.connect();
@@ -130,11 +131,13 @@ export class LiveProxy implements LiveLike {
             callbacks: {
               onmessage: (m) => { if (gen === this.gen) this.onMessage(m); },
               onerror: (e) => { if (gen === this.gen) log("live.ws_error", { session: shortId(this.hub.id), err: errSummary((e as any)?.message ?? e) }); },
-              onclose: (e) => { if (gen === this.gen) this.onClose(e.code, String(e.reason ?? "")); },
+              // only a socket that finished setup counts as a drop; a failed connect rejects connect() instead
+              // (the SDK fires onclose AND rejects in that case, which would otherwise race two reconnects)
+              onclose: (e) => { if (gen === this.gen && gen === this.openGen) this.onClose(e.code, String(e.reason ?? "")); },
             },
           });
           if (this.stopped) { this.gen++; s.close(); return; }
-          this.session = s; this.model = model; this.modelsUsed.add(model); this.openedAt = Date.now();
+          this.session = s; this.openGen = gen; this.model = model; this.modelsUsed.add(model); this.openedAt = Date.now();
           log("live.open", { session: shortId(this.hub.id), model, ms: Date.now() - t, resumed: !!this.handle });
           this.send({ type: "ready", model, session: this.hub.id });
           this.send({ type: "status", live: "open", detail: model });
@@ -332,6 +335,12 @@ export class LiveProxy implements LiveLike {
       if (r.ok) this.text(`(The user just logged a dose of ${r.med}. Confirm in three or four words.)`);
     }
   }
+
+  /** Test hook: drop the Gemini socket as if the network failed (exercises resume/reconnect). */
+  debugDrop() {
+    try { (this.session as any)?.conn?.close?.(); } catch { /* */ }
+  }
+  get currentModel() { return this.model; }
 
   stop(reason: string) {
     if (this.stopped) return;

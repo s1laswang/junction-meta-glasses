@@ -9,7 +9,7 @@ export const SPEC = {
   freshMs: 2500,        // cache younger than this (by frame time) is always usable
   stableMs: 10_000,     // ... or up to this old if every frame since looks like the same scene
   debounceMs: 350,
-  minGapMs: 1200,       // min time between speculative calls (cost cap on the shared key)
+  minGapMs: Number(process.env.SPEC_MIN_GAP_MS ?? 2000), // min time between speculative calls (cost cap on the shared key)
   minSharpness: 0.15,   // don't spend calls on frames with nothing in view
   minReadability: 0.6,
   sceneDelta: 0.12,     // relative JPEG size change that counts as "scene changed"
