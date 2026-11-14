@@ -197,7 +197,7 @@ def is_cw_dose(gt_strength: str | None, strength_read: str | None, strength_conf
 
 def run_live(workers: int) -> dict[str, Any]:
     prompt, schema, p_sha, s_sha = load_contract_files()
-    with tempfile.TemporaryDirectory(prefix="holdup_polypharmacy_lasa_", dir="/tmp") as tmp:
+    with tempfile.TemporaryDirectory(prefix="holdup_polypharmacy_lasa_") as tmp:
         def job(item: tuple[int, dict[str, Any]]) -> dict[str, Any]:
             idx, c = item
             jpg = render_case_jpeg(c, idx, Path(tmp) / f"{c['id']}.jpg")
@@ -246,7 +246,7 @@ def verify_cached() -> None:
     _, _, p_sha, s_sha = load_contract_files()
     assert data["suite"] == SUITE_NAME and data["model"] == MODEL and data["prompt_sha256"] == p_sha and data["schema_sha256"] == s_sha
     assert data["n"] == 12 and data["errors"] == 0 and data["timeouts"] == 0 and len(data["cases"]) == 12
-    with tempfile.TemporaryDirectory(prefix="holdup_verify_lasa_", dir="/tmp") as tmp:
+    with tempfile.TemporaryDirectory(prefix="holdup_verify_lasa_") as tmp:
         for idx, c in enumerate(CASES, start=1):
             assert len(render_case_jpeg(c, idx, Path(tmp) / f"{c['id']}.jpg")) > 1000
     nf = {"value": None, "confidence": 0.0}
@@ -262,7 +262,7 @@ def verify_cached() -> None:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--verify-cached", action="store_true")
+    ap.add_argument("--verify-cached", "--check", dest="verify_cached", action="store_true")
     ap.add_argument("--workers", type=int, default=3)
     a = ap.parse_args()
     verify_cached() if a.verify_cached else run_live(a.workers)

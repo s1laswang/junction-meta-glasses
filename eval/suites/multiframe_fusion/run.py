@@ -239,9 +239,10 @@ def pack_results(specs: list[dict[str, Any]], reads: list[tuple[dict[str, Any], 
 def run_live() -> dict[str, Any]:
     load_env()
     prompt, schema, p_hash, p_sha, s_sha = load_prompt_schema()
-    specs = build_specs(render_all(TMP_DIR))
-    with ThreadPoolExecutor(max_workers=3) as ex:
-        reads = list(ex.map(lambda s: call_gemini(s["frames"], s["question"], prompt, schema), specs))
+    with tempfile.TemporaryDirectory(prefix=f"holdup_{SUITE}_") as td:
+        specs = build_specs(render_all(Path(td)))
+        with ThreadPoolExecutor(max_workers=3) as ex:
+            reads = list(ex.map(lambda s: call_gemini(s["frames"], s["question"], prompt, schema), specs))
     return pack_results(specs, reads, p_hash, p_sha, s_sha)
 
 
@@ -253,7 +254,8 @@ def verify_cached() -> dict[str, Any]:
     _, _, p_hash, p_sha, s_sha = load_prompt_schema()
     assert doc["prompt_hash"] == p_hash and doc["prompt_sha256"] == p_sha and doc["schema_sha256"] == s_sha
     assert doc["n"] == 12 and doc["errors"] == 0 and doc["timeouts"] == 0 and len(doc["cases"]) == 12
-    assert sum(len(v) for v in render_all(TMP_DIR).values()) == 12
+    with tempfile.TemporaryDirectory(prefix=f"holdup_verify_{SUITE}_") as td:
+        assert sum(len(v) for v in render_all(Path(td)).values()) == 12
     re_v = run_safety_bridge([{"read": c["read"], "profile": doc["profile"], "now": doc["eval_now_iso"]} for c in doc["cases"]])
     for c, v in zip(doc["cases"], re_v):
         assert v["level"] == c["predicted_level"] == c["actual_level"] and v["reasons"] == c["reasons"]
