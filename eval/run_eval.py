@@ -32,19 +32,71 @@ REAL = EVAL_DIR / "real"
 
 
 # ---------------------------------------------------------------- prompt + schema
+SNAPSHOT = Path(os.environ["HOLDUP_SNAPSHOT"]) if os.environ.get("HOLDUP_SNAPSHOT") else None
+
+
+def inline_refs(s, defs=None):
+    """Same as server/src/verify.ts inlineRefs: inline $ref/$defs, drop $comment."""
+    if defs is None:
+        defs = s.get("$defs", {}) if isinstance(s, dict) else {}
+    if isinstance(s, list):
+        return [inline_refs(x, defs) for x in s]
+    if isinstance(s, dict):
+        if isinstance(s.get("$ref"), str):
+            return inline_refs(defs[s["$ref"].split("/")[-1]], defs)
+        return {k: inline_refs(v, defs) for k, v in s.items() if k not in ("$defs", "$comment")}
+    return s
+
+
 def load_prompt_schema():
-    p, s = SHARED / "verify_prompt.md", SHARED / "label_schema.json"
-    src = "shared"
-    if not (p.exists() and s.exists()):
-        p, s = EVAL_DIR / "draft" / "verify_prompt.md", EVAL_DIR / "draft" / "label_schema.json"
-        src = "eval/draft"
+    """Prefer the server's real files: repo shared/ (after merge), then a snapshot of
+    origin/feat/server extracted by pipeline.sh sync, then eval/draft."""
+    cands = [(SHARED, "shared")]
+    if SNAPSHOT:
+        cands.append((SNAPSHOT / "shared", "feat/server@" + (SNAPSHOT / "SHA").read_text().strip()[:8]
+                      if (SNAPSHOT / "SHA").exists() else "snapshot"))
+    cands.append((EVAL_DIR / "draft", "eval/draft"))
+    for d, src in cands:
+        p, s = d / "verify_prompt.md", d / "label_schema.json"
+        if p.exists() and s.exists():
+            break
     prompt, schema_txt = p.read_text(), s.read_text()
     h = hashlib.sha256((prompt + schema_txt).encode()).hexdigest()[:12]
-    schema = json.loads(schema_txt)
-    # allow a wrapper {"schema": {...}} or {"name":..., "schema": ...}
-    if "schema" in schema and "properties" not in schema:
-        schema = schema["schema"]
+    schema = inline_refs(json.loads(schema_txt))
     return prompt, schema, src, h
+
+
+def safety_ts_path():
+    for p in ([REPO / "server" / "src" / "safety.ts"] + ([SNAPSHOT / "server" / "src" / "safety.ts"] if SNAPSHOT else [])):
+        if p.exists():
+            return p
+    return None
+
+
+def to_label_read(j):
+    """Python port of server/src/verify.ts toLabelRead (coercion applied before the safety check)."""
+    def clamp(x):
+        return max(0.0, min(1.0, float(x))) if isinstance(x, (int, float)) else 0.0
+    def field(x, is_t):
+        v = x.get("value") if isinstance(x, dict) else None
+        v = v if is_t(v) else None
+        c = clamp(x.get("confidence") if isinstance(x, dict) else 0)
+        return {"value": v, "confidence": min(c, 0.3) if v is None else c}
+    is_str = lambda v: isinstance(v, str) and v.strip() != ""
+    is_arr = lambda v: isinstance(v, list) and all(isinstance(s, str) for s in v)
+    if not isinstance(j, dict):
+        j = {}
+    kind = j.get("kind") if j.get("kind") in ("medication", "food", "other", "unreadable") else "unreadable"
+    r = {"kind": kind, "product": field(j.get("product"), is_str), "ingredient": field(j.get("ingredient"), is_str),
+         "strength": field(j.get("strength"), is_str), "dosing": field(j.get("dosing"), is_str),
+         "expiry": field(j.get("expiry"), is_str), "allergens": field(j.get("allergens"), is_arr),
+         "barcode": field(j.get("barcode"), is_str), "readability": clamp(j.get("readability"))}
+    if is_str(j.get("guidance")):
+        r["guidance"] = j["guidance"].strip()[:120]
+    import re as _re
+    if r["expiry"]["value"] and not _re.match(r"^\d{4}-\d{2}(-\d{2})?$", r["expiry"]["value"]):
+        r["expiry"]["confidence"] = min(r["expiry"]["confidence"], 0.5)
+    return r
 
 
 USER_TEXT = os.environ.get("VERIFY_USER_TEXT", "Read this label.")
@@ -280,10 +332,15 @@ def gt_read(row, visible_only: bool):
     g = row["gt"]
     def fld(f):
         v, st = gt_value(row, f)
-        if v in (None, "") or (visible_only and st != "visible"):
+        if f == "allergens" and row["kind"] != "food":
+            return {"value": None, "confidence": 0.0}
+        if v is None or v == "" or (visible_only and st != "visible"):
             return {"value": None, "confidence": 0.0}
         if f == "allergens":
-            v = [x.replace("_", " ") for x in v]
+            may = set(((g.get("may_contain") or {}).get("value")) or [])
+            con = set((g.get("allergens") or {}).get("value") or [])
+            v = [x.replace("_", " ") for x in sorted(con)] + \
+                ["may contain: " + x.replace("_", " ") for x in sorted(may - con)]
         if f == "expiry":
             v = (g.get("expiry") or {}).get("value") or v
         return {"value": v, "confidence": 1.0}
@@ -293,19 +350,68 @@ def gt_read(row, visible_only: bool):
     return read
 
 
-def run_safety(rows, preds, t):
-    """Returns list of per-(image,scenario) verdict records."""
-    recs = []
+def ts_verdicts(cases, ts_path):
+    """Batch-call the server's checkLabel through npx tsx. Returns list of levels or None if unavailable."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    tsx = os.environ.get("HOLDUP_TSX")  # path to a locally installed tsx (compute nodes have no internet)
+    cmd = [tsx] if tsx and os.path.exists(tsx) else (["npx", "--yes", "tsx"] if shutil.which("npx") else None)
+    if not ts_path or not cmd:
+        return None
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
+        for c in cases:
+            f.write(json.dumps(c, ensure_ascii=False) + "\n")
+        fn = f.name
+    try:
+        r = subprocess.run(cmd + [str(EVAL_DIR / "safety_bridge.mts")], stdin=open(fn),
+                           capture_output=True, text=True, timeout=600,
+                           env=dict(os.environ, HOLDUP_SAFETY_TS=str(ts_path)))
+        if r.returncode != 0:
+            log("safety bridge failed:", r.stderr[-500:])
+            return None
+        outs = [json.loads(l) for l in r.stdout.splitlines() if l.strip()]
+        return outs if len(outs) == len(cases) else None
+    finally:
+        os.unlink(fn)
+
+
+SAFETY_IMPL = {"impl": None}
+
+
+def run_safety(rows, preds, t=None):
+    """Per-(image, scenario) verdicts from the server's real safety check (TS bridge) or the Python port.
+    world   = verdict on the true label (all fields, conf 1)
+    visible = verdict an ideal reader would give from what is visible in this image
+    pred    = verdict on the model's read (after toLabelRead coercion)"""
+    meta, cases = [], []
     for r in rows:
         p = preds.get(r["img_id"])
         if not p or p.get("error"):
             continue
+        pr = to_label_read(p["pred"])
         for name, prof in scenarios(r):
-            world = py_verdict(gt_read(r, False), prof, t=t)["level"]
-            seen = py_verdict(gt_read(r, True), prof, t=t)["level"]
-            got = py_verdict(p["pred"], prof, t=t)["level"]
-            recs.append({"img_id": r["img_id"], "deg": r["deg"], "sev": r["sev"], "kind": r["kind"],
-                         "scenario": name, "world": world, "visible": seen, "pred": got})
+            meta.append({"img_id": r["img_id"], "deg": r["deg"], "sev": r["sev"], "kind": r["kind"], "scenario": name})
+            cases += [{"read": gt_read(r, False), "profile": prof}, {"read": gt_read(r, True), "profile": prof},
+                      {"read": pr, "profile": prof}]
+    outs = None
+    if t is None:
+        outs = ts_verdicts(cases, safety_ts_path())
+    if outs is not None:
+        SAFETY_IMPL["impl"] = f"server/src/safety.ts via npx tsx (STRENGTH_MIN_CONF from the module)"
+        levels = [o["level"] for o in outs]
+        reasons = [o["reasons"] for o in outs]
+    else:
+        tt = t if t is not None else CONF_T
+        SAFETY_IMPL["impl"] = SAFETY_IMPL["impl"] or "python port (eval/safety.py)"
+        vs = [py_verdict(c["read"], c["profile"], t=tt) for c in cases]
+        levels = [v["level"] for v in vs]
+        reasons = [v["reasons"] for v in vs]
+    recs = []
+    for i, m in enumerate(meta):
+        recs.append(dict(m, world=levels[3 * i], visible=levels[3 * i + 1], pred=levels[3 * i + 2],
+                         pred_reasons=reasons[3 * i + 2][:3]))
     return recs
 
 
@@ -357,8 +463,9 @@ def score_set(rows, preds, label):
             errors += 1
             continue
         lat.append(p["latency_s"])
+        pr = to_label_read(p["pred"])
         for f in FIELDS:
-            c = classify(r, p["pred"], f)
+            c = classify(r, pr, f)
             if c is None:
                 continue
             per_field[f].append(c)
@@ -367,7 +474,7 @@ def score_set(rows, preds, label):
             if c["outcome"] == "wrong" and c["conf"] >= CONF_T and len(wrong_examples) < 60:
                 gv, st = gt_value(r, f)
                 wrong_examples.append({"img_id": r["img_id"], "field": f, "status": st, "gt": gv,
-                                       "pred": pred_field(p["pred"], f)[0], "conf": c["conf"]})
+                                       "pred": pred_field(pr, f)[0], "conf": c["conf"]})
     allf = [c for f in FIELDS for c in per_field[f]]
     res = {
         "label": label, "images_scored": len(lat), "errors": errors,
@@ -383,8 +490,14 @@ def score_set(rows, preds, label):
         "confident_wrong_examples": wrong_examples,
     }
     sweeps = {}
+    recs = run_safety(rows, preds, None)  # server's safety.ts if node+tsx available
+    sweeps["server"] = safety_summary(recs)
+    sweeps["server"]["impl"] = SAFETY_IMPL["impl"]
+    sweeps["server"]["by_deg"] = {d: safety_summary([x for x in recs if x["deg"] == d]) for d in sorted({x["deg"] for x in recs})}
+    for d in sweeps["server"]["by_deg"].values():
+        d.pop("by_scenario", None); d.pop("unsafe_examples", None)
     for t in (0.6, 0.7, 0.8, 0.9):
-        sweeps[str(t)] = safety_summary(run_safety(rows, preds, t))
+        sweeps[f"py_t{t}"] = safety_summary(run_safety(rows, preds, t))
     res["safety"] = sweeps
     return res
 
@@ -413,6 +526,7 @@ def cmd_score(a):
             drop = read_jsonl(DATA / "renders_dropped.jsonl")
             results[which]["dataset"]["renders_kept"] = len(ren)
             results[which]["dataset"]["renders_dropped"] = len(drop)
+    results["safety_impl"] = SAFETY_IMPL["impl"]
     led = read_jsonl(OUT / "ledger.jsonl")
     by = defaultdict(lambda: {"calls": 0, "ok": 0, "in": 0, "out": 0, "thinking": 0})
     for l in led:

@@ -20,8 +20,10 @@ DATA_ROOT=/data/silas/junction-meta-glasses
 if ! mkdir -p "$DATA_ROOT" 2>/dev/null || [ ! -w "$DATA_ROOT" ]; then DATA_ROOT=$HOME/data/junction-meta-glasses; mkdir -p "$DATA_ROOT"; fi
 export HOLDUP_DATA=${HOLDUP_DATA:-$DATA_ROOT/synthetic}
 export HOLDUP_OUT=${HOLDUP_OUT:-$ROOT/eval/out}
+export HOLDUP_SNAPSHOT=${HOLDUP_SNAPSHOT:-$DATA_ROOT/server_snapshot}
 mkdir -p "$HOLDUP_DATA" "$HOLDUP_OUT" "$DATA_ROOT/logs"
 VENV=${VENV:-$DATA_ROOT/venv}
+export HOLDUP_TSX=${HOLDUP_TSX:-$DATA_ROOT/node_tools/node_modules/.bin/tsx}
 PY="$VENV/bin/python"
 NICE="nice -n 15"
 
@@ -31,6 +33,19 @@ case "${1:-}" in
     "$VENV/bin/pip" install -q --upgrade pip
     "$VENV/bin/pip" install -q google-genai pillow numpy
     "$PY" -c "import google.genai, PIL, numpy; print('venv ok', google.genai.__version__)"
+    if command -v npm >/dev/null; then npm install -s --prefix "$DATA_ROOT/node_tools" tsx && echo "tsx ok"; else echo "no node: safety falls back to the python port"; fi
+    ;;
+  sync)
+    # Snapshot the server's real verify prompt, schema and safety module (until feat/server is on main).
+    git fetch -q origin
+    REF=${SERVER_REF:-origin/feat/server}
+    git cat-file -e origin/main:shared/verify_prompt.md 2>/dev/null && [ -z "${SERVER_REF:-}" ] && REF=origin/main
+    rm -rf "$HOLDUP_SNAPSHOT"; mkdir -p "$HOLDUP_SNAPSHOT/shared" "$HOLDUP_SNAPSHOT/server/src"
+    for f in shared/verify_prompt.md shared/label_schema.json shared/types.ts server/src/safety.ts; do
+      git show "$REF:$f" > "$HOLDUP_SNAPSHOT/$f"
+    done
+    git rev-parse "$REF" > "$HOLDUP_SNAPSHOT/SHA"
+    echo "snapshot of $REF @ $(cut -c1-8 "$HOLDUP_SNAPSHOT/SHA") in $HOLDUP_SNAPSHOT"
     ;;
   specs)  $NICE "$PY" eval/gen_specs.py --meds "${MEDS:-105}" --foods "${FOODS:-55}" --batch 8 --workers 8 ;;
   images) $NICE "$PY" eval/gen_images.py --workers "${WORKERS:-12}" --back "${BACK:-40}" ;;

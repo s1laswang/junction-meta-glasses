@@ -68,10 +68,28 @@ def sweep_table(s):
 
 
 def safety_table(res):
-    rows = ["| Threshold | Verdicts | Correct vs truth | Unsure | **Unsafe reassurance** | False match |", "|---|---|---|---|---|---|"]
+    rows = ["| Safety rules | Verdicts | Correct vs truth | Unsure | **Unsafe reassurance** | False match |", "|---|---|---|---|---|---|"]
     for t, s in res["safety"].items():
-        rows.append(f"| {t} | {s['n']} | {f(s['verdict_correct_vs_world'])} | {f(s['unsure_rate'])} | "
+        name = "server safety.ts (as shipped)" if t == "server" else f"python port, all thresholds = {t.replace('py_t', '')}"
+        rows.append(f"| {name} | {s['n']} | {f(s['verdict_correct_vs_world'])} | {f(s['unsure_rate'])} | "
                     f"**{s['unsafe_reassurance']}** ({f(s['unsafe_reassurance_rate'])}) | {s['false_match']} |")
+    return "\n".join(rows)
+
+
+def safety_deg_table(s):
+    rows = ["| Condition | Verdicts | Correct vs truth | Unsure | Unsafe reassurance | Agrees with ideal reader |", "|---|---|---|---|---|---|"]
+    for d in sorted(s.get("by_deg", {}), key=lambda k: DEG_ORDER.index(k) if k in DEG_ORDER else 99):
+        x = s["by_deg"][d]
+        rows.append(f"| {d} | {x['n']} | {f(x['verdict_correct_vs_world'])} | {f(x['unsure_rate'])} | {x['unsafe_reassurance']} | {f(x['agree_with_ideal_reader'])} |")
+    return "\n".join(rows)
+
+
+def unsafe_table(s):
+    ex = s.get("unsafe_examples") or []
+    if not ex:
+        return "_None._"
+    rows = ["| Image | Scenario | Truth | System said | Reasons |", "|---|---|---|---|---|"]
+    rows += [f"| {e['img_id']} | {e['scenario']} | {e['world']} | {e['pred']} | {'; '.join(e.get('pred_reasons') or [])} |" for e in ex]
     return "\n".join(rows)
 
 
@@ -128,7 +146,7 @@ def main():
         md += [open(a.notes).read(), ""]
     if syn:
         d = syn.get("dataset", {})
-        s8 = syn["safety"].get("0.8", {})
+        s8 = syn["safety"].get("server", {})
         st = syn["per_field"].get("strength", {})
         md += ["## Headline (synthetic set)", "",
                f"- **{d.get('images')} images** from {d.get('specs')} Gemini-generated label specs "
@@ -136,7 +154,7 @@ def main():
                f"- Strength: **{f(st.get('acc_visible'))} accurate when readable**, **{st.get('confident_wrong')} confident-wrong "
                f"reads out of {st.get('n')}** ({f(st.get('confident_wrong_rate'))}); abstains on {f(st.get('abstain_hidden'))} "
                f"of strengths that are not visible.",
-               f"- End-to-end safety verdict (t=0.8): **{s8.get('unsafe_reassurance')} unsafe reassurances in {s8.get('n')} "
+               f"- End-to-end safety verdict (server rules): **{s8.get('unsafe_reassurance')} unsafe reassurances in {s8.get('n')} "
                f"verdicts** ({f(s8.get('unsafe_reassurance_rate'))}); correct {f(s8.get('verdict_correct_vs_world'))}, "
                f"unsure {f(s8.get('unsure_rate'))}.",
                f"- Latency per verify call: p50 {syn['latency_s']['p50']} s, p95 {syn['latency_s']['p95']} s.", "",
@@ -154,7 +172,9 @@ def main():
                "Each image is checked against 2–3 profiles: the item on the list at the same strength, on the list at a "
                "different strength, not on the list (medicines); allergic to an allergen it contains, or to one it doesn't (food). "
                "_Unsafe reassurance_ = the true verdict is a warning (wrong strength, not your med, allergen, expired) but the "
-               "system says match/no-allergen.", "", safety_table(syn), "", "Per scenario at t=0.8:", "", scen_table(s8), ""]
+               "system says match/no-allergen.", "", safety_table(syn), "", "Per scenario (server rules):", "", scen_table(s8), "",
+               "By condition (server rules):", "", safety_deg_table(s8), "",
+               "Unsafe reassurance cases (server rules):", "", unsafe_table(s8), ""]
         ex = syn.get("confident_wrong_examples", [])
         if ex:
             md += ["### Confident-wrong examples", "", "| Image | Field | GT status | Truth | Read | Conf |", "|---|---|---|---|---|---|"]
