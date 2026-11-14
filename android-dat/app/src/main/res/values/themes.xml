@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <color name="holdup_window_background">#0B0F17</color>
+    <color name="holdup_surface_background">#121926</color>
+    <color name="ic_launcher_background">#0B0F17</color>
+
+    <style name="Theme.HoldUpBridge" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/holdup_window_background</item>
+        <item name="android:colorBackground">@color/holdup_window_background</item>
+        <item name="android:statusBarColor">@color/holdup_window_background</item>
+        <item name="android:navigationBarColor">@color/holdup_window_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowSplashScreenBackground">@color/holdup_window_background</item>
+    </style>
+
+    <style name="Theme.HoldUp" parent="Theme.HoldUpBridge" />
+</resources>
