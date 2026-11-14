@@ -16,7 +16,8 @@ import { jpegSharpness, toProfile, verify } from "./verify.ts";
 
 const MAX_WS_MSG = 4 * 1024 * 1024;
 
-export function createApp() {
+export function createApp(opts?: { repoRoot?: string }) {
+  const root = opts?.repoRoot ?? REPO_ROOT;
   const app = express();
   app.disable("x-powered-by");
 
@@ -39,6 +40,49 @@ export function createApp() {
   });
 
   app.get("/api/stats", (_req, res) => { res.json(stats()); });
+
+  const evalSummaryFile = path.join(root, "eval", "combined_summary.json");
+  let evalCache: { at: number; summary: Record<string, unknown> } | undefined;
+  app.get("/api/eval-summary", (_req, res) => {
+    const now = Date.now();
+    if (evalCache && now - evalCache.at <= 10_000) {
+      res.json({ ok: true, summary: evalCache.summary });
+      return;
+    }
+    try {
+      if (!fs.existsSync(evalSummaryFile)) {
+        evalCache = undefined;
+        res.json({ ok: false, summary: null });
+        return;
+      }
+      const parsed: unknown = JSON.parse(fs.readFileSync(evalSummaryFile, "utf8"));
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        evalCache = undefined;
+        res.json({ ok: false, summary: null });
+        return;
+      }
+      const rec = parsed as Record<string, any>;
+      const inv = rec.safety_invariants && typeof rec.safety_invariants === "object" ? rec.safety_invariants : {};
+      const existingHm = rec.headline_metrics && typeof rec.headline_metrics === "object" && !Array.isArray(rec.headline_metrics) ? rec.headline_metrics : {};
+      const summary: Record<string, unknown> = {
+        ...rec,
+        headline_metrics: {
+          ...(typeof inv.strength_min_conf === "number" ? { never_guess_strength_min_conf: inv.strength_min_conf } : {}),
+          overall_verdict_accuracy: rec.overall_verdict_accuracy ?? null,
+          total_confident_wrong_dose_count: rec.total_confident_wrong_dose_count ?? null,
+          occluded_abstention_rate: rec.occluded_abstention_rate ?? null,
+          total_label_cases_evaluated: rec.total_label_cases_evaluated ?? 0,
+          ...existingHm,
+        },
+      };
+      evalCache = { at: now, summary };
+      res.json({ ok: true, summary });
+    } catch (e) {
+      evalCache = undefined;
+      log("eval_summary.read_failed", { err: errSummary(e) });
+      res.json({ ok: false, summary: null });
+    }
+  });
 
   app.post("/api/verify", express.json({ limit: "12mb" }), async (req, res) => {
     const frames = Array.isArray(req.body?.frames) ? (req.body.frames as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 100) : [];
@@ -101,14 +145,26 @@ export function createApp() {
     res.status(204).end();
   });
 
-  const dist = path.join(REPO_ROOT, "web", "dist");
-  if (fs.existsSync(dist)) {
-    app.use(express.static(dist, { index: "index.html", maxAge: "1h" }));
-    app.use((req, res, next) => {
-      if (req.method !== "GET" || /^\/(api|ingest|live|hud-ws)\b/.test(req.path)) return next();
-      res.sendFile(path.join(dist, "index.html"));
-    });
-  }
+  app.use("/deck", express.static(path.join(root, "deck"), { index: "index.html", maxAge: "1h" }));
+  const propsHtml = path.join(root, "docs", "printable-props.html");
+  app.get("/printable-props.html", (_req, res, next) => {
+    if (!fs.existsSync(propsHtml)) { next(); return; }
+    res.sendFile(propsHtml);
+  });
+  const handoutHtml = path.join(root, "docs", "judge-handout.html");
+  app.get("/judge-handout.html", (_req, res, next) => {
+    if (!fs.existsSync(handoutHtml)) { next(); return; }
+    res.sendFile(handoutHtml);
+  });
+
+  const dist = path.join(root, "web", "dist");
+  app.use(express.static(dist, { index: "index.html", maxAge: "1h" }));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || /^\/(api|ingest|live|hud-ws|deck)\b/.test(req.path) || /\.html$/i.test(req.path)) return next();
+    const indexHtml = path.join(dist, "index.html");
+    if (!fs.existsSync(indexHtml)) return next();
+    res.sendFile(indexHtml);
+  });
   app.use((_req, res) => { res.status(404).json({ type: "error", code: "not_found", message: "not found", recoverable: false }); });
   return app;
 }
@@ -208,8 +264,8 @@ function onHud(ws: WebSocket, sessionParam: string | null) {
   ws.on("error", () => {});
 }
 
-export function startServer(port = env.port): Promise<http.Server> {
-  const app = createApp();
+export function startServer(port = env.port, opts?: { repoRoot?: string }): Promise<http.Server> {
+  const app = createApp(opts);
   const server = http.createServer(app);
   const wssLive = new WebSocketServer({ noServer: true, maxPayload: MAX_WS_MSG });
   const wssHud = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
