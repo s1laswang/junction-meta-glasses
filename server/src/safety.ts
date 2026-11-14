@@ -225,6 +225,12 @@ export function sayDate(iso: string): string {
   return `${m[3] ? +m[3] + " " : ""}${MONTHS[+m[2] - 1]} ${m[1]}`;
 }
 
+/** "2024-11" / "2024-11-30" -> "November 2024" */
+export function monthYear(iso: string): string {
+  const m = /^(\d{4})-(\d{2})/.exec(iso);
+  return m ? `${MONTHS[+m[2] - 1]} ${m[1]}` : iso;
+}
+
 export function dosesToday(profile: Profile, medId: string, now = new Date()): number {
   const start = new Date(now); start.setHours(0, 0, 0, 0);
   return profile.doseLog.filter((d) => d.medId === medId && d.ts >= start.getTime() && d.ts <= now.getTime()).length;
@@ -312,12 +318,20 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
       reasons.push(`strength ${read.strength.value} differs from your ${med.strength}`);
       return v("warning", `${label}: wrong strength`, `This is ${label}, but your list says ${fmtStrength(med.strength)}. Don't take it before checking with a pharmacist.`, { matchedMedId: med.id });
     }
-    if (expired) return v("warning", `${label}: expired`, `This is ${label}, your medicine, but it expired in ${sayDate(read.expiry.value!)}. Don't take it, ask a pharmacist for a new pack.`, { matchedMedId: med.id });
+    if (expired) {
+      return v("warning", `${label}: expired ${monthYear(read.expiry.value!)}`,
+        `This is ${label}, your medicine. This box expired in ${monthYear(read.expiry.value!)}, so ask a pharmacist for a new one.`, { matchedMedId: med.id });
+    }
+    // expiry unknown (not legible / low confidence): still a match, but say so
+    const expiryUnknown = !read.expiry.value || read.expiry.confidence < 0.7;
+    if (expiryUnknown) reasons.push("expiry not readable");
     const taken = dosesToday(profile, med.id, now);
     const perDay = Math.max(1, med.schedule.length);
     const sw = scheduleWord(med);
     const yours = sw ? `your ${sw} pill` : "on your list";
-    const takenSpeech = taken === 0 ? "You haven't taken it today." : taken >= perDay ? `You already took it today${taken > 1 ? `, ${taken} times` : ""}.` : `You've taken ${taken} of ${perDay} doses today.`;
+    const takenSpeech = (taken === 0 ? "You haven't taken it today" : taken >= perDay ? `You already took it today${taken > 1 ? `, ${taken} times` : ""}` : `You've taken ${taken} of ${perDay} doses today`)
+      // speech stays <= 2 sentences: the expiry note joins the second sentence
+      + (expiryUnknown ? ", and I couldn't read the expiry date." : ".");
     reasons.push(`matches ${med.id}`, `taken today: ${taken}/${perDay}`);
     return v(taken >= perDay ? "warning" : "match", taken >= perDay ? `${label}: already taken today` : `Yes: ${label}, ${yours}`.replace(", on your list", ""),
       `${taken >= perDay ? "This is" : "Yes,"} ${label}, ${yours}. ${takenSpeech}`, { matchedMedId: med.id, takenToday: taken > 0 });

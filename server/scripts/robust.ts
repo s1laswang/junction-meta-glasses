@@ -137,6 +137,25 @@ await run("reconnect", async () => {
   return [/blue/i.test(said), `phone reconnected with same session id; recalled="${said}"`];
 });
 
+await run("hud", async () => {
+  const c = new Client("rb-hud"); await c.open(); c.start(false);
+  await c.waitFor((m) => m.type === "ready", 15000);
+  // device state with unknown `worn` must stay null
+  await fetch(`http://localhost:${port}/ingest/state`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connected: true, worn: null, battery: null, streaming: true }) });
+  const hud = new WebSocket(`ws://localhost:${port}/hud-ws`); // no session -> latest
+  const hudMsgs: any[] = [];
+  hud.on("message", (d) => hudMsgs.push(JSON.parse(d.toString())));
+  await new Promise((r) => hud.once("open", r));
+  const conn = await c.waitFor((m) => m.type === "hud" && m.connected, 3000);
+  hud.send(JSON.stringify({ type: "event", name: "log_dose" }));
+  const ev = await c.waitFor((m) => m.type === "hud_event" && m.name === "log_dose", 3000);
+  hud.close();
+  const disc = await c.waitFor((m) => m.type === "hud" && !m.connected, 3000);
+  const dev = hudMsgs.find((m) => m.type === "device");
+  c.close();
+  return [!!conn && !!ev && !!disc && dev?.device.worn === null, `hud connected=${!!conn} hud_event=${!!ev} disconnected=${!!disc} replayed device worn=${dev?.device.worn} battery=${dev?.device.battery}`];
+});
+
 await run("input", async () => {
   const c = new Client("rb-input"); await c.open();
   c.ws.send("not json"); c.send({ type: "nope" }); c.send({ type: "text", text: "hi" }); c.send({ type: "event", name: "log_dose" });

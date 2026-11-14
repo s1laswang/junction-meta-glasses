@@ -95,10 +95,14 @@ export function createApp() {
   });
   app.post("/ingest/state", express.json({ limit: "16kb" }), (req, res) => {
     const b = req.body ?? {};
-    const device: DeviceState = {
-      connected: !!b.connected, worn: !!b.worn, streaming: !!b.streaming,
-      battery: typeof b.battery === "number" ? b.battery : null, source: "glasses",
-    };
+    // null/missing = unknown: never coerce `worn` to false (that would fire a false "glasses taken off" fallback)
+    const device = {
+      connected: !!b.connected,
+      worn: typeof b.worn === "boolean" ? b.worn : null,
+      streaming: !!b.streaming,
+      battery: typeof b.battery === "number" && Number.isFinite(b.battery) ? b.battery : null,
+      source: "glasses",
+    } as unknown as DeviceState; // contract proposal: DeviceState.worn: boolean | null
     setDevice(device, req.query.session as string | undefined);
     res.status(204).end();
   });
@@ -106,10 +110,19 @@ export function createApp() {
   // ---------- production: serve the web build ----------
   const dist = path.join(REPO_ROOT, "web", "dist");
   if (fs.existsSync(dist)) {
-    app.use(express.static(dist, { index: "index.html", maxAge: "1h" }));
+    // dotfiles: "allow" so /hud/.well-known/meta-wearables-manifest.json is served (docs/HUD_SPEC.md);
+    // /hud redirects to /hud/ (static's directory redirect), which serves dist/hud/index.html
+    app.use(express.static(dist, {
+      index: "index.html", dotfiles: "allow", maxAge: "1h",
+      setHeaders: (res, file) => { if (/\.(html|json)$/.test(file)) res.setHeader("Cache-Control", "no-cache"); },
+    }));
     app.use((req, res, next) => {
-      if (req.method !== "GET" || /^\/(api|ingest|live|hud-ws)\b/.test(req.path)) return next();
-      res.sendFile(path.join(dist, "index.html"));
+      if ((req.method !== "GET" && req.method !== "HEAD") || /^\/(api|ingest|live|hud-ws)\b/.test(req.path)) return next();
+      const hudIndex = path.join(dist, "hud", "index.html");
+      const isHud = req.path === "/hud" || req.path.startsWith("/hud/");
+      res.setHeader("Cache-Control", "no-cache");
+      // dotfiles "allow": the checkout itself may live under a dot-directory (e.g. .claude/worktrees)
+      res.sendFile(isHud && fs.existsSync(hudIndex) ? hudIndex : path.join(dist, "index.html"), { dotfiles: "allow" });
     });
   }
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -199,11 +212,14 @@ function onHud(ws: WebSocket, sessionParam: string | null) {
   ws.on("message", (raw) => {
     try {
       const m = JSON.parse(raw.toString());
-      if (m?.type !== "event") return;
+      if (m?.type !== "event" || !["log_dose", "repeat", "dismiss"].includes(m.name)) return;
       const hub = hudTarget(sessionParam);
       if (!hub) return;
-      if (m.name === "repeat" || m.name === "log_dose") (hub.live as LiveProxy | undefined)?.handleEvent(m.name);
-      // "dismiss" only affects the HUD itself
+      // Contract (Sat 16:40): forward to the phone, which owns the dose log and decides what to do
+      // (it sends {type:"event"} back on /live for repeat / log_dose).
+      const s = JSON.stringify({ type: "hud_event", name: m.name });
+      for (const c of hub.clients) safeSend(c, s);
+      log("ws.hud.event", { session: shortId(hub.id), name: m.name });
     } catch { /* ignore */ }
   });
   ws.on("error", () => { /* */ });
