@@ -23,7 +23,7 @@ export type Verdict = {
 };
 export type CoachCue = "rotate_left" | "rotate_right" | "closer" | "farther" | "more_light" | "hold_still" | "other_side" | "ok";
 export type LiveState = "connecting" | "open" | "reconnecting" | "degraded" | "closed";
-export type DeviceState = { connected: boolean; worn: boolean; battery: number | null; streaming: boolean; source: "phone" | "glasses" };
+export type DeviceState = { connected: boolean; worn: boolean | null; battery: number | null; streaming: boolean; source: "phone" | "glasses" };
 
 export type ClientMsg =
   | { type: "start"; profile: Profile; lang: string; voice: boolean; source: "phone" | "glasses" }
