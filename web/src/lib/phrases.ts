@@ -4,6 +4,7 @@
 type Manifest = { phrases: Record<string, Record<string, { file: string; text: string }>> };
 let manifest: Manifest | null | undefined;
 let current: HTMLAudioElement | undefined;
+let seq = 0;
 
 async function load(): Promise<Manifest | null> {
   if (manifest !== undefined) return manifest;
@@ -12,17 +13,42 @@ async function load(): Promise<Manifest | null> {
   return manifest;
 }
 
+export function stopPhrase(): void {
+  seq++;
+  const audio = current;
+  current = undefined;
+  if (!audio) return;
+  try {
+    audio.pause();
+  } catch {}
+  try {
+    audio.currentTime = 0;
+  } catch {}
+}
+
 export async function playPhrase(id: string, lang = "en"): Promise<boolean> {
+  const mySeq = ++seq;
   const m = await load();
   const p = m?.phrases[lang]?.[id] ?? m?.phrases.en?.[id];
   if (!p) return false;
+  if (mySeq !== seq) return true;
+  let next: HTMLAudioElement | undefined;
   try {
     current?.pause();
-    current = new Audio(p.file);
-    await current.play();
+    next = new Audio(p.file);
+    current = next;
+    await next.play();
+    if (mySeq !== seq) {
+      try {
+        next.pause();
+      } catch {}
+      return true;
+    }
     return true;
   } catch {
-    return false; // autoplay blocked or not cached: caller speaks the text instead
+    if (next && current === next) current = undefined;
+    if (mySeq !== seq) return true;
+    return false;
   }
 }
 
