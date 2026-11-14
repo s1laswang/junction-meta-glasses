@@ -311,3 +311,76 @@ test("combo brands expand in ingredientsOf so opioid, NSAID, and penicillin chec
   const vimovoRead = makeRead({ product: f("Vimovo 500/20 mg"), strength: f("500/20 mg") });
   assert.equal(avoidHits(vimovoRead, ["NSAIDs"]).length, 1);
 });
+
+test("bilingual FI/SV/EU slash-separated single-ingredient packs coalesce while true combinations still reject", () => {
+  const profile = makeProfile([
+    { id: "aml", name: "Norvasc", ingredient: "amlodipine", strength: "5 mg", schedule: ["evening"] },
+    { id: "par", name: "Panadol", ingredient: "paracetamol", strength: "500 mg", schedule: ["morning"] },
+    { id: "met", name: "Metformin", ingredient: "metformin", strength: "500 mg", schedule: ["morning", "evening"] },
+  ]);
+
+  const ml11Occluded = makeRead({
+    product: f("AMLODIPIN / AMLODIPINE", 0.98),
+    ingredient: f("amlodipine", 0.98),
+    strength: f(null, 0.1),
+    readability: 0.6,
+    guidance: "Move your thumb away from the text.",
+  });
+  const vOccluded = checkLabel(ml11Occluded, profile, NOW);
+  assert.equal(vOccluded.level, "unsure");
+  assert.equal(vOccluded.matchedMedId, "aml");
+  assert.ok(vOccluded.reasons.includes("strength not readable"));
+  assert.ok(!vOccluded.reasons.includes("not on your medication list"));
+  assertVerdictBounds(vOccluded.headline, vOccluded.speech, "ml11-occluded");
+
+  const bilingualMatches: Array<{ tag: string; read: LabelRead; expectedId: string }> = [
+    {
+      tag: "AMLODIPIN / AMLODIPINE 5 mg",
+      read: makeRead({ product: f("AMLODIPIN / AMLODIPINE"), ingredient: f("amlodipine"), strength: f("5 mg") }),
+      expectedId: "aml",
+    },
+    {
+      tag: "amlodipiini / amlodipin FI/SV",
+      read: makeRead({ product: f("Amlodipiini / Amlodipin Orion 5 mg"), ingredient: f("amlodipiini / amlodipin"), strength: f("5 mg") }),
+      expectedId: "aml",
+    },
+    {
+      tag: "Active substance / Wirkstoff multilingual header",
+      read: makeRead({
+        product: f("AMLODIPIN / AMLODIPINE 5 mg"),
+        ingredient: f("Active substance: amlodipine / Wirkstoff: Amlodipin"),
+        strength: f("5 mg"),
+      }),
+      expectedId: "aml",
+    },
+    {
+      tag: "Vaikuttava aine / Aktiv substans FI/SV header",
+      read: makeRead({
+        product: f("Metformiini / Metformin 500 mg"),
+        ingredient: f("Vaikuttava aine: metformiini / Aktiv substans: metformin"),
+        strength: f("500 mg"),
+      }),
+      expectedId: "met",
+    },
+    {
+      tag: "parasetamoli / paracetamol FI/SV",
+      read: makeRead({ product: f("Parasetamoli / Paracetamol 500 mg"), ingredient: f("parasetamoli / paracetamol"), strength: f("500 mg") }),
+      expectedId: "par",
+    },
+  ];
+
+  for (const bm of bilingualMatches) {
+    const v = checkLabel(bm.read, profile, NOW);
+    assert.equal(v.level, "match", bm.tag);
+    assert.equal(v.matchedMedId, bm.expectedId, bm.tag);
+    assertVerdictBounds(v.headline, v.speech, bm.tag);
+  }
+
+  for (const comboIng of ["amlodipine / valsartan", "paracetamol / codeine", "amoxicillin / clavulanic acid"]) {
+    const cr = makeRead({ product: f(comboIng), ingredient: f(comboIng), strength: f("5 mg") });
+    assert.equal(matchMed(cr, profile.meds), undefined, comboIng);
+    const cv = checkLabel(cr, profile, NOW);
+    assert.equal(cv.level, "warning", comboIng);
+    assert.ok(cv.reasons.includes("not on your medication list"), comboIng);
+  }
+});
