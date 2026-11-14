@@ -247,8 +247,11 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
       }
       case "text":
         if (typeof msg.text === "string" && msg.text.trim()) {
-          if (live?.active) live.text(msg.text);
-          else err("bad_input", "send start first");
+          if (live?.active) {
+            live.text(msg.text);
+            // typed questions get no Live input transcription: caption them on the stage only (phone unchanged)
+            hub.toStages(JSON.stringify({ type: "transcript", role: "user", text: msg.text.trim().slice(0, 300), final: true }));
+          } else err("bad_input", "send start first");
         }
         return;
       case "event":

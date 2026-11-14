@@ -138,3 +138,27 @@ test("HOLDUP_KEY: a stage without the key is closed with 4401, with it it connec
     delete process.env.HOLDUP_KEY;
   }
 });
+
+test("a typed question is captioned on the stage only (Live doesn't transcribe text input); the phone gets no echo", async () => {
+  await boot();
+  const phone = connect("/live?session=stage-test-5");
+  await phone.opened;
+  await tick();
+  const hub = getHub("stage-test-5")!;
+  markLatest(hub);
+  const typed: string[] = [];
+  // a fake Live session: no Gemini needed
+  hub.live = { active: true, text: (t: string) => typed.push(t), handleEvent() {}, stop() {} } as any;
+  const stage = connect("/hud-ws?role=stage");
+  const hud = connect("/hud-ws");
+  await Promise.all([stage.opened, hud.opened]);
+  await tick();
+  phone.msgs.length = 0; stage.msgs.length = 0; hud.msgs.length = 0;
+  phone.ws.send(JSON.stringify({ type: "text", text: "  Is this my evening pill?  " }));
+  await tick();
+  assert.deepEqual(typed, ["  Is this my evening pill?  "], "the model still gets the text unchanged");
+  assert.deepEqual(stage.msgs.filter((m) => m.type === "transcript"), [{ type: "transcript", role: "user", text: "Is this my evening pill?", final: true }]);
+  assert.equal(phone.msgs.filter((m) => m.type === "transcript").length, 0);
+  assert.equal(hud.msgs.length, 0);
+  hub.live = undefined;
+});
