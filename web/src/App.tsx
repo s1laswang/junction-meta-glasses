@@ -127,6 +127,14 @@ export function App() {
         ) : screen === "profile" ? (
           <Profile
             profile={profile}
+            onSetupByVoice={
+              consent
+                ? () => {
+                    setScreen("check");
+                    void checker.startSetupByVoice();
+                  }
+                : undefined
+            }
             onChange={(p) => {
               setProfile(p);
               checker.profileChanged();

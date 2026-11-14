@@ -224,7 +224,8 @@ export function Hud() {
         if (!alive) return;
         setConn("retry");
         // a WS upgrade refused for a missing/wrong key looks like any drop: ask the HTTP side why
-        void fetch("/api/health", { headers: keyHeaders(), cache: "no-store" })
+        // /api/health is open even with HOLDUP_KEY; /api/stats is protected
+        void fetch("/api/stats", { headers: keyHeaders(), cache: "no-store" })
           .then((r) => setKeyNeeded(r.status === 401 || r.status === 403))
           .catch(() => {});
         timer = setTimeout(connect, BACKOFF[Math.min(attempt++, BACKOFF.length - 1)]);

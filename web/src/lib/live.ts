@@ -94,8 +94,9 @@ export class LiveClient {
       if (this.ws !== ws) return;
       if (this.connectTimer) clearTimeout(this.connectTimer);
       this.attempt = 0;
-      this.setState("open");
+      // start must be the first message: onState("open") may flush queued text right away
       this.sendRaw(this.o.buildStart());
+      this.setState("open");
       this.ping();
       this.pingTimer = setInterval(() => this.ping(), PING_MS);
     };

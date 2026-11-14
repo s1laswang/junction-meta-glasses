@@ -30,7 +30,7 @@ function play(notes: Note[]) {
     const g = c.createGain();
     o.type = n.type ?? "sine";
     o.frequency.value = n.f;
-    const v = n.vol ?? 0.18;
+    const v = (n.vol ?? 0.18) * (loadSettings().quiet ? 0.5 : 1);
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(v, t + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t + n.d);

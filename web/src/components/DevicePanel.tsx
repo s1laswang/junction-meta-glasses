@@ -78,6 +78,8 @@ export function DevicePanel({ s, checker, open, onToggle }: { s: CheckState; che
           {(["scene", "datamatrix", "addmed", "sonar"] as const).map((f) => `${f} ${checker.feature(f) ? "on" : "off"}`).join(" · ")}
           {s.serverFeatures ? "" : " (server not asked yet)"}
         </dd>
+        <dt>Readiness</dt>
+        <dd>{s.readiness == null ? "–" : `${Math.round(s.readiness * 100)}%${s.speaking ? " (ducked)" : ""}`}</dd>
         <dt>Pack code</dt>
         <dd>{s.lastCode ? `GTIN ${s.lastCode.gtin ?? "?"} · exp ${s.lastCode.expiry ?? "?"} · batch ${s.lastCode.batch ?? "?"}` : "–"}</dd>
         <dt>Auto-stop</dt>

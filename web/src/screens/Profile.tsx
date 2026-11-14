@@ -9,7 +9,8 @@ import { demoProfile, emptyMed, LANGS, loadSettings, newMedId, saveProfile, take
 
 const SLOTS = ["morning", "midday", "evening", "night"];
 
-export function Profile({ profile, onChange }: { profile: P; onChange: (p: P) => void }) {
+export function Profile({ profile, onChange, onSetupByVoice }: { profile: P; onChange: (p: P) => void; onSetupByVoice?: () => void }) {
+  const addmed = loadSettings().features.addmed;
   const [editing, setEditing] = useState<Med | null>(null);
   const update = (p: P) => {
     saveProfile(p);
@@ -47,7 +48,14 @@ export function Profile({ profile, onChange }: { profile: P; onChange: (p: P) =>
             ))}
           </ul>
         ) : (
-          <p className="card">No medicines yet. Add the ones you take so HoldUp can tell you if a box is yours.</p>
+          <div className="card stack">
+            <p>No medicines yet. Add the ones you take so HoldUp can tell you if a box is yours.</p>
+            {addmed && onSetupByVoice ? (
+              <button className="btn primary" onClick={onSetupByVoice}>
+                <Icon.mic size={22} /> Set up by voice: hold up each of your medicines
+              </button>
+            ) : null}
+          </div>
         )}
       </section>
 
@@ -105,6 +113,11 @@ export function Profile({ profile, onChange }: { profile: P; onChange: (p: P) =>
       </section>
 
       <div className="row">
+        {addmed && onSetupByVoice ? (
+          <button className="btn small primary" onClick={onSetupByVoice} aria-describedby="voice-setup-help">
+            <Icon.mic size={22} /> Set up by voice
+          </button>
+        ) : null}
         <button
           className="btn small"
           onClick={() => {
@@ -117,6 +130,11 @@ export function Profile({ profile, onChange }: { profile: P; onChange: (p: P) =>
           Load demo profile
         </button>
       </div>
+      {addmed && onSetupByVoice ? (
+        <p id="voice-setup-help" className="muted">
+          Set up by voice: hold up each of your medicines and say when you take it. HoldUp reads the box and asks you to confirm before adding anything.
+        </p>
+      ) : null}
 
       {editing ? (
         <MedEditor
