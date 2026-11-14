@@ -1,0 +1,838 @@
+{
+  "generated_at": "2026-11-14T14:54:05.415623+00:00",
+  "reference_date": "2026-11-14",
+  "eval_now_iso": "2026-11-14T12:00:00Z",
+  "model": "gemini-3.8-flash",
+  "profile": {
+    "meds": [
+      {
+        "id": "aml",
+        "name": "Amlodipin",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ],
+        "barcode": "6432100012345",
+        "notes": "Blood pressure, 1 tablet in the evening"
+      },
+      {
+        "id": "met",
+        "name": "Metformin",
+        "ingredient": "metformin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ],
+        "barcode": "6432100054321",
+        "notes": "With meals twice daily"
+      },
+      {
+        "id": "par",
+        "name": "Panadol",
+        "ingredient": "paracetamol",
+        "strength": "500 mg",
+        "schedule": [
+          "as needed"
+        ],
+        "barcode": "6432100098765",
+        "notes": "Pain or fever"
+      }
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "reference_date": "2026-11-14",
+    "n_items": 10,
+    "n_expired_items": 8,
+    "n_valid_items": 2,
+    "verdict_matches": 10,
+    "verdict_accuracy": 1.0,
+    "expired_catches": 8,
+    "expired_catch_recall": 1.0,
+    "expiry_iso_normalized_count": 10,
+    "expiry_iso_normalization_accuracy": 1.0,
+    "last_month_boundary_caught": true,
+    "current_month_boundary_matched": true,
+    "debossed_end_flap_caught": true,
+    "expired_food_caught": true,
+    "clean_field_accuracy": 1.0,
+    "confident_wrong_dose_count": 0,
+    "latency_p50_ms": 3367.2,
+    "latency_p95_ms": 3981.0,
+    "latency_mean_ms": 3349.2,
+    "tokens_in": 24850,
+    "tokens_out": 1611,
+    "tokens_thinking": 0,
+    "mean_tokens_in": 2485.0,
+    "mean_tokens_out": 161.1
+  },
+  "items": [
+    {
+      "id": "ex_01",
+      "kind": "medication",
+      "surface": "med_carton",
+      "language": "en",
+      "format_family": "EN_MM_SLASH_YYYY",
+      "description": "NORVASC 5 mg / amlodipine carton with expired EN MM/YYYY stamp EXP 03/2025",
+      "image_path": "eval/out/expiry_formats/ex_01.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 57036,
+      "printed_expiry": "EXP 03/2025",
+      "expected_expiry_iso": "2025-03",
+      "predicted_expiry_iso": "2025-03",
+      "expiry_confidence": 0.98,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": true,
+      "ts_is_expired": true,
+      "expired_caught": true,
+      "strength_readable": true,
+      "printed_strength": "5 mg",
+      "expected_strength": "5 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3361.9,
+      "tokens_in": 2485,
+      "tokens_out": 115,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "NORVASC",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2025-03",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Amlodipine 5 mg: expired",
+        "speech": "This is Amlodipine 5 mg, your medicine, but it expired in March 2025. Don't take it, ask a pharmacist for a new pack.",
+        "matchedMedId": "aml",
+        "reasons": [
+          "expired 2025-03"
+        ],
+        "takenToday": null
+      }
+    },
+    {
+      "id": "ex_02",
+      "kind": "medication",
+      "surface": "med_carton",
+      "language": "fi",
+      "format_family": "FI_KAYT_VIIM_MM_DOT_YYYY",
+      "description": "METFORMIN ORION 500 mg Finnish carton with expired Kayt. viim. 02.2025",
+      "image_path": "eval/out/expiry_formats/ex_02.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 63158,
+      "printed_expiry": "Kayt. viim. 02.2025",
+      "expected_expiry_iso": "2025-02",
+      "predicted_expiry_iso": "2025-02",
+      "expiry_confidence": 0.99,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": true,
+      "ts_is_expired": true,
+      "expired_caught": true,
+      "strength_readable": true,
+      "printed_strength": "500 mg",
+      "expected_strength": "500 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3423.8,
+      "tokens_in": 2485,
+      "tokens_out": 118,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN ORION",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2025-02",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Metformin 500 mg: expired",
+        "speech": "This is Metformin 500 mg, your medicine, but it expired in February 2025. Don't take it, ask a pharmacist for a new pack.",
+        "matchedMedId": "met",
+        "reasons": [
+          "expired 2025-02"
+        ],
+        "takenToday": null
+      }
+    },
+    {
+      "id": "ex_03",
+      "kind": "medication",
+      "surface": "end_flap_inkjet",
+      "language": "sv",
+      "format_family": "SV_UTG_DAT_YYYY_MM",
+      "description": "AMLODIPIN 5 mg Swedish carton end-flap with expired Utg.dat 2024-12",
+      "image_path": "eval/out/expiry_formats/ex_03.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 58329,
+      "printed_expiry": "Utg.dat 2024-12",
+      "expected_expiry_iso": "2024-12",
+      "predicted_expiry_iso": "2024-12",
+      "expiry_confidence": 0.98,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": true,
+      "ts_is_expired": true,
+      "expired_caught": true,
+      "strength_readable": true,
+      "printed_strength": "5 mg",
+      "expected_strength": "5 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3177.0,
+      "tokens_in": 2485,
+      "tokens_out": 223,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPIN ACTAVIS",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "expiry": {
+          "value": "2024-12",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Amlodipine 5 mg: expired",
+        "speech": "This is Amlodipine 5 mg, your medicine, but it expired in December 2024. Don't take it, ask a pharmacist for a new pack.",
+        "matchedMedId": "aml",
+        "reasons": [
+          "expired 2024-12"
+        ],
+        "takenToday": null
+      }
+    },
+    {
+      "id": "ex_04",
+      "kind": "medication",
+      "surface": "med_carton",
+      "language": "de",
+      "format_family": "DE_VERWENDBAR_BIS_MM_DOT_YYYY",
+      "description": "METFORMIN HEXAL 500 mg German carton with expired Verwendbar bis 05.2025",
+      "image_path": "eval/out/expiry_formats/ex_04.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 67069,
+      "printed_expiry": "Verwendbar bis 05.2025",
+      "expected_expiry_iso": "2025-05",
+      "predicted_expiry_iso": "2025-05",
+      "expiry_confidence": 0.98,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": true,
+      "ts_is_expired": true,
+      "expired_caught": true,
+      "strength_readable": true,
+      "printed_strength": "500 mg",
+      "expected_strength": "500 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 4275.8,
+      "tokens_in": 2485,
+      "tokens_out": 225,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN HEXAL",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "Zum Einnehmen",
+          "confidence": 0.9
+        },
+        "expiry": {
+          "value": "2025-05",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Metformin 500 mg: expired",
+        "speech": "This is Metformin 500 mg, your medicine, but it expired in May 2025. Don't take it, ask a pharmacist for a new pack.",
+        "matchedMedId": "met",
+        "reasons": [
+          "expired 2025-05"
+        ],
+        "takenToday": null
+      }
+    },
+    {
+      "id": "ex_05",
+      "kind": "medication",
+      "surface": "debossed_end_flap",
+      "language": "en",
+      "format_family": "DEBOSSED_END_FLAP_YYYY_MM",
+      "description": "PANADOL 500 mg low-contrast debossed cardboard end-flap EXP 2025-01",
+      "image_path": "eval/out/expiry_formats/ex_05.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 55385,
+      "printed_expiry": "EXP 2025-01",
+      "expected_expiry_iso": "2025-01",
+      "predicted_expiry_iso": "2025-01",
+      "expiry_confidence": 0.98,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": true,
+      "ts_is_expired": true,
+      "expired_caught": true,
+      "strength_readable": true,
+      "printed_strength": "500 mg",
+      "expected_strength": "500 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3244.4,
+      "tokens_in": 2485,
+      "tokens_out": 116,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "PANADOL",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "paracetamol",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2025-01",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Paracetamol 500 mg: expired",
+        "speech": "This is Paracetamol 500 mg, your medicine, but it expired in January 2025. Don't take it, ask a pharmacist for a new pack.",
+        "matchedMedId": "par",
+        "reasons": [
+          "expired 2025-01"
+        ],
+        "takenToday": null
+      }
+    },
+    {
+      "id": "ex_06",
+      "kind": "medication",
+      "surface": "med_carton",
+      "language": "en",
+      "format_family": "DAY_BOUNDARY_YESTERDAY_YYYY_MM_DD",
+      "description": "AMLODIPIN ORION 5 mg carton with day-level yesterday boundary EXP 2026-11-13",
+      "image_path": "eval/out/expiry_formats/ex_06.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 59056,
+      "printed_expiry": "EXP 2026-11-13",
+      "expected_expiry_iso": "2026-11-13",
+      "predicted_expiry_iso": "2026-11-13",
+      "expiry_confidence": 0.99,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": true,
+      "ts_is_expired": true,
+      "expired_caught": true,
+      "strength_readable": true,
+      "printed_strength": "5 mg",
+      "expected_strength": "5 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3620.6,
+      "tokens_in": 2485,
+      "tokens_out": 121,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPIN ORION",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "expiry": {
+          "value": "2026-11-13",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Amlodipine 5 mg: expired",
+        "speech": "This is Amlodipine 5 mg, your medicine, but it expired in 13 November 2026. Don't take it, ask a pharmacist for a new pack.",
+        "matchedMedId": "aml",
+        "reasons": [
+          "expired 2026-11-13"
+        ],
+        "takenToday": null
+      }
+    },
+    {
+      "id": "ex_07",
+      "kind": "medication",
+      "surface": "end_flap_inkjet",
+      "language": "en",
+      "format_family": "LAST_MONTH_BOUNDARY_YYYY_MM",
+      "description": "METFORMIN 500 mg end-flap with last-month boundary EXP 2026-10 at 2026-11-14",
+      "image_path": "eval/out/expiry_formats/ex_07.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 58013,
+      "printed_expiry": "EXP 2026-10",
+      "expected_expiry_iso": "2026-10",
+      "predicted_expiry_iso": "2026-10",
+      "expiry_confidence": 0.99,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": true,
+      "ts_is_expired": true,
+      "expired_caught": true,
+      "strength_readable": true,
+      "printed_strength": "500 mg",
+      "expected_strength": "500 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 2548.9,
+      "tokens_in": 2485,
+      "tokens_out": 116,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2026-10",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Metformin 500 mg: expired",
+        "speech": "This is Metformin 500 mg, your medicine, but it expired in October 2026. Don't take it, ask a pharmacist for a new pack.",
+        "matchedMedId": "met",
+        "reasons": [
+          "expired 2026-10"
+        ],
+        "takenToday": null
+      }
+    },
+    {
+      "id": "ex_08",
+      "kind": "medication",
+      "surface": "med_carton",
+      "language": "en",
+      "format_family": "CURRENT_MONTH_BOUNDARY_YYYY_MM",
+      "description": "AMLODIPIN ORION 5 mg carton with current-month EXP 2026-11 valid through Nov 30",
+      "image_path": "eval/out/expiry_formats/ex_08.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 58634,
+      "printed_expiry": "EXP 2026-11",
+      "expected_expiry_iso": "2026-11",
+      "predicted_expiry_iso": "2026-11",
+      "expiry_confidence": 0.99,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": false,
+      "ts_is_expired": false,
+      "expired_caught": null,
+      "strength_readable": true,
+      "printed_strength": "5 mg",
+      "expected_strength": "5 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 2889.6,
+      "tokens_in": 2485,
+      "tokens_out": 118,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPIN ORION",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2026-11",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Amlodipine 5 mg, your evening pill",
+        "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+        "matchedMedId": "aml",
+        "reasons": [
+          "matches aml",
+          "taken today: 0/1"
+        ],
+        "takenToday": false
+      }
+    },
+    {
+      "id": "ex_09",
+      "kind": "medication",
+      "surface": "med_carton",
+      "language": "en",
+      "format_family": "FUTURE_MM_SLASH_YYYY",
+      "description": "PANADOL 500 mg carton with future EXP 09/2027 normalized to 2027-09",
+      "image_path": "eval/out/expiry_formats/ex_09.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 59001,
+      "printed_expiry": "EXP 09/2027",
+      "expected_expiry_iso": "2027-09",
+      "predicted_expiry_iso": "2027-09",
+      "expiry_confidence": 0.99,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": false,
+      "ts_is_expired": false,
+      "expired_caught": null,
+      "strength_readable": true,
+      "printed_strength": "500 mg",
+      "expected_strength": "500 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3372.4,
+      "tokens_in": 2485,
+      "tokens_out": 220,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "PANADOL",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "paracetamol",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-09",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Paracetamol 500 mg",
+        "speech": "Yes, Paracetamol 500 mg, on your list. You haven't taken it today.",
+        "matchedMedId": "par",
+        "reasons": [
+          "matches par",
+          "taken today: 0/1"
+        ],
+        "takenToday": false
+      }
+    },
+    {
+      "id": "ex_10",
+      "kind": "food",
+      "surface": "food_carton",
+      "language": "fi",
+      "format_family": "FI_PARASTA_ENNEN_DD_DOT_MM_DOT_YYYY_FOOD",
+      "description": "KAURAJUOMA Finnish oat drink carton with expired Parasta ennen 14.03.2026",
+      "image_path": "eval/out/expiry_formats/ex_10.jpg",
+      "width": 768,
+      "height": 768,
+      "jpeg_bytes": 69208,
+      "printed_expiry": "Parasta ennen 14.03.2026",
+      "expected_expiry_iso": "2026-03-14",
+      "predicted_expiry_iso": "2026-03-14",
+      "expiry_confidence": 0.99,
+      "expiry_iso_normalized": true,
+      "is_expired_ground_truth": true,
+      "ts_is_expired": true,
+      "expired_caught": true,
+      "strength_readable": null,
+      "printed_strength": null,
+      "expected_strength": null,
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": null,
+      "clean_fields_correct": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3577.7,
+      "tokens_in": 2485,
+      "tokens_out": 239,
+      "tokens_thinking": 0,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "POHJOLAN KAURA KAURAJUOMA",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "oat drink",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2026-03-14",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": [
+            "gluten",
+            "oats"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "POHJOLAN KAURA KAURAJUOMA: past its date",
+        "speech": "POHJOLAN KAURA KAURAJUOMA was best before 14 March 2026.",
+        "matchedMedId": null,
+        "reasons": [
+          "expired 2026-03-14"
+        ],
+        "takenToday": null
+      }
+    }
+  ]
+}
