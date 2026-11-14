@@ -23,6 +23,25 @@ async function get(): Promise<Detector | null> {
   return detector;
 }
 
+/** All codes in view, with their format ("ean_13", "data_matrix", ...). */
+export async function detectCodes(src: CanvasImageSource): Promise<Detected[]> {
+  const d = await get();
+  if (!d) return [];
+  try {
+    return await d.detect(src);
+  } catch {
+    return [];
+  }
+}
+
+export const dataMatrixSupported = async () => {
+  try {
+    return !!Ctor && ((await Ctor.getSupportedFormats?.()) ?? []).includes("data_matrix");
+  } catch {
+    return false;
+  }
+};
+
 export async function detectBarcode(src: CanvasImageSource): Promise<string | null> {
   const d = await get();
   if (!d) return null;

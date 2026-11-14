@@ -1,8 +1,9 @@
 // ?mock=1 : an in-browser fake of the HoldUp server. Speaks the real ServerMsg contract on a script,
 // so the UI can be developed and demoed without the backend (and as a stage fallback).
-import type { ClientMsg, DeviceState, Profile, ServerMsg, Verdict } from "../../../shared/types.ts";
+import type { ClientMsg, DeviceState, FeatureFlag, Gs1Code, Profile, ServerMsg, Verdict } from "../../../shared/types.ts";
 import { synthPcmChunks } from "./audio.ts";
-import { matchVerdict, mockFoodNuts, mockUnsureStrength, mockWarningIbuprofen } from "./verdicts.ts";
+import { matchVerdict, mockFoodNuts, mockScene, mockUnsureStrength, mockWarningIbuprofen, withCrossCheck } from "./verdicts.ts";
+import { parseGs1, sameGtin } from "./gs1.ts";
 import { demoProfile } from "./storage.ts";
 
 const params = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
@@ -56,6 +57,8 @@ export class MockSocket {
   private lastVerdict: Verdict | null = null;
   private running = false;
   private frames = 0;
+  private features: FeatureFlag[] = ["scene", "datamatrix", "addmed", "sonar"];
+  private pendingCode: Gs1Code | null = null;
 
   constructor() {
     mockCtl.sockets.add(this);
@@ -98,7 +101,8 @@ export class MockSocket {
     switch (m.type) {
       case "start":
         this.profile = m.profile;
-        this.emit({ type: "ready", model: "mock-gemini-live", session: "MOCK" });
+        this.features = m.features ?? ["scene", "datamatrix", "addmed", "sonar"];
+        this.emit({ type: "ready", model: "mock-gemini-live", session: "MOCK", features: this.features });
         if (mockCtl.geminiDown) {
           this.emit({ type: "status", live: "degraded", detail: "Gemini Live is unavailable (simulated). Use snapshot mode." });
           return;
@@ -111,13 +115,18 @@ export class MockSocket {
       case "ping":
         this.later(mockCtl.slow ? 1100 + Math.random() * 400 : 40 + Math.random() * 60, () => this.emit({ type: "pong", t: m.t }));
         break;
+      case "datamatrix": {
+        const code = parseGs1(m.raw);
+        if (code) this.pendingCode = code;
+        break;
+      }
       case "frame":
         this.frames++;
         break;
       case "text": {
         this.emit({ type: "transcript", role: "user", text: m.text, final: true });
         const t = m.text.toLowerCase();
-        const pick = /nut|allerg|food|bar/.test(t) ? 3 : /ibu|nsaid|pain/.test(t) ? 1 : /strength|metformin/.test(t) ? 2 : /evening|amlo|pill/.test(t) ? 0 : undefined;
+        const pick = /which|table|three/.test(t) && this.features.includes("scene") ? 4 : /nut|allerg|food|bar/.test(t) ? 3 : /ibu|nsaid|pain/.test(t) ? 1 : /strength|metformin/.test(t) ? 2 : /evening|amlo|pill/.test(t) ? 0 : undefined;
         this.later(400, () => this.runScenario(pick));
         break;
       }
@@ -135,11 +144,12 @@ export class MockSocket {
   private runScenario(which?: number) {
     if (this.running) return;
     this.running = true;
-    const idx = which ?? scenarioIndex++ % 4;
+    const n = this.features.includes("scene") ? 5 : 4;
+    const idx = which ?? scenarioIndex++ % n;
     const p = this.profile;
     const amlo = p.meds.find((m) => /amlodipine/i.test(m.name)) ?? demoProfile().meds[0];
     const steps: [number, () => void][] = [
-      [0, () => this.emit({ type: "transcript", role: "user", text: idx === 3 ? "Does this have nuts in it?" : "Is this my evening pill?", final: true })],
+      [0, () => this.emit({ type: "transcript", role: "user", text: idx === 3 ? "Does this have nuts in it?" : idx === 4 ? "Which one is my evening pill?" : "Is this my evening pill?", final: true })],
       [1200, () => (this.emit({ type: "coach", cue: "other_side", text: "The label is facing away. Turn it around." }), this.say("I can see a box, but the label is on the other side. Turn it around."))],
       [3600, () => (this.emit({ type: "coach", cue: "rotate_left", text: "Turn it a little left" }), this.say("Turn it a little to the left."))],
       [5600, () => (this.emit({ type: "coach", cue: "closer", text: "A bit closer" }), this.say("A bit closer."))],
@@ -149,7 +159,14 @@ export class MockSocket {
       [
         11800,
         () => {
-          const v = idx === 0 ? matchVerdict(p, amlo) : idx === 1 ? mockWarningIbuprofen() : idx === 2 ? mockUnsureStrength() : mockFoodNuts();
+          let v = idx === 0 ? matchVerdict(p, amlo) : idx === 1 ? mockWarningIbuprofen() : idx === 2 ? mockUnsureStrength() : idx === 3 ? mockFoodNuts() : mockScene(p);
+          // a pack code the phone decoded during this check: the mock "server" cross-checks it
+          const code = this.pendingCode;
+          if (code && v.mode !== "scene" && this.features.includes("datamatrix")) {
+            const same = !!v.matchedMedId && (sameGtin(code.gtin, amlo.gtin) || sameGtin(code.gtin, amlo.barcode));
+            v = withCrossCheck(v, same, same ? [`GTIN ${code.gtin} = your ${amlo.name}`, `expiry: code ${code.expiry ?? "?"} = print ${code.expiry ?? "?"}`] : [`pack code GTIN ${code.gtin} is not ${v.read.product.value ?? "this product"}`], code);
+            this.pendingCode = null;
+          }
           this.lastVerdict = v;
           this.emit({ type: "verdict", verdict: v });
           this.say(v.speech);

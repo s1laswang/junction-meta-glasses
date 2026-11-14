@@ -1,5 +1,5 @@
 // Everything HoldUp keeps lives here, in this browser's localStorage. Nothing is stored server-side.
-import type { Med, Profile } from "../../../shared/types.ts";
+import type { FeatureFlag, Med, Profile } from "../../../shared/types.ts";
 
 const PREFIX = "holdup.";
 const K = {
@@ -17,9 +17,31 @@ export type Settings = {
   haptics: boolean;
   earcons: boolean;
   showPanel: boolean;
+  /** per-phone feature switches (all on by default); sent as start.features */
+  features: Record<FeatureFlag, boolean>;
+  /** readiness sonar volume 0..1 */
+  sonarVolume: number;
+  /** quiet: no sonar, softer earcons (e.g. in a shared room) */
+  quiet: boolean;
 };
 
-const DEFAULT_SETTINGS: Settings = { source: "phone", voice: true, haptics: true, earcons: true, showPanel: false };
+export const FEATURES: { flag: FeatureFlag; label: string; help: string }[] = [
+  { flag: "scene", label: "Which one?", help: "Several packages on a table: HoldUp says which one is yours, by position." },
+  { flag: "datamatrix", label: "Pack code double-check", help: "Reads the square pack code (EU DataMatrix) to double-check the label and expiry, also offline." },
+  { flag: "addmed", label: "Hold up to add", help: "Add a medicine to your list by holding up its box and saying when you take it." },
+  { flag: "sonar", label: "Readiness tone", help: "A soft tone that rises as the label becomes readable." },
+];
+
+const DEFAULT_SETTINGS: Settings = {
+  source: "phone",
+  voice: true,
+  haptics: true,
+  earcons: true,
+  showPanel: false,
+  features: { scene: true, datamatrix: true, addmed: true, sonar: true },
+  sonarVolume: 0.35,
+  quiet: false,
+};
 
 function read<T>(key: string): T | null {
   try {
@@ -53,9 +75,9 @@ export function demoProfile(): Profile {
   return {
     lang: defaultLang(),
     meds: [
-      { id: "amlodipine", name: "Amlodipine", ingredient: "amlodipine", strength: "5 mg", schedule: ["evening"], barcode: "6416542002149", notes: "Blood pressure" },
-      { id: "metformin", name: "Metformin", ingredient: "metformin", strength: "500 mg", schedule: ["morning", "evening"], barcode: "6416542003375", notes: "Diabetes, with food" },
-      { id: "atorvastatin", name: "Atorvastatin", ingredient: "atorvastatin", strength: "20 mg", schedule: ["evening"], barcode: "6416542004860", notes: "Cholesterol" },
+      { id: "amlodipine", name: "Amlodipine", ingredient: "amlodipine", strength: "5 mg", schedule: ["evening"], barcode: "6416542002149", gtin: "06416542002149", notes: "Blood pressure" },
+      { id: "metformin", name: "Metformin", ingredient: "metformin", strength: "500 mg", schedule: ["morning", "evening"], barcode: "6416542003375", gtin: "06416542003375", notes: "Diabetes, with food" },
+      { id: "atorvastatin", name: "Atorvastatin", ingredient: "atorvastatin", strength: "20 mg", schedule: ["evening"], barcode: "6416542004860", gtin: "06416542004860", notes: "Cholesterol" },
     ],
     allergies: ["tree nuts", "peanut"],
     avoid: ["NSAIDs"],
@@ -79,7 +101,8 @@ export function saveConsent() {
 }
 
 export function loadSettings(): Settings {
-  return { ...DEFAULT_SETTINGS, ...(read<Partial<Settings>>(K.settings) ?? {}) };
+  const s = read<Partial<Settings>>(K.settings) ?? {};
+  return { ...DEFAULT_SETTINGS, ...s, features: { ...DEFAULT_SETTINGS.features, ...(s.features ?? {}) } };
 }
 export function saveSettings(s: Settings) {
   write(K.settings, s);

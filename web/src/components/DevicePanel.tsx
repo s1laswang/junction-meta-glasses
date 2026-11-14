@@ -13,6 +13,9 @@ function useNow(active: boolean) {
   return now;
 }
 
+// Amlodipine demo pack: GTIN 06416542002149, expiry Aug 2027, batch A1234, serial (FMD)
+const DEMO_PACK_CODE = "]d201064165420021491727083110A1234\x1d21SN0001";
+
 const tone = (ok: boolean | null) => (ok == null ? undefined : ok ? "ok" : "bad");
 
 export function DevicePanel({ s, checker, open, onToggle }: { s: CheckState; checker: Checker; open: boolean; onToggle: (o: boolean) => void }) {
@@ -70,6 +73,13 @@ export function DevicePanel({ s, checker, open, onToggle }: { s: CheckState; che
         </dd>
         <dt>Display (HUD)</dt>
         <dd className={tone(s.hudConnected)}>{s.hudConnected == null ? "–" : s.hudConnected ? "connected" : "not connected"}</dd>
+        <dt>Features</dt>
+        <dd>
+          {(["scene", "datamatrix", "addmed", "sonar"] as const).map((f) => `${f} ${checker.feature(f) ? "on" : "off"}`).join(" · ")}
+          {s.serverFeatures ? "" : " (server not asked yet)"}
+        </dd>
+        <dt>Pack code</dt>
+        <dd>{s.lastCode ? `GTIN ${s.lastCode.gtin ?? "?"} · exp ${s.lastCode.expiry ?? "?"} · batch ${s.lastCode.batch ?? "?"}` : "–"}</dd>
         <dt>Auto-stop</dt>
         <dd>{autoStop == null ? "–" : `${autoStop} s`}</dd>
         <dt>Session</dt>
@@ -87,6 +97,9 @@ export function DevicePanel({ s, checker, open, onToggle }: { s: CheckState; che
         <h3>Demo controls</h3>
         <button className="btn small" onClick={() => checker.simulateDrop()} disabled={!s.running}>
           Drop connection
+        </button>
+        <button className="btn small" onClick={() => checker.injectCode(DEMO_PACK_CODE)} disabled={!s.running}>
+          Simulate pack code
         </button>
         <button className="btn small" onClick={() => checker.toggleSnapshotMode()} disabled={!s.running}>
           {s.mode === "snapshot" ? "Back to live" : "Force snapshot"}

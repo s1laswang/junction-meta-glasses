@@ -1,10 +1,19 @@
 import { useState } from "react";
 import { Icon } from "../components/Icons.tsx";
 import { announce } from "../lib/feedback.ts";
-import { loadSettings, saveSettings, type Consent, type Settings } from "../lib/storage.ts";
+import { FEATURES, loadSettings, saveSettings, type Consent, type Settings } from "../lib/storage.ts";
+import type { FeatureFlag } from "../../../shared/types.ts";
 
 export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: { consent: Consent | null; onWithdraw: () => void; onReviewConsent: () => void; onDeleteAll: () => void }) {
   const [st, setSt] = useState<Settings>(loadSettings());
+  const save = (next: Settings) => {
+    setSt(next);
+    saveSettings(next);
+  };
+  const toggleFeature = (f: FeatureFlag) => {
+    save({ ...st, features: { ...st.features, [f]: !st.features[f] } });
+    announce(`${FEATURES.find((x) => x.flag === f)?.label} ${st.features[f] ? "off" : "on"}. Applies from the next check.`);
+  };
   const toggle = (k: "voice" | "haptics" | "earcons") => {
     const next = { ...st, [k]: !st[k] };
     setSt(next);
@@ -56,6 +65,42 @@ export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: {
               Review and agree
             </button>
           )}
+        </div>
+      </section>
+
+      <section className="stack" aria-labelledby="feat-h">
+        <h2 id="feat-h">Features</h2>
+        <div className="card stack" style={{ gap: 4, paddingTop: 8, paddingBottom: 8 }}>
+          {FEATURES.map((x) => (
+            <div key={x.flag}>
+              <label className="switch">
+                {x.label}
+                <input type="checkbox" role="switch" checked={st.features[x.flag]} onChange={() => toggleFeature(x.flag)} aria-describedby={`feat-${x.flag}`} />
+              </label>
+              <p id={`feat-${x.flag}`} className="muted" style={{ fontSize: "1rem", marginTop: -4, marginBottom: 8 }}>
+                {x.help}
+              </p>
+            </div>
+          ))}
+          {st.features.sonar ? (
+            <div className="field" style={{ marginBottom: 8 }}>
+              <label htmlFor="sonar-vol">Readiness tone volume: {Math.round(st.sonarVolume * 100)}%</label>
+              <input
+                id="sonar-vol"
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={st.sonarVolume}
+                onChange={(e) => save({ ...st, sonarVolume: Number(e.target.value) })}
+                aria-valuetext={`${Math.round(st.sonarVolume * 100)} percent`}
+              />
+            </div>
+          ) : null}
+          <label className="switch">
+            Quiet mode (no readiness tone, softer sounds)
+            <input type="checkbox" role="switch" checked={st.quiet} onChange={() => save({ ...st, quiet: !st.quiet })} />
+          </label>
         </div>
       </section>
 
