@@ -3,6 +3,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
+const EM_DASH = String.fromCharCode(0x2014);
+const XML_COMMENT_OPEN = String.fromCharCode(60, 33, 45, 45);
+const XML_COMMENT_CLOSE = String.fromCharCode(45, 45, 62);
+
+function checkXmlClean(relLabel, content, errors) {
+  if (content.includes(XML_COMMENT_OPEN) || content.includes(XML_COMMENT_CLOSE)) {
+    errors.push(`${relLabel}: contains forbidden XML comment`);
+  }
+  if (content.includes(EM_DASH)) {
+    errors.push(`${relLabel}: contains forbidden em-dash`);
+  }
+}
 
 function resolveRootDir(argv) {
   for (let i = 0; i < argv.length; i++) {
@@ -33,6 +45,7 @@ function collectFiles(dir, predicate, out = []) {
 function checkKotlinBraces(source) {
   const stack = [];
   let braceDepth = 0;
+  let sawComment = false;
   let i = 0;
   const n = source.length;
 
@@ -44,11 +57,13 @@ function checkKotlinBraces(source) {
 
     if (mode === "code" || mode === "template") {
       if (ch === "/" && next === "/") {
+        sawComment = true;
         i += 2;
         while (i < n && source[i] !== "\n") i++;
         continue;
       }
       if (ch === "/" && next === "*") {
+        sawComment = true;
         i += 2;
         let commentDepth = 1;
         while (i < n && commentDepth > 0) {
@@ -63,7 +78,7 @@ function checkKotlinBraces(source) {
           }
         }
         if (commentDepth !== 0) {
-          return { ok: false, reason: "unterminated block comment" };
+          return { ok: false, reason: "unterminated block comment", sawComment };
         }
         continue;
       }
@@ -93,7 +108,7 @@ function checkKotlinBraces(source) {
       if (ch === "}") {
         braceDepth--;
         if (braceDepth < 0) {
-          return { ok: false, reason: "unexpected closing brace }" };
+          return { ok: false, reason: "unexpected closing brace }", sawComment };
         }
         if (top && top.kind === "template") {
           top.depth--;
@@ -123,7 +138,7 @@ function checkKotlinBraces(source) {
         continue;
       }
       if (ch === "\n") {
-        return { ok: false, reason: "unterminated string literal" };
+        return { ok: false, reason: "unterminated string literal", sawComment };
       }
       i++;
       continue;
@@ -147,12 +162,12 @@ function checkKotlinBraces(source) {
   }
 
   if (stack.length > 0) {
-    return { ok: false, reason: `unclosed ${stack.at(-1).kind}` };
+    return { ok: false, reason: `unclosed ${stack.at(-1).kind}`, sawComment };
   }
   if (braceDepth !== 0) {
-    return { ok: false, reason: `unbalanced braces (remaining depth ${braceDepth})` };
+    return { ok: false, reason: `unbalanced braces (remaining depth ${braceDepth})`, sawComment };
   }
-  return { ok: true };
+  return { ok: true, sawComment };
 }
 
 function validateAndroidProject(rootDir) {
@@ -177,6 +192,61 @@ function validateAndroidProject(rootDir) {
     /android:host\s*=\s*"connect"/.test(manifest);
   if (!hasLiteralDeepLink && !hasXmlDeepLink) {
     errors.push("AndroidManifest.xml missing holdupbridge://connect deep-link intent-filter");
+  }
+  if (!/android:icon\s*=\s*"@drawable\/ic_launcher_foreground"/.test(manifest)) {
+    errors.push('AndroidManifest.xml missing android:icon="@drawable/ic_launcher_foreground"');
+  }
+  if (!/android:theme\s*=\s*"@style\/Theme\.HoldUpBridge"/.test(manifest)) {
+    errors.push('AndroidManifest.xml missing android:theme="@style/Theme.HoldUpBridge"');
+  }
+  if (!/android:networkSecurityConfig\s*=\s*"@xml\/network_security_config"/.test(manifest)) {
+    errors.push('AndroidManifest.xml missing android:networkSecurityConfig="@xml/network_security_config"');
+  }
+  if (/android:usesCleartextTraffic\s*=\s*"true"/.test(manifest)) {
+    errors.push('AndroidManifest.xml must not enable global android:usesCleartextTraffic="true"');
+  }
+
+  const iconPath = path.join(rootDir, "app", "src", "main", "res", "drawable", "ic_launcher_foreground.xml");
+  if (!fs.existsSync(iconPath)) {
+    errors.push("Missing app/src/main/res/drawable/ic_launcher_foreground.xml");
+  } else {
+    const iconXml = fs.readFileSync(iconPath, "utf8");
+    if (!/<vector\b/.test(iconXml) || !/<path\b/.test(iconXml)) {
+      errors.push("ic_launcher_foreground.xml missing <vector> or <path> definition");
+    }
+  }
+
+  const themesPath = path.join(rootDir, "app", "src", "main", "res", "values", "themes.xml");
+  if (!fs.existsSync(themesPath)) {
+    errors.push("Missing app/src/main/res/values/themes.xml");
+  } else {
+    const themesXml = fs.readFileSync(themesPath, "utf8");
+    if (!/<style\s+name\s*=\s*"Theme\.HoldUpBridge"/.test(themesXml)) {
+      errors.push("themes.xml missing Theme.HoldUpBridge style definition");
+    }
+  }
+
+  const netSecPath = path.join(rootDir, "app", "src", "main", "res", "xml", "network_security_config.xml");
+  if (!fs.existsSync(netSecPath)) {
+    errors.push("Missing app/src/main/res/xml/network_security_config.xml");
+  } else {
+    const netSecXml = fs.readFileSync(netSecPath, "utf8");
+    if (!/<network-security-config\b/.test(netSecXml)) {
+      errors.push("network_security_config.xml missing <network-security-config> root");
+    }
+    if (!/<base-config\b[^>]*\bcleartextTrafficPermitted\s*=\s*"false"/.test(netSecXml)) {
+      errors.push('network_security_config.xml missing <base-config cleartextTrafficPermitted="false">');
+    }
+    if (!/<domain-config\b[^>]*\bcleartextTrafficPermitted\s*=\s*"true"/.test(netSecXml)) {
+      errors.push('network_security_config.xml missing <domain-config cleartextTrafficPermitted="true">');
+    }
+  }
+
+  const xmlFiles = collectFiles(path.join(rootDir, "app", "src", "main"), (name) => name.endsWith(".xml"));
+  for (const xmlFile of xmlFiles) {
+    const relXml = path.relative(rootDir, xmlFile);
+    const xmlContent = fs.readFileSync(xmlFile, "utf8");
+    checkXmlClean(relXml, xmlContent, errors);
   }
 
   const gradleFiles = collectFiles(
@@ -214,6 +284,49 @@ function validateAndroidProject(rootDir) {
         errors.push(`Expected mwdat catalog/variable version 1.0.1, got ${ver}`);
       }
     }
+    if (!/\bjunit\b/.test(combinedGradle)) {
+      errors.push("Gradle configuration missing junit dependency");
+    }
+  }
+
+  const bridgePrefsPath = path.join(
+    rootDir,
+    "app",
+    "src",
+    "main",
+    "java",
+    "app",
+    "holdup",
+    "bridge",
+    "BridgePreferences.kt",
+  );
+  if (!fs.existsSync(bridgePrefsPath)) {
+    errors.push("Missing app/src/main/java/app/holdup/bridge/BridgePreferences.kt");
+  } else {
+    const prefsSrc = fs.readFileSync(bridgePrefsPath, "utf8");
+    if (!/\bobject\s+BridgePreferences\b/.test(prefsSrc)) {
+      errors.push("BridgePreferences.kt missing 'object BridgePreferences' declaration");
+    }
+  }
+
+  const bridgeContractTestPath = path.join(
+    rootDir,
+    "app",
+    "src",
+    "test",
+    "java",
+    "app",
+    "holdup",
+    "bridge",
+    "BridgeContractTest.kt",
+  );
+  if (!fs.existsSync(bridgeContractTestPath)) {
+    errors.push("Missing app/src/test/java/app/holdup/bridge/BridgeContractTest.kt");
+  } else {
+    const testSrc = fs.readFileSync(bridgeContractTestPath, "utf8");
+    if (!/\bclass\s+BridgeContractTest\b/.test(testSrc) || !/@Test\b/.test(testSrc)) {
+      errors.push("BridgeContractTest.kt missing BridgeContractTest @Test suite");
+    }
   }
 
   const ktFiles = collectFiles(rootDir, (name) => name.endsWith(".kt"));
@@ -230,9 +343,15 @@ function validateAndroidProject(rootDir) {
       if (/^\s*package\s+app\.holdup\.bridge(?:\s*;)?\s*$/m.test(src)) {
         sawExactRootPackage = true;
       }
+      if (src.includes(EM_DASH)) {
+        errors.push(`${rel}: contains forbidden em-dash`);
+      }
       const braceCheck = checkKotlinBraces(src);
       if (!braceCheck.ok) {
         errors.push(`${rel}: ${braceCheck.reason}`);
+      }
+      if (braceCheck.sawComment) {
+        errors.push(`${rel}: contains forbidden Kotlin comment`);
       }
     }
     if (!sawExactRootPackage) {
@@ -258,4 +377,4 @@ if (result.errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`PASS android-dat structure verified: ${result.ktCount} Kotlin files, manifest, deep-link, and mwdat 1.0.1 (${Date.now() - t0} ms)`);
+console.log(`PASS android-dat structure verified: ${result.ktCount} Kotlin files, manifest, resources, network-security-config, tests, deep-link, and mwdat 1.0.1 (${Date.now() - t0} ms)`);
