@@ -107,6 +107,38 @@ curl -i -X POST -H 'Content-Type: application/json' \
   "$TUNNEL/ingest/state?session=TEST"
 ```
 
+### 5.1 Android Bridge Architecture, Trilingual TalkBack Localization & Automated Verification (`android-dat/`)
+
+- **`11` Kotlin Files (`package app.holdup.bridge`, verified by `node android-dat/verify-structure.mjs`)**:
+  - **7 Main App Sources (`android-dat/app/src/main/java/app/holdup/bridge/`)**:
+    - `MainActivity.kt`: handles `holdupbridge://connect?server=<url>&session=<code>` (`ACTION_VIEW` + `singleTop` `onNewIntent`) and scrubs consumed intent URIs.
+    - `BridgeScreen.kt`: Jetpack Compose screen-reader-first UI with `Modifier.semantics { heading() }`, `Modifier.heightIn(min = 56.dp)` on all `10` interactive inputs and buttons, `LiveRegionMode.Polite` on the active `CAMERA ON - CAPTURE LED ACTIVE` privacy card (`R.string.cd_streaming_active`) and live glasses status card (`R.string.cd_glasses_status`), and `LiveRegionMode.Assertive` on bridge error alerts (`R.string.cd_error_alert`).
+    - `DatBridgeController.kt`: drives `mwdat-core:1.0.1` and `mwdat-camera:1.0.1` (`STREAM_FPS = 2`, `MIN_ENCODE_INTERVAL_MS = 960L`, `SESSION_START_TIMEOUT_MS = 15_000L`, plus `openFirmwareUpdate` and `openGlassesAppUpdate`).
+    - `IngestClient.kt`: enforces `minFrameIntervalMs = 950L` (`<= ~1 fps`) and atomic `frameInFlight` drop gating across `POST /ingest/frame` (`image/jpeg`) and `POST /ingest/state` (`application/json; charset=utf-8`).
+    - `YuvJpegEncoder.kt`: converts uncompressed `720x1280` `VideoFrame.buffer` I420 planar frames via `i420ToNv21` chroma interleaving and encodes JPEG at `quality = 78`.
+    - `BridgePreferences.kt`: sanitizes server URLs (`<= 256` chars, `http`/`https` only) and session codes (`^[A-Za-z0-9_-]{4,64}$`), with 1-tap `clearSavedEndpoint()` erasure (`Forget Saved Server`).
+    - `StreamingForegroundService.kt`: `connectedDevice` foreground service keeping the DAT camera stream alive while Chrome/PWA is in the foreground.
+  - **4 JUnit4 Contract & State-Machine Test Suites (`android-dat/app/src/test/java/app/holdup/bridge/`)**:
+    - `IngestPayloadContractTest.kt`: verifies session-less and session-bound `/ingest/frame` and `/ingest/state` URL builders, exact 4-field `BridgeDeviceState` JSON serialization (`connected`, `worn`, `battery`, `streaming`), `<= 1 fps` frame throttling (`minFrameIntervalMs = 950L`, `MIN_ENCODE_INTERVAL_MS = 960L` across `2 fps` SDK arrivals) + `frameInFlight` drop lock, and low-battery (`< 15%`, `<= 10%` charge floor) and `DOFFED` -> phone-camera fallback transitions.
+    - `DatStateTransitionTest.kt`: verifies `YuvJpegEncoder.i420ToNv21` across minimal `2x2`, portrait/landscape, sliced/read-only/padded buffers, and full `720x1280` (`1,382,400 B`) direct buffers + odd-dimension guards, `BridgeUiState` registration/device/thermal/permission/session/stream (`STARTING -> STARTED -> STREAMING -> PAUSED -> STOPPING -> CLOSED`) state transitions, HTTP `204`/`503`/`502` ingest error precedence, and `28` hostile `holdupbridge://connect` deep-link rejection vectors.
+    - `BridgeContractTest.kt` & `BridgePreferencesTest.kt`: verify `i420ToNv21` luma/chroma invariants, `BridgePreferences` URL/session sanitizers, and deep-link parameter safety.
+- **Trilingual Android TalkBack Localization (`values`, `values-fi`, `values-sv`)**:
+  - `android-dat/app/src/main/res/values/strings.xml` (English default), `values-fi/strings.xml` (Finnish), and `values-sv/strings.xml` (Swedish) localize all `19` resource keys (`app_name`, `4` foreground streaming notification strings, and `14` `cd_*` TalkBack `contentDescription` templates with `%1$s..%4$s` positional placeholder parity).
+- **Offline CI Structure & Parity Gate**:
+  ```bash
+  node android-dat/verify-structure.mjs
+  ```
+  Verifies all `11` Kotlin files, balanced braces, zero comments/em-dashes, `AndroidManifest.xml`, `network_security_config.xml` (`cleartextTrafficPermitted="false"` base-config), vector launcher icon, dark `#0B0F17` theme, XML resources, JUnit4 suites, and `mwdat` `1.0.1` coordinates, complemented by `server/test/android-a11y-parity.test.ts`, `server/test/android-i18n-strings.test.ts`, `server/test/android-prefs-contract.test.ts`, and `server/test/android-res-security.test.ts`.
+
+### 5.2 Companion PWA Live Hardware Telemetry (`HardwareTelemetryCard.tsx`)
+
+On the companion phone/laptop PWA, **`<HardwareTelemetryCard />`** (`web/src/components/HardwareTelemetryCard.tsx`, `summarizeHardwareLink()`, verified in `web/test/hardwareTelemetryCard.test.ts` and `web/test/allComponentsA11yAudit.test.ts`) surfaces live trilingual (`en`, `fi`, `sv`) wearables telemetry with a `role="status"` `aria-live="polite"` summary pill and **4 real-time diagnostic tiles**:
+
+1. **`dat-camera` (*Ray-Ban Gen 2 DAT Camera*)**: Resolves `5` deterministic `GlassesLinkState` states (`streaming_glasses`, `standby_glasses`, `low_battery_fallback` below `LOW_BATTERY_THRESHOLD_PCT = 15` / `< 15%`, `doffed_fallback` when `worn === false`, and `phone_only`), displaying active eye (`"glasses"` vs `"phone"`), Bluetooth HFP open-ear audio readiness, and live battery percentage.
+2. **`capture-led` (*Firmware Capture LED Bystander Indicator*)**: Reflects `captureLedActive` (`device.connected && device.streaming && cameraActive`), distinguishing `LED LOCKED ON` (front Capture LED illuminated by DAT `1.0.1` + firmware `V128+`) from `LED OFF (IDLE)` (`45s` auto-stop + `FrameRing(8)` RAM clear).
+3. **`hud-waveguide` (*Ray-Ban Display `/hud-ws` Waveguide*)**: Shows live `/hud-ws` synchronization (`SYNCED /hud-ws` vs `WAITING /hud-ws` zero-code attach and state replay on the `600x600` `#000000` waveguide with Meta Neural Band `Arrow*` / `Enter` focus).
+4. **`adaptive-bandwidth` (*RTT-Adaptive Bandwidth Tier*)**: Maps live 5s WebSocket `ping`/`pong` RTT (`computeAdaptiveParams()`) across `4` `AdaptiveTier` steps: `high_768p` (`< 250 ms` RTT: `768 px` @ `1.0 fps`), `medium_640p` (`250..650 ms` RTT: `640 px` @ `0.75 fps`), `low_512p` (`> 650 ms` RTT: `512 px`, saving `~84%` video bandwidth), and `offline` (`0 fps` network stream, local `BarcodeDetector`).
+
 ---
 
 ## 6. Ray-Ban Display HUD as a Web App
