@@ -123,7 +123,7 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 
 ### Steps to load the HUD on the glasses
 1. The server and tunnel are running. The web engineer has built `/hud` (spec in `docs/HUD_SPEC.md`).
-2. On the laptop, open `https://<tunnel>/hud/?session=<code>` in Chrome first. It must load with **no console or certificate errors**. Optional: preview with the [Meta Ray-Ban Display Simulator](https://chromewebstore.google.com/detail/jpjlmmodokemlepklkdbimceggpbjcll) Chrome extension (600×600 additive preview, arrow/Select buttons, and a **View on Glasses QR** generator).
+2. On the laptop, open `https://<tunnel>/hud/?session=<code>` in Chrome first. (If the server supports `session=latest`, see `docs/HUD_SPEC.md` §2, save `https://<tunnel>/hud/?session=latest` in Meta AI instead, so you don't retype it for every session.) It must load with **no console or certificate errors**. Optional: preview with the [Meta Ray-Ban Display Simulator](https://chromewebstore.google.com/detail/jpjlmmodokemlepklkdbimceggpbjcll) Chrome extension (600×600 additive preview, arrow/Select buttons, and a **View on Glasses QR** generator).
 3. On the phone: **Meta AI app → App Settings (left panel) → Apps → Web Apps → Connect Web App** → enter `https://<tunnel>/hud/?session=<code>` → **Save**.
 4. On the glasses: the app appears at the **bottom of the app grid**. Pin it, then open it.
 5. Alternative: scan the **View on Glasses QR** from the simulator with the glasses, then confirm on the glasses. The QR encodes `fb-viewapp://web_app_deep_link?appName=HoldUp&appUrl=<https-url>`. A plain URL QR does **not** work.
@@ -177,4 +177,6 @@ Facts from the docs ([setup](https://wearables.developer.meta.com/docs/develop/w
 | Time | Who | Finding |
 |---|---|---|
 | Sat 14:20 | glasses agent | Docs research done. SDK 1.0.1 is on Maven Central (no PAT). Dev Mode uses app ID `0`. Web Apps are loaded via Meta AI → Connect Web App. |
+| Sat 14:25 | glasses agent | **Bridge not compiled yet.** freighter (FR8) is unreachable from the venue network (ports 22 and 443 time out), and building on Silas' laptop is off-limits. Every DAT call was checked with `javap` against the real `mwdat-core`/`mwdat-camera` 1.0.1 AARs from Maven Central, so the API names and signatures match. **Momin's first Android Studio sync and build of `android-dat/` is the compile check.** Send any compile error to the glasses agent (paste the first error line). |
+| Sat 14:25 | glasses agent | Uncompressed DAT frames are the raw MediaCodec output. The SDK requests color format 19 (I420, found in the AAR), but phone decoders can return NV12 or padded rows. `YuvJpeg.kt` auto-detects the layout. The bridge shows the detected layout next to the frame size. **If colours look wrong (blue/orange swapped) on the server, note it here.** Text stays readable either way. |
 | | | |
