@@ -61,29 +61,51 @@ A persistent failure mode for blind and low-vision patients is **initial profile
 
 HoldUp solves onboarding at the pharmacy pickup counter with **zero cloud storage and zero Kanta integration**:
 
-### 3.1 `holdup://rx` URI Specification
+### 3.1 `holdup://rx` URI Specification (`web/src/pairing/pharmacyQr.ts`)
 
-When a dispensing pharmacist (*farmaseutti* or *proviisori*) prints the standard Finnish patient instruction sticker (*annostusohjetarra*) at pickup, a standalone local browser utility (running offline on the counter workstation) encodes only the non-identifying package fields into a high-contrast `25 mm x 25 mm` QR sticker affixed to the non-text flap of the carton (or handed over on a tactile-notched onboarding card):
+When a dispensing pharmacist (*farmaseutti* or *proviisori*) prints the standard Finnish patient instruction sticker (*annostusohjetarra*) at pickup, a standalone local browser utility running offline on the counter workstation calls `encodePharmacyQrUri(payload)` (`web/src/pairing/pharmacyQr.ts`) to serialize only non-identifying package fields (`PharmacyRxPayload`) as Base64URL UTF-8 JSON inside a `25 mm x 25 mm` high-contrast QR sticker affixed to a non-text, Braille-clear flap of the carton (or handed over on a tactile-notched onboarding card):
 
 ```text
-holdup://rx?v=1&name=Amlodipin&ing=amlodipine&str=5%20mg&sched=evening&ean=6432100012345&avoid=NSAIDs
+holdup://rx?v=1&data=eyJ2IjoxLCJtZWRzIjpbeyJpZCI6ImFtbCIsIm5hbWUiOiJBbWxvZGlwaW4iLCJpbmdyZWRpZW50IjoiYW1sb2RpcGluZSIsInN0cmVuZ3RoIjoiNSBtZyIsInNjaGVkdWxlIjpbImV2ZW5pbmciXSwiYmFyY29kZSI6IjY0MzIxMDAwMTIzNDUiLCJub3RlcyI6IjEgdGFibGV0dGkgaWxsYWxsYSJ9XSwicGhhcm1hY3kiOiJZbGlvcGlzdG9uIEFwdGVla2tpIEl0w6RrZXNrdXMiLCJhdm9pZCI6WyJOU0FJRHMiXX0
 ```
 
-| Parameter | Maps to `shared/types.ts` | Example Value | Privacy & Safety Property |
+`parsePharmacyQrUri()` accepts `holdup://rx?v=1&data=<base64url-json>`, `https://<host>/rx?v=1&data=<base64url-json>`, or raw `PharmacyRxPayload` JSON (preserving Nordic UTF-8 characters `ä/ö/å`), decoding the token above into:
+
+```json
+{
+  "v": 1,
+  "meds": [
+    {
+      "id": "aml",
+      "name": "Amlodipin",
+      "ingredient": "amlodipine",
+      "strength": "5 mg",
+      "schedule": ["evening"],
+      "barcode": "6432100012345",
+      "notes": "1 tabletti illalla"
+    }
+  ],
+  "pharmacy": "Yliopiston Apteekki Itäkeskus",
+  "avoid": ["NSAIDs"]
+}
+```
+
+| Payload Field | Maps to `web/src/types.ts` / `shared/types.ts` | Example Value | Privacy & Safety Property |
 |---|---|---|---|
-| `v` | Schema version | `1` | Deterministic parser version lock; unknown versions rejected safely. |
-| `name` | `Med.name` | `Amlodipin` | Printed commercial package name on the Finnish carton. |
-| `ing` | `Med.ingredient` | `amlodipine` | Normalized INN active substance used by `ingredientsOf()` in `server/src/safety.ts`. |
-| `str` | `Med.strength` | `5 mg` | Exact prescribed unit strength checked by `sameStrength()` (`STRENGTH_MIN_CONF = 0.80`). |
-| `sched` | `Med.schedule` | `evening` or `08:00,20:00` | Comma-separated daily slots for schedule phrasing and `dosesToday()` duplicate checks. |
-| `ean` | `Med.barcode` | `6432100012345` | 13-digit EAN-13 / Nordic Vnr barcode enabling **100% offline** verification via `BarcodeDetector` (`web/src/camera/barcode.ts`). |
-| `avoid` | `Profile.avoid` (optional) | `NSAIDs` | Pharmacist-flagged drug class to avoid (e.g., *tulehduskipulääkkeet* on antihypertensives/anticoagulants). |
+| `v` | `PharmacyRxPayload.v` | `1` | Deterministic parser version lock; unknown versions or malformed tokens return `null`. |
+| `pharmacy` | `PharmacyRxPayload.pharmacy` (optional) | `"Yliopiston Apteekki Itäkeskus"` | Dispensing branch name (`<= 120` chars) for spoken confirmation and hotline context. |
+| `meds[].name` | `Med.name` | `"Amlodipin"` | Printed commercial package name (`<= 120` chars) on the Finnish carton. |
+| `meds[].ingredient` | `Med.ingredient` | `"amlodipine"` | Normalized INN active substance (maps Finnish aliases like `amlodipiini` -> `amlodipine`). |
+| `meds[].strength` | `Med.strength` | `"5 mg"` | Exact prescribed unit strength (`2,5 mg` normalized to `2.5 mg`) checked against `STRENGTH_MIN_CONF = 0.80`. |
+| `meds[].schedule` | `Med.schedule` | `["evening"]` | Daily schedule slots (`morning`, `evening`, `08:00`) used for schedule phrasing and `dosesToday()` checks. |
+| `meds[].barcode` | `Med.barcode` | `"6432100012345"` | Stripped digits-only EAN-13 / Nordic Vnr barcode enabling **100% offline** matching via `BarcodeDetector` (`web/src/camera/barcode.ts`). |
+| `allergies` / `avoid` | `Profile.allergies` / `Profile.avoid` | `["NSAIDs"]` | Case-insensitive set union into `Profile` (e.g., *tulehduskipulääkkeet* avoid rule on antihypertensives/anticoagulants). |
 
 ### 3.2 Privacy Invariants of `holdup://rx`
 
-1. **Zero Personal Identifiers:** The QR payload never contains the patient's name, Finnish personal identity code (*henkilötunnus* / HETU), address, prescriber name, or Kanta prescription ID. If a carton is recycled, the QR reveals no more personal identity than the commercial box itself (participants are still instructed to peel or black out pharmacy stickers on disposal, matching standard Finnish pharmacy guidance).
-2. **100% Local Import with Spoken Read-Back:** Scanning `holdup://rx` in HoldUp parses the URI locally on the phone, speaks the full entry aloud in Finnish, Swedish, or English (*"Lisätäänkö profiiliin: Amlodipin 5 mg, iltalääke, vältä tulehduskipulääkkeitä?"*), requires an explicit confirmation tap/pinch, and writes strictly to `localStorage` (`holdup.profile` in `web/src/storage/profileStore.ts`). Zero onboarding payloads are stored on any server.
-3. **Under-45-Second Counter Workflow:** At pickup counseling (*lääkeneuvonta*), the pharmacist scans the carton's commercial EAN barcode into the standalone QR generator, selects schedule slot(s) (`morning` / `evening` / `as needed`) and any `avoid` class tag, prints the QR sticker, and lets the participant test one live glasses scan at the counter before leaving.
+1. **Zero Personal Identifiers:** The `PharmacyRxPayload` object never contains the patient's name, Finnish personal identity code (*henkilötunnus* / HETU), address, prescriber name, or Kanta prescription ID. If a carton is recycled, the QR reveals no more personal identity than the commercial box itself (participants are still instructed to peel or black out pharmacy stickers on disposal, matching standard Finnish pharmacy guidance).
+2. **100% Local Idempotent Merge with Spoken Read-Back:** Scanning `holdup://rx` runs `parsePharmacyQrUri()` and `mergePharmacyPayload()` (`web/src/pairing/pharmacyQr.ts`) entirely on the phone, deduplicating repeat refill scans by EAN barcode or canonical INN + strength without erasing existing `doseLog` entries, speaks the summary aloud in Finnish, Swedish, or English (*"Lisätäänkö profiiliin: Amlodipin 5 mg, iltalääke, vältä tulehduskipulääkkeitä?"*), requires an explicit confirmation tap/pinch, and saves strictly to `localStorage` (`holdup.profile` in `web/src/storage/profileStore.ts`). Zero onboarding payloads touch any server.
+3. **Under-45-Second Counter Workflow:** At pickup counseling (*lääkeneuvonta*), the pharmacist scans the carton's commercial EAN barcode into the standalone offline QR generator, selects schedule slot(s) (`morning` / `evening` / `as needed`) and any `avoid` class tag, prints the QR sticker, and lets the participant test one live glasses scan at the counter before leaving.
 
 ---
 
