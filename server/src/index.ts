@@ -20,7 +20,6 @@ export function createApp() {
   const app = express();
   app.disable("x-powered-by");
 
-  // ---------- health (Gemini reachability cached 30 s) ----------
   let healthCache: { at: number; ok: boolean } | undefined;
   app.get("/api/health", async (_req, res) => {
     if (!healthCache || Date.now() - healthCache.at > 30_000) {
@@ -41,19 +40,19 @@ export function createApp() {
 
   app.get("/api/stats", (_req, res) => { res.json(stats()); });
 
-  // ---------- snapshot verify ----------
   app.post("/api/verify", express.json({ limit: "12mb" }), async (req, res) => {
     const frames = Array.isArray(req.body?.frames) ? (req.body.frames as unknown[]).filter((f): f is string => typeof f === "string" && f.length > 100) : [];
     if (!frames.length) { res.status(400).json({ type: "error", code: "bad_input", message: "frames[] (base64 JPEG) required", recoverable: true }); return; }
-    // without client sharpness, prefer the largest JPEGs (more detail) among the last 3
+    const sessionParam = typeof req.body?.session === "string" ? req.body.session : undefined;
     const picked = frames.slice(-3).map((f, i) => ({ f, i, s: f.length })).sort((a, b) => b.s - a.s).slice(0, 2).map((x) => x.f);
     const t = Date.now();
     const r = await verify(picked, toProfile(req.body?.profile), typeof req.body?.question === "string" ? req.body.question : undefined);
+    const hub = resolveHub(sessionParam);
+    if (hub) hub.emit({ type: "verdict", verdict: r.verdict }, { clients: false });
     log("api.verify", { level: r.verdict.level, model: r.model ?? "none", ms: Date.now() - t, n_frames: picked.length });
     res.json(r.verdict);
   });
 
-  // ---------- TTS (optional; browser speechSynthesis is the fallback) ----------
   app.post("/api/tts", express.json({ limit: "64kb" }), async (req, res) => {
     const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 600) : "";
     if (!text) { res.status(400).json({ type: "error", code: "bad_input", message: "text required", recoverable: true }); return; }
@@ -80,7 +79,6 @@ export function createApp() {
     res.status(503).json({ type: "error", code: "gemini_unavailable", message: "TTS unavailable, use speechSynthesis", recoverable: true });
   });
 
-  // ---------- glasses bridge ingest (session optional: defaults to the latest live session) ----------
   app.post("/ingest/frame", express.raw({ type: ["image/jpeg", "application/octet-stream"], limit: "6mb" }), (req, res) => {
     const buf = req.body as Buffer;
     if (!Buffer.isBuffer(buf) || buf.length < 100) { res.status(400).json({ type: "error", code: "bad_input", message: "image/jpeg body required", recoverable: true }); return; }
@@ -90,7 +88,7 @@ export function createApp() {
       const sharpness = Number(req.query.sharpness) || jpegSharpness(buf);
       hub.ring.push({ data, sharpness, ts: Date.now(), bytes: buf.length, source: "glasses" });
       (hub.live as LiveProxy | undefined)?.frame(data);
-    } // no session: frame dropped (never stored)
+    }
     res.status(204).end();
   });
   app.post("/ingest/state", express.json({ limit: "16kb" }), (req, res) => {
@@ -103,7 +101,6 @@ export function createApp() {
     res.status(204).end();
   });
 
-  // ---------- production: serve the web build ----------
   const dist = path.join(REPO_ROOT, "web", "dist");
   if (fs.existsSync(dist)) {
     app.use(express.static(dist, { index: "index.html", maxAge: "1h" }));
@@ -124,7 +121,6 @@ function wav(pcm: Buffer, rate: number): Buffer {
   return Buffer.concat([h, pcm]);
 }
 
-// ---------- WebSockets ----------
 function onLive(ws: WebSocket, sessionParam: string | null) {
   const id = sessionParam && /^[\w-]{4,64}$/.test(sessionParam) ? sessionParam : crypto.randomUUID();
   const hub = getOrCreateHub(id);
@@ -183,10 +179,10 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
     log("ws.live.close", { session: shortId(id), remaining: hub.clients.size });
     if (hub.clients.size === 0) {
       hub.live?.stop("client disconnected");
-      hub.ring.clear(); // privacy: frames never outlive the session
+      hub.ring.clear();
     }
   });
-  ws.on("error", () => { /* close follows */ });
+  ws.on("error", () => {});
 }
 
 function onHud(ws: WebSocket, sessionParam: string | null) {
@@ -198,11 +194,18 @@ function onHud(ws: WebSocket, sessionParam: string | null) {
       if (m?.type !== "event") return;
       const hub = hudTarget(sessionParam);
       if (!hub) return;
-      if (m.name === "repeat" || m.name === "log_dose") (hub.live as LiveProxy | undefined)?.handleEvent(m.name);
-      // "dismiss" only affects the HUD itself
-    } catch { /* ignore */ }
+      const live = hub.live as LiveProxy | undefined;
+      if (live?.active && (m.name === "repeat" || m.name === "log_dose")) {
+        live.handleEvent(m.name);
+      } else if (m.name === "log_dose" && hub.lastVerdict?.matchedMedId) {
+        hub.profile.doseLog.push({ medId: hub.lastVerdict.matchedMedId, ts: Date.now() });
+        hub.emit({ type: "verdict", verdict: { ...hub.lastVerdict, takenToday: true } });
+      } else if (m.name === "repeat" && hub.lastVerdict) {
+        hub.emit({ type: "verdict", verdict: hub.lastVerdict });
+      }
+    } catch {}
   });
-  ws.on("error", () => { /* */ });
+  ws.on("error", () => {});
 }
 
 export function startServer(port = env.port): Promise<http.Server> {
