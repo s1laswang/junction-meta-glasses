@@ -120,14 +120,19 @@
   .btn {
     appearance: none;
     min-height: 44px;
-    padding: 8px 14px;
+    padding: 8px 12px;
     border-radius: 9px;
     border: 1.5px solid #64748b;
     background: #1e293b;
     color: #f8fafc;
     font-family: inherit;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     cursor: pointer;
   }
 
@@ -488,26 +493,26 @@
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 2mm;
+    gap: 1.7mm;
   }
 
   .metric-tile {
     background: var(--surface-alt);
     border: 1px solid var(--border-subtle);
     border-radius: 5px;
-    padding: 1.8mm 2mm;
+    padding: 1.4mm 1.8mm;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 0.7mm;
+    gap: 0.5mm;
   }
 
   .metric-val {
-    font-size: 10.2pt;
+    font-size: 9.2pt;
     font-weight: 900;
     letter-spacing: -0.02em;
     color: var(--accent);
-    line-height: 1.1;
+    line-height: 1.08;
   }
 
   .metric-val.safe {
@@ -519,25 +524,26 @@
   }
 
   .metric-label {
-    font-size: 6.9pt;
+    font-size: 6.65pt;
     font-weight: 800;
     color: var(--ink-primary);
-    line-height: 1.2;
+    line-height: 1.18;
   }
 
   .metric-sub {
-    font-size: 6.35pt;
+    font-size: 6.05pt;
     color: var(--ink-muted);
-    line-height: 1.22;
+    line-height: 1.18;
   }
 
   .proof-strip {
-    font-size: 7.2pt;
+    font-size: 6.85pt;
     color: var(--ink-secondary);
-    padding: 1.4mm 2.2mm;
+    padding: 1.2mm 2mm;
     background: var(--surface-alt);
     border-left: 3px solid var(--match-border);
     border-radius: 4px;
+    line-height: 1.26;
   }
 
   .proof-strip strong {
@@ -546,20 +552,39 @@
 
   .footer-bar {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding: 1.8mm 2.8mm;
+    flex-direction: column;
+    gap: 1mm;
+    padding: 1.5mm 2.6mm;
     background: var(--surface-bg);
     border: 1px solid var(--border-subtle);
     border-radius: 6px;
-    font-size: 6.9pt;
+    font-size: 6.75pt;
     color: var(--ink-secondary);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .footer-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
   }
 
   .footer-bar strong {
     color: var(--ink-primary);
+  }
+
+  .doc-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .doc-link:hover,
+  .doc-link:focus-visible {
+    text-decoration: underline;
   }
 
   @media (max-width: 820px) {
@@ -617,25 +642,36 @@
       border: none;
       border-radius: 0;
       box-shadow: none;
-      gap: 2.8mm;
+      gap: 2.2mm;
     }
 
     .hero {
       grid-template-columns: 1.16fr 1fr;
-      padding: 2.6mm 3mm;
+      padding: 2.2mm 2.8mm;
+    }
+
+    .hero-diagram svg {
+      max-height: 29mm;
+    }
+
+    .panel {
+      padding: 2.2mm 2.8mm;
+      gap: 1.5mm;
     }
 
     .two-col {
       grid-template-columns: 1.14fr 0.86fr;
-      gap: 2.8mm;
+      gap: 2.4mm;
     }
 
     .resilience-grid {
       grid-template-columns: repeat(3, 1fr);
+      gap: 1.6mm;
     }
 
     .metrics-grid {
       grid-template-columns: repeat(6, 1fr);
+      gap: 1.5mm;
     }
 
     .metric-val.safe {
@@ -648,9 +684,12 @@
   <aside class="toolbar no-print" aria-label="Handout display and print actions">
     <div class="toolbar-meta">
       <div class="toolbar-title">HoldUp Judge &amp; Mentor Quick-Start Handout (A4 1-Page)</div>
-      <div class="toolbar-sub">Self-contained offline sheet served at <code>/judge-handout.html</code> and printable on single-page A4 portrait.</div>
+      <div class="toolbar-sub">Self-contained offline sheet served at <code>/judge-handout.html</code> alongside <code>/deck</code>, <code>/printable-props.html</code>, and <code>/architecture-poster.html</code>.</div>
     </div>
     <div class="toolbar-actions">
+      <a href="/deck" class="btn">Pitch Deck (<code>/deck</code>)</a>
+      <a href="/printable-props.html" class="btn">Printable Props</a>
+      <a href="/architecture-poster.html" class="btn">Architecture Poster</a>
       <button type="button" id="btn-toggle-preview" class="btn" aria-pressed="false">Light Print Preview</button>
       <button type="button" id="btn-print-page" class="btn btn-primary">Print A4 Handout</button>
     </div>
@@ -871,15 +910,15 @@
 
     <section class="panel" aria-labelledby="sec-benchmarks">
       <div class="panel-header">
-        <h2 id="sec-benchmarks">4. Verified Measured Benchmarks (<code>eval/</code> JSON Artifacts)</h2>
-        <span class="panel-kicker">Zero Unverified Claims</span>
+        <h2 id="sec-benchmarks">4. Verified Measured Benchmarks (<code>27</code> Committed <code>eval/</code> JSON Artifacts)</h2>
+        <span class="panel-kicker">Wave-1 Through Wave-7 Proof</span>
       </div>
 
       <div class="metrics-grid">
         <div class="metric-tile">
           <div class="metric-val safe">0</div>
           <div class="metric-label">Confident-Wrong Doses</div>
-          <div class="metric-sub">100.0% occluded abstention at 0.80 gate</div>
+          <div class="metric-sub">52/53 (98.1%) core; 100.0% abstention at 0.80</div>
         </div>
         <div class="metric-tile">
           <div class="metric-val">ECE = 0.0138</div>
@@ -887,44 +926,90 @@
           <div class="metric-sub">Brier 0.0005 across 4 degradation tiers</div>
         </div>
         <div class="metric-tile">
-          <div class="metric-val">582 ms</div>
-          <div class="metric-label">First-Audio Latency</div>
-          <div class="metric-sub"><code>gemini-3.8-live</code> (706 ms WS connect)</div>
+          <div class="metric-val">431.6 ms</div>
+          <div class="metric-label">Live Ready / 582 ms Audio</div>
+          <div class="metric-sub"><code>gemini-3.8-live</code> (706 ms WS probe)</div>
         </div>
         <div class="metric-tile">
-          <div class="metric-val">84.0%</div>
-          <div class="metric-label">Slow-Net Video Saved</div>
-          <div class="metric-sub">724.64 KB -&gt; 116.02 KB per 12s check</div>
+          <div class="metric-val">2738.8 ms</div>
+          <div class="metric-label">Glass-to-HUD Verdict p50</div>
+          <div class="metric-sub">DAT frame -&gt; <code>gemini-3.8-flash</code> -&gt; <code>/hud-ws</code></div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val">1.17 / 1.78 ms</div>
+          <div class="metric-label"><code>/ingest</code> &amp; <code>/hud-ws</code> p50</div>
+          <div class="metric-sub"><code>1.17 ms</code> ingest, <code>1.78 ms</code> replay (<code>674 B</code> wire)</div>
         </div>
         <div class="metric-tile">
           <div class="metric-val safe">91.8%</div>
           <div class="metric-label">3-Year TCO Savings</div>
-          <div class="metric-sub">EUR 341.68 vs EUR 4,150.00 (12.1x lower)</div>
+          <div class="metric-sub">EUR 341.68 vs EUR 4,150.00 (12.1x; 84.0% BW saved)</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">10 / 10</div>
+          <div class="metric-label"><code>90/180/270 deg</code> Blind-Hold</div>
+          <div class="metric-sub">100.0% upside-down &amp; sideways, 0 wrong doses</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">10 / 10</div>
+          <div class="metric-label">Faded Thermal &amp; Smudge</div>
+          <div class="metric-sub">6/6 worn recall + 4/4 smudge abstention, 0 wrong</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">8 / 8 (100%)</div>
+          <div class="metric-label">Prompt-Injection Defense</div>
+          <div class="metric-sub">Visual override stickers resisted, <code>0</code> hijacks</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">25 / 50 WS</div>
+          <div class="metric-label">Concurrent Hub Isolation</div>
+          <div class="metric-sub"><code>25</code> sessions / <code>50</code> sockets, <code>0</code> leaks, <code>0</code> retained</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-val safe">9 / 9</div>
+          <div class="metric-label"><code>en</code>/<code>fi</code>/<code>sv</code> Hand Coaching</div>
+          <div class="metric-sub">100.0% cue compliance, <code>0</code> dose hallucinations</div>
         </div>
         <div class="metric-tile">
           <div class="metric-val safe">8 / 8</div>
-          <div class="metric-label">Coaching &amp; Privacy</div>
-          <div class="metric-sub">5.0/5 score; 2574.8 ms face refusal</div>
+          <div class="metric-label">Coaching &amp; Bystander PII</div>
+          <div class="metric-sub">5.0/5 score; 2574.8 ms face refusal; 0 PII leaks</div>
         </div>
       </div>
 
       <div class="proof-strip">
-        <strong>Evidence Breakdown:</strong>
+        <strong>Evidence Breakdown (<code>27</code> Committed <code>eval/</code> JSONs):</strong>
         <code>ECE = 0.0138</code> and <strong><code>0</code> confident-wrong dose reads</strong> verified across
         <strong><code>16</code></strong> progressive degradation reads (<code>calibration_curve.json</code>) +
         <strong><code>36</code></strong> 3-model probe reads (<code>model_comparison.json</code>: <code>gemini-3.8-flash</code>, <code>gemini-3.5-flash</code>, <code>gemini-3-flash-preview</code>, <code>100.0%</code> verdict match) +
         <strong><code>7</code></strong> <code>/api/verify</code> fixture reads (<code>demo_fixtures_results.json</code>) +
-        <strong><code>18</code></strong> food/allergen reads (<code>results_batch2.json</code>, <code>0</code> false-safe allergens).
-        3-year TCO: <strong><code>EUR 341.68</code></strong> (EUR 329 Ray-Ban Meta Gen 2 + EUR 0.00294/check) vs <strong><code>EUR 4,150.00</code></strong> OrCam midpoint = <strong><code>91.8%</code> savings</strong>.
+        <strong><code>18</code></strong> food/allergen reads (<code>results_batch2.json</code>, <code>0</code> false-safe allergens) +
+        <strong><code>10/10</code></strong> <code>90/180/270 deg</code> blind-hold orientation reads (<code>orientation_robustness_results.json</code>, <code>0</code> wrong doses) +
+        <strong><code>10/10</code></strong> faded thermal sticker &amp; wet-hand smudge reads (<code>thermal_fade_wear_results.json</code>, <code>0</code> wrong doses) +
+        <strong><code>8/8</code></strong> (<code>100%</code>) visual prompt-injection resistance (<code>prompt_injection_labels_results.json</code>, <code>0</code> hijacks) +
+        <strong><code>9/9</code></strong> <code>en</code>/<code>fi</code>/<code>sv</code> hand-coaching compliance (<code>multilingual_coaching_results.json</code>, <code>0</code> dose hallucinations, <code>0</code> bystander leaks) +
+        <strong><code>25</code></strong> concurrent sessions / <strong><code>50</code></strong> WebSockets (<code>concurrent_sessions_results.json</code>, <code>0</code> cross-session leaks, <code>0</code> post-disconnect buffered frames).
+        Live &amp; HUD wire: <code>431.6 ms</code> Live ready &amp; <code>2738.8 ms</code> live glass-to-HUD <code>p50</code> (<code>e2e_websocket_live.json</code>), <code>1.17 ms</code> <code>/ingest/frame</code> <code>p50</code> &amp; <code>1.78 ms</code> <code>/hud-ws</code> late-join replay <code>p50</code> at <code>674 B</code> HUD wire (<code>hud_latency_bandwidth.json</code>), <code>84.0%</code> adaptive video saved (<code>724.64 KB -&gt; 116.02 KB</code>), and <strong><code>EUR 341.68</code></strong> (EUR 329 Ray-Ban Meta Gen 2 + EUR 0.00294/check) vs <strong><code>EUR 4,150.00</code></strong> OrCam midpoint = <strong><code>91.8%</code> savings</strong>.
       </div>
     </section>
 
     <footer class="footer-bar">
-      <div>
-        <strong>Privacy &amp; EU MDR Boundary:</strong> Explicit active check only (45s auto-stop) | 8-slot RAM <code>FrameRing</code> wiped on close | 1-tap <code>wipeAllLocalData()</code> | Assistive optical label reader (pharmacist handoff on uncertainty).
+      <div class="footer-row">
+        <div>
+          <strong>Privacy &amp; EU MDR Boundary:</strong> Explicit active check only (45s auto-stop) | 8-slot RAM <code>FrameRing</code> wiped on close (<code>0</code> post-disconnect buffered frames) | 1-tap <code>wipeAllLocalData()</code> | Assistive optical label reader (pharmacist handoff on uncertainty).
+        </div>
+        <div>
+          <strong>Pilot Path:</strong> 12-week Helsinki cohort (<code>N = 24</code>, Nakovammaisten liitto Iiris Center + 25 mm zero-PII pharmacy QR).
+        </div>
       </div>
-      <div>
-        <strong>Pilot Path:</strong> 12-week Helsinki cohort (<code>N = 24</code>, Nakovammaisten liitto Iiris Center + 25 mm zero-PII pharmacy QR).
+      <div class="footer-row">
+        <div>
+          <strong>Booth Companion Sheets &amp; Routes:</strong>
+          <a href="/deck" class="doc-link"><code>/deck</code></a> (12-slide pitch deck) |
+          <a href="/printable-props.html" class="doc-link"><code>/printable-props.html</code></a> (stage cartons, EAN-13 &amp; <code>holdup:&#47;&#47;rx</code> QR) |
+          <a href="/architecture-poster.html" class="doc-link"><code>/architecture-poster.html</code></a> (<code>docs/architecture-poster.html</code> A4/A3 architecture &amp; safety poster) |
+          <a href="/hud" class="doc-link"><code>/hud</code></a> (600x600 Ray-Ban Display HUD).
+        </div>
       </div>
     </footer>
   </main>
