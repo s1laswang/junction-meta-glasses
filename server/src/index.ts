@@ -8,7 +8,7 @@ import { Modality } from "@google/genai";
 import type { ClientMsg, DeviceState } from "../../shared/types.ts";
 import { env, REPO_ROOT } from "./env.ts";
 import { ai, unaryGate } from "./gemini.ts";
-import { addHud, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
+import { addHud, addStage, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
 import { ledger, stats } from "./ledger.ts";
 import { eleven, elevenEnabled, elevenStream, scribeToken } from "./elevenlabs.ts";
 import { requireKey, wsKeyOk } from "./auth.ts";
@@ -288,6 +288,13 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
   ws.on("error", () => { /* close follows */ });
 }
 
+/** /hud-ws?role=stage: the projector view. Read-only: anything it sends is ignored. */
+function onStage(ws: WebSocket, sessionParam: string | null) {
+  addStage(ws, sessionParam);
+  log("ws.stage.connect", { session: sessionParam ? shortId(sessionParam) : "latest" });
+  ws.on("error", () => { /* */ });
+}
+
 function onHud(ws: WebSocket, sessionParam: string | null) {
   addHud(ws, sessionParam);
   log("ws.hud.connect", { session: sessionParam ? shortId(sessionParam) : "latest" });
@@ -322,7 +329,10 @@ export function startServer(port = env.port): Promise<http.Server> {
       return;
     }
     if (url.pathname === "/live") wssLive.handleUpgrade(req, socket, head, (ws) => onLive(ws, session));
-    else if (url.pathname === "/hud-ws") wssHud.handleUpgrade(req, socket, head, (ws) => onHud(ws, session));
+    else if (url.pathname === "/hud-ws") {
+      const stage = url.searchParams.get("role") === "stage";
+      wssHud.handleUpgrade(req, socket, head, (ws) => (stage ? onStage(ws, session) : onHud(ws, session)));
+    }
     else socket.destroy();
   });
   return new Promise((resolve) => server.listen(port, () => {
