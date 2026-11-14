@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HoldUp Bridge</string>
+    <string name="notification_channel_name">Lasien kameravirta</string>
+    <string name="notification_title">HoldUp käyttää lasiesi kameraa</string>
+    <string name="notification_body">Kuvat lähetetään vain HoldUp-istuntoosi. Lopeta avaamalla sovellus.</string>
+</resources>
