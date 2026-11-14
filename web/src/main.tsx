@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import "./styles.css";
 import { App } from "./App.tsx";
 import { Hud } from "./screens/Hud.tsx";
+import { accessKey } from "./lib/key.ts";
+
+accessKey(); // read ?key= once, store it, and strip it from the address bar
 
 const isHud = location.pathname.replace(/\/+$/, "").endsWith("/hud");
 

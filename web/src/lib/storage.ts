@@ -37,13 +37,25 @@ function write(key: string, value: unknown) {
   }
 }
 
+export const LANGS = [
+  { code: "en", label: "English" },
+  { code: "fi", label: "Suomi" },
+  { code: "sv", label: "Svenska" },
+] as const;
+
+/** en / fi / sv from the browser language, English otherwise. */
+export function defaultLang(): string {
+  const l = (typeof navigator !== "undefined" ? navigator.language : "en").toLowerCase().slice(0, 2);
+  return LANGS.some((x) => x.code === l) ? l : "en";
+}
+
 export function demoProfile(): Profile {
   return {
-    lang: "en",
+    lang: defaultLang(),
     meds: [
-      { id: "amlodipine", name: "Amlodipine", ingredient: "amlodipine besilate", strength: "5 mg", schedule: ["evening"], barcode: "6416542002149", notes: "Blood pressure" },
-      { id: "metformin", name: "Metformin", ingredient: "metformin hydrochloride", strength: "500 mg", schedule: ["morning", "evening"], barcode: "6416542003375", notes: "Diabetes, with food" },
-      { id: "atorvastatin", name: "Atorvastatin", ingredient: "atorvastatin calcium", strength: "20 mg", schedule: ["evening"], barcode: "6416542004860", notes: "Cholesterol" },
+      { id: "amlodipine", name: "Amlodipine", ingredient: "amlodipine", strength: "5 mg", schedule: ["evening"], barcode: "6416542002149", notes: "Blood pressure" },
+      { id: "metformin", name: "Metformin", ingredient: "metformin", strength: "500 mg", schedule: ["morning", "evening"], barcode: "6416542003375", notes: "Diabetes, with food" },
+      { id: "atorvastatin", name: "Atorvastatin", ingredient: "atorvastatin", strength: "20 mg", schedule: ["evening"], barcode: "6416542004860", notes: "Cholesterol" },
     ],
     allergies: ["tree nuts", "peanut"],
     avoid: ["NSAIDs"],

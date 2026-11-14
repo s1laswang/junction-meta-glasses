@@ -4,7 +4,7 @@ import { Icon } from "../components/Icons.tsx";
 import { announce } from "../lib/feedback.ts";
 import { barcodeSupported, detectBarcode } from "../lib/barcode.ts";
 import { getCamera } from "../lib/media.ts";
-import { demoProfile, emptyMed, newMedId, saveProfile, takenToday } from "../lib/storage.ts";
+import { demoProfile, emptyMed, LANGS, newMedId, saveProfile, takenToday } from "../lib/storage.ts";
 
 const SLOTS = ["morning", "midday", "evening", "night"];
 
@@ -58,6 +58,26 @@ export function Profile({ profile, onChange }: { profile: P; onChange: (p: P) =>
         onChange={(allergies) => update({ ...profile, allergies })}
       />
       <TagList id="avoid" title="Avoid" help="Medicine groups your doctor told you to avoid, for example NSAIDs" items={profile.avoid} onChange={(avoid) => update({ ...profile, avoid })} />
+
+      <section className="stack" aria-labelledby="lang-h">
+        <h2 id="lang-h">Language</h2>
+        <div className="field">
+          <label htmlFor="lang">Language HoldUp speaks</label>
+          <select id="lang" value={profile.lang || "en"} onChange={(e) => {
+            update({ ...profile, lang: e.target.value });
+            announce(`Language set to ${LANGS.find((l) => l.code === e.target.value)?.label}.`);
+          }} aria-describedby="lang-help">
+            {LANGS.map((l) => (
+              <option key={l.code} value={l.code} lang={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+          <p id="lang-help" className="help">
+            Used for spoken coaching and answers. The screens are in English for now.
+          </p>
+        </div>
+      </section>
 
       <section className="stack" aria-labelledby="log-h">
         <h2 id="log-h">Dose log</h2>
@@ -253,7 +273,7 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
             Cancel
           </button>
           {onDelete ? (
-            <button className="btn danger" type="button" onClick={onDelete} style={{ marginLeft: "auto" }}>
+            <button className="btn danger" type="button" onClick={() => confirm(`Remove ${med.name} from your list? Its dose history stays in the log.`) && onDelete()} style={{ marginLeft: "auto" }}>
               Remove
             </button>
           ) : null}

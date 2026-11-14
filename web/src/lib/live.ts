@@ -1,6 +1,7 @@
 // WebSocket state machine for /live: connect, start, ping/pong RTT, exponential-backoff reconnect.
 import type { ClientMsg, ServerMsg } from "../../../shared/types.ts";
 import { MockSocket } from "./mock.ts";
+import { withKey } from "./key.ts";
 
 export type ConnState = "idle" | "connecting" | "open" | "reconnecting" | "closed";
 
@@ -31,7 +32,7 @@ const MAX_BACKOFF_MS = 10000;
 
 export function liveUrl(session: string) {
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
-  return `${proto}//${location.host}/live?session=${encodeURIComponent(session)}`;
+  return withKey(`${proto}//${location.host}/live?session=${encodeURIComponent(session)}`);
 }
 
 export class LiveClient {
@@ -144,6 +145,17 @@ export class LiveClient {
     if (!this.want || this.state === "open" || this.state === "connecting") return;
     this.clearTimers();
     this.open();
+  }
+
+  /**
+   * Make sure the server has a live Gemini session: re-send start (profile, lang, source) on an open
+   * socket. The server creates a fresh LiveProxy when the old one ended (degraded/closed) and treats
+   * it as a profile update when one is still active. If the socket isn't open, reconnect (which sends start).
+   */
+  resendStart() {
+    if (this.isOpen) return void this.sendRaw(this.o.buildStart());
+    if (!this.want) return this.start();
+    this.retryNow();
   }
 
   private ping() {

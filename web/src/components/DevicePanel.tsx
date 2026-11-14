@@ -94,10 +94,10 @@ export function DevicePanel({ s, checker, open, onToggle }: { s: CheckState; che
         {IS_MOCK ? (
           <>
             <button className="btn small" aria-pressed={mockCtl.slow} onClick={sim(() => (mockCtl.slow = !mockCtl.slow))}>
-              Slow network {mockCtl.slow ? "on" : "off"}
+              Slow network
             </button>
             <button className="btn small" aria-pressed={mockCtl.geminiDown} onClick={sim(() => mockSetGeminiDown(!mockCtl.geminiDown))}>
-              Gemini down {mockCtl.geminiDown ? "on" : "off"}
+              Gemini down
             </button>
             <button
               className="btn small"
@@ -107,7 +107,7 @@ export function DevicePanel({ s, checker, open, onToggle }: { s: CheckState; che
                 window.dispatchEvent(new Event(mockCtl.offline ? "offline" : "online"));
               })}
             >
-              Offline {mockCtl.offline ? "on" : "off"}
+              Simulate offline
             </button>
             <button className="btn small" onClick={sim(() => mockSetDevice({ connected: true, worn: true, battery: 82, streaming: true, source: "glasses" }))}>
               Glasses on

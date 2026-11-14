@@ -1,6 +1,5 @@
 // Local verdict builders: used by the mock server and by offline barcode mode.
 import type { LabelRead, Med, Profile, Verdict } from "../../../shared/types.ts";
-import { takenToday } from "./storage.ts";
 
 const f = <T,>(value: T | null, confidence: number) => ({ value, confidence });
 
@@ -18,30 +17,61 @@ export function emptyRead(kind: LabelRead["kind"] = "unreadable"): LabelRead {
   };
 }
 
-export function scheduleText(m: Med) {
-  if (!m.schedule.length) return "";
-  if (m.schedule.length === 1) return `your ${m.schedule[0]} pill`;
-  return `taken ${m.schedule.join(" and ")}`;
+/** Today's doses of one med, oldest first (mirrors server safety.ts dosesToday). */
+export function dosesToday(p: Profile, medId: string, now = new Date()) {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  return p.doseLog.filter((d) => d.medId === medId && d.ts >= start.getTime() && d.ts <= now.getTime()).sort((a, b) => a.ts - b.ts);
 }
 
-export function matchVerdict(p: Profile, m: Med, opts: { via?: "barcode" | "label" } = {}): Verdict {
-  const taken = takenToday(p, m.id);
-  const sched = scheduleText(m);
+const hhmm = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+/**
+ * A saved medicine was recognised. Same rules as server/src/safety.ts: once today's doses reach the
+ * number of scheduled doses it is a WARNING ("already taken today"), never a "Yes".
+ * via "barcode" = offline: matched by barcode only, so the expiry date was not checked.
+ */
+export function matchVerdict(p: Profile, m: Med, opts: { via?: "barcode" | "label"; now?: Date } = {}): Verdict {
+  const doses = dosesToday(p, m.id, opts.now);
+  const taken = doses.length;
+  const perDay = Math.max(1, m.schedule.length);
+  const label = `${m.name} ${m.strength}`.trim();
+  const sw = m.schedule.join(" and ");
+  const yours = sw ? `your ${sw} pill` : "on your list";
+  const offline = opts.via === "barcode";
+  const read = {
+    ...emptyRead("medication"),
+    product: f(m.name, 0.97),
+    ingredient: f(m.ingredient, 0.93),
+    strength: f(m.strength, offline ? 0.99 : 0.95),
+    barcode: f(m.barcode ?? null, m.barcode ? 0.99 : 0),
+    readability: 0.92,
+  };
+  const reasons = [
+    offline ? "Matched by barcode only (offline): label and expiry not checked" : "Name and strength match your list",
+    `Taken today: ${taken} of ${perDay}`,
+  ];
+  if (taken >= perDay) {
+    const last = doses[doses.length - 1];
+    return {
+      level: "warning",
+      headline: `${label}: already taken today`,
+      speech: `You already took ${m.name} today at ${hhmm(last.ts)}${taken > 1 ? `, ${taken} times` : ""}. Don't take another unless your plan says so.`,
+      read,
+      matchedMedId: m.id,
+      reasons,
+      takenToday: true,
+    };
+  }
+  const takenSpeech = taken === 0 ? "You haven't taken it today" : `You've taken ${taken} of ${perDay} doses today, last at ${hhmm(doses[taken - 1].ts)}`;
   return {
     level: "match",
-    headline: `${m.name} ${m.strength}`.trim(),
-    speech: `Yes. ${m.name} ${m.strength}${sched ? `, ${sched}` : ""}. ${taken ? "You already logged a dose today." : "You haven't logged it today."}`,
-    read: {
-      ...emptyRead("medication"),
-      product: f(m.name, 0.97),
-      ingredient: f(m.ingredient, 0.93),
-      strength: f(m.strength, opts.via === "barcode" ? 0.99 : 0.95),
-      barcode: f(m.barcode ?? null, m.barcode ? 0.99 : 0),
-      readability: 0.92,
-    },
+    headline: offline ? `${label} (barcode match)` : label,
+    speech: `Yes, ${label}, ${yours}`.replace(", on your list", "") + `. ${takenSpeech}${offline ? "; I matched the barcode offline, so I couldn't check the expiry date." : "."}`,
+    read,
     matchedMedId: m.id,
-    reasons: [opts.via === "barcode" ? "Barcode matches your saved medicine" : "Name and strength match your list", ...(m.schedule.length ? [`Scheduled: ${m.schedule.join(", ")}`] : [])],
-    takenToday: taken,
+    reasons,
+    takenToday: taken > 0,
   };
 }
 
