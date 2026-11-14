@@ -8,6 +8,12 @@ const NAME_MIN_CONF = 0.6;
 export const MATCH_NAME_MIN_CONF = 0.8;
 export const MATCH_MIN_READABILITY = 0.5;
 const ALLERGEN_MIN_CONF = 0.6;
+// A "none of your allergens" reassurance needs a near-certain, complete read of the allergen panel.
+// Eval v1 (1,740 synthetic images): at the old 0.6 bar, 43 of 334 answered food reads were unsafe (mostly cropped
+// panels where a nut was off-frame); at conf >= 0.95 and readability >= 0.8, 2 of 117 remained. Warnings
+// (an allergen found) still fire from ALLERGEN_MIN_CONF; only the reassurance is gated.
+export const ALLERGEN_SAFE_CONF = 0.95;
+export const ALLERGEN_SAFE_READABILITY = 0.8;
 
 // ---------- normalisation ----------
 export function norm(s: string | null | undefined): string {
@@ -520,6 +526,10 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
     if (read.allergens.value === null || read.allergens.confidence < ALLERGEN_MIN_CONF) {
       reasons.push("allergen panel not readable");
       return v("unsure", "Can't read the allergens yet", `This is ${what}, but I can't read the allergen list. ${guidance ?? "Turn the pack to show the ingredients panel."}`);
+    }
+    if (read.allergens.confidence < ALLERGEN_SAFE_CONF || read.readability < ALLERGEN_SAFE_READABILITY) {
+      reasons.push("allergen panel may be incomplete");
+      return v("unsure", "Not sure it's free of your allergens", `I can see part of the allergen list on ${what}, but I can't be sure it's complete. ${guidance ?? "Turn the pack so the whole ingredients panel faces you."}`);
     }
     reasons.push("no listed allergen matches your profile");
     return v("info", `${cap(what)}: none of your allergens`, `${cap(what)}: no ${listAnd(profile.allergies)} listed.${expSpeech}`);
