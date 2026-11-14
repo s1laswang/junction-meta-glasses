@@ -1,0 +1,686 @@
+{
+  "generated_at": "2026-11-14T14:19:20.698405+00:00",
+  "model": "gemini-3.8-flash",
+  "profile": {
+    "meds": [
+      {
+        "id": "med_amlodipine",
+        "name": "Amlodipin",
+        "ingredient": "amlodipine",
+        "strength": "5 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "med_metformin",
+        "name": "Metformin",
+        "ingredient": "metformin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning",
+          "evening"
+        ]
+      },
+      {
+        "id": "med_bisoprolol",
+        "name": "Bisoprolol",
+        "ingredient": "bisoprolol",
+        "strength": "2.5 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "med_paracetamol",
+        "name": "Paracetamol",
+        "ingredient": "paracetamol",
+        "strength": "500 mg",
+        "schedule": [
+          "noon"
+        ]
+      }
+    ],
+    "allergies": [
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "summary": {
+    "model": "gemini-3.8-flash",
+    "thinking_level": "LOW",
+    "n_items": 10,
+    "verdict_matches": 10,
+    "verdict_accuracy": 1.0,
+    "comma_decimal_matched": true,
+    "confident_wrong_dose_count": 0,
+    "clean_field_accuracy": 1.0,
+    "occluded_abstention_rate": 1.0,
+    "allergen_recall": 1.0,
+    "false_safe_allergen_count": 0,
+    "latency_p50_ms": 3660.5,
+    "latency_p95_ms": 5638.1,
+    "latency_mean_ms": 4018.2,
+    "tokens_in": 2485,
+    "tokens_out": 154
+  },
+  "items": [
+    {
+      "id": "ns_01",
+      "description": "AMLODIPIN ORION 5 mg / 98 tablettia + Finnish evening dosing sticker",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_01.jpg",
+      "strength_readable": true,
+      "printed_strength": "5 mg",
+      "ground_truth_strength": "5 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "latency_ms": 3694.0,
+      "tokens_in": 2485,
+      "tokens_out": 132,
+      "raw_strength_value": "5 mg",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPIN ORION",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "1 tabletti iltaisin verenpaineen hoitoon.",
+          "confidence": 0.98
+        },
+        "expiry": {
+          "value": "2027-08",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Amlodipine 5 mg, your evening pill",
+        "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+        "reasons": [
+          "matches med_amlodipine",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "med_amlodipine",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "ns_02",
+      "description": "METFORMIN ACTAVIS 500 mg bilingual FI/SV box + twice-daily sticker",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_02.jpg",
+      "strength_readable": true,
+      "printed_strength": "500 mg",
+      "ground_truth_strength": "500 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "latency_ms": 3482.6,
+      "tokens_in": 2485,
+      "tokens_out": 135,
+      "raw_strength_value": "500 mg",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN ACTAVIS",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "1 tabletti aamulla ja illalla aterian yhteydessa.",
+          "confidence": 0.98
+        },
+        "expiry": {
+          "value": "2028-03",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Metformin 500 mg, your morning pill",
+        "speech": "Yes, Metformin 500 mg, your morning pill. You haven't taken it today.",
+        "reasons": [
+          "matches med_metformin",
+          "taken today: 0/2"
+        ],
+        "matchedMedId": "med_metformin",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "ns_03",
+      "description": "BISOPROLOL ORION 2,5 mg comma-decimal strength box against 2.5 mg profile",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_03.jpg",
+      "strength_readable": true,
+      "printed_strength": "2,5 mg",
+      "ground_truth_strength": "2.5 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "latency_ms": 4260.5,
+      "tokens_in": 2485,
+      "tokens_out": 239,
+      "raw_strength_value": "2.5 mg",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "BISOPROLOL ORION",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "bisoprolol",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": "2.5 mg",
+          "confidence": 0.98
+        },
+        "dosing": {
+          "value": "1 tabletti aamuisin laakarin ohjeen mukaan.",
+          "confidence": 0.95
+        },
+        "expiry": {
+          "value": "2027-09",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Bisoprolol 2.5 mg, your morning pill",
+        "speech": "Yes, Bisoprolol 2.5 mg, your morning pill. You haven't taken it today.",
+        "reasons": [
+          "matches med_bisoprolol",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "med_bisoprolol",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "ns_04",
+      "description": "BURANA 400 mg tabletti / ibuprofeeni triggering NSAID avoid warning",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_04.jpg",
+      "strength_readable": true,
+      "printed_strength": "400 mg",
+      "ground_truth_strength": "400 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "latency_ms": 5874.0,
+      "tokens_in": 2485,
+      "tokens_out": 140,
+      "raw_strength_value": "400 mg",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "BURANA",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "ibuprofen",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "400 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "1 tabletti tarvittaessa kipuun, korkeintaan 3 tablettia vuorokaudessa.",
+          "confidence": 0.98
+        },
+        "expiry": {
+          "value": "2027-11",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.98
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Ibuprofen 400 mg: not on your list",
+        "speech": "This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.",
+        "reasons": [
+          "ibuprofen is an NSAID, on your avoid list",
+          "not on your medication list"
+        ]
+      }
+    },
+    {
+      "id": "ns_05",
+      "description": "PANADOL ZAPP 500 mg matching paracetamol 500 mg profile",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_05.jpg",
+      "strength_readable": true,
+      "printed_strength": "500 mg",
+      "ground_truth_strength": "500 mg",
+      "expected_level": "match",
+      "predicted_level": "match",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "latency_ms": 3627.0,
+      "tokens_in": 2485,
+      "tokens_out": 133,
+      "raw_strength_value": "500 mg",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "PANADOL ZAPP",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "paracetamol",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "1 tabletti tarvittaessa sarkyyn tai kuumeeseen.",
+          "confidence": 0.95
+        },
+        "expiry": {
+          "value": "2028-06",
+          "confidence": 0.98
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Paracetamol 500 mg, your noon pill",
+        "speech": "Yes, Paracetamol 500 mg, your noon pill. You haven't taken it today.",
+        "reasons": [
+          "matches med_paracetamol",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "med_paracetamol",
+        "takenToday": false
+      }
+    },
+    {
+      "id": "ns_06",
+      "description": "AMLODIPIN ORION 10 mg tabletti against 5 mg profile (wrong strength)",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_06.jpg",
+      "strength_readable": true,
+      "printed_strength": "10 mg",
+      "ground_truth_strength": "10 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "latency_ms": 2906.6,
+      "tokens_in": 2485,
+      "tokens_out": 133,
+      "raw_strength_value": "10 mg",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPIN ORION",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "10 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "1 tabletti iltaisin verenpaineen hoitoon.",
+          "confidence": 0.98
+        },
+        "expiry": {
+          "value": "2027-10",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.98
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Amlodipine 10 mg: wrong strength",
+        "speech": "This is Amlodipine 10 mg, but your list says 5 mg. Don't take it before checking with a pharmacist.",
+        "reasons": [
+          "strength 10 mg differs from your 5 mg"
+        ],
+        "matchedMedId": "med_amlodipine"
+      }
+    },
+    {
+      "id": "ns_07",
+      "description": "METFORMIN 500 mg / EXP 2025-02 triggering expired pack warning",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_07.jpg",
+      "strength_readable": true,
+      "printed_strength": "500 mg",
+      "ground_truth_strength": "500 mg",
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": true,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "latency_ms": 4007.5,
+      "tokens_in": 2485,
+      "tokens_out": 230,
+      "raw_strength_value": "500 mg",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "500 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": "1 tabletti aamulla ja illalla.",
+          "confidence": 0.98
+        },
+        "expiry": {
+          "value": "2025-02",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.98
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Metformin 500 mg: expired",
+        "speech": "This is Metformin 500 mg, your medicine, but it expired in February 2025. Don't take it, ask a pharmacist for a new pack.",
+        "reasons": [
+          "expired 2025-02"
+        ],
+        "matchedMedId": "med_metformin"
+      }
+    },
+    {
+      "id": "ns_08",
+      "description": "AMLODIPIN ORION with white pharmacy sticker completely covering strength region",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_08.jpg",
+      "strength_readable": false,
+      "printed_strength": null,
+      "ground_truth_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 3422.7,
+      "tokens_in": 2485,
+      "tokens_out": 142,
+      "raw_strength_value": null,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "AMLODIPIN ORION",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": "Ota iltaisin verenpaineen hoitoon laakarin ohjeen mukaan.",
+          "confidence": 0.95
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.65,
+        "guidance": "Turn the box to show the other sides."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Amlodipine: strength unclear",
+        "speech": "It looks like Amlodipine, but I can't read the strength confidently. Turn the box to show the other sides.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "med_amlodipine"
+      }
+    },
+    {
+      "id": "ns_09",
+      "description": "Faded low-contrast thermal pharmacy sticker where strength is omitted/illegible",
+      "kind": "medication",
+      "image_path": "eval/out/nordic_stickers/ns_09.jpg",
+      "strength_readable": false,
+      "printed_strength": null,
+      "ground_truth_strength": null,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": true,
+      "confident_wrong_dose": false,
+      "latency_ms": 5349.8,
+      "tokens_in": 2485,
+      "tokens_out": 118,
+      "raw_strength_value": null,
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "METFORMIN",
+          "confidence": 0.98
+        },
+        "ingredient": {
+          "value": "metformin",
+          "confidence": 0.98
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "expiry": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0.1
+        },
+        "readability": 0.5,
+        "guidance": "Turn the package to find the strength and instructions."
+      },
+      "verdict": {
+        "level": "unsure",
+        "headline": "Metformin: strength unclear",
+        "speech": "It looks like Metformin, but I can't read the strength confidently. Turn the package to find the strength and instructions.",
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "med_metformin"
+      }
+    },
+    {
+      "id": "ns_10",
+      "description": "Swedish oat cream HAVREGRADDE with mandel och hasselnot trace declaration",
+      "kind": "food",
+      "image_path": "eval/out/nordic_stickers/ns_10.jpg",
+      "strength_readable": null,
+      "printed_strength": null,
+      "ground_truth_strength": null,
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "verdict_match": true,
+      "strength_correct": null,
+      "abstained": null,
+      "confident_wrong_dose": false,
+      "latency_ms": 3557.3,
+      "tokens_in": 2485,
+      "tokens_out": 138,
+      "raw_strength_value": null,
+      "read": {
+        "kind": "food",
+        "product": {
+          "value": "HAVREGRADDE Matlagningsgradde av havre",
+          "confidence": 0.95
+        },
+        "ingredient": {
+          "value": "oat cream",
+          "confidence": 0.95
+        },
+        "strength": {
+          "value": null,
+          "confidence": 0
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-05-14",
+          "confidence": 0.95
+        },
+        "allergens": {
+          "value": [
+            "oat",
+            "may contain: almond",
+            "may contain: hazelnut"
+          ],
+          "confidence": 0.95
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95
+      },
+      "verdict": {
+        "level": "warning",
+        "headline": "Warning: may contain almond",
+        "speech": "Warning: HAVREGRADDE Matlagningsgradde av havre may contain almond. Your profile lists an allergy to tree nuts.",
+        "reasons": [
+          "may contain almond (allergy: tree nuts)"
+        ]
+      }
+    }
+  ]
+}
