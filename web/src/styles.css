@@ -696,6 +696,97 @@ main {
   flex-wrap: wrap;
 }
 
+/* scene ("Which one?") cards, left to right; the target is larger */
+.scene {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s1);
+  align-items: stretch;
+}
+.scene-item {
+  --ic: var(--unsure);
+  border: var(--line) solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  min-width: 0;
+  background: var(--bg);
+}
+.scene-item.match { --ic: var(--match); }
+.scene-item.warning { --ic: var(--warning); }
+.scene-item.unsure { --ic: var(--unsure); }
+.scene-item.info { --ic: var(--muted); }
+.scene-item.target {
+  border: 4px solid var(--ic);
+  background: color-mix(in srgb, var(--ic) 12%, var(--bg));
+}
+.scene-pos {
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.scene-word {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--ic);
+}
+.scene-head {
+  font-size: 1rem;
+  font-weight: 700;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.scene-item.target .scene-head {
+  font-size: var(--t-base);
+}
+.xcheck {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: var(--s2);
+  align-items: start;
+  border-radius: var(--radius);
+  padding: var(--s2);
+  border: var(--line) solid var(--border);
+}
+.xcheck.ok {
+  border-color: var(--match);
+  color: var(--text);
+}
+.xcheck.ok svg { color: var(--match); }
+.xcheck.bad {
+  border: 4px double var(--danger);
+}
+.xcheck.bad svg { color: var(--danger); }
+.xcheck.info svg { color: var(--unsure); }
+.xcheck p { font-size: 1rem; }
+/* scene boxes over the camera preview */
+.scene-box {
+  position: absolute;
+  border: 4px solid var(--ic, var(--unsure));
+  border-radius: 10px;
+  pointer-events: none;
+}
+.scene-box.match { --ic: var(--match); }
+.scene-box.warning { --ic: var(--warning); border-style: double; border-width: 6px; }
+.scene-box.unsure { --ic: var(--unsure); border-style: dashed; }
+.scene-box span {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  background: var(--ic, var(--unsure));
+  color: #0b1018;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 2px 8px;
+  border-radius: 8px 0 8px 0;
+}
 .captions {
   display: flex;
   flex-direction: column;
@@ -1145,6 +1236,26 @@ body.hud-body #root {
   font-size: clamp(1rem, 3.4vmin, 1.15rem);
   font-weight: 700;
   color: #e6e6e6;
+}
+.hud-strip {
+  list-style: none;
+  margin: 4px 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  justify-items: center;
+}
+.hud-slot .hud-glyph {
+  margin: 0;
+  min-width: 2.2em;
+  height: 2.2em;
+  font-size: clamp(1.1rem, 4.5vmin, 1.5rem);
+}
+.hud-slot.target .hud-glyph {
+  font-size: clamp(1.8rem, 8vmin, 2.6rem);
+  outline: 4px solid #fff;
+  outline-offset: 4px;
 }
 .hud-acts {
   display: grid;

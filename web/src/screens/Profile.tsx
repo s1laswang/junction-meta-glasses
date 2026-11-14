@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import type { Med, Profile as P } from "../../../shared/types.ts";
 import { Icon } from "../components/Icons.tsx";
 import { announce } from "../lib/feedback.ts";
-import { barcodeSupported, detectBarcode } from "../lib/barcode.ts";
+import { barcodeSupported, detectCodes } from "../lib/barcode.ts";
+import { expiryWords, parseGs1 } from "../lib/gs1.ts";
 import { getCamera } from "../lib/media.ts";
-import { demoProfile, emptyMed, LANGS, newMedId, saveProfile, takenToday } from "../lib/storage.ts";
+import { demoProfile, emptyMed, LANGS, loadSettings, newMedId, saveProfile, takenToday } from "../lib/storage.ts";
 
 const SLOTS = ["morning", "midday", "evening", "night"];
 
@@ -36,7 +37,7 @@ export function Profile({ profile, onChange }: { profile: P; onChange: (p: P) =>
                     {m.name} <span className="strength">{m.strength}</span>
                   </p>
                   <p className="meta">
-                    {[m.schedule.join(", "), m.ingredient, m.barcode ? "barcode saved" : null, takenToday(profile, m.id) ? "taken today" : null].filter(Boolean).join(" · ")}
+                    {[m.schedule.join(", "), m.ingredient, m.barcode ? "barcode saved" : null, m.gtin ? "pack code saved" : null, takenToday(profile, m.id) ? "taken today" : null].filter(Boolean).join(" · ")}
                   </p>
                 </div>
                 <button className="btn small" onClick={() => setEditing(m)} aria-label={`Edit ${m.name} ${m.strength}`}>
@@ -197,7 +198,8 @@ function TagList({ id, title, help, items, onChange }: { id: string; title: stri
 function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: Med) => void; onCancel: () => void; onDelete?: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [m, setM] = useState<Med>(med);
-  const [scan, setScan] = useState(false);
+  const [scan, setScan] = useState<false | "barcode" | "pack">(false);
+  const dmOn = loadSettings().features.datamatrix;
   useEffect(() => {
     const d = ref.current;
     if (d && !d.open) d.showModal();
@@ -212,7 +214,7 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
         className="stack"
         onSubmit={(e) => {
           e.preventDefault();
-          if (valid) onSave({ ...m, name: m.name.trim(), strength: m.strength.trim(), ingredient: m.ingredient.trim(), barcode: m.barcode?.trim() || undefined });
+          if (valid) onSave({ ...m, name: m.name.trim(), strength: m.strength.trim(), ingredient: m.ingredient.trim(), barcode: m.barcode?.trim() || undefined, gtin: m.gtin?.replace(/\D/g, "") || undefined });
         }}
       >
         <h2 id="med-h">{med.id ? `Edit ${med.name}` : "Add medicine"}</h2>
@@ -243,7 +245,7 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
           <label htmlFor="m-bc">Barcode (optional)</label>
           <div className="textask">
             <input id="m-bc" type="text" inputMode="numeric" value={m.barcode ?? ""} onChange={(e) => set({ barcode: e.target.value })} aria-describedby="m-bc-help" autoComplete="off" />
-            <button type="button" className="btn" onClick={() => setScan(true)} disabled={!barcodeSupported}>
+            <button type="button" className="btn" onClick={() => setScan("barcode")} disabled={!barcodeSupported}>
               <Icon.scan size={22} /> Scan
             </button>
           </div>
@@ -251,12 +253,34 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
             {barcodeSupported ? "Lets HoldUp recognise this box even when you're offline." : "This browser can't scan barcodes. You can type the number under the stripes."}
           </p>
         </div>
+        {dmOn ? (
+          <div className="field">
+            <label htmlFor="m-gtin">Pack code GTIN (optional)</label>
+            <div className="textask">
+              <input id="m-gtin" type="text" inputMode="numeric" value={m.gtin ?? ""} onChange={(e) => set({ gtin: e.target.value })} aria-describedby="m-gtin-help" autoComplete="off" />
+              <button type="button" className="btn" onClick={() => setScan("pack")} disabled={!barcodeSupported}>
+                <Icon.scan size={22} /> Scan pack code
+              </button>
+            </div>
+            <p id="m-gtin-help" className="help">
+              The small square code on prescription packs. HoldUp uses it to double-check the label and to recognise this exact medicine offline, with its expiry date.
+            </p>
+          </div>
+        ) : null}
         {scan ? (
           <BarcodeScanner
+            mode={scan}
             onResult={(code) => {
-              set({ barcode: code });
+              if (scan === "pack") {
+                const g = parseGs1(code);
+                if (!g?.gtin) return announce("That wasn't a medicine pack code. Try the small square code.", "assertive");
+                set({ gtin: g.gtin, barcode: m.barcode || g.gtin.replace(/^0/, "") });
+                announce(`Pack code saved${g.expiry ? `. This pack expires ${expiryWords(g.expiry)}` : ""}.`, "assertive");
+              } else {
+                set({ barcode: code });
+                announce(`Barcode ${code.split("").join(" ")} saved.`, "assertive");
+              }
               setScan(false);
-              announce(`Barcode ${code.split("").join(" ")} saved.`, "assertive");
             }}
             onClose={() => setScan(false)}
           />
@@ -283,7 +307,7 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
   );
 }
 
-function BarcodeScanner({ onResult, onClose }: { onResult: (code: string) => void; onClose: () => void }) {
+function BarcodeScanner({ onResult, onClose, mode = "barcode" }: { onResult: (code: string) => void; onClose: () => void; mode?: "barcode" | "pack" }) {
   const v = useRef<HTMLVideoElement>(null);
   const [msg, setMsg] = useState("Starting camera…");
   const cb = useRef(onResult);
@@ -298,11 +322,14 @@ function BarcodeScanner({ onResult, onClose }: { onResult: (code: string) => voi
         if (!v.current) return;
         v.current.srcObject = stream;
         await v.current.play().catch(() => {});
-        setMsg("Point the camera at the barcode. Hold it about a hand's length away.");
-        announce("Scanning. Point the camera at the barcode.", "assertive");
+        const what = mode === "pack" ? "the small square pack code" : "the barcode";
+        setMsg(`Point the camera at ${what}. Hold it about a hand's length away.`);
+        announce(`Scanning. Point the camera at ${what}.`, "assertive");
         timer = setInterval(async () => {
           if (done || !v.current) return;
-          const code = await detectBarcode(v.current);
+          const codes = await detectCodes(v.current);
+          const hit = mode === "pack" ? codes.find((c) => c.format === "data_matrix" || !!parseGs1(c.rawValue)?.gtin) : codes[0];
+          const code = hit?.rawValue;
           if (code) {
             done = true;
             navigator.vibrate?.([60, 40, 60]);

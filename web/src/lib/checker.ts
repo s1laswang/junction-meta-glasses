@@ -1,9 +1,10 @@
 // The check session controller: owns camera, mic, playback, the /live socket, snapshot and offline
 // fallbacks, and device-state reactions. React subscribes through useSyncExternalStore.
-import type { CoachCue, DeviceState, LiveState, Profile, ServerMsg, Verdict } from "../../../shared/types.ts";
+import type { CoachCue, DeviceState, FeatureFlag, Gs1Code, LiveState, Profile, ServerMsg, Verdict } from "../../../shared/types.ts";
 import { MicCapture, PcmPlayer } from "./audio.ts";
 import { verify, health } from "./api.ts";
-import { barcodeSupported, detectBarcode } from "./barcode.ts";
+import { barcodeSupported, detectBarcode, detectCodes } from "./barcode.ts";
+import { parseGs1 } from "./gs1.ts";
 import { announce, earcon, earconForVerdict, haptic, primeSpeech, speak, stopSpeaking } from "./feedback.ts";
 import { captureFrame, FrameRing, policyForRtt, shouldSend, type CapturedFrame, type FramePolicy } from "./frames.ts";
 import { LiveClient, type ConnState } from "./live.ts";
@@ -11,7 +12,7 @@ import { audioRoute, classifyError, explain, getCamera, getMic, type PermState }
 import { IS_MOCK, mockCtl, mockHudChannel } from "./mock.ts";
 import { loadProfile, loadSettings, logDose, saveSettings, sessionCode } from "./storage.ts";
 import { AuthError } from "./key.ts";
-import { findByBarcode, matchVerdict, offlineUnknownBarcode } from "./verdicts.ts";
+import { findByBarcode, findByGtin, matchVerdict, offlineUnknownBarcode, offlineUnknownCode } from "./verdicts.ts";
 
 export type Mode = "live" | "snapshot" | "offline";
 export type Caption = { id: number; role: "user" | "assistant" | "system"; text: string; final: boolean };
@@ -55,6 +56,10 @@ export type CheckState = {
   authNeeded: boolean;
   speaking: boolean;
   sharpness: number;
+  /** features the server reported in ready (null = not told yet / older server) */
+  serverFeatures: FeatureFlag[] | null;
+  /** last GS1 pack code decoded on the phone */
+  lastCode: Gs1Code | null;
   banner: Banner;
   lastError: string | null;
   hidden: boolean;
@@ -103,6 +108,8 @@ function initial(): CheckState {
     authNeeded: false,
     speaking: false,
     sharpness: 0,
+    serverFeatures: null,
+    lastCode: null,
     banner: null,
     lastError: null,
     hidden: document.visibilityState === "hidden",
@@ -200,7 +207,7 @@ export class Checker {
     this.live = new LiveClient({
       session: this.s.session,
       mock: IS_MOCK,
-      buildStart: () => ({ type: "start", profile: loadProfile(), lang: loadProfile().lang || "en", voice: loadSettings().voice, source: this.source }),
+      buildStart: () => ({ type: "start", profile: loadProfile(), lang: loadProfile().lang || "en", voice: loadSettings().voice, source: this.source, features: localFeatures() }),
       onMessage: (m) => this.onServer(m),
       onState: (st, info) => this.onConn(st, info),
       onRtt: (rtt) => {
@@ -211,7 +218,7 @@ export class Checker {
     });
     if (this.s.mode !== "offline") this.live.start();
     this.loopFrames();
-    if (this.s.mode === "offline") this.startBarcodeScan();
+    this.startBarcodeScan(); // offline barcodes + online pack codes (DataMatrix)
   }
 
   async stop(reason = "Check stopped. Camera and microphone off.") {
@@ -376,7 +383,7 @@ export class Checker {
   private onServer(m: ServerMsg) {
     switch (m.type) {
       case "ready":
-        this.set({ model: m.model, session: m.session || this.s.session });
+        this.set({ model: m.model, session: m.session || this.s.session, serverFeatures: m.features ?? null });
         break;
       case "audio":
         if (loadSettings().voice) this.player.enqueue(m.data);
@@ -509,10 +516,8 @@ export class Checker {
     if (mode === "live") {
       this.set({ banner: { tone: "good", title: "Live assistant connected" } });
       setTimeout(() => this.s.banner?.tone === "good" && this.set({ banner: null }), 4000);
-      this.stopBarcodeScan();
     } else if (mode === "snapshot") {
       this.player.flush();
-      this.stopBarcodeScan();
       this.set({ banner: { tone: "warn", title: "Snapshot mode", detail: "Live coaching is paused. Hold the label steady and press Check label. Answers are read out by your phone.", action: "snapshot" } });
     } else {
       this.player.flush();
@@ -626,20 +631,61 @@ export class Checker {
   }
 
   // ---- offline mode (barcode) ----
+/** Feature on for this check: switched on in settings and offered by the server (when it said). */
+  feature(f: FeatureFlag) {
+    return loadSettings().features[f] !== false && (this.s.serverFeatures == null || this.s.serverFeatures.includes(f));
+  }
+
+  /**
+   * Code scanner on the phone camera, at most 2 decodes/s. Offline: saved medicines by barcode, or exactly by
+   * the pack's GS1 DataMatrix GTIN. Online (flag datamatrix): decoded pack codes go to /live for the cross-check.
+   */
   private startBarcodeScan() {
-    this.stopBarcodeScan();
-    if (!barcodeSupported) return;
+    if (this.barcodeTimer || !barcodeSupported) return;
+    let busy = false;
     this.barcodeTimer = setInterval(async () => {
-      if (!this.s.running || !this.video || this.s.camera !== "on") return;
-      const code = await detectBarcode(this.video);
-      if (!code) return;
-      if (code === this.lastBarcode && Date.now() - this.lastBarcodeAt < 8000) return;
-      this.lastBarcode = code;
-      this.lastBarcodeAt = Date.now();
+      if (busy || !this.s.running || !this.video || this.s.camera !== "on" || this.s.hidden) return;
+      const offline = this.s.mode === "offline";
+      if (!offline && !(this.s.mode === "live" && this.live?.isOpen && this.feature("datamatrix"))) return;
+      busy = true;
+      try {
+        const codes = await detectCodes(this.video);
+        const pick = codes.find((c) => c.format === "data_matrix") ?? codes[0];
+        if (pick) this.onCode(pick.rawValue, pick.format);
+      } finally {
+        busy = false;
+      }
+    }, 500);
+  }
+
+  private onCode(raw: string, format: string, force = false) {
+    if (!force && raw === this.lastBarcode && Date.now() - this.lastBarcodeAt < 8000) return;
+    this.lastBarcode = raw;
+    this.lastBarcodeAt = Date.now();
+    const gs1 = format === "data_matrix" || /^(\]d2|\x1d|\(01\)|01\d{14})/.test(raw) ? parseGs1(raw) : null;
+    const dm = this.feature("datamatrix") && !!gs1;
+    if (dm) this.set({ lastCode: gs1 });
+    if (this.s.mode === "offline") {
       const p = loadProfile();
-      const med = findByBarcode(p, code);
-      this.showVerdict(med ? matchVerdict(p, med, { via: "barcode" }) : offlineUnknownBarcode(code), "offline");
-    }, 600);
+      if (dm && gs1?.gtin) {
+        const med = findByGtin(p, gs1.gtin);
+        this.showVerdict(med ? matchVerdict(p, med, { via: "datamatrix", code: gs1 }) : offlineUnknownCode(gs1), "offline");
+      } else {
+        const med = findByBarcode(p, raw);
+        this.showVerdict(med ? matchVerdict(p, med, { via: "barcode" }) : offlineUnknownBarcode(raw), "offline");
+      }
+      return;
+    }
+    if (dm && this.live?.isOpen) {
+      this.live.send({ type: "datamatrix", raw, ts: Date.now() });
+      earcon.coach();
+      announce(`Pack code read${gs1?.expiry ? `, expiry ${gs1.expiry}` : ""}. Double-checking the label.`);
+    }
+  }
+
+  /** Demo / test: behave as if the camera decoded this code. */
+  injectCode(raw: string) {
+    this.onCode(raw, "data_matrix", true);
   }
   private stopBarcodeScan() {
     if (this.barcodeTimer) clearInterval(this.barcodeTimer);
@@ -866,4 +912,10 @@ function silentWavUrl() {
   for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
   silentUrl = URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
   return silentUrl;
+}
+
+/** Feature flags switched on in this phone's settings (sent as start.features). */
+export function localFeatures(): FeatureFlag[] {
+  const f = loadSettings().features;
+  return (Object.keys(f) as FeatureFlag[]).filter((k) => f[k]);
 }

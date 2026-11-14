@@ -3,9 +3,9 @@
 // Input: the glasses' Chromium does spatial navigation on arrow keys and Enter clicks the focused
 // native <button>. We don't intercept arrows/Enter. System Back calls history.back().
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CoachCue, DeviceState, LiveState, Verdict, VerdictLevel } from "../../../shared/types.ts";
+import type { CoachCue, DeviceState, LiveState, ScenePosition, Verdict, VerdictLevel } from "../../../shared/types.ts";
 import { CueArrow } from "../components/Icons.tsx";
-import { matchVerdict, mockFoodNuts, mockUnsureStrength, mockWarningIbuprofen } from "../lib/verdicts.ts";
+import { matchVerdict, mockFoodNuts, mockScene, mockUnsureStrength, mockWarningIbuprofen } from "../lib/verdicts.ts";
 import { demoProfile } from "../lib/storage.ts";
 import { MOCK_HUD_CHANNEL } from "../lib/mock.ts";
 import { keyHeaders, withKey } from "../lib/key.ts";
@@ -30,6 +30,45 @@ const LEVEL: Record<VerdictLevel, { glyph: string; word: string; color: string }
 };
 
 type Conn = "connecting" | "open" | "retry";
+
+const SLOT: Record<ScenePosition, number> = { far_left: 0, left: 1, center: 2, right: 3, far_right: 4 };
+const POS_WORD: Record<ScenePosition, string> = { far_left: "far left", left: "left", center: "middle", right: "right", far_right: "far right" };
+
+/** "Which one?" on the display: glyphs on a left-to-right strip, the target big, its headline below. */
+function HudScene({ verdict, stale }: { verdict: Verdict; stale: boolean }) {
+  const items = [...(verdict.items ?? [])].sort((a, b) => SLOT[a.position] - SLOT[b.position]);
+  let t = verdict.matchedMedId ? items.findIndex((i) => i.matchedMedId === verdict.matchedMedId) : -1;
+  if (t < 0) t = items.findIndex((i) => i.level === "match");
+  const target = t >= 0 ? items[t] : null;
+  // use 3 columns when only left/center/right appear, 5 otherwise
+  const five = items.some((i) => i.position === "far_left" || i.position === "far_right");
+  const col = (p: ScenePosition) => (five ? SLOT[p] + 1 : ({ far_left: 1, left: 1, center: 2, right: 3, far_right: 3 } as const)[p]);
+  return (
+    <section className={`hud-card scene-card ${stale ? "stale" : ""}`} style={{ "--lvl": target ? LEVEL[target.level].color : "#fff" } as React.CSSProperties}>
+      <p className="hud-level">
+        WHICH ONE{stale ? <span className="hud-old"> (old)</span> : null}
+      </p>
+      <ol className="hud-strip" style={{ gridTemplateColumns: `repeat(${five ? 5 : 3}, 1fr)` }} aria-label="Packages, left to right">
+        {items.map((it, i) => (
+          <li key={i} className={`hud-slot ${i === t ? "target" : ""}`} style={{ gridColumn: col(it.position), "--lvl": LEVEL[it.level].color } as React.CSSProperties}>
+            <span className="hud-glyph" aria-hidden="true">
+              {LEVEL[it.level].glyph}
+            </span>
+            <span className="sr-only">
+              {POS_WORD[it.position]}: {LEVEL[it.level].word}, {it.headline}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p className="hud-headline">{verdict.headline}</p>
+      {target ? (
+        <p className="hud-fields">
+          {POS_WORD[target.position].toUpperCase()}: {target.headline}
+        </p>
+      ) : null}
+    </section>
+  );
+}
 
 export function Hud() {
   const [conn, setConn] = useState<Conn>("connecting");
@@ -146,6 +185,8 @@ export function Hud() {
         { type: "coach", cue: "rotate_left", text: "Turn it left" },
         { type: "verdict", verdict: mockUnsureStrength() },
         { type: "verdict", verdict: mockFoodNuts() },
+        { type: "coach", cue: "hold_still", text: "Hold still" },
+        { type: "verdict", verdict: mockScene(p) },
       ];
       onMsg({ type: "status", live: "open" });
       onMsg({ type: "device", device: { connected: true, worn: true, battery: 78, streaming: true, source: "glasses" } });
@@ -252,6 +293,8 @@ export function Hud() {
             </span>
             <p className="hud-headline">{cue.text}</p>
           </section>
+        ) : verdict && L && verdict.mode === "scene" && verdict.items?.length ? (
+          <HudScene verdict={verdict} stale={stale} />
         ) : verdict && L ? (
           <section className={`hud-card verdict-card ${stale ? "stale" : ""}`} style={{ "--lvl": L.color } as React.CSSProperties}>
             <p className="hud-level">

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Checker } from "../lib/checker.ts";
 import { CueArrow, Icon } from "../components/Icons.tsx";
-import { VerdictCard } from "../components/VerdictCard.tsx";
+import { POSITION_WORD, VerdictCard } from "../components/VerdictCard.tsx";
 import { DevicePanel } from "../components/DevicePanel.tsx";
 import { frameFromFile } from "../lib/frames.ts";
 import { IS_MOCK } from "../lib/mock.ts";
@@ -171,6 +171,23 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
         ) : !cameraOn ? (
           <div className="placeholder">
             {s.camera === "paused" ? "Camera paused while HoldUp is in the background" : s.camera === "error" ? s.cameraMsg || "Camera unavailable" : s.camera === "starting" ? "Starting camera…" : "Camera off. Press Start check."}
+          </div>
+        ) : null}
+        {cameraOn && s.verdict?.mode === "scene" && s.verdict.items?.some((i) => i.box) ? (
+          <div aria-hidden="true">
+            {s.verdict.items.map((it, i) =>
+              it.box ? (
+                <div
+                  key={i}
+                  className={`scene-box ${it.level}`}
+                  style={{ top: `${it.box[0] / 10}%`, left: `${it.box[1] / 10}%`, height: `${(it.box[2] - it.box[0]) / 10}%`, width: `${(it.box[3] - it.box[1]) / 10}%` }}
+                >
+                  <span>
+                    {it.level === "match" ? "✓" : it.level === "warning" ? "⚠" : "?"} {POSITION_WORD[it.position]}
+                  </span>
+                </div>
+              ) : null,
+            )}
           </div>
         ) : null}
         {cameraOn ? (
