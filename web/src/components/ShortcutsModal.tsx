@@ -6,6 +6,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent
 } from "react";
+import { trapModalTabKey } from "../a11y/focusTrap.ts";
 import { SHORTCUT_LEGEND, type KeydownHost, type ShortcutAction } from "../a11y/shortcuts.ts";
 import { speakFallback } from "../audio/tts.ts";
 import { normalizeLang, type UiLocale } from "../i18n/translations.ts";
@@ -495,6 +496,9 @@ export function ShortcutsModal(props: ShortcutsModalProps) {
   const speechText = getOrientationSpeech(lang);
 
   const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (trapModalTabKey(event, dialogRef.current)) {
+      return;
+    }
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
