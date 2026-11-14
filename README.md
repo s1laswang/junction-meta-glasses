@@ -10,6 +10,14 @@ Hold up a medicine box or a food package. HoldUp coaches you by voice until the 
 
 Junction 2026 · Meta "AI Glasses for Everyone, Everyday" · Google DeepMind "Best Use of Gemini API".
 
+## How HoldUp differs from Seeing AI, Be My Eyes, and "Hey Meta"
+
+| Existing option | What it does today | How HoldUp differs |
+|---|---|---|
+| **Seeing AI** (phone OCR) | Fast document and barcode reader on a phone. | Needs a free hand to aim a phone blind, reads raw text aloud with no per-field confidence abstention, and never checks your personal medication list, schedule, allergies, NSAID avoid-list, or today's dose log. |
+| **Be My Eyes** (volunteer video call / Be My AI on phone or Ray-Ban Meta) | Proved blind users wear Ray-Ban Meta across 21 markets. | Calling a volunteer exposes private prescriptions and waits for a person; general AI descriptions have no deterministic `safety.ts` profile check, no `>= 0.8` dose or `>= 0.95` allergen confidence gate, and no EU FMD GS1 DataMatrix cross-check. |
+| **Built-in "Hey Meta"** ("Hey Meta, look and tell me") | Instant general scene description on the glasses. | Reads or guesses partial text without abstaining when strength confidence `< 0.8`, has no on-device medication or allergy profile, and cannot log today's doses. |
+
 ## Prerequisites
 
 | Tool | Why | Install |
