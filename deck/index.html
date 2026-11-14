@@ -371,7 +371,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     </div>
   </div>
   <div class="card" style="padding:12px 20px">
-    <p style="font-size:16.5px"><b class="accent">Why Gemini specifically:</b> one API gives us realtime audio+video with tool calls mid-conversation, schema-constrained vision with thinking control, native-audio voices, TTS, and image generation to build our own eval set. Every call is metered: <code>/api/stats</code> reports p50/p95 latency, first-audio time, tool latency and tokens per feature from a metadata-only ledger.</p>
+    <p style="font-size:16.5px"><b class="accent">Why Gemini specifically:</b> one API gives us realtime audio+video with tool calls mid-conversation, schema-constrained vision with thinking control, native-audio voices, TTS, and image generation to build our own eval set. Every call is metered: <code>/api/stats</code> reports p50/p95 latency, first-audio time, tool latency and tokens per feature from a metadata-only ledger. Measured on 150 paired images: all models 0 confident-wrong strengths, but Gemma 4 31B was confidently wrong on other fields twice as often (7.2% vs 3.6%, mostly allergens), gave the only unsafe reassurances (2/377) and was ~9× slower.</p>
   </div>
   <div class="foot"><span class="src">Latency: server logs and /api/stats, Sat 14 Nov 2026, demo laptop over venue Wi-Fi; verify p50/p95 from the 1,740-call eval (docs/EVAL.md).</span><span class="pg">7</span></div>
 </section>
