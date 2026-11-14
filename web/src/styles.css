@@ -756,6 +756,14 @@ main {
   flex-wrap: wrap;
 }
 
+.asklabel {
+  color: var(--muted);
+  font-weight: 700;
+}
+.btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .textask {
   display: flex;
   gap: var(--s1);

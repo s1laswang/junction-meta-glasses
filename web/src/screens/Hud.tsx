@@ -8,6 +8,7 @@ import { CueArrow } from "../components/Icons.tsx";
 import { matchVerdict, mockFoodNuts, mockUnsureStrength, mockWarningIbuprofen } from "../lib/verdicts.ts";
 import { demoProfile } from "../lib/storage.ts";
 import { MOCK_HUD_CHANNEL } from "../lib/mock.ts";
+import { keyHeaders, withKey } from "../lib/key.ts";
 
 type HudMsg =
   | { type: "verdict"; verdict: Verdict }
@@ -37,6 +38,7 @@ export function Hud() {
   const [live, setLive] = useState<LiveState | null>(null);
   const [device, setDevice] = useState<DeviceState | null>(null);
   const [toast, setToast] = useState("");
+  const [keyNeeded, setKeyNeeded] = useState(false);
   const [ownBattery, setOwnBattery] = useState<number | null>(null);
   const [speakOn, setSpeakOn] = useState(() => {
     try {
@@ -163,11 +165,12 @@ export function Hud() {
     let alive = true;
     const connect = () => {
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      ws = new WebSocket(`${proto}//${location.host}/hud-ws${SESSION ? `?session=${encodeURIComponent(SESSION)}` : ""}`);
+      ws = new WebSocket(withKey(`${proto}//${location.host}/hud-ws${SESSION ? `?session=${encodeURIComponent(SESSION)}` : ""}`));
       setConn(attempt ? "retry" : "connecting");
       ws.onopen = () => {
         attempt = 0;
         setConn("open");
+        setKeyNeeded(false);
       };
       ws.onmessage = (e) => {
         try {
@@ -179,6 +182,10 @@ export function Hud() {
       ws.onclose = () => {
         if (!alive) return;
         setConn("retry");
+        // a WS upgrade refused for a missing/wrong key looks like any drop: ask the HTTP side why
+        void fetch("/api/health", { headers: keyHeaders(), cache: "no-store" })
+          .then((r) => setKeyNeeded(r.status === 401 || r.status === 403))
+          .catch(() => {});
         timer = setTimeout(connect, BACKOFF[Math.min(attempt++, BACKOFF.length - 1)]);
       };
     };
@@ -233,7 +240,12 @@ export function Hud() {
       <main className="hud-main">
         <h1 className="sr-only">HoldUp display</h1>
         <div className="hud-live" aria-live="assertive" aria-atomic="true">
-        {cue && !verdict ? (
+        {keyNeeded ? (
+          <section className="hud-card" style={{ borderColor: "#FFCA28" }}>
+            <p className="hud-headline">Access key needed</p>
+            <p className="hud-small">Open the HUD link with its ?key=… (set it in the Meta AI app).</p>
+          </section>
+        ) : cue && !verdict ? (
           <section className="hud-card cue-card">
             <span className="hud-cue-glyph">
               <CueArrow cue={cue.cue} size={104} />

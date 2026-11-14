@@ -113,6 +113,11 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
                   Take a photo instead
                 </button>
               ) : null}
+              {s.running && s.mode === "snapshot" && s.online ? (
+                <button className="btn small" onClick={() => checker.backToLive()}>
+                  Try live again
+                </button>
+              ) : null}
               {s.banner.action === "retry" ? (
                 <button className="btn small" onClick={() => void checker.snapshot()}>
                   Try again
@@ -213,6 +218,9 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
             ))}
           </div>
         ) : null}
+        <label htmlFor="ask" className="asklabel">
+          Or type a question
+        </label>
         <form
           className="textask"
           onSubmit={(e) => {
@@ -222,10 +230,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
             setText("");
           }}
         >
-          <label htmlFor="ask" className="sr-only">
-            Type a question
-          </label>
-          <input id="ask" type="text" placeholder="Type a question" value={text} onChange={(e) => setText(e.target.value)} autoComplete="off" enterKeyHint="send" />
+          <input id="ask" type="text" placeholder="Is this my evening pill?" value={text} onChange={(e) => setText(e.target.value)} autoComplete="off" enterKeyHint="send" />
           <button className="btn" type="submit" disabled={!text.trim()}>
             Ask
           </button>

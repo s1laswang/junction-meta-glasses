@@ -10,6 +10,7 @@ import { LiveClient, type ConnState } from "./live.ts";
 import { audioRoute, classifyError, explain, getCamera, getMic, type PermState } from "./media.ts";
 import { IS_MOCK, mockCtl, mockHudChannel } from "./mock.ts";
 import { loadProfile, loadSettings, logDose, saveSettings, sessionCode } from "./storage.ts";
+import { AuthError } from "./key.ts";
 import { findByBarcode, matchVerdict, offlineUnknownBarcode } from "./verdicts.ts";
 
 export type Mode = "live" | "snapshot" | "offline";
@@ -51,6 +52,7 @@ export type CheckState = {
   snapshotBusy: boolean;
   checking: boolean;
   hudConnected: boolean | null;
+  authNeeded: boolean;
   speaking: boolean;
   sharpness: number;
   banner: Banner;
@@ -98,6 +100,7 @@ function initial(): CheckState {
     snapshotBusy: false,
     checking: false,
     hudConnected: null,
+    authNeeded: false,
     speaking: false,
     sharpness: 0,
     banner: null,
@@ -135,7 +138,10 @@ export class Checker {
       this.s.micLevel = rms; // no re-render for every chunk
       if (this.s.mode === "live" && this.live?.isOpen) this.live.send({ type: "audio", data: b64 });
     });
-    this.player.onPlayingChange = (p) => this.set({ speaking: p });
+    this.player.onPlayingChange = (p) => {
+      this.set({ speaking: p });
+      if (p) this.armAutoStop();
+    };
     window.addEventListener("online", this.onOnline);
     window.addEventListener("offline", this.onOffline);
     document.addEventListener("visibilitychange", this.onVisibility);
@@ -194,7 +200,7 @@ export class Checker {
     this.live = new LiveClient({
       session: this.s.session,
       mock: IS_MOCK,
-      buildStart: () => ({ type: "start", profile: loadProfile(), lang: "en", voice: loadSettings().voice, source: this.source }),
+      buildStart: () => ({ type: "start", profile: loadProfile(), lang: loadProfile().lang || "en", voice: loadSettings().voice, source: this.source }),
       onMessage: (m) => this.onServer(m),
       onState: (st, info) => this.onConn(st, info),
       onRtt: (rtt) => {
@@ -382,6 +388,8 @@ export class Checker {
           stopSpeaking();
           this.armAutoStop();
         }
+        // the assistant is still talking: don't auto-stop mid-answer (QA #11)
+        if (m.role === "assistant") this.armAutoStop();
         this.addCaption(m.role, m.text, m.final);
         break;
       case "coach":
@@ -508,6 +516,7 @@ export class Checker {
       this.set({ banner: { tone: "warn", title: "Snapshot mode", detail: "Live coaching is paused. Hold the label steady and press Check label. Answers are read out by your phone.", action: "snapshot" } });
     } else {
       this.player.flush();
+      if (this.source === "glasses") void this.setSource("phone", "Offline: the glasses camera needs the server. Switched to the phone camera for barcode checks.");
       this.set({ banner: { tone: "info", title: "Offline mode", detail: barcodeSupported ? "No internet. I can still recognise your own saved medicines by their barcode. I can't read new labels until you're back online." : "No internet, and this browser can't scan barcodes. I can't check labels until you're back online." } });
       if (this.s.running) this.startBarcodeScan();
     }
@@ -585,8 +594,10 @@ export class Checker {
   async snapshot(extra?: CapturedFrame, question?: string) {
     if (this.s.snapshotBusy) return;
     primeSpeech();
-    const frames = extra ? [extra] : this.ring.sharpest(2);
-    if (!frames.length) {
+    // glasses camera: the bridge frames live on the server, so verify by session with no frames (QA #3)
+    const useServerFrames = !extra && this.source === "glasses";
+    const frames = extra ? [extra] : useServerFrames ? [] : this.ring.sharpest(2);
+    if (!frames.length && !useServerFrames) {
       announce("I don't have a picture yet. Hold the label up to the camera, or take a photo.", "assertive");
       speak("I don't have a picture yet. Hold the label up to the camera, or take a photo.");
       return;
@@ -598,10 +609,11 @@ export class Checker {
       const v = await verify(
         frames.map((f) => f.data),
         loadProfile(),
-        question,
+        { question, session: this.s.session },
       );
       this.showVerdict(v, "snapshot");
     } catch (e) {
+      if (e instanceof AuthError) return this.needKey();
       const offline = !navigator.onLine || e instanceof TypeError;
       const msg = offline ? "I couldn't reach the server. Check your connection." : `The check failed: ${(e as Error).message}`;
       this.set({ lastError: String(e), banner: { tone: "bad", title: "Snapshot failed", detail: msg, action: "retry" } });
@@ -677,19 +689,34 @@ export class Checker {
     try {
       const h = await health();
       this.healthFails = 0;
-      this.set({ health: h.gemini === "down" ? "down" : "ok" });
+      this.set({ health: h.gemini === "down" ? "down" : "ok", authNeeded: false });
       if (this.s.mode === "offline" && navigator.onLine && (!IS_MOCK || !mockCtl.offline)) {
         this.set({ online: true });
         this.setMode(this.live?.isOpen ? "live" : "snapshot", "Connection is back.");
         this.ensureLive();
       }
-    } catch {
+    } catch (e) {
+      if (e instanceof AuthError) return this.needKey();
       this.healthFails++;
       this.set({ health: "unreachable" });
       if (this.healthFails >= 2 && !this.live?.isOpen && this.s.mode !== "offline") {
         this.setMode("offline", "I can't reach the HoldUp server. Offline mode: I can recognise your saved medicines by barcode.");
       }
     }
+  }
+
+  /** The server wants an access key (HOLDUP_KEY) we don't have or that is wrong. */
+  private needKey() {
+    if (this.s.authNeeded) return;
+    this.set({ authNeeded: true, health: "unreachable" });
+    if (this.s.running) void this.stop("Check stopped: this HoldUp server needs an access key.");
+    announce("Access key needed. This HoldUp server only accepts people with its link.", "assertive");
+  }
+
+  /** After the user entered a key. */
+  async retryKey() {
+    this.set({ authNeeded: false });
+    await this.checkHealth();
   }
 
   // ---- device / visibility ----
@@ -759,7 +786,21 @@ export class Checker {
     if (IS_MOCK) mockCtl.failConnects = 2;
   }
   toggleSnapshotMode() {
-    this.setMode(this.s.mode === "snapshot" ? "live" : "snapshot", this.s.mode === "snapshot" ? "Back to live mode." : "Snapshot mode on.");
+    if (this.s.mode === "snapshot") this.backToLive();
+    else this.setMode("snapshot", "Snapshot mode on.");
+  }
+
+  /** Leave snapshot mode: always re-send start so a degraded/closed server session is recreated. (QA #2) */
+  backToLive() {
+    if (!this.s.running) return;
+    this.set({ serverLive: this.s.serverLive === "degraded" || this.s.serverLive === "closed" ? "connecting" : this.s.serverLive });
+    this.setMode("live", "Back to live mode. Reconnecting to the assistant.");
+    this.live?.resendStart();
+  }
+
+  /** The profile changed during a check: the server's safety check uses the profile from start. (QA #7) */
+  profileChanged() {
+    if (this.s.running && this.live?.isOpen && this.s.mode === "live") this.live.resendStart();
   }
 
   private addCaption(role: Caption["role"], text: string, final: boolean) {

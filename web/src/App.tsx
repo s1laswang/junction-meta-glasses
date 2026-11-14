@@ -10,6 +10,7 @@ import { Live } from "./screens/Live.tsx";
 import { Consent, PermissionRecovery, PermissionStep, type PermResult } from "./screens/Onboarding.tsx";
 import { Privacy } from "./screens/Privacy.tsx";
 import { Profile } from "./screens/Profile.tsx";
+import { AccessKey } from "./screens/AccessKey.tsx";
 
 type Screen = "consent" | "permissions" | "recovery" | "check" | "profile" | "privacy";
 const TITLES: Record<string, string> = { check: "Check", profile: "Profile", privacy: "Privacy" };
@@ -39,6 +40,13 @@ export function App() {
     } else document.title = "HoldUp";
   }, [screen]);
 
+  if (s.authNeeded)
+    return (
+      <>
+        <Announcer />
+        <AccessKey onSave={() => void checker.retryKey()} />
+      </>
+    );
   if (screen === "consent")
     return (
       <>
@@ -117,7 +125,13 @@ export function App() {
             }}
           />
         ) : screen === "profile" ? (
-          <Profile profile={profile} onChange={setProfile} />
+          <Profile
+            profile={profile}
+            onChange={(p) => {
+              setProfile(p);
+              checker.profileChanged();
+            }}
+          />
         ) : (
           <Privacy
             consent={consent}
