@@ -1,0 +1,49 @@
+{
+  "testedAt": "2026-11-14T14:08:37.455Z",
+  "results": [
+    {
+      "model": "gemini-3.8-live",
+      "ok": true,
+      "connectMs": 706,
+      "firstAudioMs": 582,
+      "kinds": [
+        "setupComplete",
+        "sessionResumptionUpdate",
+        "serverContent",
+        "serverContent+sc.modelTurn+sc.outputTranscription",
+        "serverContent+sc.modelTurn",
+        "serverContent+sc.generationComplete",
+        "serverContent+usageMetadata+sc.turnComplete"
+      ]
+    },
+    {
+      "model": "gemini-3.1-flash-live-preview",
+      "ok": true,
+      "connectMs": 222,
+      "firstAudioMs": 489,
+      "kinds": [
+        "setupComplete",
+        "serverContent",
+        "serverContent+sc.modelTurn+sc.outputTranscription",
+        "serverContent+sc.modelTurn",
+        "sessionResumptionUpdate",
+        "serverContent+sc.generationComplete",
+        "serverContent+usageMetadata+sc.turnComplete"
+      ]
+    },
+    {
+      "model": "gemini-2.5-flash-native-audio-latest",
+      "ok": true,
+      "connectMs": 244,
+      "firstAudioMs": 3126,
+      "kinds": [
+        "setupComplete",
+        "sessionResumptionUpdate",
+        "serverContent+sc.modelTurn",
+        "serverContent+sc.outputTranscription",
+        "serverContent+sc.generationComplete",
+        "serverContent+usageMetadata+sc.turnComplete"
+      ]
+    }
+  ]
+}
