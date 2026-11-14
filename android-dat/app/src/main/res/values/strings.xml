@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HoldUp Bridge</string>
+    <string name="notification_channel_name">Glasses streaming</string>
+    <string name="notification_title">HoldUp is using your glasses camera</string>
+    <string name="notification_body">Frames go to your HoldUp session only. Open the app to stop.</string>
+</resources>
