@@ -35,6 +35,7 @@ Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w se
 **Verify prompt and schema** are shared by the server and the eval: `shared/verify_prompt.md` and `shared/label_schema.json`.
 
 ### For the FR8 "meta" fleet and other helpers: where help is wanted
+**Read [docs/FLEET_REQUEST.md](docs/FLEET_REQUEST.md) first (Silas's decision, Sat 18:50).** This `main` on GitHub is the submission. `fr8/meta/main` isn't. Stop building a parallel UI or deck, start from this main, and take tickets F1–F5 there.
 Work on branches, never on `main`. Open small PRs. Don't change `shared/types.ts`.
 1. **Run the eval** (most valuable): `eval/pipeline.sh setup|specs|images|degrade|predict|score` → `docs/EVAL.md`. Headline metric: the strength confident-wrong rate (wrong strength at confidence ≥ 0.8).
 2. **More, harder test data:** Finnish and Swedish pharmacy labels, look-alike strengths (2.5 vs 25 mg), allergen synonyms, back-of-box views. Add them as specs in `eval/`.
