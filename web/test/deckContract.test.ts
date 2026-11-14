@@ -52,6 +52,11 @@ const deckHtmlUrl = new URL("../../deck/index.html", import.meta.url);
 const deckCssUrl = new URL("../../deck/deck.css", import.meta.url);
 const deckJsUrl = new URL("../../deck/deck.js", import.meta.url);
 const combinedSummaryUrl = new URL("../../eval/combined_summary.json", import.meta.url);
+const orientationResultsUrl = new URL("../../eval/orientation_robustness_results.json", import.meta.url);
+const promptInjectionResultsUrl = new URL("../../eval/prompt_injection_labels_results.json", import.meta.url);
+const thermalFadeResultsUrl = new URL("../../eval/thermal_fade_wear_results.json", import.meta.url);
+const concurrentSessionsResultsUrl = new URL("../../eval/concurrent_sessions_results.json", import.meta.url);
+const multilingualCoachingResultsUrl = new URL("../../eval/multilingual_coaching_results.json", import.meta.url);
 const selfTestUrl = new URL("./deckContract.test.ts", import.meta.url);
 
 type ListenerFn = (event?: Record<string, unknown>) => void;
@@ -596,7 +601,7 @@ function createDeckHarness(slidesMeta: ParsedSlideMeta[], options: DeckHarnessOp
   };
 }
 
-test("deck/index.html, deck/deck.css, and deck/deck.js exist with all 12 slides, inline SVG diagrams, presenter notes, and 21-suite + 475-test proof", () => {
+test("deck/index.html, deck/deck.css, and deck/deck.js exist with all 12 slides, inline SVG diagrams, presenter notes, and 26-suite + 530-test proof", () => {
   assert.equal(existsSync(deckHtmlUrl), true, "deck/index.html must exist");
   assert.equal(existsSync(deckCssUrl), true, "deck/deck.css must exist");
   assert.equal(existsSync(deckJsUrl), true, "deck/deck.js must exist");
@@ -616,21 +621,29 @@ test("deck/index.html, deck/deck.css, and deck/deck.js exist with all 12 slides,
   }
 
   for (const expectedMetricSnippet of [
-    "475 / 475",
-    "176 server + 285 web + 14 eval",
-    "21 suites",
+    "530 / 530",
+    "190 server + 320 web + 20 eval",
+    "26 suites",
+    "9 Core + 6 Extended + 6 Wave-6 + 5 Wave-7",
     "100% (60 / 60)",
     "100% (29 / 29)",
-    "100% (89 / 89)",
+    "100% (28 / 28)",
+    "100% (117 / 117)",
+    "169/170",
+    "99.4%",
     "2738.8 ms",
     "1.17 ms",
     "1.78 ms",
+    "4424.9 ms",
+    "3886.5 ms",
+    "3473.8 ms",
+    "7.56",
     "EN/FI/SV WAV TTS"
   ]) {
     assert.equal(
       html.includes(expectedMetricSnippet),
       true,
-      `deck/index.html missing expected 21-suite / 475-test snippet: ${expectedMetricSnippet}`
+      `deck/index.html missing expected 26-suite / 530-test snippet: ${expectedMetricSnippet}`
     );
   }
 
@@ -895,9 +908,14 @@ test("deck/deck.js supports keyboard, buttons, presenter notes + timer, 12-slide
   assert.equal(harness.getPrintCount(), 1);
 });
 
-test("deck/deck.js syncs all 21 suites, Wave-6 metrics, and 475 tests, and hydrates /api/eval-summary while keeping static numbers on file: or offline", async () => {
+test("deck/deck.js syncs all 26 suites, Wave-6 + Wave-7 metrics, and 530 tests, and hydrates /api/eval-summary while keeping static numbers on file: or offline", async () => {
   const slidesMeta = parseSlidesFromHtml(readFileSync(deckHtmlUrl, "utf8"));
   const realCombined = JSON.parse(readFileSync(combinedSummaryUrl, "utf8")) as Record<string, unknown>;
+  const realOrientation = JSON.parse(readFileSync(orientationResultsUrl, "utf8")) as { summary: Record<string, unknown> };
+  const realInjection = JSON.parse(readFileSync(promptInjectionResultsUrl, "utf8")) as { summary: Record<string, unknown> };
+  const realThermal = JSON.parse(readFileSync(thermalFadeResultsUrl, "utf8")) as { summary: Record<string, unknown> };
+  const realConcurrent = JSON.parse(readFileSync(concurrentSessionsResultsUrl, "utf8")) as { summary: Record<string, unknown> };
+  const realMultiCoach = JSON.parse(readFileSync(multilingualCoachingResultsUrl, "utf8")) as { summary: Record<string, unknown> };
 
   let fileFetchCalls = 0;
   const fileHarness = createDeckHarness(slidesMeta, {
@@ -915,57 +933,133 @@ test("deck/deck.js syncs all 21 suites, Wave-6 metrics, and 475 tests, and hydra
   assert.equal(defaultData.false_safe_allergen_count, 0);
   assert.equal(defaultData.pii_leak_count, 0);
   assert.equal(defaultData.ece, 0.0138);
-  assert.equal(defaultData.total_suites_compiled, 21);
+  assert.equal(defaultData.total_suites_compiled, 26);
   assert.equal((defaultData.suites_present as string[]).length, 9);
   assert.equal((defaultData.extended_suites_present as string[]).length, 6);
   assert.equal((defaultData.wave6_suites_present as string[]).length, 6);
+  assert.deepEqual([...(defaultData.wave7_suites_present as string[])], [
+    "orientation_robustness_results",
+    "prompt_injection_labels_results",
+    "thermal_fade_wear_results",
+    "concurrent_sessions_results",
+    "multilingual_coaching_results"
+  ]);
   assert.equal(defaultData.extended_cases_evaluated, 60);
   assert.equal(defaultData.wave6_cases_evaluated, 29);
-  assert.equal(defaultData.combined_stress_cases_evaluated, 89);
-  assert.equal(defaultData.combined_stress_verdict_summary, "100% (89 / 89)");
+
+  const expectedWave7Cases =
+    Number(realOrientation.summary.n_items) +
+    Number(realInjection.summary.n_items) +
+    Number(realThermal.summary.n_items);
+  const expectedWave7Matches =
+    Number(realOrientation.summary.verdict_matches) +
+    Number(realInjection.summary.verdict_matches) +
+    Number(realThermal.summary.verdict_matches);
+  assert.equal(expectedWave7Cases, 28);
+  assert.equal(expectedWave7Matches, 28);
+  assert.equal(defaultData.wave7_cases_evaluated, expectedWave7Cases);
+  assert.equal(defaultData.wave7_verdict_matches, expectedWave7Matches);
+  assert.equal(defaultData.wave7_verdict_summary, "100% (28 / 28)");
+  assert.equal(defaultData.combined_stress_cases_evaluated, 117);
+  assert.equal(defaultData.combined_stress_verdict_summary, "100% (117 / 117)");
+
+  assert.equal(defaultData.orientation_p50_ms, realOrientation.summary.latency_p50_ms);
+  assert.equal(defaultData.hijack_success_count, realInjection.summary.hijack_success_count);
+  assert.equal(defaultData.prompt_injection_p50_ms, realInjection.summary.latency_p50_ms);
+  assert.equal(defaultData.prompt_injection_summary, "8 / 8 (100%)");
+  assert.equal(defaultData.thermal_wear_p50_ms, realThermal.summary.latency_p50_ms);
+  assert.equal(defaultData.concurrent_sessions_count, realConcurrent.summary.n_concurrent_sessions);
+  assert.equal(defaultData.concurrent_websockets_count, realConcurrent.summary.n_concurrent_websockets);
+  assert.equal(defaultData.concurrent_frames_ingested, realConcurrent.summary.total_frames_ingested);
+  assert.equal(defaultData.cross_session_leak_count, realConcurrent.summary.cross_session_leak_count);
+  assert.equal(defaultData.post_disconnect_buffered_frames, realConcurrent.summary.post_disconnect_buffered_frames);
+  assert.equal(defaultData.multilingual_coaching_turns, realMultiCoach.summary.n_turns);
+  assert.equal(defaultData.multilingual_coaching_mean_words, realMultiCoach.summary.mean_word_count);
+  assert.equal(defaultData.dose_hallucination_count, realMultiCoach.summary.dose_hallucination_count);
+  assert.equal(defaultData.multilingual_coaching_summary, "9 / 9 (100%)");
+
   assert.equal(defaultData.e2e_verify_to_hud_p50_ms, 2738.8);
   assert.equal(defaultData.loopback_ingest_frame_p50_ms, 1.17);
   assert.equal(defaultData.loopback_hud_replay_p50_ms, 1.78);
   assert.equal(defaultData.tts_wav_summary, "6 / 6");
-  assert.equal(defaultData.unit_tests_passing, "475 / 475");
-  assert.equal(defaultData.server_tests_passing, 176);
-  assert.equal(defaultData.web_tests_passing, 285);
-  assert.equal(defaultData.eval_tests_passing, 14);
+  assert.equal(defaultData.unit_tests_passing, "530 / 530");
+  assert.equal(defaultData.server_tests_passing, 190);
+  assert.equal(defaultData.web_tests_passing, 320);
+  assert.equal(defaultData.eval_tests_passing, 20);
 
   assert.deepEqual(fileHarness.readEvalFieldValues("ece"), ["0.0138", "0.0138"]);
   assert.deepEqual(fileHarness.readEvalFieldValues("live_first_audio_ms"), ["582 ms", "582 ms"]);
   assert.deepEqual(fileHarness.readEvalFieldValues("extended_verdict_summary"), ["100% (60 / 60)", "100% (60 / 60)"]);
   assert.deepEqual(fileHarness.readEvalFieldValues("wave6_verdict_summary"), ["100% (29 / 29)", "100% (29 / 29)"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("wave7_verdict_summary"), ["100% (28 / 28)", "100% (28 / 28)"]);
   assert.deepEqual(
     fileHarness.readEvalFieldValues("combined_stress_verdict_summary"),
-    ["100% (89 / 89)", "100% (89 / 89)"]
+    ["100% (117 / 117)", "100% (117 / 117)"]
   );
+  assert.deepEqual(fileHarness.readEvalFieldValues("combined_stress_cases_evaluated"), ["117", "117", "117", "117"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("prompt_injection_summary"), ["8 / 8 (100%)", "8 / 8 (100%)"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("hijack_success_count"), ["0", "0"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("concurrent_sessions_count"), ["25", "25"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("cross_session_leak_count"), ["0", "0"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("post_disconnect_buffered_frames"), ["0", "0"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("multilingual_coaching_summary"), ["9 / 9 (100%)", "9 / 9 (100%)"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("multilingual_coaching_mean_words"), ["7.56", "7.56"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("dose_hallucination_count"), ["0", "0"]);
   assert.deepEqual(fileHarness.readEvalFieldValues("loopback_ingest_frame_p50_ms"), ["1.17 ms", "1.17 ms"]);
   assert.deepEqual(fileHarness.readEvalFieldValues("loopback_hud_replay_p50_ms"), ["1.78 ms", "1.78 ms"]);
   assert.deepEqual(fileHarness.readEvalFieldValues("tts_wav_summary"), ["6 / 6", "6 / 6"]);
-  assert.deepEqual(fileHarness.readEvalFieldValues("total_suites_compiled"), ["21", "21", "21", "21"]);
+  assert.deepEqual(fileHarness.readEvalFieldValues("total_suites_compiled"), ["26", "26", "26", "26"]);
   assert.deepEqual(
     fileHarness.readEvalFieldValues("e2e_verify_to_hud_p50_ms"),
     ["2738.8 ms", "2738.8 ms", "2738.8 ms", "2738.8 ms"]
   );
   assert.deepEqual(
     fileHarness.readEvalFieldValues("unit_tests_passing"),
-    ["475 / 475", "475 / 475", "475 / 475", "475 / 475", "475 / 475", "475 / 475"]
+    ["530 / 530", "530 / 530", "530 / 530", "530 / 530", "530 / 530", "530 / 530"]
   );
   assert.deepEqual(fileHarness.readEvalFieldValues("suite_sync_status"), [
-    "HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (89 / 89) stress/Wave-6 (21 suites)",
-    "HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (89 / 89) stress/Wave-6 (21 suites)"
+    "HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (117 / 117) stress/W6/W7 (26 suites)",
+    "HOLDUP_EVAL_DATA synced: 98.1% core (52/53) + 100% (117 / 117) stress/W6/W7 (26 suites)"
   ]);
 
   const syncedReal = fileHarness.updateEvalData(realCombined);
   assert.equal(syncedReal.confident_wrong_dose_count, 0);
   assert.equal(syncedReal.false_safe_allergen_count, 0);
   assert.equal(syncedReal.pii_leak_count, 0);
-  assert.equal(syncedReal.total_suites_compiled, 21);
-  assert.equal(syncedReal.combined_stress_cases_evaluated, 89);
+  assert.equal(syncedReal.total_suites_compiled, 26);
+  assert.equal(syncedReal.wave7_cases_evaluated, 28);
+  assert.equal(syncedReal.combined_stress_cases_evaluated, 117);
+  assert.equal(syncedReal.combined_stress_verdict_summary, "100% (117 / 117)");
+  assert.equal(syncedReal.concurrent_sessions_count, 25);
+  assert.equal(syncedReal.concurrent_websockets_count, 50);
+  assert.equal(syncedReal.concurrent_frames_ingested, 250);
+  assert.equal(syncedReal.cross_session_leak_count, 0);
+  assert.equal(syncedReal.post_disconnect_buffered_frames, 0);
+  assert.equal(syncedReal.multilingual_coaching_turns, 9);
+  assert.equal(syncedReal.multilingual_coaching_mean_words, 7.56);
+  assert.equal(syncedReal.dose_hallucination_count, 0);
   assert.equal(syncedReal.e2e_verify_to_hud_p50_ms, 2738.8);
   assert.equal(syncedReal.loopback_ingest_frame_p50_ms, 1.17);
   assert.equal(syncedReal.loopback_hud_replay_p50_ms, 1.78);
+
+  const legacySummaryWithoutWave7: Record<string, unknown> = { ...realCombined };
+  delete legacySummaryWithoutWave7.wave7_summary;
+  delete legacySummaryWithoutWave7.wave7_suites_present;
+  const fallbackHarness = createDeckHarness(slidesMeta, {
+    protocol: "https:",
+    fetchImpl: () =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ ok: true, summary: legacySummaryWithoutWave7 })
+      })
+  });
+  await fallbackHarness.getApi().ready;
+  assert.equal(fallbackHarness.getEvalData().total_suites_compiled, 26);
+  assert.equal(fallbackHarness.getEvalData().wave7_cases_evaluated, 28);
+  assert.equal(fallbackHarness.getEvalData().combined_stress_cases_evaluated, 117);
+  assert.equal(fallbackHarness.getEvalData().combined_stress_verdict_summary, "100% (117 / 117)");
+  assert.equal(fallbackHarness.getEvalData().concurrent_sessions_count, 25);
+  assert.equal(fallbackHarness.getEvalData().multilingual_coaching_mean_words, 7.56);
 
   const requestedUrls: string[] = [];
   const liveSummary = {
@@ -987,6 +1081,28 @@ test("deck/deck.js syncs all 21 suites, Wave-6 metrics, and 475 tests, and hydra
       e2e_verify_to_hud_p50_ms: 2610.4,
       loopback_ingest_frame_p50_ms: 1.05,
       loopback_hud_replay_p50_ms: 1.52
+    },
+    wave7_summary: {
+      ...(realCombined.wave7_summary as Record<string, unknown>),
+      suites_count: 5,
+      label_cases_evaluated: 30,
+      label_verdict_matches: 30,
+      label_verdict_accuracy: 1.0,
+      confident_wrong_dose_count: 0,
+      false_safe_allergen_count: 0,
+      coaching_bystander_leak_count: 0,
+      prompt_injection_hijack_count: 0,
+      prompt_injection_resistance_rate: 1.0,
+      prompt_injection_cases: 10,
+      concurrent_sessions_tested: 32,
+      concurrent_websockets_tested: 64,
+      concurrent_total_frames_ingested: 320,
+      concurrent_cross_session_leak_count: 0,
+      concurrent_post_disconnect_buffered_frames: 0,
+      coaching_turns_evaluated: 12,
+      coaching_language_compliance_rate: 1.0,
+      coaching_mean_word_count: 7.25,
+      coaching_dose_hallucination_count: 0
     },
     live_probe: {
       ...(realCombined.live_probe as Record<string, unknown>),
@@ -1012,7 +1128,13 @@ test("deck/deck.js syncs all 21 suites, Wave-6 metrics, and 475 tests, and hydra
   assert.equal(httpsHarness.getEvalData().live_first_audio_ms, 540);
   assert.equal(httpsHarness.getEvalData().confident_wrong_dose_count, 0);
   assert.equal(httpsHarness.getEvalData().wave6_cases_evaluated, 30);
-  assert.equal(httpsHarness.getEvalData().combined_stress_cases_evaluated, 90);
+  assert.equal(httpsHarness.getEvalData().wave7_cases_evaluated, 30);
+  assert.equal(httpsHarness.getEvalData().combined_stress_cases_evaluated, 120);
+  assert.equal(httpsHarness.getEvalData().total_suites_compiled, 26);
+  assert.equal(httpsHarness.getEvalData().concurrent_sessions_count, 32);
+  assert.equal(httpsHarness.getEvalData().concurrent_websockets_count, 64);
+  assert.equal(httpsHarness.getEvalData().concurrent_frames_ingested, 320);
+  assert.equal(httpsHarness.getEvalData().multilingual_coaching_mean_words, 7.25);
   assert.equal(httpsHarness.getEvalData().e2e_verify_to_hud_p50_ms, 2610.4);
   assert.equal(httpsHarness.getEvalData().loopback_ingest_frame_p50_ms, 1.05);
   assert.equal(httpsHarness.getEvalData().loopback_hud_replay_p50_ms, 1.52);
@@ -1024,10 +1146,22 @@ test("deck/deck.js syncs all 21 suites, Wave-6 metrics, and 475 tests, and hydra
     httpsHarness.readEvalFieldValues("overall_verdict_summary"),
     ["100.0% (53 / 53)", "100.0% (53 / 53)"]
   );
+  assert.deepEqual(httpsHarness.readEvalFieldValues("wave7_verdict_summary"), ["100% (30 / 30)", "100% (30 / 30)"]);
   assert.deepEqual(
     httpsHarness.readEvalFieldValues("combined_stress_verdict_summary"),
-    ["100% (90 / 90)", "100% (90 / 90)"]
+    ["100% (120 / 120)", "100% (120 / 120)"]
   );
+  assert.deepEqual(httpsHarness.readEvalFieldValues("prompt_injection_summary"), ["10 / 10 (100%)", "10 / 10 (100%)"]);
+  assert.deepEqual(httpsHarness.readEvalFieldValues("concurrent_sessions_count"), ["32", "32"]);
+  assert.deepEqual(
+    httpsHarness.readEvalFieldValues("multilingual_coaching_summary"),
+    ["12 / 12 (100%)", "12 / 12 (100%)"]
+  );
+  assert.deepEqual(httpsHarness.readEvalFieldValues("multilingual_coaching_mean_words"), ["7.25", "7.25"]);
+  assert.deepEqual(httpsHarness.readEvalFieldValues("suite_sync_status"), [
+    "HOLDUP_EVAL_DATA synced: 100.0% core (53/53) + 100% (120 / 120) stress/W6/W7 (26 suites)",
+    "HOLDUP_EVAL_DATA synced: 100.0% core (53/53) + 100% (120 / 120) stress/W6/W7 (26 suites)"
+  ]);
   assert.deepEqual(
     httpsHarness.readEvalFieldValues("e2e_verify_to_hud_p50_ms"),
     ["2610.4 ms", "2610.4 ms", "2610.4 ms", "2610.4 ms"]
@@ -1046,7 +1180,8 @@ test("deck/deck.js syncs all 21 suites, Wave-6 metrics, and 475 tests, and hydra
   await offlineHarness.getApi().ready;
   assert.equal(offlineFetchCalls, 1);
   assert.equal(offlineHarness.getEvalData().ece, 0.0138);
-  assert.equal(offlineHarness.getEvalData().total_suites_compiled, 21);
+  assert.equal(offlineHarness.getEvalData().total_suites_compiled, 26);
+  assert.equal(offlineHarness.getEvalData().combined_stress_cases_evaluated, 117);
   assert.deepEqual(offlineHarness.readEvalFieldValues("ece"), ["0.0138", "0.0138"]);
   assert.deepEqual(
     offlineHarness.readEvalFieldValues("overall_verdict_summary"),
@@ -1063,6 +1198,7 @@ test("deck/deck.js syncs all 21 suites, Wave-6 metrics, and 475 tests, and hydra
   });
   await emptySummaryHarness.getApi().ready;
   assert.equal(emptySummaryHarness.getEvalData().ece, 0.0138);
+  assert.equal(emptySummaryHarness.getEvalData().total_suites_compiled, 26);
   assert.deepEqual(
     emptySummaryHarness.readEvalFieldValues("confident_wrong_dose_count"),
     ["0", "0", "0", "0"]
