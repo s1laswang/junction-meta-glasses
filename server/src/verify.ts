@@ -6,7 +6,10 @@ import { env, REPO_ROOT } from "./env.ts";
 import { ai, backoffMs, classify, sleep, unaryGate } from "./gemini.ts";
 import { ledger, usage } from "./ledger.ts";
 import { errSummary, log } from "./log.ts";
+import { parseJpegHeader, rankBase64Frames, scoreFrameOpticalQuality, type FrameOpticalQuality, type JpegHeaderInfo } from "./frameRanker.ts";
 import { checkLabel } from "./safety.ts";
+
+export { parseJpegHeader, rankBase64Frames, scoreFrameOpticalQuality, type FrameOpticalQuality, type JpegHeaderInfo };
 
 export const VERIFY_PROMPT = fs.readFileSync(path.join(REPO_ROOT, "shared", "verify_prompt.md"), "utf8");
 const RAW_SCHEMA = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "shared", "label_schema.json"), "utf8"));
@@ -44,17 +47,8 @@ export function jpegSharpness(buf: Buffer): number {
   return Math.max(0, Math.min(1, buf.length / px / 0.35));
 }
 export function jpegSize(buf: Buffer): { w: number; h: number } | undefined {
-  if (buf[0] !== 0xff || buf[1] !== 0xd8) return undefined;
-  let i = 2;
-  while (i + 9 < buf.length) {
-    if (buf[i] !== 0xff) { i++; continue; }
-    const marker = buf[i + 1];
-    const len = buf.readUInt16BE(i + 2);
-    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker))
-      return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) };
-    i += 2 + len;
-  }
-  return undefined;
+  const hdr = parseJpegHeader(buf);
+  return hdr ? { w: hdr.w, h: hdr.h } : undefined;
 }
 
 const clamp01 = (x: unknown) => (typeof x === "number" && Number.isFinite(x) ? Math.max(0, Math.min(1, x)) : 0);
@@ -163,7 +157,7 @@ export function toProfile(p: any): Profile {
     })),
     allergies: arr(p?.allergies).map((x) => s(x, 60)).filter(Boolean).slice(0, 30),
     avoid: arr(p?.avoid).map((x) => s(x, 60)).filter(Boolean).slice(0, 30),
-    doseLog: arr(p?.doseLog).filter((d: any) => typeof d?.ts === "number").map((d: any) => ({ medId: s(d.medId, 64), ts: d.ts })).slice(-500),
+    doseLog: arr(p?.doseLog).filter((d: any) => typeof d?.ts === "number" && Number.isFinite(d.ts)).map((d: any) => ({ medId: s(d.medId, 64), ts: d.ts })).slice(-500),
     lang: s(p?.lang, 16) || "en",
   };
 }
