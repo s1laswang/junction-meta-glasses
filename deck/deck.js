@@ -75,6 +75,29 @@
         out[k] = incoming[k];
       }
     }
+    if (incoming.safety_invariants && typeof incoming.safety_invariants === "object") {
+      if (typeof incoming.safety_invariants.strength_min_conf === "number") {
+        out.strength_min_conf = incoming.safety_invariants.strength_min_conf;
+      }
+    }
+    if (incoming.headline_metrics && typeof incoming.headline_metrics === "object" && !Array.isArray(incoming.headline_metrics)) {
+      var hm = incoming.headline_metrics;
+      if (typeof hm.never_guess_strength_min_conf === "number") {
+        out.strength_min_conf = hm.never_guess_strength_min_conf;
+      }
+      if (typeof incoming.overall_verdict_accuracy !== "number" && typeof hm.overall_verdict_accuracy === "number") {
+        out.overall_verdict_accuracy = hm.overall_verdict_accuracy;
+      }
+      if (typeof incoming.total_confident_wrong_dose_count !== "number" && typeof hm.total_confident_wrong_dose_count === "number") {
+        out.confident_wrong_dose_count = hm.total_confident_wrong_dose_count;
+      }
+      if (typeof incoming.occluded_abstention_rate !== "number" && typeof hm.occluded_abstention_rate === "number") {
+        out.occluded_abstention_pct = (hm.occluded_abstention_rate * 100).toFixed(1) + "%";
+      }
+      if (typeof incoming.total_label_cases_evaluated !== "number" && typeof hm.total_label_cases_evaluated === "number") {
+        out.total_label_cases_evaluated = hm.total_label_cases_evaluated;
+      }
+    }
     if (typeof incoming.total_confident_wrong_dose_count === "number") {
       out.confident_wrong_dose_count = incoming.total_confident_wrong_dose_count;
     }
@@ -117,15 +140,50 @@
         out.pii_leak_count = es.pii_or_bystander_leak_count;
       }
     }
+    if (incoming.artifacts && incoming.artifacts.calibration_curve) {
+      var cc = incoming.artifacts.calibration_curve;
+      if (typeof cc.ece === "number" && typeof incoming.ece !== "number") {
+        out.ece = cc.ece;
+      }
+      if (typeof cc.n_items === "number" && typeof incoming.calibration_items !== "number") {
+        out.calibration_items = cc.n_items;
+      }
+    }
+    if (incoming.artifacts && incoming.artifacts.demo_fixtures_results) {
+      var df = incoming.artifacts.demo_fixtures_results;
+      if (typeof df.verdict_matches === "number" && typeof df.n_cases === "number" && df.n_cases > 0) {
+        var dfPct = Math.round((df.verdict_matches / df.n_cases) * 100);
+        out.demo_fixtures_pass = df.verdict_matches + " / " + df.n_cases + " (" + dfPct + "%)";
+      }
+      if (df.latency_ms && typeof df.latency_ms.p50 === "number") {
+        out.demo_fixtures_p50_ms = df.latency_ms.p50;
+      }
+    }
+    if (incoming.summary && typeof incoming.summary === "object") {
+      var sum = incoming.summary;
+      if (typeof sum.ece === "number" && typeof incoming.ece !== "number") {
+        out.ece = sum.ece;
+      }
+      if (typeof sum.brier_score === "number" && typeof incoming.brier_score !== "number") {
+        out.brier_score = sum.brier_score;
+      }
+      if (typeof sum.total_items === "number" && typeof incoming.calibration_items !== "number") {
+        out.calibration_items = sum.total_items;
+      }
+      if (typeof sum.verdict_matches === "number" && typeof sum.n_items === "number" && sum.n_items > 0) {
+        var fPct = Math.round((sum.verdict_matches / sum.n_items) * 100);
+        out.demo_fixtures_pass = sum.verdict_matches + " / " + sum.n_items + " (" + fPct + "%)";
+      }
+    }
     if (incoming.calibration && typeof incoming.calibration === "object") {
       var cal = incoming.calibration;
-      if (typeof cal.ece === "number") {
+      if (typeof cal.ece === "number" && typeof incoming.ece !== "number") {
         out.ece = cal.ece;
       }
-      if (typeof cal.brier_score === "number") {
+      if (typeof cal.brier_score === "number" && typeof incoming.brier_score !== "number") {
         out.brier_score = cal.brier_score;
       }
-      if (typeof cal.n_items === "number") {
+      if (typeof cal.n_items === "number" && typeof incoming.calibration_items !== "number") {
         out.calibration_items = cal.n_items;
       }
       if (cal.latency_ms && typeof cal.latency_ms.p50 === "number") {
@@ -142,7 +200,7 @@
     }
     if (incoming.live_probe && typeof incoming.live_probe === "object") {
       var lp = incoming.live_probe;
-      if (typeof lp.primary_first_audio_ms === "number") {
+      if (typeof lp.primary_first_audio_ms === "number" && typeof incoming.live_first_audio_ms !== "number") {
         out.live_first_audio_ms = lp.primary_first_audio_ms;
       }
       if (Array.isArray(lp.models) && lp.models.length > 0) {
@@ -166,33 +224,8 @@
         out.coaching_p50_ms = cj.assistant_latency_ms.p50;
       }
     }
-    if (incoming.artifacts && incoming.artifacts.calibration_curve) {
-      var cc = incoming.artifacts.calibration_curve;
-      if (typeof cc.ece === "number") {
-        out.ece = cc.ece;
-      }
-      if (typeof cc.n_items === "number") {
-        out.calibration_items = cc.n_items;
-      }
-    }
     if (incoming.verify_latency_ms && typeof incoming.verify_latency_ms.p50 === "number") {
       out.verify_p50_ms = incoming.verify_latency_ms.p50;
-    }
-    if (incoming.summary && typeof incoming.summary === "object") {
-      var sum = incoming.summary;
-      if (typeof sum.ece === "number") {
-        out.ece = sum.ece;
-      }
-      if (typeof sum.brier_score === "number") {
-        out.brier_score = sum.brier_score;
-      }
-      if (typeof sum.total_items === "number") {
-        out.calibration_items = sum.total_items;
-      }
-      if (typeof sum.verdict_matches === "number" && typeof sum.n_items === "number" && sum.n_items > 0) {
-        var fPct = Math.round((sum.verdict_matches / sum.n_items) * 100);
-        out.demo_fixtures_pass = sum.verdict_matches + " / " + sum.n_items + " (" + fPct + "%)";
-      }
     }
     return out;
   }
@@ -738,15 +771,31 @@
     updateStageScale();
 
     var proto = String((window.location && window.location.protocol) || "");
+    var hydrationPromise = Promise.resolve(window.HOLDUP_EVAL_DATA);
     if ((proto === "http:" || proto === "https:") && typeof window.fetch === "function") {
-      window.fetch("../api/eval-summary", { headers: { Accept: "application/json" } })
-        .then(function (res) { return res && res.ok ? res.json() : null; })
-        .then(function (payload) {
-          if (payload && payload.ok && payload.summary && typeof payload.summary === "object") {
-            window.updateHoldUpEvalData(payload.summary);
-          }
-        })
-        .catch(function () {});
+      try {
+        var req = window.fetch("/api/eval-summary", { headers: { Accept: "application/json" } });
+        if (req && typeof req.then === "function") {
+          hydrationPromise = req
+            .then(function (res) { return res && res.ok ? res.json() : null; })
+            .then(function (payload) {
+              if (
+                payload &&
+                payload.ok !== false &&
+                payload.summary &&
+                typeof payload.summary === "object" &&
+                !Array.isArray(payload.summary) &&
+                typeof window.updateHoldUpEvalData === "function"
+              ) {
+                return window.updateHoldUpEvalData(payload.summary);
+              }
+              return window.HOLDUP_EVAL_DATA;
+            })
+            .catch(function () { return window.HOLDUP_EVAL_DATA; });
+        }
+      } catch (fetchErr) {
+        void fetchErr;
+      }
     }
 
     var initialIdx = parseHashSlide();
@@ -759,7 +808,8 @@
       setNotesOpen: setNotesOpen,
       setOverviewOpen: setOverviewOpen,
       getCurrentIndex: function () { return currentIndex; },
-      getTotalSlides: function () { return total; }
+      getTotalSlides: function () { return total; },
+      ready: hydrationPromise
     };
   }
 

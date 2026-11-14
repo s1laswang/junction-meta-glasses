@@ -77,6 +77,7 @@ test("Dockerfile uses multi-stage build and non-root runtime with healthcheck, s
     "COPY server ./server",
     "COPY web ./web",
     "COPY docs ./docs",
+    "COPY deck ./deck",
     "COPY eval/combined_summary.json ./eval/combined_summary.json",
   ]) {
     assert.ok(
@@ -84,6 +85,9 @@ test("Dockerfile uses multi-stage build and non-root runtime with healthcheck, s
       `expected build stage line: ${expectedBuildCopy}`,
     );
   }
+
+  const copyDeckBuildIdx = buildStage.lines.indexOf("COPY deck ./deck");
+  assert.ok(copyDeckBuildIdx > installIdx && copyDeckBuildIdx < buildRunIdx);
 
   assert.match(runtimeStage.header, /^FROM node:\d+-slim AS runtime$/);
   assert.ok(runtimeStage.lines.includes("WORKDIR /app"));
@@ -99,6 +103,7 @@ test("Dockerfile uses multi-stage build and non-root runtime with healthcheck, s
     "COPY --from=build --chown=node:node /app/web/package.json ./web/package.json",
     "COPY --from=build --chown=node:node /app/web/dist ./web/dist",
     "COPY --from=build --chown=node:node /app/docs ./docs",
+    "COPY --from=build --chown=node:node /app/deck ./deck",
     "COPY --from=build --chown=node:node /app/eval/combined_summary.json ./eval/combined_summary.json",
   ]) {
     assert.ok(
@@ -138,6 +143,9 @@ test("All workspace artifacts copied by Dockerfile exist on disk and eval/combin
     "web/index.html",
     "docs/printable-props.html",
     "docs/DEPLOY.md",
+    "deck/index.html",
+    "deck/deck.css",
+    "deck/deck.js",
     "eval/combined_summary.json",
   ];
 
@@ -189,6 +197,10 @@ test(".dockerignore excludes .env, .git, node_modules, eval/synthetic, eval/out,
   for (const mustRemainIncluded of [
     "docs",
     "docs/printable-props.html",
+    "deck",
+    "deck/index.html",
+    "deck/deck.css",
+    "deck/deck.js",
     "eval",
     "eval/combined_summary.json",
     "shared",

@@ -8,6 +8,7 @@ COPY shared ./shared
 COPY server ./server
 COPY web ./web
 COPY docs ./docs
+COPY deck ./deck
 COPY eval/combined_summary.json ./eval/combined_summary.json
 RUN npm run typecheck && npm run build
 
@@ -22,6 +23,7 @@ COPY --from=build --chown=node:node /app/server ./server
 COPY --from=build --chown=node:node /app/web/package.json ./web/package.json
 COPY --from=build --chown=node:node /app/web/dist ./web/dist
 COPY --from=build --chown=node:node /app/docs ./docs
+COPY --from=build --chown=node:node /app/deck ./deck
 COPY --from=build --chown=node:node /app/eval/combined_summary.json ./eval/combined_summary.json
 RUN mkdir -p /app/server/logs /app/eval /app/deck && chown node:node /app /app/server/logs /app/eval /app/deck
 USER node
