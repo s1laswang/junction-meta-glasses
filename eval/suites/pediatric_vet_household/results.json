@@ -1,0 +1,640 @@
+{
+ "suite": "pediatric_vet_household",
+ "model": "gemini-3.8-flash",
+ "eval_now_iso": "2026-11-14T20:00:00Z",
+ "prompt_sha256": "679231d18fd3cd780440bcf99bd26a0987429d82f0a21f07308c133c02c0456a",
+ "schema_sha256": "fc39b9cff30dfccb60bf9087fc1172761b37d9e54c799c901b729aeaa5616542",
+ "profile": {
+  "meds": [
+   {
+    "id": "par",
+    "name": "Paracetamol",
+    "ingredient": "paracetamol",
+    "strength": "500 mg",
+    "schedule": [
+     "as needed"
+    ]
+   },
+   {
+    "id": "aml",
+    "name": "Amlodipin",
+    "ingredient": "amlodipine",
+    "strength": "5 mg",
+    "schedule": [
+     "evening"
+    ]
+   }
+  ],
+  "allergies": [
+   "peanut",
+   "penicillin"
+  ],
+  "avoid": [
+   "NSAIDs"
+  ],
+  "doseLog": [],
+  "lang": "en"
+ },
+ "n": 12,
+ "errors": 0,
+ "timeouts": 0,
+ "pass_count": 12,
+ "pass_rate": 1.0,
+ "pass_ci95_wilson": [
+  0.7575,
+  1.0
+ ],
+ "confident_wrong_dose_count": 0,
+ "confident_wrong_dose_rate": 0.0,
+ "confident_wrong_dose_ci95_wilson": [
+  0.0,
+  0.2425
+ ],
+ "rule_of_three_95_upper": 0.25,
+ "cases": [
+  {
+   "id": "hh_01",
+   "scenario": "own_adult_paracetamol_500mg_tablet_match",
+   "expected_level": "match",
+   "actual_level": "match",
+   "predicted_level": "match",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": "500 mg",
+   "strength_conf": 0.99,
+   "name_conf": 0.99,
+   "readability": 0.98,
+   "latency_s": 5.267,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Paracetamol",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "paracetamol",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "500 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet as needed for pain",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "readability": 0.98
+   },
+   "error": null
+  },
+  {
+   "id": "hh_02",
+   "scenario": "grandchild_panadol_junior_24mg_ml_suspension_warning",
+   "expected_level": "warning",
+   "actual_level": "warning",
+   "predicted_level": "warning",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": "24 mg/ml",
+   "strength_conf": 0.99,
+   "name_conf": 0.99,
+   "readability": 0.95,
+   "latency_s": 2.894,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Panadol Junior",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "paracetamol",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "24 mg/ml",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "error": null
+  },
+  {
+   "id": "hh_03",
+   "scenario": "adult_panadol_forte_1g_double_strength_warning",
+   "expected_level": "warning",
+   "actual_level": "warning",
+   "predicted_level": "warning",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": "1 g",
+   "strength_conf": 0.99,
+   "name_conf": 0.99,
+   "readability": 0.95,
+   "latency_s": 3.688,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Panadol Forte",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "paracetamol",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "1 g",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet up to 3 times daily",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-12",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "error": null
+  },
+  {
+   "id": "hh_04",
+   "scenario": "veterinary_rimadyl_50mg_carprofen_nsaid_warning",
+   "expected_level": "warning",
+   "actual_level": "warning",
+   "predicted_level": "warning",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": "50 mg",
+   "strength_conf": 0.99,
+   "name_conf": 0.99,
+   "readability": 0.95,
+   "latency_s": 5.084,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Rimadyl",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "carprofen",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "50 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 chewable tablet daily with food",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-08",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "error": null
+  },
+  {
+   "id": "hh_05",
+   "scenario": "veterinary_synulox_vet_250mg_penicillin_allergy_warning",
+   "expected_level": "warning",
+   "actual_level": "warning",
+   "predicted_level": "warning",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": "250 mg",
+   "strength_conf": 0.98,
+   "name_conf": 0.98,
+   "readability": 0.98,
+   "latency_s": 4.414,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Synulox Vet",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "amoxicillin, clavulanic acid",
+     "confidence": 0.98
+    },
+    "strength": {
+     "value": "250 mg",
+     "confidence": 0.98
+    },
+    "dosing": {
+     "value": "1 tablet twice daily",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-09",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.2
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.98
+   },
+   "error": null
+  },
+  {
+   "id": "hh_06",
+   "scenario": "own_amlodipine_5mg_evening_pill_match",
+   "expected_level": "match",
+   "actual_level": "match",
+   "predicted_level": "match",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": "5 mg",
+   "strength_conf": 0.99,
+   "name_conf": 0.99,
+   "readability": 0.95,
+   "latency_s": 3.293,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Amlodipin",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "amlodipine",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "5 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet in the evening",
+     "confidence": 0.98
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.1
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.1
+    },
+    "readability": 0.95
+   },
+   "error": null
+  },
+  {
+   "id": "hh_07",
+   "scenario": "spouse_atorvastatin_20mg_not_on_list_warning",
+   "expected_level": "warning",
+   "actual_level": "warning",
+   "predicted_level": "warning",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": "20 mg",
+   "strength_conf": 0.99,
+   "name_conf": 0.99,
+   "readability": 0.95,
+   "latency_s": 3.012,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Atorvastatin",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "atorvastatin",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "20 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": "1 tablet once daily.",
+     "confidence": 0.95
+    },
+    "expiry": {
+     "value": "2027-10",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "error": null
+  },
+  {
+   "id": "hh_08",
+   "scenario": "pediatric_burana_100mg_suppository_nsaid_avoid_warning",
+   "expected_level": "warning",
+   "actual_level": "warning",
+   "predicted_level": "warning",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": "100 mg",
+   "strength_conf": 0.99,
+   "name_conf": 0.99,
+   "readability": 0.95,
+   "latency_s": 5.801,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Burana",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "ibuprofen",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": "100 mg",
+     "confidence": 0.99
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": "2027-09",
+     "confidence": 0.99
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.95
+   },
+   "error": null
+  },
+  {
+   "id": "hh_09",
+   "scenario": "safe_household_oat_biscuit_no_profile_allergens_info",
+   "expected_level": "info",
+   "actual_level": "info",
+   "predicted_level": "info",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": null,
+   "strength_conf": 0.0,
+   "name_conf": 0.99,
+   "readability": 0.98,
+   "latency_s": 4.04,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "NORDIC BAKERY Crunchy Oat Biscuits",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "oat biscuits",
+     "confidence": 0.95
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": "2027-11-20",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": [
+      "oats",
+      "wheat",
+      "gluten"
+     ],
+     "confidence": 0.98
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.98
+   },
+   "error": null
+  },
+  {
+   "id": "hh_10",
+   "scenario": "grandchild_peanut_butter_puff_snack_allergy_warning",
+   "expected_level": "warning",
+   "actual_level": "warning",
+   "predicted_level": "warning",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": null,
+   "strength_conf": 0.0,
+   "name_conf": 0.98,
+   "readability": 0.98,
+   "latency_s": 3.682,
+   "read": {
+    "kind": "food",
+    "product": {
+     "value": "Peanut Butter Puffs",
+     "confidence": 0.98
+    },
+    "ingredient": {
+     "value": "Baked Maize Snack for Kids",
+     "confidence": 0.95
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": "2027-10-18",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": [
+      "peanut"
+     ],
+     "confidence": 0.98
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.98
+   },
+   "error": null
+  },
+  {
+   "id": "hh_11",
+   "scenario": "thumb_occluded_strength_panadol_bottle_unsure",
+   "expected_level": "unsure",
+   "actual_level": "unsure",
+   "predicted_level": "unsure",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": null,
+   "strength_conf": 0.0,
+   "name_conf": 0.99,
+   "readability": 0.6,
+   "latency_s": 2.999,
+   "read": {
+    "kind": "medication",
+    "product": {
+     "value": "Panadol",
+     "confidence": 0.99
+    },
+    "ingredient": {
+     "value": "paracetamol",
+     "confidence": 0.99
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": "2027-11",
+     "confidence": 0.98
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.6,
+    "guidance": "Move your finger away from the middle of the label."
+   },
+   "error": null
+  },
+  {
+   "id": "hh_12",
+   "scenario": "out_of_focus_turned_away_medicine_bottle_unsure",
+   "expected_level": "unsure",
+   "actual_level": "unsure",
+   "predicted_level": "unsure",
+   "passed": true,
+   "verdict_ok": true,
+   "confident_wrong": false,
+   "strength_read": null,
+   "strength_conf": 0.0,
+   "name_conf": 0.0,
+   "readability": 0.0,
+   "latency_s": 5.49,
+   "read": {
+    "kind": "unreadable",
+    "product": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "ingredient": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "strength": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "dosing": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "expiry": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "allergens": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "barcode": {
+     "value": null,
+     "confidence": 0.0
+    },
+    "readability": 0.0,
+    "guidance": "Move closer and turn the label towards you."
+   },
+   "error": null
+  }
+ ]
+}
