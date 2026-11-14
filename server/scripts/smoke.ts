@@ -1,7 +1,3 @@
-// End-to-end smoke test: boots the server in-process on a free port, opens /live like the phone would,
-// sends a profile, one JPEG frame and a text question, and prints the message types and timings it gets back.
-// Also checks /hud-ws (no session -> follows latest), /ingest/state, /api/verify and /api/health.
-// Usage: npm -w server run smoke [-- path/to/label.jpg "question"]
 import fs from "node:fs";
 import path from "node:path";
 import WebSocket from "ws";
@@ -28,7 +24,6 @@ const t0 = Date.now();
 const ms = () => Date.now() - t0;
 let fail = false;
 
-// HUD first, without session: it must get the verdict of the latest live session
 const hud = new WebSocket(`ws://localhost:${port}/hud-ws`);
 const hudTypes: string[] = [];
 hud.on("message", (d) => hudTypes.push(JSON.parse(d.toString()).type));
@@ -70,7 +65,6 @@ const done = new Promise<void>((resolve) => {
   setTimeout(resolve, 45_000);
 });
 await done;
-// give the HUD a moment, then test ingest/state fan-out
 await fetch(`${base}/ingest/state`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connected: true, worn: true, battery: 0.8, streaming: true }) });
 await new Promise((r) => setTimeout(r, 300));
 ws.send(JSON.stringify({ type: "event", name: "stop" }));
@@ -86,7 +80,6 @@ if (verdict) console.log("verdict:", JSON.stringify({ level: verdict.level, head
 console.log("assistant said (final):", finalAssistant);
 console.log("== /hud-ws (no session) ==\n types:", JSON.stringify(hudTypes));
 
-// snapshot path
 const tv = Date.now();
 const vr = await fetch(`${base}/api/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ frames: [jpeg], profile, question }) });
 const vj: any = await vr.json();
