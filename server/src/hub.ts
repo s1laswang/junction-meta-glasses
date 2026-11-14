@@ -3,7 +3,8 @@
 // follow the most recently started live session.
 import type { WebSocket } from "ws";
 import type { DeviceState, Profile, ServerMsg, Verdict } from "../../shared/types.ts";
-import { FrameRing, emptyProfile } from "./verify.ts";
+import { FrameRing, emptyProfile, type Frame } from "./verify.ts";
+import { Speculator } from "./speculate.ts";
 import { log, shortId } from "./log.ts";
 
 export interface LiveLike {
@@ -18,6 +19,7 @@ export class Hub {
   clients = new Set<WebSocket>();
   huds = new Set<WebSocket>();
   ring = new FrameRing(8);
+  spec = new Speculator(this.ring, () => !!this.live?.active);
   profile: Profile = emptyProfile();
   live?: LiveLike;
   lastVerdict?: Verdict;
@@ -38,6 +40,18 @@ export class Hub {
     const s = JSON.stringify(msg);
     if (opts.clients !== false) for (const c of this.clients) safeSend(c, s);
     if (opts.hud !== false && HUD_TYPES.has(msg.type)) for (const h of hudsFor(this)) safeSend(h, s);
+  }
+  /** Every frame (phone or glasses) goes through here: ring buffer + speculative verify. */
+  addFrame(f: Frame) {
+    this.ring.push(f);
+    this.spec.onFrame(f);
+  }
+  /** Privacy: drop frames and cached reads. */
+  dropFrames() { this.ring.clear(); this.spec.clear(); }
+  /** Tell the phone(s) whether a HUD is attached to this session. */
+  hudChanged() {
+    const s = JSON.stringify({ type: "hud", connected: hudsFor(this).length > 0 });
+    for (const c of this.clients) safeSend(c, s);
   }
   /** Replay buffered state to a HUD that connects late. */
   replay(ws: WebSocket) {
@@ -81,6 +95,7 @@ export function markLatest(h: Hub) {
   latestId = h.id;
   if (orphanDevice && !h.device) h.device = orphanDevice;
   for (const ws of floatingHuds) h.replay(ws);
+  h.hudChanged();
 }
 
 export function addHud(ws: WebSocket, id?: string | null) {
@@ -88,14 +103,15 @@ export function addHud(ws: WebSocket, id?: string | null) {
     const h = getOrCreateHub(id);
     h.huds.add(ws);
     h.replay(ws);
-    ws.on("close", () => h.huds.delete(ws));
+    h.hudChanged();
+    ws.on("close", () => { h.huds.delete(ws); h.hudChanged(); });
     return;
   }
   floatingHuds.add(ws);
   const h = latestHub();
-  if (h) h.replay(ws);
+  if (h) { h.replay(ws); h.hudChanged(); }
   else if (orphanDevice) safeSend(ws, JSON.stringify({ type: "device", device: orphanDevice }));
-  ws.on("close", () => floatingHuds.delete(ws));
+  ws.on("close", () => { floatingHuds.delete(ws); latestHub()?.hudChanged(); });
 }
 /** The hub a HUD event should go to. */
 export function hudTarget(id?: string | null) { return resolveHub(id); }
@@ -116,7 +132,7 @@ setInterval(() => {
   const now = Date.now();
   for (const [id, h] of hubs) {
     if (h.clients.size === 0 && !h.live?.active && now - h.touchedAt > 10 * 60_000) {
-      h.ring.clear();
+      h.dropFrames();
       hubs.delete(id);
       if (latestId === id) latestId = undefined;
       log("hub.gc", { session: shortId(id) });

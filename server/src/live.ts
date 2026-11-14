@@ -12,7 +12,8 @@ import { ai, backoffMs } from "./gemini.ts";
 import type { Hub, LiveLike } from "./hub.ts";
 import { ledger } from "./ledger.ts";
 import { errSummary, log, shortId } from "./log.ts";
-import { verify } from "./verify.ts";
+import { readLabel } from "./verify.ts";
+import { checkLabel } from "./safety.ts";
 
 const BASE_PROMPT = fs.readFileSync(path.join(SERVER_DIR, "src", "prompts", "live.md"), "utf8");
 const CUES: CoachCue[] = ["rotate_left", "rotate_right", "closer", "farther", "more_light", "hold_still", "other_side", "ok"];
@@ -218,7 +219,7 @@ export class LiveProxy implements LiveLike {
     }
     if (sc.interrupted) {
       // barge-in: the client must flush its playback queue
-      this.send({ type: "status", live: "open", detail: "interrupted" });
+      this.send({ type: "interrupted" });
     }
     if (sc.turnComplete || sc.interrupted) {
       if (this.botText) this.send({ type: "transcript", role: "assistant", text: this.botText.trim(), final: true });
@@ -250,23 +251,36 @@ export class LiveProxy implements LiveLike {
         const r = this.logDose(String(args.medId ?? ""));
         this.respond(fc, r);
       } else if (fc.name === "verify_label") {
-        const frames = this.hub.ring.pick(2);
-        if (!frames.length) {
-          this.respond(fc, { level: "unsure", speech: "I can't see anything yet. Hold the item up in front of your face." });
-          return;
+        const question = typeof args.question === "string" ? args.question : undefined;
+        this.send({ type: "checking", phase: "start" });
+        try {
+          // 1) speculative cache / in-flight read, 2) otherwise a fresh read of the sharpest recent frames
+          const spec = await this.hub.spec.get();
+          let read = spec?.read, model = spec?.model ?? null, source: string = spec?.source ?? "fresh";
+          if (!read) {
+            const frames = this.hub.ring.pick(2);
+            if (!frames.length) {
+              this.respond(fc, { level: "unsure", speech: "I can't see anything yet. Hold the item up in front of your face." });
+              return;
+            }
+            this.send({ type: "coach", cue: "hold_still", text: "Hold still, reading…" });
+            const r = await readLabel(frames.map((f) => f.data), question, "verify_live");
+            read = r.read; model = r.model;
+          }
+          if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
+          if (this.stopped) return;
+          const v = checkLabel(read, this.hub.profile);
+          if (!model) { v.level = "unsure"; v.reasons.push("reader unavailable"); }
+          this.send({ type: "verdict", verdict: v });
+          this.respond(fc, {
+            level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
+            guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
+            instruction: "Say `speech` word for word (translate faithfully if needed), then stop. No disclaimer, add nothing.",
+          });
+          log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t });
+        } finally {
+          this.send({ type: "checking", phase: "end" });
         }
-        this.send({ type: "coach", cue: "hold_still", text: "Hold still, reading…" });
-        const r = await verify(frames.map((f) => f.data), this.hub.profile, typeof args.question === "string" ? args.question : undefined, "verify_live");
-        if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
-        if (this.stopped) return;
-        this.send({ type: "verdict", verdict: r.verdict });
-        const v = r.verdict;
-        this.respond(fc, {
-          level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
-          guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
-          instruction: "Say `speech` word for word (translate faithfully if needed), then stop. No disclaimer, add nothing.",
-        });
-        log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_frames: r.frames });
       } else {
         this.respond(fc, { error: `unknown tool ${fc.name}` });
       }

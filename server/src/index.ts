@@ -88,7 +88,7 @@ export function createApp() {
     if (hub) {
       const data = buf.toString("base64");
       const sharpness = Number(req.query.sharpness) || jpegSharpness(buf);
-      hub.ring.push({ data, sharpness, ts: Date.now(), bytes: buf.length, source: "glasses" });
+      hub.addFrame({ data, sharpness, ts: Date.now(), bytes: buf.length, source: "glasses" });
       (hub.live as LiveProxy | undefined)?.frame(data);
     } // no session: frame dropped (never stored)
     res.status(204).end();
@@ -112,6 +112,11 @@ export function createApp() {
       res.sendFile(path.join(dist, "index.html"));
     });
   }
+  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const status = typeof err?.status === "number" ? err.status : 500;
+    log("http.error", { status, kind: String(err?.type ?? err?.name ?? "error").slice(0, 40) });
+    res.status(status).json({ type: "error", code: status === 413 ? "too_large" : status < 500 ? "bad_input" : "server_error", message: status < 500 ? "invalid request" : "server error", recoverable: true });
+  });
   app.use((_req, res) => { res.status(404).json({ type: "error", code: "not_found", message: "not found", recoverable: false }); });
   return app;
 }
@@ -157,7 +162,7 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
       case "frame": {
         if (typeof msg.data !== "string" || msg.data.length < 100) return err("bad_input", "frame.data must be base64 JPEG");
         const sharp = typeof msg.sharpness === "number" ? Math.max(0, Math.min(1, msg.sharpness)) : jpegSharpness(Buffer.from(msg.data, "base64"));
-        hub.ring.push({ data: msg.data, sharpness: sharp, ts: Date.now(), bytes: Math.round(msg.data.length * 0.75), source: "phone" });
+        hub.addFrame({ data: msg.data, sharpness: sharp, ts: Date.now(), bytes: Math.round(msg.data.length * 0.75), source: "phone" });
         live?.frame(msg.data);
         return;
       }
@@ -182,7 +187,7 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
     log("ws.live.close", { session: shortId(id), remaining: hub.clients.size });
     if (hub.clients.size === 0) {
       hub.live?.stop("client disconnected");
-      hub.ring.clear(); // privacy: frames never outlive the session
+      hub.dropFrames(); // privacy: frames never outlive the session
     }
   });
   ws.on("error", () => { /* close follows */ });
