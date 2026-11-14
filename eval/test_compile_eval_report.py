@@ -22,6 +22,8 @@ from eval.compile_eval_report import (
     WAVE6_SUITE_IDS,
     WAVE7_ARTIFACT_SPECS,
     WAVE7_SUITE_IDS,
+    WAVE8_ARTIFACT_SPECS,
+    WAVE8_SUITE_IDS,
     compile_summary,
     main,
     render_markdown,
@@ -586,6 +588,207 @@ def _synthetic_wave7_payloads() -> dict[str, dict[str, Any]]:
     }
 
 
+def _synthetic_wave8_payloads() -> dict[str, dict[str, Any]]:
+    return {
+        "blister_strip_cuts_results.json": {
+            "generated_at": "2026-11-14T15:56:00+00:00",
+            "model": "gemini-3.8-flash",
+            "summary": {
+                "n_items": 8,
+                "n_intact_tile": 4,
+                "n_truncated_strength": 4,
+                "intact_tile_accuracy": 1.0,
+                "truncated_abstention_rate": 1.0,
+                "verdict_matches": 8,
+                "verdict_accuracy": 1.0,
+                "confident_wrong_dose_count": 0,
+                "false_safe_allergen_count": 0,
+                "latency_p50_ms": 4109.0,
+                "latency_p95_ms": 4597.5,
+                "tokens_in": 19948,
+                "tokens_out": 1045,
+            },
+            "items": [
+                {
+                    "id": f"bs_{idx:02d}",
+                    "strip_condition": "intact_repeating_tiles" if idx <= 4 else "truncated_strength",
+                    "intact_tile": idx <= 4,
+                    "expected_level": "match" if idx == 1 else ("warning" if idx <= 4 else "unsure"),
+                    "predicted_level": "match" if idx == 1 else ("warning" if idx <= 4 else "unsure"),
+                    "verdict_match": True,
+                    "intact_tile_correct": True if idx <= 4 else None,
+                    "abstained": None if idx <= 4 else True,
+                    "strength_value": "5 mg" if idx <= 4 else None,
+                    "strength_confidence": 0.98 if idx <= 4 else 0.0,
+                    "confident_wrong_dose": False,
+                    "false_safe_allergen": False,
+                    "latency_ms": 3900.0 + idx * 35.0,
+                }
+                for idx in range(1, 9)
+            ],
+        },
+        "two_boxes_in_frame_results.json": {
+            "generated_at": "2026-11-14T15:48:00+00:00",
+            "model": "gemini-3.8-flash",
+            "summary": {
+                "n_items": 8,
+                "n_foreground_items": 4,
+                "n_twin_box_items": 4,
+                "foreground_focus_accuracy": 1.0,
+                "multi_box_safety_rate": 1.0,
+                "false_match_on_conflict_count": 0,
+                "verdict_matches": 8,
+                "verdict_accuracy": 1.0,
+                "confident_wrong_dose_count": 0,
+                "false_safe_allergen_count": 0,
+                "latency_p50_ms": 3314.0,
+                "latency_p95_ms": 6895.7,
+                "tokens_in": 19947,
+                "tokens_out": 983,
+            },
+            "items": [
+                {
+                    "id": f"tb_{idx:02d}",
+                    "scene_group": "foreground_clutter" if idx <= 4 else "twin_boxes",
+                    "expected_level": "match" if idx == 1 else ("info" if idx == 4 else ("unsure" if idx >= 7 else "warning")),
+                    "predicted_level": "match" if idx == 1 else ("info" if idx == 4 else ("unsure" if idx >= 7 else "warning")),
+                    "verdict_match": True,
+                    "conflicting_doses": idx >= 5,
+                    "false_match_on_conflict": False,
+                    "strength_value": "5 mg" if idx == 1 else None,
+                    "strength_confidence": 0.99 if idx == 1 else 0.0,
+                    "confident_wrong_dose": False,
+                    "false_safe_allergen": False,
+                    "latency_ms": 3100.0 + idx * 45.0,
+                }
+                for idx in range(1, 9)
+            ],
+        },
+        "cellophane_tremor_results.json": {
+            "generated_at": "2026-11-14T15:51:00+00:00",
+            "model": "gemini-3.8-flash",
+            "summary": {
+                "n_items": 8,
+                "n_moderate_compound": 5,
+                "n_severe_compound": 3,
+                "moderate_compound_accuracy": 1.0,
+                "severe_compound_abstention_rate": 1.0,
+                "verdict_matches": 8,
+                "verdict_accuracy": 1.0,
+                "confident_wrong_dose_count": 0,
+                "false_safe_allergen_count": 0,
+                "latency_p50_ms": 3449.9,
+                "latency_p95_ms": 4592.4,
+                "tokens_in": 19880,
+                "tokens_out": 963,
+            },
+            "items": [
+                {
+                    "id": f"ct_{idx:02d}",
+                    "compound_tier": "moderate" if idx <= 5 else "severe",
+                    "expected_level": "match" if idx == 1 else ("info" if idx == 5 else ("unsure" if idx >= 6 else "warning")),
+                    "predicted_level": "match" if idx == 1 else ("info" if idx == 5 else ("unsure" if idx >= 6 else "warning")),
+                    "verdict_match": True,
+                    "abstained": idx >= 6,
+                    "strength_value": "5 mg" if idx == 1 else None,
+                    "strength_confidence": 0.98 if idx == 1 else 0.0,
+                    "confident_wrong_dose": False,
+                    "false_safe_allergen": False,
+                    "latency_ms": 3250.0 + idx * 40.0,
+                }
+                for idx in range(1, 9)
+            ],
+        },
+        "ws_reconnect_resilience.json": {
+            "generated_at": "2026-11-14T15:47:00+00:00",
+            "summary": {
+                "n_reconnect_cycles": 50,
+                "replay_completeness_rate": 1.0,
+                "replay_reconnect_p50_ms": 0.776,
+                "replay_reconnect_p95_ms": 1.006,
+                "n_hostile_payloads": 100,
+                "graceful_rejection_rate": 1.0,
+                "server_crash_count": 0,
+                "ping_pong_after_storm_ms": 0.135,
+                "post_storm_buffered_frames": 0,
+                "leaked_hud_refs_in_health": 0,
+            },
+            "hud_flap_reconnect_benchmark": {
+                "n_reconnect_cycles": 50,
+                "complete_4_msg_replays": 50,
+                "replay_completeness_rate": 1.0,
+                "replay_wire_bytes_per_cycle": 897,
+                "replay_reconnect_latency_ms": {"p50": 0.776, "p95": 1.006},
+                "leaked_hud_refs": 0,
+            },
+            "hostile_payload_storm_benchmark": {
+                "n_hostile_payloads": 100,
+                "graceful_rejections": 100,
+                "graceful_rejection_rate": 1.0,
+                "server_crash_count": 0,
+                "post_storm_buffered_frames": 0,
+                "post_storm_leaked_hud_refs": 0,
+            },
+        },
+        "spoken_verdict_clarity_results.json": {
+            "generated_at": "2026-11-14T15:50:00+00:00",
+            "model": "gemini-3.8-flash",
+            "summary": {
+                "n_cases": 16,
+                "verdict_matches": 16,
+                "verdict_accuracy": 1.0,
+                "headline_word_cap": 8,
+                "speech_sentence_cap": 2,
+                "headline_word_cap_pass_rate": 1.0,
+                "speech_sentence_cap_pass_rate": 1.0,
+                "zero_em_dash_rate": 1.0,
+                "mean_headline_words": 5.12,
+                "max_headline_words": 8,
+                "mean_speech_sentences": 2.0,
+                "max_speech_sentences": 2,
+                "mean_speech_words": 16.69,
+                "mean_clarity_score": 5.0,
+                "min_clarity_score": 5,
+                "max_clarity_score": 5,
+                "auditory_distinction_pass_rate": 1.0,
+                "non_medical_boundary_pass_rate": 1.0,
+                "blind_actionability_pass_rate": 1.0,
+                "confident_wrong_dose_count": 0,
+                "false_safe_allergen_count": 0,
+                "latency_p50_ms": 3181.4,
+                "latency_p95_ms": 4211.0,
+                "tokens_in": 11341,
+                "tokens_out": 2102,
+            },
+            "items": [
+                {
+                    "id": f"sv_{idx:02d}",
+                    "category": "exact_match" if idx <= 3 else ("unsure_refusal" if idx in (10, 11, 12, 16) else ("safe_info" if idx == 15 else "warning_catch")),
+                    "expected_level": "match" if idx <= 3 else ("unsure" if idx in (10, 11, 12, 16) else ("info" if idx == 15 else "warning")),
+                    "predicted_level": "match" if idx <= 3 else ("unsure" if idx in (10, 11, 12, 16) else ("info" if idx == 15 else "warning")),
+                    "verdict_match": True,
+                    "headline": "Yes: Amlodipine 5 mg",
+                    "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+                    "headline_word_count": 4,
+                    "headline_word_cap_ok": True,
+                    "speech_sentence_count": 2,
+                    "speech_sentence_cap_ok": True,
+                    "speech_word_count": 12,
+                    "zero_em_dash_ok": True,
+                    "confident_wrong_dose": False,
+                    "false_safe_allergen": False,
+                    "clarity_1_to_5": 5,
+                    "auditory_level_distinct": True,
+                    "non_medical_boundary_safe": True,
+                    "actionable_for_blind_listener": True,
+                    "latency_ms": 3000.0 + idx * 20.0,
+                }
+                for idx in range(1, 17)
+            ],
+        },
+    }
+
+
 class CompileEvalReportTest(unittest.TestCase):
     def test_current_repo_data_compiles_cleanly(self) -> None:
         compiled = compile_summary(DEFAULT_EVAL_DIR)
@@ -595,7 +798,8 @@ class CompileEvalReportTest(unittest.TestCase):
         self.assertEqual(len(EXTENDED_ARTIFACT_SPECS), 6)
         self.assertEqual(len(WAVE6_ARTIFACT_SPECS), 6)
         self.assertEqual(len(WAVE7_ARTIFACT_SPECS), 5)
-        self.assertEqual(len(OPTIONAL_SUITE_IDS), 17)
+        self.assertEqual(len(WAVE8_ARTIFACT_SPECS), 5)
+        self.assertEqual(len(OPTIONAL_SUITE_IDS), 22)
         self.assertEqual(compiled["suites_present"], [s["id"] for s in ARTIFACT_SPECS])
         self.assertEqual(compiled["suites_missing"], [])
         self.assertEqual(compiled["total_label_cases_evaluated"], 53)
@@ -607,10 +811,23 @@ class CompileEvalReportTest(unittest.TestCase):
         self.assertTrue(set(compiled["wave6_suites_present"]).issubset(set(WAVE6_SUITE_IDS)))
         self.assertIsInstance(compiled["wave7_suites_present"], list)
         self.assertTrue(set(compiled["wave7_suites_present"]).issubset(set(WAVE7_SUITE_IDS)))
+        self.assertIsInstance(compiled["wave8_suites_present"], list)
+        self.assertEqual(compiled["wave8_suites_present"], WAVE8_SUITE_IDS)
+        self.assertEqual(compiled["wave8_summary"]["suites_count"], 5)
+        self.assertEqual(compiled["wave8_summary"]["label_cases_evaluated"], 24)
+        self.assertEqual(compiled["wave8_summary"]["verdict_and_clarity_cases_evaluated"], 40)
+        self.assertEqual(compiled["wave8_summary"]["confident_wrong_dose_count"], 0)
+        self.assertEqual(compiled["wave8_summary"]["false_safe_allergen_count"], 0)
         self.assertEqual(
             compiled["optional_suites_present"],
-            [*compiled["extended_suites_present"], *compiled["wave6_suites_present"], *compiled["wave7_suites_present"]],
+            [
+                *compiled["extended_suites_present"],
+                *compiled["wave6_suites_present"],
+                *compiled["wave7_suites_present"],
+                *compiled["wave8_suites_present"],
+            ],
         )
+        self.assertEqual(len(compiled["suites_present"]) + len(compiled["optional_suites_present"]), 31)
         self.assertNotIn("Pending merge", md)
         self.assertNotIn(EM_DASH, json.dumps(compiled, ensure_ascii=False))
         self.assertNotIn(EM_DASH, md)
@@ -628,6 +845,7 @@ class CompileEvalReportTest(unittest.TestCase):
             self.assertEqual(compiled["extended_suites_present"], [])
             self.assertEqual(compiled["wave6_suites_present"], [])
             self.assertEqual(compiled["wave7_suites_present"], [])
+            self.assertEqual(compiled["wave8_suites_present"], [])
             self.assertEqual(compiled["optional_suites_present"], [])
             self.assertEqual(compiled["extended_summary"]["suites_count"], 0)
             self.assertEqual(compiled["extended_summary"]["total_cases_evaluated"], 0)
@@ -637,9 +855,13 @@ class CompileEvalReportTest(unittest.TestCase):
             self.assertEqual(compiled["wave7_summary"]["suites_count"], 0)
             self.assertEqual(compiled["wave7_summary"]["confident_wrong_dose_count"], 0)
             self.assertEqual(compiled["wave7_summary"]["false_safe_allergen_count"], 0)
+            self.assertEqual(compiled["wave8_summary"]["suites_count"], 0)
+            self.assertEqual(compiled["wave8_summary"]["confident_wrong_dose_count"], 0)
+            self.assertEqual(compiled["wave8_summary"]["false_safe_allergen_count"], 0)
             self.assertNotIn("Extended Optical, Multilingual & Privacy Stress Suites", md)
             self.assertNotIn("Wave-6 Multi-Frame Fusion, Adversarial Safety, Systems & TTS Benchmarks", md)
             self.assertNotIn("Wave-7 Orientation, Prompt-Injection, Wear, Concurrency & Coaching Benchmarks", md)
+            self.assertNotIn("Wave-8 Blister-Cut, Multi-Box, Compound-Glare, Reconnect & Spoken-Clarity Benchmarks", md)
             self.assertNotIn("Pending merge", md)
             self.assertNotIn("0 (pending)", md)
             self.assertNotIn("missing", md.lower())
@@ -1345,6 +1567,342 @@ class CompileEvalReportTest(unittest.TestCase):
             self.assertEqual(arts["multilingual_coaching_results"]["dose_hallucination_count"], 0)
             self.assertEqual(arts["multilingual_coaching_results"]["bystander_leak_count"], 0)
             self.assertEqual(arts["multilingual_coaching_results"]["mean_word_count"], 4.0)
+
+    def test_all_five_wave8_suites_discovered_and_rendered_via_cli(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = pathlib.Path(tmp)
+            eval_dir = tmp_dir / "eval"
+            eval_dir.mkdir(parents=True, exist_ok=True)
+            _copy_core_suites(eval_dir)
+
+            for fname, payload in _synthetic_extended_payloads().items():
+                (eval_dir / fname).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            for fname, payload in _synthetic_wave6_payloads().items():
+                (eval_dir / fname).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            for fname, payload in _synthetic_wave7_payloads().items():
+                (eval_dir / fname).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            w8_payloads = _synthetic_wave8_payloads()
+            self.assertEqual(len(w8_payloads), 5)
+            for fname, payload in w8_payloads.items():
+                (eval_dir / fname).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+            out_json = tmp_dir / "out" / "combined_summary.json"
+            out_md = tmp_dir / "out" / "EVAL.md"
+            stdout_buf = io.StringIO()
+            with contextlib.redirect_stdout(stdout_buf):
+                rc = main(["--eval-dir", str(eval_dir), "--out-json", str(out_json), "--out-md", str(out_md)])
+            self.assertEqual(rc, 0)
+            cli_out = stdout_buf.getvalue()
+            self.assertIn("+ 6 extended", cli_out)
+            self.assertIn("+ 6 wave6", cli_out)
+            self.assertIn("+ 5 wave7", cli_out)
+            self.assertIn("+ 5 wave8", cli_out)
+
+            compiled = json.loads(out_json.read_text(encoding="utf-8"))
+            md = out_md.read_text(encoding="utf-8")
+
+            self.assertEqual(compiled["suites_missing"], [])
+            self.assertEqual(compiled["extended_suites_present"], EXTENDED_SUITE_IDS)
+            self.assertEqual(compiled["wave6_suites_present"], WAVE6_SUITE_IDS)
+            self.assertEqual(compiled["wave7_suites_present"], WAVE7_SUITE_IDS)
+            self.assertEqual(compiled["wave8_suites_present"], WAVE8_SUITE_IDS)
+            self.assertEqual(
+                compiled["optional_suites_present"],
+                [*EXTENDED_SUITE_IDS, *WAVE6_SUITE_IDS, *WAVE7_SUITE_IDS, *WAVE8_SUITE_IDS],
+            )
+            self.assertEqual(len(compiled["suites_present"]) + len(compiled["optional_suites_present"]), 31)
+
+            w8_sum = compiled["wave8_summary"]
+            self.assertEqual(w8_sum["suites_count"], 5)
+            self.assertEqual(w8_sum["label_cases_evaluated"], 24)
+            self.assertEqual(w8_sum["label_verdict_matches"], 24)
+            self.assertEqual(w8_sum["label_verdict_accuracy"], 1.0)
+            self.assertEqual(w8_sum["verdict_and_clarity_cases_evaluated"], 40)
+            self.assertEqual(w8_sum["verdict_and_clarity_matches"], 40)
+            self.assertEqual(w8_sum["verdict_and_clarity_accuracy"], 1.0)
+            self.assertEqual(w8_sum["confident_wrong_dose_count"], 0)
+            self.assertEqual(w8_sum["false_safe_allergen_count"], 0)
+            self.assertEqual(w8_sum["blister_intact_tile_accuracy"], 1.0)
+            self.assertEqual(w8_sum["blister_truncated_abstention_rate"], 1.0)
+            self.assertEqual(w8_sum["blister_cuts_latency_p50_ms"], 4109.0)
+            self.assertEqual(w8_sum["two_boxes_foreground_focus_accuracy"], 1.0)
+            self.assertEqual(w8_sum["two_boxes_multi_box_safety_rate"], 1.0)
+            self.assertEqual(w8_sum["two_boxes_false_match_on_conflict_count"], 0)
+            self.assertEqual(w8_sum["two_boxes_latency_p50_ms"], 3314.0)
+            self.assertEqual(w8_sum["cellophane_moderate_compound_accuracy"], 1.0)
+            self.assertEqual(w8_sum["cellophane_severe_compound_abstention_rate"], 1.0)
+            self.assertEqual(w8_sum["cellophane_tremor_latency_p50_ms"], 3449.9)
+            self.assertEqual(w8_sum["ws_reconnect_cycles_tested"], 50)
+            self.assertEqual(w8_sum["ws_replay_completeness_rate"], 1.0)
+            self.assertEqual(w8_sum["ws_replay_reconnect_p50_ms"], 0.776)
+            self.assertEqual(w8_sum["ws_hostile_payloads_tested"], 100)
+            self.assertEqual(w8_sum["ws_graceful_rejection_rate"], 1.0)
+            self.assertEqual(w8_sum["ws_server_crash_count"], 0)
+            self.assertEqual(w8_sum["ws_post_storm_buffered_frames"], 0)
+            self.assertEqual(w8_sum["spoken_clarity_cases_evaluated"], 16)
+            self.assertEqual(w8_sum["spoken_clarity_verdict_matches"], 16)
+            self.assertEqual(w8_sum["spoken_clarity_verdict_accuracy"], 1.0)
+            self.assertEqual(w8_sum["spoken_headline_word_cap_pass_rate"], 1.0)
+            self.assertEqual(w8_sum["spoken_speech_sentence_cap_pass_rate"], 1.0)
+            self.assertEqual(w8_sum["spoken_mean_clarity_score"], 5.0)
+            self.assertEqual(w8_sum["spoken_non_medical_boundary_pass_rate"], 1.0)
+            self.assertEqual(w8_sum["spoken_blind_actionability_pass_rate"], 1.0)
+            self.assertEqual(w8_sum["spoken_clarity_latency_p50_ms"], 3181.4)
+            self.assertEqual(compiled["total_confident_wrong_dose_count"], 0)
+            self.assertEqual(compiled["total_false_safe_allergen_count"], 0)
+
+            arts = compiled["artifacts"]
+            self.assertEqual(arts["blister_strip_cuts_results"]["intact_tile_accuracy"], 1.0)
+            self.assertEqual(arts["blister_strip_cuts_results"]["truncated_abstention_rate"], 1.0)
+            self.assertEqual(arts["two_boxes_in_frame_results"]["foreground_focus_accuracy"], 1.0)
+            self.assertEqual(arts["two_boxes_in_frame_results"]["multi_box_safety_rate"], 1.0)
+            self.assertEqual(arts["two_boxes_in_frame_results"]["false_match_on_conflict_count"], 0)
+            self.assertEqual(arts["cellophane_tremor_results"]["moderate_compound_accuracy"], 1.0)
+            self.assertEqual(arts["cellophane_tremor_results"]["severe_compound_abstention_rate"], 1.0)
+            self.assertEqual(arts["ws_reconnect_resilience"]["n_reconnect_cycles"], 50)
+            self.assertEqual(arts["ws_reconnect_resilience"]["n_hostile_payloads"], 100)
+            self.assertEqual(arts["ws_reconnect_resilience"]["server_crash_count"], 0)
+            self.assertEqual(arts["ws_reconnect_resilience"]["post_storm_buffered_frames"], 0)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["n_cases"], 16)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["mean_clarity_score"], 5.0)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["non_medical_boundary_pass_rate"], 1.0)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["blind_actionability_pass_rate"], 1.0)
+
+            self.assertIn(
+                f"{H3} Wave-8 Blister-Cut, Multi-Box, Compound-Glare, Reconnect & Spoken-Clarity Benchmarks",
+                md,
+            )
+            for spec in WAVE8_ARTIFACT_SPECS:
+                self.assertIn(f"`eval/{spec['filename']}`", md)
+                self.assertIn(spec["repro_cmd"], md)
+            self.assertIn("Intact tiles 100.0%", md)
+            self.assertIn("0 conflict false matches", md)
+            self.assertIn("Moderate compound 100.0%", md)
+            self.assertIn("0 crashes", md)
+            self.assertIn("MDR boundary 100.0%", md)
+            self.assertNotIn("Pending merge", md)
+            self.assertNotIn("missing", md.lower())
+            self.assertNotIn(EM_DASH, out_json.read_text(encoding="utf-8"))
+            self.assertNotIn(EM_DASH, md)
+
+    def test_partial_wave8_suites_rolls_up_safety_counts_and_scrubs_em_dash(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = pathlib.Path(tmp)
+            _copy_core_suites(tmp_dir)
+
+            w8 = _synthetic_wave8_payloads()
+            bs = w8["blister_strip_cuts_results.json"]
+            bs["model"] = f"gemini-3.8-flash{EM_DASH}blister"
+            bs["summary"]["confident_wrong_dose_count"] = 2
+            ws = w8["ws_reconnect_resilience.json"]
+            sv = w8["spoken_verdict_clarity_results.json"]
+            sv["summary"]["false_safe_allergen_count"] = 1
+
+            (tmp_dir / "blister_strip_cuts_results.json").write_text(json.dumps(bs), encoding="utf-8")
+            (tmp_dir / "ws_reconnect_resilience.json").write_text(json.dumps(ws), encoding="utf-8")
+            (tmp_dir / "spoken_verdict_clarity_results.json").write_text(json.dumps(sv), encoding="utf-8")
+
+            compiled = compile_summary(tmp_dir)
+            md = render_markdown(compiled)
+
+            self.assertEqual(compiled["suites_missing"], [])
+            self.assertEqual(compiled["extended_suites_present"], [])
+            self.assertEqual(compiled["wave6_suites_present"], [])
+            self.assertEqual(compiled["wave7_suites_present"], [])
+            self.assertEqual(
+                compiled["wave8_suites_present"],
+                [
+                    "blister_strip_cuts_results",
+                    "ws_reconnect_resilience",
+                    "spoken_verdict_clarity_results",
+                ],
+            )
+            self.assertEqual(compiled["wave8_summary"]["suites_count"], 3)
+            self.assertEqual(compiled["wave8_summary"]["label_cases_evaluated"], 8)
+            self.assertEqual(compiled["wave8_summary"]["verdict_and_clarity_cases_evaluated"], 24)
+            self.assertEqual(compiled["wave8_summary"]["confident_wrong_dose_count"], 2)
+            self.assertEqual(compiled["wave8_summary"]["false_safe_allergen_count"], 1)
+            self.assertEqual(compiled["total_confident_wrong_dose_count"], 2)
+            self.assertEqual(compiled["total_false_safe_allergen_count"], 1)
+
+            self.assertIn(
+                f"{H3} Wave-8 Blister-Cut, Multi-Box, Compound-Glare, Reconnect & Spoken-Clarity Benchmarks",
+                md,
+            )
+            self.assertNotIn(f"{H3} Wave-7 Orientation, Prompt-Injection, Wear, Concurrency & Coaching Benchmarks", md)
+            self.assertIn("`eval/blister_strip_cuts_results.json`", md)
+            self.assertIn("`eval/ws_reconnect_resilience.json`", md)
+            self.assertIn("`eval/spoken_verdict_clarity_results.json`", md)
+            self.assertNotIn("`eval/two_boxes_in_frame_results.json`", md)
+            self.assertNotIn("`eval/cellophane_tremor_results.json`", md)
+            self.assertNotIn("Pending merge", md)
+            self.assertNotIn("missing", md.lower())
+            self.assertNotIn(EM_DASH, json.dumps(compiled, ensure_ascii=False))
+            self.assertNotIn(EM_DASH, md)
+
+    def test_wave8_item_and_nested_fallback_derivations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_dir = pathlib.Path(tmp)
+            _copy_core_suites(tmp_dir)
+
+            bs_minimal = {
+                "summary": {},
+                "items": [
+                    {
+                        "id": "b1",
+                        "strip_condition": "intact_repeating_tiles",
+                        "expected_level": "match",
+                        "predicted_level": "match",
+                        "false_safe_allergen": False,
+                        "latency_ms": 4050.0,
+                    },
+                    {
+                        "id": "b2",
+                        "strip_condition": "truncated_strength",
+                        "expected_level": "unsure",
+                        "predicted_level": "unsure",
+                        "false_safe_allergen": False,
+                        "latency_ms": 4150.0,
+                    },
+                ],
+            }
+            tb_minimal = {
+                "summary": {},
+                "items": [
+                    {
+                        "id": "t1",
+                        "scene_group": "foreground_clutter",
+                        "expected_level": "match",
+                        "predicted_level": "match",
+                        "conflicting_doses": False,
+                        "false_safe_allergen": False,
+                        "latency_ms": 3250.0,
+                    },
+                    {
+                        "id": "t2",
+                        "scene_group": "twin_boxes",
+                        "expected_level": "warning",
+                        "accepted_levels": ["warning", "unsure"],
+                        "predicted_level": "unsure",
+                        "conflicting_doses": True,
+                        "false_safe_allergen": False,
+                        "latency_ms": 3350.0,
+                    },
+                ],
+            }
+            ct_minimal = {
+                "summary": {},
+                "items": [
+                    {
+                        "id": "c1",
+                        "compound_tier": "moderate",
+                        "expected_level": "match",
+                        "predicted_level": "match",
+                        "false_safe_allergen": False,
+                        "latency_ms": 3400.0,
+                    },
+                    {
+                        "id": "c2",
+                        "compound_tier": "severe",
+                        "expected_level": "unsure",
+                        "predicted_level": "unsure",
+                        "false_safe_allergen": False,
+                        "latency_ms": 3500.0,
+                    },
+                ],
+            }
+            ws_minimal = {
+                "hud_flap_reconnect_benchmark": {
+                    "n_reconnect_cycles": 10,
+                    "complete_4_msg_replays": 10,
+                    "replay_wire_bytes_per_cycle": 897,
+                    "replay_reconnect_latency_ms": {"p50": 0.812, "p95": 1.045},
+                    "leaked_hud_refs": 0,
+                },
+                "hostile_payload_storm_benchmark": {
+                    "categories": {
+                        "binary": {"sent": 12, "graceful": 12},
+                        "malformed": {"sent": 8, "graceful": 8},
+                    },
+                    "server_crash_count": 0,
+                    "post_storm_ping_pong": {"latency_ms": {"p50": 0.142}},
+                    "post_storm_buffered_frames": 0,
+                    "post_storm_leaked_hud_refs": 0,
+                },
+            }
+            sv_minimal = {
+                "summary": {},
+                "items": [
+                    {
+                        "id": "s1",
+                        "expected_level": "match",
+                        "predicted_level": "match",
+                        "headline": "Yes: Amlodipine 5 mg",
+                        "speech": "Yes, Amlodipine 5 mg. Not taken today.",
+                        "rubric": {
+                            "clarity_1_to_5": 5,
+                            "auditory_level_distinct": True,
+                            "non_medical_boundary_safe": True,
+                            "actionable_for_blind_listener": True,
+                        },
+                        "latency_ms": 3100.0,
+                    },
+                    {
+                        "id": "s2",
+                        "expected_level": "warning",
+                        "predicted_level": "warning",
+                        "headline": "Amlodipine 10 mg: wrong strength",
+                        "speech": "This is Amlodipine 10 mg, not 5 mg. Ask a pharmacist.",
+                        "rubric": {
+                            "clarity_1_to_5": 5,
+                            "auditory_level_distinct": True,
+                            "non_medical_boundary_safe": True,
+                            "actionable_for_blind_listener": True,
+                        },
+                        "latency_ms": 3200.0,
+                    },
+                ],
+            }
+
+            (tmp_dir / "blister_strip_cuts_results.json").write_text(json.dumps(bs_minimal), encoding="utf-8")
+            (tmp_dir / "two_boxes_in_frame_results.json").write_text(json.dumps(tb_minimal), encoding="utf-8")
+            (tmp_dir / "cellophane_tremor_results.json").write_text(json.dumps(ct_minimal), encoding="utf-8")
+            (tmp_dir / "ws_reconnect_resilience.json").write_text(json.dumps(ws_minimal), encoding="utf-8")
+            (tmp_dir / "spoken_verdict_clarity_results.json").write_text(json.dumps(sv_minimal), encoding="utf-8")
+
+            compiled = compile_summary(tmp_dir)
+            arts = compiled["artifacts"]
+
+            self.assertEqual(arts["blister_strip_cuts_results"]["intact_tile_accuracy"], 1.0)
+            self.assertEqual(arts["blister_strip_cuts_results"]["truncated_abstention_rate"], 1.0)
+            self.assertEqual(arts["blister_strip_cuts_results"]["false_safe_allergen_count"], 0)
+
+            self.assertEqual(arts["two_boxes_in_frame_results"]["verdict_accuracy"], 1.0)
+            self.assertEqual(arts["two_boxes_in_frame_results"]["foreground_focus_accuracy"], 1.0)
+            self.assertEqual(arts["two_boxes_in_frame_results"]["multi_box_safety_rate"], 1.0)
+            self.assertEqual(arts["two_boxes_in_frame_results"]["false_match_on_conflict_count"], 0)
+            self.assertEqual(arts["two_boxes_in_frame_results"]["false_safe_allergen_count"], 0)
+
+            self.assertEqual(arts["cellophane_tremor_results"]["moderate_compound_accuracy"], 1.0)
+            self.assertEqual(arts["cellophane_tremor_results"]["severe_compound_abstention_rate"], 1.0)
+            self.assertEqual(arts["cellophane_tremor_results"]["false_safe_allergen_count"], 0)
+
+            self.assertEqual(arts["ws_reconnect_resilience"]["n_reconnect_cycles"], 10)
+            self.assertEqual(arts["ws_reconnect_resilience"]["replay_completeness_rate"], 1.0)
+            self.assertEqual(arts["ws_reconnect_resilience"]["replay_reconnect_p50_ms"], 0.812)
+            self.assertEqual(arts["ws_reconnect_resilience"]["n_hostile_payloads"], 20)
+            self.assertEqual(arts["ws_reconnect_resilience"]["graceful_rejection_rate"], 1.0)
+            self.assertEqual(arts["ws_reconnect_resilience"]["server_crash_count"], 0)
+            self.assertEqual(arts["ws_reconnect_resilience"]["ping_pong_after_storm_ms"], 0.142)
+            self.assertEqual(arts["ws_reconnect_resilience"]["post_storm_buffered_frames"], 0)
+
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["n_cases"], 2)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["verdict_accuracy"], 1.0)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["headline_word_cap_pass_rate"], 1.0)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["speech_sentence_cap_pass_rate"], 1.0)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["mean_clarity_score"], 5.0)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["non_medical_boundary_pass_rate"], 1.0)
+            self.assertEqual(arts["spoken_verdict_clarity_results"]["blind_actionability_pass_rate"], 1.0)
 
     def test_python_sources_contain_zero_hash_comments_and_zero_em_dashes(self) -> None:
         for rel in ("eval/compile_eval_report.py", "eval/test_compile_eval_report.py"):

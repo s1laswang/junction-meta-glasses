@@ -411,6 +411,7 @@ test("Dockerfile COPY --from=build manifest and .dockerignore inclusion/exclusio
     "deck/deck.js",
     "docs/printable-props.html",
     "docs/judge-handout.html",
+    "docs/architecture-poster.html",
     "eval/combined_summary.json",
     ".env.example",
   ]) {
@@ -511,6 +512,7 @@ test("Clean-room Dockerfile runtime stage boots startServer(0) with GEMINI_API_K
       "deck/index.html",
       "docs/printable-props.html",
       "docs/judge-handout.html",
+      "docs/architecture-poster.html",
       "eval/combined_summary.json",
     ]) {
       assert.equal(
@@ -542,6 +544,7 @@ test("Clean-room Dockerfile runtime stage boots startServer(0) with GEMINI_API_K
     const expectedDeckHtml = fs.readFileSync(path.join(REPO_ROOT, "deck", "index.html"), "utf8");
     const expectedPropsHtml = fs.readFileSync(path.join(REPO_ROOT, "docs", "printable-props.html"), "utf8");
     const expectedHandoutHtml = fs.readFileSync(path.join(REPO_ROOT, "docs", "judge-handout.html"), "utf8");
+    const expectedPosterHtml = fs.readFileSync(path.join(REPO_ROOT, "docs", "architecture-poster.html"), "utf8");
     const expectedWearables = JSON.parse(
       fs.readFileSync(path.join(REPO_ROOT, "web", "public", ".well-known", "meta-wearables-manifest.json"), "utf8"),
     ) as Record<string, unknown>;
@@ -587,6 +590,22 @@ test("Clean-room Dockerfile runtime stage boots startServer(0) with GEMINI_API_K
     const handoutBody = await handoutRes.text();
     assert.equal(handoutBody, expectedHandoutHtml);
     assert.match(handoutBody, /STRENGTH_MIN_CONF = 0\.80/);
+
+    const posterRes = await fetch(`${baseUrl}/architecture-poster.html`);
+    assert.equal(posterRes.status, 200);
+    assert.equal(posterRes.headers.get("x-powered-by"), null);
+    assert.match(posterRes.headers.get("content-type") ?? "", /text\/html/i);
+    assert.equal(await posterRes.text(), expectedPosterHtml);
+
+    const deckMissingRes = await fetch(`${baseUrl}/deck/missing.js`);
+    assert.equal(deckMissingRes.status, 404);
+    assert.match(deckMissingRes.headers.get("content-type") ?? "", /application\/json/i);
+    assert.deepEqual(await deckMissingRes.json(), {
+      type: "error",
+      code: "not_found",
+      message: "not found",
+      recoverable: false,
+    });
 
     const wearablesRes = await fetch(`${baseUrl}/.well-known/meta-wearables-manifest.json`);
     assert.equal(wearablesRes.status, 200);

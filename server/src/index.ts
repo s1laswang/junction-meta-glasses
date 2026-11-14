@@ -20,6 +20,12 @@ export function createApp(opts?: { repoRoot?: string }) {
   const root = opts?.repoRoot ?? REPO_ROOT;
   const app = express();
   app.disable("x-powered-by");
+  app.use((_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    next();
+  });
   app.use("/api", (_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
 
   let healthCache: { at: number; ok: boolean } | undefined;

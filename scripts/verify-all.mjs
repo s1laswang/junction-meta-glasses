@@ -268,6 +268,9 @@ async function main() {
     ? ["server/scripts/simulate-bridge.ts", "--self-test"]
     : ["exec", "--", "tsx", "server/scripts/simulate-bridge.ts", "--self-test"];
 
+  const venvPy = "/venv/bin/python3";
+  const pyCmd = fs.existsSync(venvPy) ? venvPy : "python3";
+
   const serverTestFiles = listWorkspaceTests("server");
   const webTestFiles = listWorkspaceTests("web");
   const nodeMajor = Number(process.versions.node.split(".")[0]) || 0;
@@ -293,6 +296,7 @@ async function main() {
       {},
       path.join(REPO_ROOT, "web"),
     ),
+    runCommand("eval python tests", pyCmd, ["-m", "unittest", "discover", "-s", "eval", "-p", "test_*.py"]),
     (async () => {
       await runCommand("simulate-bridge --self-test", tsxCmd, tsxArgs, { GEMINI_API_KEY: "", HOLDUP_QUIET: "1" });
       await runCommand("android-dat structure verifier", process.execPath, ["android-dat/verify-structure.mjs"]);

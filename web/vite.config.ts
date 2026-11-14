@@ -6,6 +6,9 @@ export function manualChunks(id: string): string | undefined {
   if (normalized.includes("/node_modules/") || normalized.startsWith("node_modules/")) {
     return "vendor";
   }
+  if (normalized.includes("/web/src/components/") || normalized.startsWith("src/components/")) {
+    return "cards";
+  }
   return undefined;
 }
 
