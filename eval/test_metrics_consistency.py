@@ -289,21 +289,24 @@ def audit_results_summary_invariants(data: dict[str, Any], filename: str) -> dic
 
     checked_rate_fields = _audit_summary_rate_fields(summary, filename, "$.summary", errors)
 
-    has_n_items = "n_items" in summary
-    has_n_cases = "n_cases" in summary
-    if "verdict_matches" in summary and (has_n_items or has_n_cases):
+    n_items_val = summary.get("n_items")
+    n_cases_val = summary.get("n_cases")
+    vm = summary.get("verdict_matches")
+    if vm is not None and (n_items_val is not None or n_cases_val is not None):
         checked_verdict_accuracy = True
-        denom_key = "n_items" if has_n_items else "n_cases"
+        if _is_exact_int(n_items_val):
+            denom_key = "n_items"
+        elif _is_exact_int(n_cases_val):
+            denom_key = "n_cases"
+        else:
+            denom_key = "n_items" if n_items_val is not None else "n_cases"
         denom = summary.get(denom_key)
-        vm = summary.get("verdict_matches")
         va = summary.get("verdict_accuracy")
 
-        if has_n_items and has_n_cases:
-            ni_both = summary.get("n_items")
-            nc_both = summary.get("n_cases")
-            if not _is_exact_int(ni_both) or not _is_exact_int(nc_both) or ni_both != nc_both:
+        if n_items_val is not None and n_cases_val is not None:
+            if not _is_exact_int(n_items_val) or not _is_exact_int(n_cases_val) or n_items_val != n_cases_val:
                 errors.append(
-                    f"{filename}: summary.n_items ({ni_both!r}) != summary.n_cases ({nc_both!r})"
+                    f"{filename}: summary.n_items ({n_items_val!r}) != summary.n_cases ({n_cases_val!r})"
                 )
 
         if not _is_exact_int(denom) or denom <= 0:
@@ -356,6 +359,12 @@ def audit_results_summary_invariants(data: dict[str, Any], filename: str) -> dic
                 errors.append(
                     f"{filename}: expected 0 < latency_p50_ms <= latency_p95_ms, got p50={p50}, p95={p95}"
                 )
+            elif "latency_p99_ms" in summary and summary.get("latency_p99_ms") is not None:
+                p99 = summary.get("latency_p99_ms")
+                if not _is_finite_number(p99) or not (float(p95) <= float(p99)):
+                    errors.append(
+                        f"{filename}: expected latency_p95_ms <= latency_p99_ms, got p95={p95}, p99={p99!r}"
+                    )
 
     for key, val_p50 in summary.items():
         if not key.endswith("p50_ms") or key == "latency_p50_ms":
@@ -738,7 +747,7 @@ class MetricsConsistencyTest(unittest.TestCase):
 
     def test_all_results_json_verdict_accuracy_and_latency_quantile_invariants(self) -> None:
         results_files = _collect_eval_json_files(DEFAULT_EVAL_DIR, "*_results.json")
-        self.assertGreaterEqual(len(results_files), 19)
+        self.assertGreaterEqual(len(results_files), 23)
 
         verdict_checked_suites: list[str] = []
         latency_checked_suites: list[str] = []
@@ -757,11 +766,18 @@ class MetricsConsistencyTest(unittest.TestCase):
                 rate_checked_suites.append(path.name)
                 total_rate_fields += rep["checked_rate_fields"]
 
-        self.assertGreaterEqual(len(verdict_checked_suites), 16)
-        self.assertIn("spoken_verdict_clarity_results.json", verdict_checked_suites)
-        self.assertGreaterEqual(len(latency_checked_suites), 17)
-        self.assertEqual(len(rate_checked_suites), len(results_files))
-        self.assertGreaterEqual(total_rate_fields, 45)
+        self.assertGreaterEqual(len(verdict_checked_suites), 19)
+        for expected_suite in (
+            "spoken_verdict_clarity_results.json",
+            "liquid_concentrations_results.json",
+            "pharmacy_sticker_overlay_results.json",
+            "water_droplet_pouch_results.json",
+        ):
+            self.assertIn(expected_suite, verdict_checked_suites)
+        self.assertGreaterEqual(len(latency_checked_suites), 21)
+        self.assertIn("caregiver_handoff_results.json", latency_checked_suites)
+        self.assertGreaterEqual(len(rate_checked_suites), 23)
+        self.assertGreaterEqual(total_rate_fields, 90)
 
         for filename, payload in sorted(self.eval_json_payloads.items()):
             if filename.endswith("_results.json"):
@@ -777,26 +793,33 @@ class MetricsConsistencyTest(unittest.TestCase):
         self.assertTrue(0 <= total_matches <= total_cases)
         self.assertLess(abs(overall_acc - (total_matches / total_cases)), VERDICT_ACCURACY_TOLERANCE)
 
-        for section_key, n_key, m_key, acc_key in (
-            ("extended_summary", "total_cases_evaluated", "total_verdict_matches", "overall_verdict_accuracy"),
-            (
-                "wave6_summary",
-                "label_and_fusion_cases_evaluated",
-                "label_and_fusion_verdict_matches",
-                "label_and_fusion_verdict_accuracy",
-            ),
-            ("wave7_summary", "label_cases_evaluated", "label_verdict_matches", "label_verdict_accuracy"),
-            ("wave8_summary", "label_cases_evaluated", "label_verdict_matches", "label_verdict_accuracy"),
-        ):
-            sec = combined.get(section_key)
-            if not isinstance(sec, dict) or n_key not in sec:
+        wave_triples = (
+            ("total_cases_evaluated", "total_verdict_matches", "overall_verdict_accuracy"),
+            ("label_and_fusion_cases_evaluated", "label_and_fusion_verdict_matches", "label_and_fusion_verdict_accuracy"),
+            ("label_cases_evaluated", "label_verdict_matches", "label_verdict_accuracy"),
+            ("verdict_and_clarity_cases_evaluated", "verdict_and_clarity_matches", "verdict_and_clarity_accuracy"),
+        )
+        for section_key, sec in sorted(combined.items()):
+            if not (section_key == "extended_summary" or (section_key.startswith("wave") and section_key.endswith("_summary"))):
                 continue
-            n_val = sec[n_key]
-            m_val = sec[m_key]
-            acc_val = sec[acc_key]
-            self.assertTrue(0 <= m_val <= n_val, section_key)
-            if n_val > 0:
-                self.assertLess(abs(acc_val - (m_val / n_val)), VERDICT_ACCURACY_TOLERANCE, section_key)
+            if not isinstance(sec, dict):
+                continue
+            sec_rate_errors: list[str] = []
+            _audit_summary_rate_fields(sec, "combined_summary.json", f"$.{section_key}", sec_rate_errors)
+            self.assertEqual(sec_rate_errors, [], section_key)
+            for n_key, m_key, acc_key in wave_triples:
+                if n_key not in sec or m_key not in sec or acc_key not in sec:
+                    continue
+                n_val = sec[n_key]
+                m_val = sec[m_key]
+                acc_val = sec[acc_key]
+                self.assertTrue(0 <= m_val <= n_val, f"{section_key}.{m_key}")
+                if n_val > 0:
+                    self.assertLess(
+                        abs(acc_val - (m_val / n_val)),
+                        VERDICT_ACCURACY_TOLERANCE,
+                        f"{section_key}.{acc_key}",
+                    )
 
     def test_unit_economics_three_year_tco_and_savings_invariants(self) -> None:
         econ_data = self.eval_json_payloads["unit_economics.json"]
@@ -838,7 +861,7 @@ class MetricsConsistencyTest(unittest.TestCase):
         for filename, payload in sorted(self.eval_json_payloads.items()):
             total_reads += _validate_embedded_label_reads(payload, filename, "$", read_errors)
         self.assertEqual(read_errors, [])
-        self.assertGreaterEqual(total_reads, 200)
+        self.assertGreaterEqual(total_reads, 270)
 
     def test_negative_detectors_catch_threshold_accuracy_latency_tco_and_schema_regressions(self) -> None:
         safety_text = SAFETY_TS_PATH.read_text(encoding="utf-8")
@@ -934,6 +957,28 @@ class MetricsConsistencyTest(unittest.TestCase):
         }
         r_lat = audit_results_summary_invariants(bad_lat_order, "synthetic_lat_results.json")
         self.assertTrue(any("latency_p50_ms <= latency_p95_ms" in e for e in r_lat["errors"]))
+
+        null_n_items_valid_cases = {
+            "summary": {
+                "n_items": None,
+                "n_cases": 12,
+                "verdict_matches": 12,
+                "verdict_accuracy": 1.0,
+            }
+        }
+        r_null_ni = audit_results_summary_invariants(null_n_items_valid_cases, "synthetic_null_ni_results.json")
+        self.assertEqual(r_null_ni["errors"], [])
+        self.assertTrue(r_null_ni["checked_verdict_accuracy"])
+
+        bad_p99_order = {
+            "summary": {
+                "latency_p50_ms": 200.0,
+                "latency_p95_ms": 265.0,
+                "latency_p99_ms": 250.0,
+            }
+        }
+        r_p99 = audit_results_summary_invariants(bad_p99_order, "synthetic_p99_results.json")
+        self.assertTrue(any("latency_p95_ms <= latency_p99_ms" in e for e in r_p99["errors"]))
 
         bad_lat_zero = {
             "summary": {
