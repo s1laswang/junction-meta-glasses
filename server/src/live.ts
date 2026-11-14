@@ -1,3 +1,5 @@
+// Gemini Live proxy: one LiveProxy per started phone session. Model fallback chain, session resumption on
+// goAway/drops, context window compression, barge-in, tool calls (verify_label, show_cue, log_dose), auto-stop.
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -10,7 +12,8 @@ import { ai, backoffMs } from "./gemini.ts";
 import type { Hub, LiveLike } from "./hub.ts";
 import { ledger } from "./ledger.ts";
 import { errSummary, log, shortId } from "./log.ts";
-import { verify } from "./verify.ts";
+import { readLabel } from "./verify.ts";
+import { checkLabel } from "./safety.ts";
 
 const BASE_PROMPT = fs.readFileSync(path.join(SERVER_DIR, "src", "prompts", "live.md"), "utf8");
 const CUES: CoachCue[] = ["rotate_left", "rotate_right", "closer", "farther", "more_light", "hold_still", "other_side", "ok"];
@@ -54,11 +57,11 @@ ${meds || "- none saved"}
 - Avoid: ${p.avoid.join(", ") || "nothing saved"}`;
 }
 
-type Opts = { lang: string; voice: boolean; verifyFn?: typeof verify };
+type Opts = { lang: string; voice: boolean };
 
 export class LiveProxy implements LiveLike {
   private session: Session | null = null;
-  private gen = 0;
+  private gen = 0; // generation of the current Gemini socket; stale callbacks are ignored
   private modelIdx = 0;
   private model = "";
   private handle?: string;
@@ -66,11 +69,14 @@ export class LiveProxy implements LiveLike {
   private stopped = false;
   private reconnects = 0;
   private openedAt = 0;
+  private openGen = -1;
   private connecting = false;
   private idleTimer?: NodeJS.Timeout;
   private lastFrameAt = Date.now();
   private cancelled = new Set<string>();
+  // transcripts (cumulative per utterance)
   private userText = ""; private botText = "";
+  // metrics
   private t0 = Date.now();
   private lastUserSignal = 0;
   private awaitingFirstAudio = false;
@@ -81,6 +87,7 @@ export class LiveProxy implements LiveLike {
 
   constructor(private hub: Hub, private opts: Opts) {
     const r = hub.resume;
+    // a phone that reconnects with the same session id within 10 min resumes the same Gemini context
     if (r && Date.now() - r.at < 10 * 60_000) {
       this.handle = r.handle; this.modelIdx = Math.max(0, env.liveModels.indexOf(r.model));
     }
@@ -93,12 +100,13 @@ export class LiveProxy implements LiveLike {
     this.idleTimer = setInterval(() => {
       if (!this.stopped && Date.now() - this.lastFrameAt > env.idleStopMs) {
         this.send({ type: "coach", cue: "ok", text: "Camera stopped" });
-        this.stop("auto-stopped: no camera frames for 45 s");
+        this.stop(`auto-stopped: no camera frames for ${Math.round(env.idleStopMs / 1000)} s`);
       }
     }, 2000);
     await this.connect();
   }
 
+  /** Connect (or reconnect) walking the model chain. Uses the resumption handle when we have one. */
   private async connect(): Promise<void> {
     if (this.stopped || this.connecting) return;
     this.connecting = true;
@@ -123,11 +131,13 @@ export class LiveProxy implements LiveLike {
             callbacks: {
               onmessage: (m) => { if (gen === this.gen) this.onMessage(m); },
               onerror: (e) => { if (gen === this.gen) log("live.ws_error", { session: shortId(this.hub.id), err: errSummary((e as any)?.message ?? e) }); },
-              onclose: (e) => { if (gen === this.gen) this.onClose(e.code, String(e.reason ?? "")); },
+              // only a socket that finished setup counts as a drop; a failed connect rejects connect() instead
+              // (the SDK fires onclose AND rejects in that case, which would otherwise race two reconnects)
+              onclose: (e) => { if (gen === this.gen && gen === this.openGen) this.onClose(e.code, String(e.reason ?? "")); },
             },
           });
           if (this.stopped) { this.gen++; s.close(); return; }
-          this.session = s; this.model = model; this.modelsUsed.add(model); this.openedAt = Date.now();
+          this.session = s; this.openGen = gen; this.model = model; this.modelsUsed.add(model); this.openedAt = Date.now();
           log("live.open", { session: shortId(this.hub.id), model, ms: Date.now() - t, resumed: !!this.handle });
           this.send({ type: "ready", model, session: this.hub.id });
           this.send({ type: "status", live: "open", detail: model });
@@ -136,7 +146,7 @@ export class LiveProxy implements LiveLike {
           const msg = errSummary(e);
           log("live.connect_failed", { session: shortId(this.hub.id), model, err: msg });
           ledger({ feature: "live_connect", model, latency_s: (Date.now() - t) / 1000, ok: false });
-          if (this.handle) { this.handle = undefined; continue; }
+          if (this.handle) { this.handle = undefined; continue; } // stale handle: retry same model fresh
           if (/quota|RESOURCE_EXHAUSTED|429/i.test(msg)) await new Promise((r) => setTimeout(r, backoffMs(1)));
           this.modelIdx++;
         }
@@ -153,7 +163,7 @@ export class LiveProxy implements LiveLike {
     this.session = null;
     if (this.stopped) return;
     log("live.closed_remote", { session: shortId(this.hub.id), code, err: errSummary(reason) });
-    if (Date.now() - this.openedAt > 30_000) this.reconnects = 0;
+    if (Date.now() - this.openedAt > 30_000) this.reconnects = 0; // it was healthy for a while
     this.reconnects++;
     if (/quota|RESOURCE_EXHAUSTED|429/i.test(reason)) {
       this.send({ type: "error", code: "quota", message: "Gemini quota reached, trying a backup model.", recoverable: true });
@@ -162,12 +172,12 @@ export class LiveProxy implements LiveLike {
       this.send({ type: "error", code: "bad_input", message: "Gemini rejected the input, restarting the session.", recoverable: true });
       this.handle = undefined;
     } else if (this.reconnects > 3) {
-      this.handle = undefined; this.modelIdx++;
-    }
+      this.handle = undefined; this.modelIdx++; // this model keeps dropping: next in chain, fresh context
+    } // else: same model, resume with the handle if we have one
     setTimeout(() => void this.connect(), backoffMs(this.reconnects, 300, 4000));
   }
 
-  onMessage(m: LiveServerMessage) {
+  private onMessage(m: LiveServerMessage) {
     if (m.sessionResumptionUpdate) {
       this.resumable = !!m.sessionResumptionUpdate.resumable;
       if (m.sessionResumptionUpdate.newHandle) {
@@ -177,8 +187,9 @@ export class LiveProxy implements LiveLike {
     }
     if (m.goAway) {
       log("live.go_away", { session: shortId(this.hub.id), left: m.goAway.timeLeft ?? "" });
+      // reconnect proactively with the resumption handle; context is preserved server-side
       const old = this.session; this.gen++; this.session = null;
-      try { old?.close(); } catch {}
+      try { old?.close(); } catch { /* */ }
       void this.connect();
       return;
     }
@@ -210,8 +221,8 @@ export class LiveProxy implements LiveLike {
       this.send({ type: "transcript", role: "assistant", text: this.botText.trim(), final: false });
     }
     if (sc.interrupted) {
+      // barge-in: the client must flush its playback queue
       this.send({ type: "interrupted" });
-      this.send({ type: "status", live: "open", detail: "interrupted" });
     }
     if (sc.turnComplete || sc.interrupted) {
       if (this.botText) this.send({ type: "transcript", role: "assistant", text: this.botText.trim(), final: true });
@@ -229,7 +240,7 @@ export class LiveProxy implements LiveLike {
     } catch (e) { log("live.tool_response_failed", { name: fc.name ?? "", err: errSummary(e) }); }
   }
 
-  async onTool(fc: FunctionCall) {
+  private async onTool(fc: FunctionCall) {
     const t = Date.now();
     this.toolCalls++;
     const args = (fc.args ?? {}) as Record<string, unknown>;
@@ -240,28 +251,39 @@ export class LiveProxy implements LiveLike {
         this.send({ type: "coach", cue, text: String(args.text ?? "").slice(0, 60) });
         this.respond(fc, { shown: true }, true);
       } else if (fc.name === "log_dose") {
-        const r = this.logDose(String(args.medId ?? ""));
+        const medId = String(args.medId ?? "");
+        const r = this.logDose(medId);
+        // the dose log lives on the phone: mirror voice-logged doses there
+        if (r.ok) this.send({ type: "dose_logged", medId, ts: Date.now() });
         this.respond(fc, r);
       } else if (fc.name === "verify_label") {
-        const frames = this.hub.ring.pick(2);
-        if (!frames.length) {
-          this.respond(fc, { level: "unsure", speech: "I can't see anything yet. Hold the item up in front of your face." });
-          return;
-        }
+        const question = typeof args.question === "string" ? args.question : undefined;
         this.send({ type: "checking", phase: "start" });
-        this.send({ type: "coach", cue: "hold_still", text: "Hold still, reading…" });
         try {
-          const r = await (this.opts.verifyFn ?? verify)(frames.map((f) => f.data), this.hub.profile, typeof args.question === "string" ? args.question : undefined, "verify_live");
+          // 1) speculative cache / in-flight read, 2) otherwise a fresh read of the sharpest recent frames
+          const spec = await this.hub.spec.get();
+          let read = spec?.read, model = spec?.model ?? null, source: string = spec?.source ?? "fresh";
+          if (!read) {
+            const frames = this.hub.ring.pick(2);
+            if (!frames.length) {
+              this.respond(fc, { level: "unsure", speech: "I can't see anything yet. Hold the item up in front of your face." });
+              return;
+            }
+            this.send({ type: "coach", cue: "hold_still", text: "Hold still, reading…" });
+            const r = await readLabel(frames.map((f) => f.data), question, "verify_live");
+            read = r.read; model = r.model;
+          }
           if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
           if (this.stopped) return;
-          this.send({ type: "verdict", verdict: r.verdict });
-          const v = r.verdict;
+          const v = checkLabel(read, this.hub.profile);
+          if (!model) { v.level = "unsure"; v.reasons.push("reader unavailable"); }
+          this.send({ type: "verdict", verdict: v });
           this.respond(fc, {
             level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
             guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
             instruction: "Say `speech` word for word (translate faithfully if needed), then stop. No disclaimer, add nothing.",
           });
-          log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_frames: r.frames });
+          log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t });
         } finally {
           this.send({ type: "checking", phase: "end" });
         }
@@ -283,19 +305,21 @@ export class LiveProxy implements LiveLike {
     return { ok: true, med: med.name };
   }
 
+  // ---------- client input ----------
   audio(data: string) {
-    try { this.session?.sendRealtimeInput({ audio: { data, mimeType: "audio/pcm;rate=16000" } }); } catch {}
+    try { this.session?.sendRealtimeInput({ audio: { data, mimeType: "audio/pcm;rate=16000" } }); } catch { /* socket closing */ }
   }
   private lastVideoAt = 0;
   frame(data: string) {
     this.lastFrameAt = Date.now();
+    // Live only needs ~1 fps for coaching; the ring buffer keeps every frame for verify_label.
     if (Date.now() - this.lastVideoAt < 900) return;
     this.lastVideoAt = Date.now();
-    try { this.session?.sendRealtimeInput({ video: { data, mimeType: "image/jpeg" } }); } catch {}
+    try { this.session?.sendRealtimeInput({ video: { data, mimeType: "image/jpeg" } }); } catch { /* */ }
   }
   text(text: string) {
     this.lastUserSignal = Date.now(); this.awaitingFirstAudio = true;
-    try { this.session?.sendRealtimeInput({ text: text.slice(0, 1000) }); } catch {}
+    try { this.session?.sendRealtimeInput({ text: text.slice(0, 1000) }); } catch { /* */ }
   }
   handleEvent(name: string) {
     if (name === "stop") return this.stop("stopped by user");
@@ -311,19 +335,22 @@ export class LiveProxy implements LiveLike {
         return;
       }
       const r = this.logDose(id);
-      if (r.ok) {
-        if (this.hub.lastVerdict) this.send({ type: "verdict", verdict: { ...this.hub.lastVerdict, takenToday: true } });
-        this.text(`(The user just logged a dose of ${r.med}. Confirm in three or four words.)`);
-      }
+      if (r.ok) this.text(`(The user just logged a dose of ${r.med}. Confirm in three or four words.)`);
     }
   }
+
+  /** Test hook: drop the Gemini socket as if the network failed (exercises resume/reconnect). */
+  debugDrop() {
+    try { (this.session as any)?.conn?.close?.(); } catch { /* */ }
+  }
+  get currentModel() { return this.model; }
 
   stop(reason: string) {
     if (this.stopped) return;
     this.stopped = true;
     clearInterval(this.idleTimer);
     this.gen++;
-    try { this.session?.close(); } catch {}
+    try { this.session?.close(); } catch { /* */ }
     this.session = null;
     this.send({ type: "status", live: "closed", detail: reason });
     this.finish(reason);

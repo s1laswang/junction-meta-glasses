@@ -1,114 +1,146 @@
-# HoldUp Live Stage Choreography, Pre-Flight & Contingency Playbook (`docs/DEMO_SCRIPT.md`)
+# HoldUp demo script (3 minutes)
 
-Operational stage runbook for the **3-minute Junction 2026 live demo** (`Meta: AI Glasses for Everyone, Everyday` + `Google DeepMind: Best Use of Gemini API`). Designed for **Silas** (presenter), **Momin010** (glasses & DAT bridge operator), **ivarakerholm-wq** (printable props, pharmacy QR & accessibility check), and **Chintufp** (projection, `/deck`, timer & backup video).
+The words in quotes are spoken. **[Brackets]** are actions. Every step has a fallback. The operator decides on the spot, and the presenter keeps talking.
 
----
+## Roles
 
-## 1. Five-Minute Pre-Stage Flight Check (`T-05:00` to `T-00:00`)
+| Who | Role | Where |
+|---|---|---|
+| **Silas** | Presenter. Wears the glasses and holds the props. Does all the talking. | Centre stage, facing judges |
+| **Momin010** | Operator. Runs the laptop (deck, mirrored phone screen, HUD view), switches fallbacks, and owns the glasses and the bridge. | Laptop, side of stage |
+| **ivarakerholm-wq** | Props. Hands Silas each box in order and takes it back. Holds the phone if it's not on a lanyard. | Next to Silas |
+| **Chintufp** | Timekeeper (shows 2:00 and 2:30 cards). Has the backup video open and paused. | Front row |
 
-Complete every item in order before walking onto stage or inviting booth judges to begin:
-
-### 1.1 Single-Origin Server, HTTPS Tunnel & Route Smoke (`T-05:00`)
-- [ ] Start the single-origin production build (`vendor.js` + `index.js`) and HTTPS tunnel in two persistent terminal tabs (or verify the permanent Cloud Run `europe-north1` URL from [`docs/DEPLOY.md`](DEPLOY.md)) and **do not restart `cloudflared`** once `/hud` is registered:
-  ```bash
-  npm start
-  npm run tunnel
-  ```
-- [ ] Run production smoke (`20` single-origin routes), health, manifest, and booth artifact checks against `$HOST`:
-  ```bash
-  node scripts/smoke-production.mjs
-  curl -fsS "$HOST/api/health"
-  curl -fsS "$HOST/.well-known/meta-wearables-manifest.json"
-  curl -fsSI "$HOST/deck/" "$HOST/judge-handout.html" "$HOST/printable-props.html" "$HOST/architecture-poster.html"
-  ```
-  Confirm `"ok": true` and `"gemini": "ok"`.
-- [ ] Enable a **dedicated 5 GHz phone hotspot** as primary or standby Wi-Fi so congested hackathon venue Wi-Fi cannot stall WebSocket frames.
-
-### 1.2 Battery, Firmware & Bluetooth HFP (`T-04:00`)
-- [ ] Verify battery **> 30%** (target `> 80%`; DAT glasses app install fails below `10%`) across:
-  1. **Ray-Ban Meta Gen 2** (`firmware V128+`, rebooted after any OTA update)
-  2. **Meta Ray-Ban Display + Meta Neural Band** (`firmware V128+` / `v125+`)
-  3. **Android 12+ (`minSdk 31`) bridge phone** running **Meta AI `V292+`** with **Developer Mode ON** (`0`/`0` credentials) and account DOB set ([`docs/HARDWARE_NOTES.md`](HARDWARE_NOTES.md))
-- [ ] Confirm **Bluetooth HFP** audio routing: open `$HOST` in Chrome on the paired phone, unmute audio, and confirm synthesized earcons (`web/src/audio/earcons.ts`) and spoken voice play through the glasses open-ear speakers while `VoiceActivityPill` (`web/src/components/VoiceActivityPill.tsx`) sits in `MIC STANDBY`.
-- [ ] Keep glasses unfolded on the table **un-streaming** until `T-00:30` so thermal level stays cool (`Stream` pauses if temple touch is accidentally tapped or thermal guard trips).
-
-### 1.3 Android HoldUp Bridge & Ray-Ban Display `/hud` (`T-03:00`)
-- [ ] In **HoldUp Bridge (`android-dat/`)**, scan `holdupbridge://connect?server=<HTTPS_HOST>` from the PWA `DeviceResiliencePanel` (`web/src/components/DeviceResiliencePanel.tsx`), tap **Connect glasses** (`Status: Registered`), test **Start streaming** for 3 seconds (`POST /ingest/frame` `1.17 ms` `p50` + `POST /ingest/state` -> `HTTP 204`, front hardware capture LED illuminates, PWA eye badge flips to **`Glasses DAT`**), then tap **Stop streaming** until cue `0:40`.
-- [ ] On **Meta Ray-Ban Display**, open the pinned **HoldUp** Web App (`https://<host>/hud` added via `Meta AI -> Apps -> Web Apps -> Connect Web App` or `fb-viewapp://web_app_deep_link?appName=HoldUp&appUrl=...`). Confirm pure `#000000` transparent standby, zero scrollbars, **`HUD Connected`** status on the phone PWA (`1.78 ms` `/hud-ws` replay `p50`), and **Neural Band** thumb-swipe (`ArrowLeft`/`ArrowRight`) + index-pinch (`Enter`) focus movement ([`docs/HUD_SPEC.md`](HUD_SPEC.md)).
-
-### 1.4 Printable Booth Props, Pharmacy QR Slip & Clean Profile Reset (`T-01:30`)
-- [ ] Stage the **4 physical wrapped cartons** plus the **zero-PII Finnish `holdup://rx` pharmacy counter QR sticker** printed at `100%` actual A4 scale from `/printable-props.html` ([`docs/printable-props.html`](printable-props.html)) left-to-right on a matte non-glare tray, alongside A4 copies of `/judge-handout.html` ([`docs/judge-handout.html`](judge-handout.html)) and `/architecture-poster.html` ([`docs/architecture-poster.html`](architecture-poster.html)) for judges:
-  1. **Pharmacy Counter QR Slip (`holdup://rx`):** *Yliopiston Apteekki* zero-PII prescription QR encoding `Amlodipin 5 mg` (evening, barcode `6432100012345`), `Metformin 500 mg` (morning/evening), `Panadol 500 mg` (as needed), `avoid: NSAIDs`, and `peanut` / `tree nuts` allergies.
-  2. **Prop 1 (Evening Match + Rear Coaching + Offline Barcode):** *Amlodipin 5 mg* (`amlodipine`, `EXP 08/2027`, rear Code-128 / GS1 EAN-13 barcode `6432100012345`) placed **barcode-side facing the presenter** so initial pickup faces backwards.
-  3. **Prop 2 (NSAID Contraindication Catch):** *Burana 400 mg* (`ibuprofeeni / ibuprofen`, `EXP 11/2027`, barcode `6412345000400`).
-  4. **Prop 3 (Expired Medication Trap, Q&A / Bonus Beat):** *Metformin 500 mg* (`metformin hydrochloride`, **`EXP 04/2025`**, barcode `6432100054321`).
-  5. **Prop 4 (Hidden Allergen Catch):** *Nordic Oat & Hazelnut Bar* (`roasted hazelnuts 12%, arachis oil`, `14.09.2027`, barcode `7310100555111`).
-- [ ] In the PWA `ConsentOnboarding` drawer (`P` key), click **`Wipe All Local Data`** (or **`Load Demo Profile (3 Meds + Nut Allergy)`** as instant standby) so `ConsentOnboarding` (`web/src/components/ConsentOnboarding.tsx`) is open for the `0:20` beat with **`0` doses logged today**, and confirm `JudgeDemoTour` (`web/src/components/JudgeDemoTour.tsx`) is expanded at the top of the Check tab.
+**Screen layout on the projector:** the deck in one window. When live: the phone screen mirrored (Android: `scrcpy` over USB) on the left and `https://<tunnel>/hud/` in a browser on the right. The HUD page attaches to the latest session and shows the audience what the lens shows.
 
 ---
 
-## 2. Second-by-Second `3:00` Live Stage Choreography
+## Pre-demo checklist (start T-30 min)
 
-Project the phone/laptop PWA onto the stage screen (displaying `JudgeDemoTour`, `ViewfinderStage`, `VoiceActivityPill`, `VerdictCard`, `ConfidenceBreakdownCard` with its `80%` threshold bar, `ScheduleChecklistCard` *"Did I Take My Pills?"*, `HudPreviewFrame` `600x600` `#000000` waveguide mirror, and `CaregiverAlertCard`, with `/deck` open in an adjacent browser tab) while Silas wears the Meta glasses at the prop table.
+**Power and hardware**
+- [ ] Glasses charged above 50% (DAT install fails below 10%). Phone above 70%. Laptop on the charger.
+- [ ] Glasses paired in the Meta AI app, Developer Mode on, firmware V128+. If they were just updated, **reboot the glasses** (camera bug).
+- [ ] HoldUp Bridge: Server URL is the current tunnel URL, session code **blank**. Tap "Connect glasses", then "Start streaming". The frames-sent counter goes up.
+- [ ] Ray-Ban Display: the HoldUp Web App URL in Meta AI matches the current tunnel (`https://<tunnel>/hud/`, trailing slash). Open it on the glasses; it says "Hold it up."
+- [ ] Glasses connected to the phone as the **Bluetooth headset**. The device panel's "Audio route" shows the glasses.
+- [ ] Airplane-mode rehearsal: on Android, turn airplane mode on, **turn Bluetooth back on while in airplane mode** (Android remembers this), then turn airplane mode off. Now the offline step won't kill the glasses audio.
 
-| Time Window | Stage Action & UI / Hardware State | Exact Presenter & System Dialogue | Judge Takeaway |
-|---|---|---|---|
-| **`0:00 - 0:20`** *(20 s)* **1. The Hook** | Silas stands behind the three printable white Nordic pharmacy boxes (`Prop 1`, `Prop 2`, `Prop 3` from `/printable-props.html`) while holding a glass of water in one hand. | **Silas:** *"2.2 billion people worldwide live with vision impairment, including roughly 80,000 in Finland, over 80% aged 65+. Every evening, three identical white pharmacy boxes create a high-stakes question: did I take my pills, and which box is my blood-pressure tablet? Phone OCR apps demand three hands: two to hold and rotate the package, and a third to blind-aim a phone. With Meta AI Glasses, the camera already points where your hands naturally hold the box."* | Clear audience, everyday frequency, and physical proof why head-mounted POV beats smartphone OCR. |
-| **`0:20 - 0:40`** *(20 s)* **2. Consent & Live `PharmacyImportModal` QR Scan** | Screen shows `ConsentOnboarding` (`v2026-11`). Silas taps **`I Understand, Continue to HoldUp`**, opens `PharmacyImportModal` (`Import Prescription QR`), taps **`Scan QR with Camera`**, and holds up the printed *Yliopiston Apteekki* `holdup://rx` QR slip from `/printable-props.html` (camera auto-stops tracks on capture; tap **`Import to This Device`**). `ScheduleChecklistCard` (*"Did I Take My Pills?"*) shows `Evening window` (`0 of 3 scheduled doses logged today`). | **Silas:** *"HoldUp starts with explicit consent: camera on only during a check, 45-second auto-stop, and zero server storage. At a Finnish pharmacy counter, scanning this zero-PII `holdup://rx` QR sticker imports my prescriptions, NSAID avoid rule, and nut allergy straight into on-device localStorage with zero typing."* | `BRIEF.md` consent, zero-cloud pharmacy QR camera onboarding (`PharmacyImportModal`), and local-only daily checklist (`ScheduleChecklistCard`). |
-| **`0:40 - 1:40`** *(60 s)* **3. Guided Capture, `VoiceActivityPill` Barge-In, Match & Log** | Start check (`Space` or glasses voice). `camera_on` earcon (`440 -> 659 Hz`) plays; front capture LED turns ON; eye shows **`Glasses DAT`**; `VoiceActivityPill` switches to **`MIC LISTENING`** (5-bar RMS meter). Silas holds **Prop 1 (*Amlodipin 5 mg*) backwards**. As HoldUp speaks (`VoiceActivityPill` -> **`HOLDUP SPEAKING`**), Silas speaks mid-sentence (or taps **`Interrupt Speech`**) to barge in as he flips the box, receives `MATCH` on `/hud`, inspects `ConfidenceBreakdownCard` (`80% Dose Gate: PASSED`), and logs the dose. | **Silas:** *"Is this my evening pill?"*<br>**HoldUp (`gemini-3.8-live` + `/hud` `TURN PACKAGE OVER`):** *"Turn it around, the label is on the other..."*<br>**Silas *(barge-in while flipping Prop 1)*:** *"Okay, flipped it, check this side."* (`VoiceActivityPill` flushes playback -> `MIC LISTENING`; `verify_label` -> `gemini-3.8-flash` -> `safety.ts`)<br>**HoldUp (`MATCH` green check-shield on `/hud`):** *"Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today."*<br>**Silas:** *"I took it, log it."* (or Neural Band pinch on `Log Dose`)<br>**HoldUp:** *"Logged your Amlodipine dose."* (`ScheduleChecklistCard` flips Amlodipin to `Complete`; `VerdictCard` locks `Taken today`). | Streaming 2-way body-relative coaching, live `VoiceActivityPill` barge-in, `2738.8 ms` `p50` glass-to-HUD match, and `"Did I Take My Pills?"` adherence logging. |
-| **`1:40 - 2:10`** *(30 s)* **4. Three Catches & `ConfidenceBreakdownCard` `80%` Bar** | **Beat 4a (10 s):** Hold up **Prop 2 (*Burana 400 mg*)**.<br>**Beat 4b (10 s):** Hold up **Prop 1** with **thumb covering `"5 mg"`**; highlight **`ConfidenceBreakdownCard`** `80%` threshold tick.<br>**Beat 4c (10 s):** Hold up **Prop 4 (*Nordic Oat & Hazelnut Bar*)**. | **Silas (Prop 2):** *"Can I take this for a headache?"* -> **HoldUp (`WARNING`):** *"This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs."*<br>**Silas (Thumb over `5 mg`):** *"What about this box?"* -> **HoldUp (`UNSURE` diamond):** *"It looks like Amlodipine, but I can't read the strength confidently. Turn the label toward the light or check with a pharmacist."* (`ConfidenceBreakdownCard` shows **`80% Dose Gate: BLOCKED < 80%`** against the `STRENGTH_MIN_CONF = 0.80` bar: **never guesses a dose**).<br>**Silas (Prop 4):** *"Does this snack have nuts?"* -> **HoldUp (`WARNING`):** Catches `hazelnuts` and botanical `arachis oil` (`peanut`). | Proves Nordic brand/drug-class resolution, visual `ConfidenceBreakdownCard` `80%` zero-guess dose gate, and hidden food allergen synonym detection. |
-| **`2:10 - 2:35`** *(25 s)* **5. Live Fault Resilience & `JudgeDemoTour`** | In `DeviceResiliencePanel`, toggle **`Simulate Live WS Drop`** (`VoiceActivityPill` -> `SNAPSHOT AUDIO`) -> **`Simulate Complete Offline`** (`VoiceActivityPill` -> `OFFLINE LOCAL`; scan Prop 1 rear barcode `6432100012345` with `B`) -> clear toggles -> physically **take glasses off** (or tap **`Simulate Glasses Taken Off`**). Point to top **`JudgeDemoTour`** bar. | **Silas:** *"Assistive tech cannot fail when Wi-Fi or hardware drops. Drop the Live WebSocket: HoldUp switches to HTTP Snapshot + TTS. Kill Wi-Fi completely: on-device BarcodeDetector matches my saved Amlodipine EAN barcode at zero network bytes and warns I already took it today. Take the glasses off: DAT state hot-swaps my active eye to the phone camera mid-session. And at our booth, judges can replay all five beats in one click via `JudgeDemoTour`."* | Directly satisfies `BRIEF.md` resilience mandate live on stage plus self-serve 5-step `JudgeDemoTour` walkthrough. |
-| **`2:35 - 3:00`** *(25 s)* **6. Measured Proof & Pilot Close** | Show `/deck` benchmark slide (or `EvalProofCard` + `/judge-handout.html` + `/architecture-poster.html`) while Silas holds the glasses. | **Silas:** *"Across 252 real-model label reads in 32 benchmark artifacts and 555 Node/TypeScript plus 23 Python automated tests, HoldUp recorded zero confident-wrong dose reads at the 0.80 gate, zero bystander PII leaks, a 2.74-second live glass-to-HUD median latency, and 1.17-millisecond frame ingest. At EUR 341.68 over 3 years versus EUR 4,150 for specialized OCR cameras, a 91.8% savings inside the EU MDR assistive-reader boundary, we are ready for a 12-week Helsinki pilot with Nakovammaisten liitto. Hold it up. Know it is the right one."* | Closes with verified `eval/*.json` numbers, `555/555` (`578` total) tests, `91.8%` TCO savings, EU MDR clarity, and concrete Finnish pilot path. |
+**Server and network**
+- [ ] Set an access key in `.env`: `HOLDUP_KEY=<random 8+ chars>`. That blocks anyone else on the public tunnel from the live feed and the HUD. Every URL below then gets `?key=<k>` once: the phone at `https://<tunnel>/?key=<k>` (stored, then removed from the address bar), the Display Web App at `https://<tunnel>/hud/?key=<k>`, and the Bridge server field at `https://<tunnel>/?key=<k>`.
+- [ ] `npm start` (production build) on the laptop and **one** `npm run tunnel`. Write the tunnel URL here: `______________________`. Don't restart the tunnel after this point (the HUD URL depends on it).
+- [ ] `https://<tunnel>/api/health` shows `"gemini":"ok"`.
+- [ ] Open `https://<tunnel>/` on the phone. Consent is done and the mode chip says **Ready**.
+- [ ] Device panel (Check tab → "Device state") shows: server ok, RTT under 700 ms, barcode supported.
+- [ ] Laptop has a backup network (phone hotspot or second SIM). The venue Wi-Fi can die.
+
+**Profile and props (do this on the demo phone)**
+- [ ] Profile tab → "Load demo profile": Amlodipine 5 mg (evening), Metformin 500 mg (morning and evening), Atorvastatin 20 mg (evening); allergies: tree nuts, peanut; avoid: NSAIDs.
+- [ ] **Scan the real barcode of the amlodipine prop box** into Amlodipine (Edit → Scan). The demo profile's barcodes are placeholders, so the offline step won't work without this.
+- [ ] The dose log has **no amlodipine entry today**. If it does, load the demo profile again.
+- [ ] Props in order, on a tray: (1) amlodipine 5 mg box, (2) ibuprofen 400 mg box, (3) metformin box with the strength covered by a finger-sized sticker or tape, (4) optional: a snack with hazelnuts.
+- [ ] Test each prop once in the lighting on stage. Note which side faces the audience.
+
+**Audio and screen**
+- [ ] Phone media volume at 80%. Do Not Disturb on (no notifications). Screen timeout 10 min.
+- [ ] Laptop: notifications off, deck on slide 1, browser zoom 100%. Backup video file open and paused.
+- [ ] Mic check: Silas says "Is this my evening pill?" during rehearsal and the captions show it.
+- [ ] Mock fallback ready in a spare tab: `https://<tunnel>/?mock=1` (plus `/hud/?mock=1` in a second tab on the laptop if needed).
 
 ---
 
-## 3. Three-Tier Hardware Contingency Playbook
+## The script
 
-HoldUp's one-backend, three-thin-client architecture (`server/src/hub.ts`) guarantees the team never loses the stage narrative regardless of venue RF interference, loaner firmware state, or battery conditions. Switch tiers cleanly in under **10 seconds** without restarting the server:
+### 0:00–0:20 · Hook (slide 1)
+**Silas** [holds up three white boxes]: "Three boxes. One is my blood-pressure pill, one is a painkiller my doctor told me to avoid, one is for diabetes. If you can't read the print, they're the same box. For 55,000 Finns with a visual impairment, that's every morning and every evening."
 
-### Tier A (Primary): Full Dual-Glasses Meta Wearables Stack
-- **Configuration:** **Ray-Ban Meta Gen 2** streams `720x1280` first-person frames via `android-dat/` (`mwdat-core` & `mwdat-camera` `1.0.1`) to `POST /ingest/frame` (`1.17 ms` `p50`) + state to `POST /ingest/state`; open-ear mic and speaker run over **Bluetooth HFP** with `VoiceActivityPill` barge-in; **Meta Ray-Ban Display** renders `/hud` via `/hud-ws` (`floatingHuds` zero-code attach, `1.78 ms` replay `p50`) with **Meta Neural Band** input (`Arrow*` / `Enter`).
-- **When to run:** Default whenever `DeviceResiliencePanel` shows `Eye: Glasses DAT`, `HUD: Connected`, and RTT `< 650 ms`.
+**Silas**: "HoldUp: hold it up, know it's the right one."
 
-### Tier B (Fallback 1): Glasses Bluetooth HFP Audio + Phone Chest/Stand Camera + Live `/hud` Mirror
-- **Trigger:** DAT camera registration is blocked (`CAPABILITY_DENIED`, post-OTA camera lock, or venue P2P drop), or only one pair of glasses is available on stage.
-- **Immediate switch (< 5 s):** Tap **Stop streaming** in `android-dat/` (or leave unplugged). Keep **Ray-Ban Meta glasses paired via Bluetooth HFP** so Silas still speaks into the glasses temple mic and hears open-ear coaching hands-free. Place the phone in a chest lanyard / tabletop stand aimed at chest height (`Eye: Phone Camera` via `getUserMedia`), scan the printed `holdup://rx` slip in `PharmacyImportModal`, and show the live `600x600` Ray-Ban Display waveguide UI via `HudPreviewFrame` (`web/src/hud/HudPreviewFrame.tsx`) + `/hud` in a second browser window.
-- **What stays 100% live:** Real `gemini-3.8-live` voice coaching + barge-in, real `gemini-3.8-flash` multi-frame extraction, real `safety.ts` + `ConfidenceBreakdownCard` `80%` gate on all printable props, real `/hud-ws` WebSocket fan-out, and real offline `BarcodeDetector`.
+- *Fallback:* none needed. If the clicker fails, the operator advances.
 
-### Tier C (Fallback 2): Laptop `JudgeDemoTour` + 7-Fixture Prop Mode + Backup Hardware Recording
-- **Trigger:** Complete venue internet blackout, browser mic/camera hardware lock on a shared podium machine, or 60-second booth walkthrough without physical props.
-- **Immediate switch (< 3 s):** Use the **`60-Second Interactive Judge Walkthrough` (`JudgeDemoTour.tsx`)** docked at the top of the PWA to run all 5 one-click beats (`1. Right Evening Pill`, `2. NSAID Safety Catch`, `3. Covered Dose (Zero Guess)`, `4. Hidden Nut Allergen`, `5. Wi-Fi Off Barcode Fallback`) backed by the `7` `768x768` first-person fixtures in `web/public/fixtures/`, alongside `PharmacyImportModal`'s 1-click *Yliopiston Apteekki* sample button, `/deck`, `/judge-handout.html`, and the Sunday morning hardware POV clip ([`docs/VIDEO_PRODUCTION.md`](VIDEO_PRODUCTION.md)).
+### 0:20–0:40 · Consent and profile (slide 8 visible behind, phone mirrored)
+**Momin010** [switches the projector to the mirrored phone, Profile tab].
+
+**Silas**: "My medicine list and allergies live only on this phone. Before the camera ever turns on, HoldUp tells me in three plain cards what it captures, where it goes and what it keeps. The camera is only on during a check, and it switches itself off after 45 seconds."
+
+**Momin010** [taps the **Check** tab].
+
+- *Fallback:* if the phone mirror is down, show slide 8 and say the same words.
+
+### 0:40–1:40 · Live on the glasses: coach, match, log
+**Silas** [taps the glasses touchpad or presses **Start check** on the phone; hears the start earcon]: "Start."
+
+**Silas** [is handed the amlodipine box **with the label facing away from him**]: "Is this my evening pill?"
+
+**Expected:** HoldUp coaches: "The label is on the other side. Turn it around." (The cue arrow appears on the phone and on the HUD.) Then perhaps "A bit closer."
+
+**Silas** [turns the box slowly, brings it closer, holds it still].
+
+**Expected:** a short "Let me look", the "checking" earcon, then: **"Yes, Amlodipine … 5 mg, your evening pill. You haven't taken it today."** The green **MATCH** card (round check mark) appears on the phone and in the lens.
+
+**Silas**: "I took it." *(or press **I took it** on the HUD with the Neural Band)*
+
+**Expected:** a short confirmation. The dose log on the phone shows the time.
+
+**Silas** [to the judges]: "It coached me. I didn't aim anything: the camera is where my eyes are, and both my hands are on the box."
+
+Fallbacks, in order:
+1. **The glasses camera isn't streaming** (no frames on the bridge, or the panel shows "Waiting for the glasses bridge"): **Momin010** taps **Phone camera** in the camera-source switch. Silas holds the phone at chest height (or it hangs on a lanyard) and keeps the glasses on as the headset. Say: "Today the phone is the eye, and the glasses are the ears and mouth."
+2. **Live is down** (mode chip shows **Snapshot**, or a "Snapshot mode" banner): if the source is **Glasses camera**, Momin010 first taps **Phone camera**. Snapshot mode and offline barcode mode only use the phone's own frames (see QA.md). Then Silas holds the box steady and presses **Check label** (or Space). The phone reads the verdict out with the browser voice. Say: "When Gemini Live is unavailable, it drops to snapshot mode. It's less chatty, but it gives the same verdict from the same safety rules."
+3. **No coaching cue** (the box is readable straight away): fine. Say: "It saw the label straight away. Usually it coaches you round."
+4. **It answers "Not sure"**: that is the product working. Say: "It isn't sure, so it won't guess. Let me turn it." Turn the box front-on, closer, and ask again.
+
+### 1:40–2:10 · Safety catch
+**Silas** [is handed the ibuprofen box]: "And this one?"
+
+**Expected:** an orange **WARNING** card (triangle): **"This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs."**
+
+**Silas** [is handed the metformin box with the strength taped over]: "What about this?"
+
+**Expected:** a blue **NOT SURE** card (diamond): **"It looks like Metformin…, but I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist."**
+
+**Silas**: "It never guesses a dose. Every field has a confidence, and below the bar it says so."
+
+- *Fallback:* if the taped box is read as a match (the strength is visible elsewhere on the box), say "It found the strength on the side panel, which is exactly what it should do", and move on.
+- *Optional (only if ahead of time):* the hazelnut snack: "Does this have nuts?" → warning, contains hazelnut.
+
+### 2:10–2:35 · Resilience (slide 9 next)
+**Silas**: "Now the network dies."
+
+**Momin010** [switches the camera source to **Phone camera** (offline barcode reads the phone camera only), then turns on **airplane mode** on the phone; Bluetooth stays on, per the checklist].
+
+**Expected:** an alert earcon and the spoken line "You're offline. I can still recognise your saved medicines by barcode, but I can't read new labels." The chip says **Offline**.
+
+**Silas** [shows the **barcode side** of the amlodipine box].
+
+**Expected:** **MATCH** · offline barcode, "Yes. Amlodipine 5 mg, your evening pill. You already logged a dose today."
+
+**Momin010** [turns airplane mode off]. **Expected (on screen; it is only spoken to screen-reader users):** a "Back online" banner → **Snapshot** → "Live assistant connected" within a few seconds.
+
+**Silas** [takes the glasses off]: **Expected:** an alert earcon, and the camera switch flips to **Phone camera** ("Glasses taken off. Switched to the phone camera." is announced to screen readers). This only works while the bridge is streaming and reporting "worn".
+
+Fallbacks:
+- **The phone has mobile data, so airplane mode is the only way to go offline.** If airplane mode would kill the glasses audio, use the device panel instead: **Drop connection**. That shows the reconnect and snapshot path. Say: "That's the connection dropping. It reconnects on its own and resumes the same Gemini conversation."
+- **The barcode isn't recognised** (BarcodeDetector needs Chrome on Android; the barcode must be saved in the profile): say "Offline it only knows your own saved boxes", and move on.
+- **The glasses-off step doesn't fire** (the bridge reports "worn" as unknown): skip it and point at the device panel's "Glasses" row instead.
+
+### 2:35–3:00 · Proof and path (slides 7, 10, 11, 12)
+**Momin010** [switches the projector to the deck, slide 7].
+
+**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about one to three seconds instead of six." [slide 10] "We used Gemini as a workforce to build a test set of [TODO: N] labels with known answers: [TODO: X] confident wrong dose reads." [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
+
+- *Fallback:* if time has run out, jump straight to slide 12 and say the last line.
 
 ---
 
-## 4. Top 10 Judge Q&A (Grounded in Code & Measured Data)
+## Last-resort fallbacks
 
-1. **"Why shouldn't this just be a smartphone app like Seeing AI or Be My Eyes?"**
-   - Physical ergonomics, active streaming guidance, and privacy: rotating a curved bottle or holding a cane + water glass already uses **both hands**, leaving no third hand to blind-aim a phone. Glasses point naturally at chest height, stream ~1 fps cues (*"Turn it around"*) over private open-ear audio with instant voice barge-in (`VoiceActivityPill`), project a 4-channel confirmation card on Ray-Ban Display, and never expose private prescriptions to `1,440` live video strangers per year ([`docs/RESEARCH.md`](RESEARCH.md)).
+| Situation | Do this |
+|---|---|
+| The laptop server is dead, or the tunnel can't be reached | Phone: open `https://<tunnel>/?mock=1` from a cached tab, or run `npm run dev` on the laptop and use `http://localhost:5173/?mock=1` on the projector. Mock mode plays the real message contract on a script (coach → checking → verdict), shows a **Demo** chip, and reads verdicts aloud with the browser voice. Type "is this my evening pill" or "ibuprofen" in the text box to choose the scenario. **Say it's a simulation.** |
+| No network and no laptop | Play the backup video (Chintufp), and narrate over it with the same script. |
+| The HUD doesn't load on the Display | Show `https://<tunnel>/hud/` (or `/hud/?mock=1`) on the laptop and say "this is what the lens shows". |
+| The glasses mic picks up the room | Type the question in the "Type a question" box. The answer is still spoken. |
+| Gemini quota is exhausted | The server walks the fallback models automatically. If everything is down, use snapshot mode; if that fails too, use mock mode. |
 
-2. **"What stops Gemini from hallucinating `5 mg` when the box actually says `50 mg` or is blurry?"**
-   - A three-layer split architecture surfaced visibly in `ConfidenceBreakdownCard` and `SafetyRuleExplainerCard`: (a) `gemini-3.8-live` (`server/src/prompts/live.md`) is strictly forbidden from reading drug names or doses from raw video and must call `verify_label`; (b) `readLabel()` (`server/src/verify.ts`) sends 1-3 sharpest frames (`FrameRing.pick`) to `gemini-3.8-flash` with `LABEL_SCHEMA` and **zero user profile attached**, clamping null/ambiguous fields to `confidence <= 0.30`; (c) `checkLabel()` (`server/src/safety.ts`) enforces a hard deterministic **`STRENGTH_MIN_CONF = 0.80`** gate (**`0` confident-wrong doses across all `252` real-model reads in `22` suites**, `100.0%` unreadable abstention and `ECE = 0.0138` in `eval/calibration_curve.json`, `6/6` partial-view multi-frame recovery in `eval/multiframe_recovery_results.json`, and `8/8` scissor-cut blister strip accuracy in `eval/blister_strip_cuts_results.json`).
-
-3. **"Doesn't giving medication verdicts make HoldUp a regulated Class IIa medical device under EU MDR?"**
-   - No. HoldUp is engineered strictly inside the **EU MDR Regulation (EU) 2017/745 Art. 2(1) and MDCG 2019-11** assistive-reader boundary ([`docs/PRIVACY.md`](PRIVACY.md) Section 5, surfaced in `SafetyRuleExplainerCard`): it optically reads manufacturer-printed packaging text and performs a deterministic literal match against the user's own self-entered or pharmacy-QR-imported list. It never diagnoses, alters dosing, or interprets clinical symptoms (`medical_interaction_boundary` scored `5/5` in `eval/coaching_eval.json`), and hands off any uncertainty to a pharmacist.
-
-4. **"Where is sensitive health data stored, and what about bystanders in the room?"**
-   - Medications, allergies, caregiver contacts, and `doseLog` live **exclusively in phone `localStorage` (`holdup.*`)**, never on server disk or loaner Display glasses (`/hud` writes zero storage), with 1-tap `wipeAllLocalData()`. Server frames live in an 8-slot RAM `FrameRing` cleared immediately on socket close (`hub.ring.clear()`, verified to `0` in `eval/hud_latency_bandwidth.json`), `server/src/log.ts` redacts `DENY` keys and scrubs `AIza...` secrets, DAT firmware locks the front capture LED ON while streaming, and prompts forbid describing people, badges, or screens (`0` bystander/PII leaks across `8/8` scenes in `eval/bystander_privacy_results.json` and `5/5` `2574.8 ms` refusal in `eval/coaching_eval.json`).
-
-5. **"Why did you build both an Android DAT app and a Web App instead of putting everything inside the Ray-Ban Display Web App?"**
-   - Because **Ray-Ban Display Web Apps have no camera or raw microphone API** (`getUserMedia` is unavailable inside the on-glasses Chromium container), whereas camera access is exposed only through the native **Meta Wearables DAT SDK `1.0.1`** ([`docs/HARDWARE_NOTES.md`](HARDWARE_NOTES.md), [`docs/IOS_DAT_PARITY.md`](IOS_DAT_PARITY.md)). Our session hub (`server/src/hub.ts`) bridges `android-dat/` (`POST /ingest/frame` `1.17 ms` `p50`), the phone PWA (`/live`), and the Display Web App (`/hud-ws` `1.78 ms` late-join replay `p50` and `0.78 ms` flap reconnect `p50` across `50` cycles in `eval/ws_reconnect_resilience.json`) with zero-code `floatingHuds` auto-binding and `2738.8 ms` end-to-end live frame-to-HUD verdict `p50` (`eval/e2e_websocket_live.json`).
-
-6. **"What happens when internet connectivity is slow or drops completely in an older adult's apartment?"**
-   - Three automatic tiers (`web/src/session/sessionManager.ts`): (1) 5-second WS `ping`/`pong` RTT probing scales capture from `1.0 fps` `768 px` down to `0.5 fps` `512 px` JPEG `0.50` above `650 ms` RTT, cutting video bandwidth by **`84.0%`** (`eval/unit_economics.json`); (2) if `/live` drops, HoldUp switches to **Snapshot Mode** (`POST /api/verify` + `POST /api/tts` `24 kHz` WAV verified `6/6` across `en`/`fi`/`sv` in `eval/tts_multilingual_audio.json`) while reconnecting with backoff + `sessionResumption`; (3) if completely offline, local **`BarcodeDetector`** matches saved medication EAN barcodes on-device at **`0 KB`** network usage.
-
-7. **"How does an older blind user enter their medications without making typos on a touchscreen?"**
-   - Via our **zero-cloud pharmacy QR specification (`holdup://rx` in `web/src/pairing/pharmacyQr.ts` and [`docs/FINLAND_PHARMACY_INTEGRATION.md`](FINLAND_PHARMACY_INTEGRATION.md))**. At prescription pickup (*laakeneuvonta*), an offline counter utility prints a `25 mm` QR sticker containing only package metadata + schedule + EAN barcode (**zero patient name or HETU**), placed clear of carton Braille. In `PharmacyImportModal`, tapping **`Scan QR with Camera`** captures the sticker via `getUserMedia` + `BarcodeDetector`, stops camera tracks immediately, and merges locally into `localStorage` with trilingual spoken read-back.
-
-8. **"Does it handle Finnish generic substitution, Nordic expiry formats, and hidden food allergens?"**
-   - Yes. `server/src/safety.ts` normalizes comma decimals (`2,5 mg` -> `2.5 mg`), microgram/IU/KY units, Nordic/INN drug aliases (`Norvasc` = `Amlodipin` = `amlodipiini`; `Burana` = `Ibumax` = `ibuprofeeni` -> `nsaid`; `Marevan` -> `warfarin` -> `anticoagulant`), Nordic/debossed expiry dates (`10/10` ISO normalization and `8/8` expired catches in `eval/expiry_formats_results.json`), and **all EU-14 food allergens** across English, Finnish, and Swedish (`10/10` adversarial botanical/excipient catches in `eval/allergen_adversarial_results.json` and `12/12` across `6` European languages in `eval/multilingual_labels_results.json`), backed by **`555/555` Node/TS automated tests (`578/578` total)**.
-
-9. **"Is continuous multimodal Gemini inference affordable for public assistive-device reimbursement?"**
-   - Highly affordable (`eval/unit_economics.json`): a 12-second guided check + 2-frame Flash verify uses `7,488` tokens (`$0.00319` / **`EUR 0.00294`** at standard cached Flash rates), or **`EUR 0.35/month` (`EUR 4.23/year`)** at 4 checks/day (with an uncached native-audio ceiling of `EUR 10.79/year`). Combined with EUR 329 Ray-Ban Meta Gen 2 hardware, **3-year TCO is `EUR 341.68` versus `EUR 4,150.00` for OrCam-class cameras (`91.8%` savings, `12.1x` cost reduction)**, letting HUS *Apuvalinekeskus* equip `1,214` residents on the budget of `100` legacy devices.
-
-10. **"What would a real pilot look like starting Monday morning?"**
-    - [`docs/PILOT_PLAN.md`](PILOT_PLAN.md) and [`docs/FIELD_PILOT_RUNBOOK.md`](FIELD_PILOT_RUNBOOK.md) specify a ready-to-sign **12-week Helsinki pilot (`N = 24`: `12` blind VoiceOver/TalkBack users + `12` older adults 65+ with `>= 3` daily meds)** hosted at **Nakovammaisten liitto's Iiris Center (Itakeskus)** alongside a Helsinki pharmacy counter (**Yliopiston Apteekki**), enforcing parallel "shadow check" safety in Weeks 4-7, a Pilot Safety Review Board with a 24-hour pause rule on any confident-wrong read, and a Week 12 HUS / Kela reimbursement dossier.
+## After the demo
+- Stop streaming in the bridge (the capture LED goes off), stop the check, and stop the server. Return the glasses to the booth (Momin010).

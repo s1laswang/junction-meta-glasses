@@ -1,0 +1,26 @@
+// Gradle init script: resolve (download) every resolvable configuration's artifacts so a later
+// `--offline` build on a compute node (no internet) finds everything in ~/.gradle. No compilation.
+allprojects {
+  tasks.register("prefetchAll") {
+    doLast {
+      def confs = project.configurations.findAll { it.canBeResolved }
+      confs.each { c ->
+        try {
+          def n = c.incoming.artifactView { lenient = true }.files.files.size()
+          println "prefetch ${project.path}:${c.name} -> ${n} files"
+        } catch (Throwable t) {
+          println "prefetch ${project.path}:${c.name} FAILED ${t.class.simpleName}: ${t.message?.take(200)}"
+        }
+      }
+      // AGP resolves aapt2 lazily through a detached configuration; fetch it explicitly.
+      if (project.path == ":app") {
+        def aapt2 = project.configurations.detachedConfiguration(
+            project.dependencies.create("com.android.tools.build:aapt2:8.11.1-12782657:linux"))
+        println "prefetch aapt2 -> ${aapt2.files*.name}"
+      }
+      project.buildscript.configurations.findAll { it.canBeResolved }.each { c ->
+        try { c.files } catch (Throwable t) { println "buildscript ${c.name} FAILED" }
+      }
+    }
+  }
+}
