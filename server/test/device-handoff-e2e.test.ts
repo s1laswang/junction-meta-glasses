@@ -1149,6 +1149,190 @@ test("last /live client disconnect clears FrameRing immediately while preserving
   assert.deepEqual(liveSessions[2].config?.sessionResumption, {});
 });
 
+test("handoff-1 Finnish live session covers pre-connected /hud-ws orphan battery 82, 0.72 glasses vs 0.91 phone sharpness verify_label bracket, late /hud-ws replay, and post-disconnect HUD log_dose + repeat", async () => {
+  const hud1 = openWsClient("/hud-ws");
+  await hud1.ready;
+
+  await postDatState({ connected: true, worn: true, streaming: true, battery: 82 });
+  const expectedOrphan82: DeviceState = {
+    connected: true,
+    worn: true,
+    streaming: true,
+    battery: 82,
+    source: "glasses",
+  };
+  await waitFor(
+    () => hud1.received.some((m) => m.type === "device" && m.device.battery === 82),
+    "pre-connected floating /hud-ws receives orphan battery 82 state",
+  );
+  assert.deepEqual(hud1.received[0], { type: "device", device: expectedOrphan82 });
+
+  const sessionId = trackSession("handoff-1");
+  const liveClient = openWsClient(`/live?session=${sessionId}`);
+  await liveClient.ready;
+
+  const fiProfile: Profile = {
+    meds: [
+      {
+        id: "aml-fi",
+        name: "Norvasc",
+        ingredient: "amlodipine",
+        strength: "5 mg",
+        schedule: ["evening"],
+        barcode: "6432100012345",
+      },
+    ],
+    allergies: ["peanut"],
+    avoid: ["NSAIDs"],
+    doseLog: [],
+    lang: "fi",
+  };
+
+  liveClient.sendJson({
+    type: "start",
+    profile: fiProfile,
+    lang: "fi",
+    voice: true,
+    source: "glasses",
+  });
+
+  await waitFor(
+    () =>
+      liveSessions.length === 1 &&
+      liveClient.received.some((m) => m.type === "hud" && m.connected === true) &&
+      liveClient.received.some((m) => m.type === "status" && m.live === "open"),
+    "handoff-1 started in Finnish and bound orphan device + floating HUD",
+  );
+
+  const hub = getHub(sessionId);
+  assert.ok(hub);
+  assert.equal(latestHub(), hub);
+  assert.deepEqual(hub.device, expectedOrphan82);
+  assert.equal(hub.profile.lang, "fi");
+  assert.equal(hub.profile.meds.length, 1);
+  assert.equal(hub.profile.meds[0].id, "aml-fi");
+
+  await postDatFrame(fixtureAmlodipineJpg, { sessionId, sharpness: 0.72 });
+  assert.equal(hub.ring.length, 1);
+  assert.equal(hub.ring.pick(1)[0].source, "glasses");
+  assert.equal(hub.ring.pick(1)[0].sharpness, 0.72);
+
+  const lowBatDoff: DeviceState = {
+    connected: true,
+    worn: false,
+    streaming: false,
+    battery: 9,
+    source: "glasses",
+  };
+  await postDatState({ connected: true, worn: false, streaming: false, battery: 9 }, sessionId);
+
+  await waitFor(
+    () =>
+      liveClient.received.some(
+        (m) => m.type === "device" && m.device.battery === 9 && m.device.worn === false,
+      ) &&
+      hud1.received.some(
+        (m) => m.type === "device" && m.device.battery === 9 && m.device.worn === false,
+      ),
+    "doff + battery 9 delivered to both /live and floating /hud-ws",
+  );
+  assert.equal(hub.live?.active, true);
+  assert.equal(liveSessions[0].closed, 0);
+  assert.equal(hub.profile.lang, "fi");
+  assert.equal(hub.profile.meds[0].id, "aml-fi");
+
+  const phoneFallbackJpg = buildTestJpeg(768, 768, 4200, 93);
+  const phoneFallbackB64 = phoneFallbackJpg.toString("base64");
+  liveClient.sendJson({
+    type: "frame",
+    data: phoneFallbackB64,
+    w: 768,
+    h: 768,
+    sharpness: 0.91,
+    ts: Date.now(),
+  });
+
+  await waitFor(() => hub.ring.length === 2, "phone fallback frame recorded in handoff-1 FrameRing");
+  const picked = hub.ring.pick(2);
+  assert.equal(picked[0].source, "phone");
+  assert.equal(picked[0].sharpness, 0.91);
+  assert.equal(picked[0].data, phoneFallbackB64);
+  assert.equal(picked[1].source, "glasses");
+  assert.equal(picked[1].sharpness, 0.72);
+
+  const liveIdxBeforeVerify = liveClient.received.length;
+  liveSessions[0].callbacks.onmessage?.(
+    liveMsg({
+      toolCall: {
+        functionCalls: [
+          { id: "fc-fi-verify", name: "verify_label", args: { question: "Onko tama iltalake?" } },
+        ],
+      },
+    }),
+  );
+
+  await waitFor(
+    () =>
+      verifyCaptures.length === 1 &&
+      liveClient.received
+        .slice(liveIdxBeforeVerify)
+        .some((m) => m.type === "checking" && m.phase === "end") &&
+      hud1.received.some((m) => m.type === "verdict" && m.verdict.matchedMedId === "aml-fi"),
+    "verify_label emits checking start -> verdict -> checking end across /live and /hud-ws",
+  );
+
+  assert.deepEqual(verifyCaptures[0].frames, [
+    phoneFallbackB64,
+    fixtureAmlodipineJpg.toString("base64"),
+  ]);
+
+  const liveVerifySlice = liveClient.received.slice(liveIdxBeforeVerify);
+  const startPos = liveVerifySlice.findIndex((m) => m.type === "checking" && m.phase === "start");
+  const verdictPos = liveVerifySlice.findIndex((m) => m.type === "verdict");
+  const endPos = liveVerifySlice.findIndex((m) => m.type === "checking" && m.phase === "end");
+  assert.ok(startPos >= 0 && verdictPos > startPos && endPos > verdictPos);
+
+  const hud2 = openWsClient("/hud-ws");
+  await hud2.ready;
+  await waitFor(() => hud2.received.length >= 4, "2nd zero-code /hud-ws receives instant 4-message replay");
+  assert.deepEqual(
+    hud2.received.slice(0, 4).map((m) => m.type),
+    ["status", "device", "coach", "verdict"],
+  );
+  assert.deepEqual(hud2.received[1], { type: "device", device: lowBatDoff });
+
+  await liveClient.close();
+  await waitFor(
+    () => hub.clients.size === 0 && hub.ring.length === 0 && hub.live?.active === false,
+    "/live disconnect immediately zeroes FrameRing and closes LiveProxy",
+  );
+  assert.equal(hub.ring.length, 0);
+
+  const hud1VerdictsBeforeDose = hud1.received.filter((m) => m.type === "verdict").length;
+  const hud2VerdictsBeforeDose = hud2.received.filter((m) => m.type === "verdict").length;
+
+  hud2.sendJson({ type: "event", name: "log_dose" });
+  await waitFor(
+    () =>
+      hub.profile.doseLog.length === 1 &&
+      hud1.received.filter((m) => m.type === "verdict").length === hud1VerdictsBeforeDose + 1 &&
+      hud2.received.filter((m) => m.type === "verdict").length === hud2VerdictsBeforeDose + 1,
+    "post-disconnect HUD log_dose increments doseLog and fans out takenToday true verdict",
+  );
+  assert.equal(hub.profile.doseLog[0].medId, "aml-fi");
+  assert.equal(hud1.received.filter((m) => m.type === "verdict").at(-1)?.verdict.takenToday, true);
+  assert.equal(hud2.received.filter((m) => m.type === "verdict").at(-1)?.verdict.takenToday, true);
+
+  hud1.sendJson({ type: "event", name: "repeat" });
+  await waitFor(
+    () =>
+      hud1.received.filter((m) => m.type === "verdict").length === hud1VerdictsBeforeDose + 2 &&
+      hud2.received.filter((m) => m.type === "verdict").length === hud2VerdictsBeforeDose + 2,
+    "post-disconnect HUD repeat re-emits updated takenToday true verdict to all HUDs",
+  );
+  assert.equal(hud2.received.filter((m) => m.type === "verdict").at(-1)?.verdict.takenToday, true);
+});
+
 test("device-handoff-e2e.test.ts contains zero comments, em dashes, trailers, or API keys", () => {
   const selfPath = fileURLToPath(import.meta.url);
   const src = fs.readFileSync(selfPath, "utf8");
