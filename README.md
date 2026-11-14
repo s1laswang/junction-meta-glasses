@@ -51,7 +51,7 @@ Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w se
 | Part | Path | Status |
 |---|---|---|
 | Server: Gemini Live proxy (`gemini-3.8-live`), `verify_label` tool (`gemini-3.8-flash`, JSON schema, per-field confidence), speculative verify, deterministic safety check, HUD fan-out, glasses ingest, usage ledger + `/api/stats` | `server/` | ✅ done, smoke + robustness tests pass |
-| Phone PWA: consent, permissions, live check, snapshot and offline modes, device panel, a11y (axe checks during development; no committed report) | `web/` | ✅ done |
+| Phone PWA: consent, permissions, live check, snapshot and offline modes, device panel, a11y (axe-core WCAG 2.2 A+AA: 0 violations on 6 screens, docs/evidence/a11y-axe.json; Profile and Privacy tabs not yet covered by the script) | `web/` | ✅ done |
 | Ray-Ban Display HUD Web App (600×600 additive display, Neural Band input) | `web/src/screens/Hud.tsx`, `/hud/` | ✅ done |
 | Device Access Toolkit Android bridge (glasses camera → `/ingest/frame`) | `android-dat/` | ✅ compiles (freighter Slurm build, 4/4 unit tests, APK sha256 in HARDWARE_NOTES). ⏳ on-glasses proof: docs/HARDWARE_LOG.md |
 | Eval: synthetic labels (Gemini image) → accuracy, confident-wrong rate, calibration | `eval/`, results in `eval/results/v1_results.json` | ✅ v1: 1,740 images, 0/754 confident-wrong strengths, 1.0% unsafe before the allergen gate ([docs/EVAL.md](docs/EVAL.md)). ⏳ real photos |
