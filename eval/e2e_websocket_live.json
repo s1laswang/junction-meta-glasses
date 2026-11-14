@@ -1,0 +1,456 @@
+{
+  "generated_at": "2026-11-14T14:58:23.914062+00:00",
+  "pipeline": "DAT /ingest/* + WS /live?session=bench1 (gemini-3.8-live) + HTTP /api/verify (gemini-3.8-flash) -> session-less WS /hud-ws",
+  "session_id": "bench1",
+  "hud_received_all_3": true,
+  "hud_received_all_verdicts": true,
+  "confident_wrong_dose_count": 0,
+  "profile_summary": {
+    "meds": [
+      "Amlodipin 5 mg (evening)",
+      "Metformin 500 mg (morning/evening)",
+      "Panadol 500 mg (as needed)"
+    ],
+    "allergies": [
+      "peanut",
+      "tree nuts"
+    ],
+    "avoid": [
+      "NSAIDs"
+    ]
+  },
+  "summary": {
+    "session_id": "bench1",
+    "live_model": "gemini-3.8-live",
+    "verify_model": "gemini-3.8-flash",
+    "strength_min_conf": 0.8,
+    "server_boot_ms": 6.06,
+    "hud_ws_connect_ms": 3.98,
+    "live_ws_connect_ms": 1.72,
+    "live_ws_ping_pong_ms": 2.33,
+    "ingest_state_n_probes": 3,
+    "ingest_state_http_p50_ms": 3.43,
+    "ingest_state_to_hud_ws_p50_ms": 3.01,
+    "ingest_state_to_hud_ws_mean_ms": 6.82,
+    "ingest_state_to_live_ws_p50_ms": 2.96,
+    "ingest_state_to_live_ws_mean_ms": 6.76,
+    "ingest_frame_to_ring_p50_ms": 3.07,
+    "ingest_frame_to_ring_mean_ms": 3.48,
+    "api_verify_http_p50_ms": 2734.64,
+    "verify_to_hud_ws_p50_ms": 2733.33,
+    "verify_to_hud_ws_p95_ms": 6232.4,
+    "verify_to_hud_ws_mean_ms": 3955.73,
+    "e2e_frame_to_hud_verdict_p50_ms": 2738.77,
+    "e2e_frame_to_hud_verdict_p95_ms": 6235.73,
+    "e2e_frame_to_hud_verdict_mean_ms": 3959.25,
+    "amlodipine_frame_to_hud_verdict_ms": 2738.77,
+    "n_verify_trials": 3,
+    "verify_verdict_levels": {
+      "amlodipine.jpg": "match",
+      "ibuprofen.jpg": "warning",
+      "blurry_amlodipine.jpg": "unsure"
+    },
+    "verify_verdict_matches": 3,
+    "verify_verdict_accuracy": 1.0,
+    "hud_received_all_3": true,
+    "hud_received_all_verdicts": true,
+    "live_startup_to_ready_ms": 431.64,
+    "live_startup_to_status_open_ms": 431.69,
+    "live_startup_to_hud_status_open_ms": 431.76,
+    "live_turn_first_audio_chunk_ms": 5830.77,
+    "live_turn_first_coach_event_ms": 1175.29,
+    "live_turn_first_event_ms": 1175.29,
+    "live_turn_complete_ms": 9248.08,
+    "live_turn_audio_chunks": 16,
+    "live_turn_pcm16_bytes": 239040,
+    "live_turn_pcm16_duration_s": 4.98,
+    "confident_wrong_dose_count": 0,
+    "clean_shutdown": true,
+    "ledger_stats": {
+      "since": 1794668287561,
+      "total": 5,
+      "features": {
+        "verify_live": {
+          "calls": 1,
+          "ok": 1,
+          "errors": 0,
+          "latency_p50_s": 3.724,
+          "latency_p95_s": 3.724,
+          "tokens_in": 3582,
+          "tokens_out": 238,
+          "tokens_thinking": 0,
+          "models": {
+            "gemini-3.8-flash": 1
+          }
+        },
+        "live": {
+          "calls": 1,
+          "ok": 1,
+          "errors": 0,
+          "latency_p50_s": 10.691,
+          "latency_p95_s": 10.691,
+          "tokens_in": 0,
+          "tokens_out": 0,
+          "tokens_thinking": 0,
+          "models": {
+            "gemini-3.8-live": 1
+          },
+          "first_audio_p50_s": 5.83,
+          "first_audio_p95_s": 5.83,
+          "tool_p50_s": 3.781,
+          "tool_p95_s": 3.781,
+          "tool_calls": 1
+        },
+        "verify": {
+          "calls": 3,
+          "ok": 3,
+          "errors": 0,
+          "latency_p50_s": 2.712,
+          "latency_p95_s": 6.615,
+          "tokens_in": 7481,
+          "tokens_out": 460,
+          "tokens_thinking": 0,
+          "models": {
+            "gemini-3.8-flash": 3
+          }
+        }
+      }
+    }
+  },
+  "transport_setup": {
+    "port": 40675,
+    "server_boot_ms": 6.06,
+    "health_check_ms": 220.76,
+    "health_ok": true,
+    "models_configured": {
+      "live": [
+        "gemini-3.8-live",
+        "gemini-3.1-flash-live-preview",
+        "gemini-2.5-flash-native-audio-latest"
+      ],
+      "verify": [
+        "gemini-3.8-flash",
+        "gemini-3.5-flash",
+        "gemini-3-flash-preview"
+      ],
+      "tts": [
+        "gemini-3.8-flash-tts",
+        "gemini-2.5-flash-preview-tts"
+      ]
+    },
+    "hud_ws_connect_ms": 3.98,
+    "live_ws_connect_ms": 1.72,
+    "live_ws_ping_pong_ms": 2.33,
+    "clean_shutdown": true
+  },
+  "ingest_state_broadcast": [
+    {
+      "probe_index": 1,
+      "battery": 0.91,
+      "http_status": 204,
+      "http_ms": 16.06,
+      "hud_ws_broadcast_ms": 15.47,
+      "live_ws_broadcast_ms": 15.38,
+      "hud_matched": true,
+      "live_matched": true
+    },
+    {
+      "probe_index": 2,
+      "battery": 0.87,
+      "http_status": 204,
+      "http_ms": 3.43,
+      "hud_ws_broadcast_ms": 3.01,
+      "live_ws_broadcast_ms": 2.96,
+      "hud_matched": true,
+      "live_matched": true
+    },
+    {
+      "probe_index": 3,
+      "battery": 0.83,
+      "http_status": 204,
+      "http_ms": 2.32,
+      "hud_ws_broadcast_ms": 1.99,
+      "live_ws_broadcast_ms": 1.95,
+      "hud_matched": true,
+      "live_matched": true
+    }
+  ],
+  "live_websocket_session": {
+    "model": "gemini-3.8-live",
+    "startup_to_connecting_ms": 4.18,
+    "startup_to_hud_attached_ms": 4.15,
+    "startup_to_ready_ms": 431.64,
+    "startup_to_status_open_ms": 431.69,
+    "startup_to_hud_status_open_ms": 431.76,
+    "pre_turn_ingest_frame_ms": 4.34,
+    "turn_fixture": "amlodipine.jpg",
+    "turn_question": "Is this my evening pill?",
+    "first_audio_chunk_ms": 5830.77,
+    "first_coach_event_ms": 1175.29,
+    "hud_first_coach_event_ms": 1175.37,
+    "first_transcript_delta_ms": 5830.81,
+    "first_event_ms": 1175.29,
+    "turn_complete_ms": 9248.08,
+    "coach_cue": "hold_still",
+    "coach_text": "Hold still, reading…",
+    "audio_chunks": 16,
+    "pcm16_bytes": 239040,
+    "pcm16_duration_s": 4.98,
+    "assistant_transcript": "",
+    "used_verify_tool": true,
+    "live_strength_same": true,
+    "live_verdict_ms": 4952.7,
+    "live_verdict": {
+      "level": "match",
+      "headline": "Yes: Amlodipine 5 mg, your evening pill",
+      "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+      "read": {
+        "kind": "medication",
+        "product": {
+          "value": "Amlodipin",
+          "confidence": 0.99
+        },
+        "ingredient": {
+          "value": "amlodipine",
+          "confidence": 0.99
+        },
+        "strength": {
+          "value": "5 mg",
+          "confidence": 0.99
+        },
+        "dosing": {
+          "value": null,
+          "confidence": 0
+        },
+        "expiry": {
+          "value": "2027-08",
+          "confidence": 0.99
+        },
+        "allergens": {
+          "value": null,
+          "confidence": 0
+        },
+        "barcode": {
+          "value": null,
+          "confidence": 0
+        },
+        "readability": 0.95,
+        "guidance": "Turn the box to show the pharmacy label."
+      },
+      "reasons": [
+        "matches aml",
+        "taken today: 0/1"
+      ],
+      "matchedMedId": "aml",
+      "takenToday": false
+    },
+    "confident_wrong_dose": false
+  },
+  "ingest_frame_verify_hud_trials": [
+    {
+      "fixture": "amlodipine.jpg",
+      "question": "Is this my evening pill?",
+      "bytes": 58414,
+      "ring_length": 1,
+      "ring_picked_count": 1,
+      "ring_source": "glasses",
+      "ring_sharpness": 0.282961,
+      "ingest_frame_ms": 5.36,
+      "ring_pick_ms": 0.05,
+      "api_verify_http_ms": 2734.64,
+      "verify_to_hud_ws_ms": 2733.33,
+      "e2e_frame_to_hud_verdict_ms": 2738.77,
+      "expected_level": "match",
+      "predicted_level": "match",
+      "hud_verdict_level": "match",
+      "hud_received_verdict": true,
+      "verdict_match": true,
+      "reason_check_ok": true,
+      "strength_readable": true,
+      "expected_strength": "5 mg",
+      "strength_value": "5 mg",
+      "strength_confidence": 0.99,
+      "strength_correct": true,
+      "confident_wrong_dose": false,
+      "verdict": {
+        "level": "match",
+        "headline": "Yes: Amlodipine 5 mg, your evening pill",
+        "speech": "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.",
+        "read": {
+          "kind": "medication",
+          "product": {
+            "value": "Amlodipin",
+            "confidence": 0.99
+          },
+          "ingredient": {
+            "value": "amlodipine",
+            "confidence": 0.99
+          },
+          "strength": {
+            "value": "5 mg",
+            "confidence": 0.99
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": "2027-08",
+            "confidence": 0.98
+          },
+          "allergens": {
+            "value": null,
+            "confidence": 0
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0
+          },
+          "readability": 0.95,
+          "guidance": "Turn the box to check the pharmacy label for dosing."
+        },
+        "reasons": [
+          "matches aml",
+          "taken today: 0/1"
+        ],
+        "matchedMedId": "aml",
+        "takenToday": false
+      }
+    },
+    {
+      "fixture": "ibuprofen.jpg",
+      "question": "Can I take this for a headache?",
+      "bytes": 65615,
+      "ring_length": 1,
+      "ring_picked_count": 1,
+      "ring_source": "glasses",
+      "ring_sharpness": 0.317843,
+      "ingest_frame_ms": 3.07,
+      "ring_pick_ms": 0.01,
+      "api_verify_http_ms": 6621.75,
+      "verify_to_hud_ws_ms": 6621.19,
+      "e2e_frame_to_hud_verdict_ms": 6624.28,
+      "expected_level": "warning",
+      "predicted_level": "warning",
+      "hud_verdict_level": "warning",
+      "hud_received_verdict": true,
+      "verdict_match": true,
+      "reason_check_ok": true,
+      "strength_readable": true,
+      "expected_strength": "400 mg",
+      "strength_value": "400 mg",
+      "strength_confidence": 0.98,
+      "strength_correct": true,
+      "confident_wrong_dose": false,
+      "verdict": {
+        "level": "warning",
+        "headline": "Ibuprofen 400 mg: not on your list",
+        "speech": "This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.",
+        "read": {
+          "kind": "medication",
+          "product": {
+            "value": "burana",
+            "confidence": 0.98
+          },
+          "ingredient": {
+            "value": "ibuprofen",
+            "confidence": 0.98
+          },
+          "strength": {
+            "value": "400 mg",
+            "confidence": 0.98
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": null,
+            "confidence": 0
+          },
+          "allergens": {
+            "value": null,
+            "confidence": 0
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0
+          },
+          "readability": 0.95
+        },
+        "reasons": [
+          "ibuprofen is an NSAID, on your avoid list",
+          "not on your medication list"
+        ]
+      }
+    },
+    {
+      "fixture": "blurry_amlodipine.jpg",
+      "question": "Is this my evening pill?",
+      "bytes": 54085,
+      "ring_length": 1,
+      "ring_picked_count": 1,
+      "ring_source": "glasses",
+      "ring_sharpness": 0.261991,
+      "ingest_frame_ms": 2.02,
+      "ring_pick_ms": 0.01,
+      "api_verify_http_ms": 2513.34,
+      "verify_to_hud_ws_ms": 2512.66,
+      "e2e_frame_to_hud_verdict_ms": 2514.7,
+      "expected_level": "unsure",
+      "predicted_level": "unsure",
+      "hud_verdict_level": "unsure",
+      "hud_received_verdict": true,
+      "verdict_match": true,
+      "reason_check_ok": true,
+      "strength_readable": false,
+      "expected_strength": null,
+      "strength_value": null,
+      "strength_confidence": 0.2,
+      "strength_correct": null,
+      "confident_wrong_dose": false,
+      "verdict": {
+        "level": "unsure",
+        "headline": "Amlodipine: strength unclear",
+        "speech": "It looks like Amlodipine, but I can't read the strength confidently. Move your thumb away from the text.",
+        "read": {
+          "kind": "medication",
+          "product": {
+            "value": "Amlodipin",
+            "confidence": 0.95
+          },
+          "ingredient": {
+            "value": "amlodipine",
+            "confidence": 0.98
+          },
+          "strength": {
+            "value": null,
+            "confidence": 0.2
+          },
+          "dosing": {
+            "value": null,
+            "confidence": 0
+          },
+          "expiry": {
+            "value": null,
+            "confidence": 0
+          },
+          "allergens": {
+            "value": null,
+            "confidence": 0
+          },
+          "barcode": {
+            "value": null,
+            "confidence": 0
+          },
+          "readability": 0.5,
+          "guidance": "Move your thumb away from the text."
+        },
+        "reasons": [
+          "strength not readable"
+        ],
+        "matchedMedId": "aml"
+      }
+    }
+  ]
+}
