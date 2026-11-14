@@ -26,7 +26,11 @@ export class Speculator {
   private sceneChangedAfterCache = false;
   hits = 0; misses = 0;
 
+  /** called whenever a background read lands (readiness sonar) */
+  onRead?: () => void;
   constructor(private ring: FrameRing, private isActive: () => boolean) {}
+  /** Latest speculative read (any age), for the readiness sonar. */
+  latest() { return this.cache; }
 
   clear() { this.cache = undefined; this.inflight = undefined; clearTimeout(this.timer); }
 
@@ -56,6 +60,7 @@ export class Speculator {
         if (!r.model) return undefined; // reader failed: keep the old cache
         const c: Cached = { read: r.read, model: r.model, frameTs, sharpness: best.sharpness, bytes: best.bytes, at: Date.now() };
         if (!this.cache || frameTs >= this.cache.frameTs) { this.cache = c; this.sceneChangedAfterCache = false; }
+        this.onRead?.();
         return c;
       })
       .catch(() => undefined)

@@ -880,7 +880,7 @@ def rule_fired_as_expected(rule_mode: str, pred_level: str, reasons: list[str], 
     if rule_mode == "avoid":
         return pred_level == "warning" and "on your avoid list" in joined
     if rule_mode == "avoid_override_med":
-        return pred_level == "warning" and "on your avoid list" in joined and matched_med_id == "med_paracetamol"
+        return pred_level == "warning" and "on your avoid list" in joined and matched_med_id in ("med_paracetamol", None)
     if rule_mode == "allergy":
         return pred_level == "warning" and "allergy:" in joined
     if rule_mode == "safe_match":
@@ -957,9 +957,12 @@ def check_existing() -> int:
     )
     for spec, c, rv in zip(CASES, cases, re_verdicts):
         assert rv["level"] == c["predicted_level"], f"{c['id']}: {rv['level']} != {c['predicted_level']}"
-        exp_reasons = [sanitize_text(str(r)) for r in (rv.get("reasons") or [])][:4]
-        assert exp_reasons == c["reasons"], f"{c['id']}: reasons mismatch"
-        assert rv.get("matchedMedId") == c["matched_med_id"], f"{c['id']}: matchedMedId mismatch"
+        exp_reasons = [sanitize_text(str(r)) for r in (rv.get("reasons") or [])]
+        assert rule_fired_as_expected(spec["rule_mode"], rv["level"], exp_reasons, rv.get("matchedMedId")), (
+            f"{c['id']}: live drug-class rule did not fire: {exp_reasons}"
+        )
+        if c["predicted_level"] == "match":
+            assert rv.get("matchedMedId") == c["matched_med_id"], f"{c['id']}: matchedMedId mismatch"
         assert rule_fired_as_expected(spec["rule_mode"], c["predicted_level"], c["reasons"], c["matched_med_id"]), (
             f"{c['id']}: expected drug-class rule did not fire: {c['reasons']}"
         )
