@@ -8,8 +8,10 @@ import React, {
 } from "react";
 import { ScreenReaderAnnouncer } from "./a11y/announcer.tsx";
 import { createLiveAudioBridge } from "./audio/player.ts";
+import { cancelSpeech } from "./audio/tts.ts";
 import { AppHeader, type AppTab } from "./components/AppHeader.tsx";
 import { CaregiverAlertCard } from "./components/CaregiverAlertCard.tsx";
+import { ConfidenceBreakdownCard } from "./components/ConfidenceBreakdownCard.tsx";
 import { ConsentOnboarding } from "./components/ConsentOnboarding.tsx";
 import { ConversationBar } from "./components/ConversationBar.tsx";
 import { DeviceResiliencePanel } from "./components/DeviceResiliencePanel.tsx";
@@ -25,6 +27,7 @@ import { ProfileManager } from "./components/ProfileManager.tsx";
 import { ShortcutsModal } from "./components/ShortcutsModal.tsx";
 import { VerdictCard } from "./components/VerdictCard.tsx";
 import { ViewfinderStage } from "./components/ViewfinderStage.tsx";
+import { VoiceActivityPill } from "./components/VoiceActivityPill.tsx";
 import { HudApp } from "./hud/HudApp.tsx";
 import { HudPreviewFrame } from "./hud/HudPreviewFrame.tsx";
 import { buildBridgeDeepLink, buildHudUrl } from "./pairing/links.ts";
@@ -37,15 +40,30 @@ import {
   type AudioStreamBridge,
   type HoldUpControllerOptions
 } from "./session/useHoldUpController.ts";
+import type { Verdict } from "./types.ts";
 
 export type AppProps = {
   initialUrl?: string;
   controllerOptions?: HoldUpControllerOptions;
+  initialVerdict?: Verdict | null;
 };
 
 const DOUBLE_SLASH = "\x2f\x2f";
 const DEFAULT_PWA_URL = `http:${DOUBLE_SLASH}localhost:5173/`;
 const DEFAULT_SERVER_ORIGIN = `http:${DOUBLE_SLASH}localhost:8787`;
+const SPEAKING_IDLE_MS = 700;
+
+type FooterResourceLink = {
+  href: string;
+  label: string;
+};
+
+const FOOTER_RESOURCE_LINKS: readonly FooterResourceLink[] = [
+  { href: "/deck", label: "Pitch Deck (12 Slides)" },
+  { href: "/judge-handout.html", label: "Judge Quick-Start (A4)" },
+  { href: "/printable-props.html", label: "Printable Demo Props & QR" },
+  { href: "/hud", label: "Ray-Ban Display HUD (/hud)" }
+];
 
 const ROOT_WRAPPER_STYLE: CSSProperties = {
   minHeight: "100dvh",
@@ -53,6 +71,11 @@ const ROOT_WRAPPER_STYLE: CSSProperties = {
   flexDirection: "column",
   backgroundColor: "var(--bg-app, #0b0f17)",
   color: "var(--text-primary, #f8fafc)"
+};
+
+const MAIN_SHELL_STYLE: CSSProperties = {
+  flex: "1 1 auto",
+  minHeight: 0
 };
 
 const SHELL_CONTAINER_STYLE: CSSProperties = {
@@ -82,6 +105,58 @@ const COLUMN_STACK_STYLE: CSSProperties = {
   width: "100%"
 };
 
+const FOOTER_STYLE: CSSProperties = {
+  width: "100%",
+  backgroundColor: "var(--bg-surface, #121926)",
+  color: "var(--text-primary, #f8fafc)",
+  borderTop: "var(--border-width, 1.5px) solid var(--border-subtle, #2c3a52)",
+  padding: "var(--space-4, 16px) var(--space-5, 20px)"
+};
+
+const FOOTER_INNER_STYLE: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "var(--space-3, 12px)",
+  width: "100%",
+  maxWidth: "var(--container-max, 1280px)",
+  marginInline: "auto"
+};
+
+const FOOTER_CAPTION_STYLE: CSSProperties = {
+  margin: 0,
+  fontSize: "var(--text-xs, 0.875rem)",
+  lineHeight: 1.45,
+  color: "var(--text-secondary, #d8e1ee)"
+};
+
+const FOOTER_LINKS_ROW_STYLE: CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: "var(--space-2, 8px)"
+};
+
+const FOOTER_LINK_STYLE: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "var(--space-2, 8px)",
+  minHeight: "56px",
+  minWidth: "56px",
+  padding: "10px 16px",
+  borderRadius: "var(--radius-md, 12px)",
+  border: "var(--border-width, 1.5px) solid var(--border-strong, #6980a3)",
+  backgroundColor: "var(--bg-elevated, #1a2333)",
+  color: "var(--text-primary, #f8fafc)",
+  fontSize: "var(--text-sm, 1rem)",
+  fontWeight: 700,
+  lineHeight: 1.25,
+  textDecoration: "none",
+  whiteSpace: "nowrap"
+};
+
 function toLocationLike(initialUrl?: string): { pathname: string; search: string } {
   const raw =
     typeof initialUrl === "string" && initialUrl.trim().length > 0
@@ -103,11 +178,13 @@ function toLocationLike(initialUrl?: string): { pathname: string; search: string
 type HoldUpPwaShellProps = {
   route: ResolvedRoute;
   controllerOptions?: HoldUpControllerOptions;
+  initialVerdict?: Verdict | null;
 };
 
 function HoldUpPwaShell({
   route,
-  controllerOptions
+  controllerOptions,
+  initialVerdict
 }: HoldUpPwaShellProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<AppTab>(() => route.initialTab);
   const [pharmacyOpen, setPharmacyOpen] = useState<boolean>(() =>
@@ -115,15 +192,41 @@ function HoldUpPwaShell({
   );
   const [shortcutsOpen, setShortcutsOpen] = useState<boolean>(false);
   const [activeTourStep, setActiveTourStep] = useState<TourStepId | null>(null);
+  const [micRms, setMicRms] = useState<number>(0);
+  const [assistantSpeaking, setAssistantSpeaking] = useState<boolean>(false);
 
   const liveAudioRef = useRef<(AudioStreamBridge & { dispose: () => void }) | null>(null);
+  const speakingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearSpeakingTimer = useCallback((): void => {
+    if (speakingTimerRef.current !== null) {
+      clearTimeout(speakingTimerRef.current);
+      speakingTimerRef.current = null;
+    }
+  }, []);
+
+  const markAssistantAudioChunk = useCallback((): void => {
+    setAssistantSpeaking(true);
+    clearSpeakingTimer();
+    const timer = setTimeout(() => {
+      speakingTimerRef.current = null;
+      setAssistantSpeaking(false);
+    }, SPEAKING_IDLE_MS);
+    const maybeNodeTimer = timer as unknown as { unref?: () => void };
+    maybeNodeTimer.unref?.();
+    speakingTimerRef.current = timer;
+  }, [clearSpeakingTimer]);
 
   const getOrCreateBrowserAudio = useCallback(() => {
     if (typeof window === "undefined") {
       return null;
     }
     if (!liveAudioRef.current) {
-      liveAudioRef.current = createLiveAudioBridge();
+      liveAudioRef.current = createLiveAudioBridge({
+        onMicLevel: (rms) => {
+          setMicRms(rms);
+        }
+      });
     }
     return liveAudioRef.current;
   }, []);
@@ -138,35 +241,80 @@ function HoldUpPwaShell({
       },
       stopMic: () => {
         liveAudioRef.current?.stopMic?.();
+        setMicRms(0);
       },
       enqueuePcm24k: (b64) => {
+        markAssistantAudioChunk();
         getOrCreateBrowserAudio()?.enqueuePcm24k?.(b64);
       },
       flushPlayback: () => {
+        clearSpeakingTimer();
+        setAssistantSpeaking(false);
         liveAudioRef.current?.flushPlayback?.();
       },
       resumePlayback: async () => {
         await getOrCreateBrowserAudio()?.resumePlayback?.();
       }
     };
-  }, [getOrCreateBrowserAudio]);
+  }, [clearSpeakingTimer, getOrCreateBrowserAudio, markAssistantAudioChunk]);
 
   useEffect(() => {
     return () => {
+      clearSpeakingTimer();
       liveAudioRef.current?.dispose();
       liveAudioRef.current = null;
     };
-  }, []);
+  }, [clearSpeakingTimer]);
+
+  const wrappedExternalAudioBridge = useMemo<AudioStreamBridge | undefined>(() => {
+    const ext = controllerOptions?.audioBridge;
+    if (!ext) {
+      return undefined;
+    }
+    return {
+      startMic: ext.startMic
+        ? async (onChunk) => {
+            await ext.startMic?.(onChunk);
+          }
+        : undefined,
+      stopMic: () => {
+        ext.stopMic?.();
+        setMicRms(0);
+      },
+      enqueuePcm24k: (b64) => {
+        markAssistantAudioChunk();
+        ext.enqueuePcm24k?.(b64);
+      },
+      flushPlayback: () => {
+        clearSpeakingTimer();
+        setAssistantSpeaking(false);
+        ext.flushPlayback?.();
+      },
+      resumePlayback: ext.resumePlayback
+        ? async () => {
+            await ext.resumePlayback?.();
+          }
+        : undefined
+    };
+  }, [clearSpeakingTimer, controllerOptions?.audioBridge, markAssistantAudioChunk]);
 
   const mergedControllerOptions = useMemo<HoldUpControllerOptions>(
     () => ({
       ...controllerOptions,
-      audioBridge: controllerOptions?.audioBridge ?? lazyBrowserAudioBridge
+      audioBridge: wrappedExternalAudioBridge ?? lazyBrowserAudioBridge
     }),
-    [controllerOptions, lazyBrowserAudioBridge]
+    [controllerOptions, lazyBrowserAudioBridge, wrappedExternalAudioBridge]
   );
 
   const ctrl = useHoldUpController(mergedControllerOptions);
+
+  const handleInterruptSpeech = useCallback((): void => {
+    clearSpeakingTimer();
+    setAssistantSpeaking(false);
+    controllerOptions?.audioBridge?.flushPlayback?.();
+    liveAudioRef.current?.flushPlayback?.();
+    cancelSpeech();
+  }, [clearSpeakingTimer, controllerOptions?.audioBridge]);
 
   const appliedInitialRouteRef = useRef<boolean>(false);
 
@@ -276,7 +424,8 @@ function HoldUpPwaShell({
     return { bridgeLink, hudUrl, bridgeQrSvg, hudQrSvg };
   }, [activeTab, ctrl.sessionId, serverOrigin]);
 
-  const hudPreviewVerdict = ctrl.hudDismissed ? null : ctrl.snapshot.verdict;
+  const effectiveVerdict = ctrl.snapshot.verdict ?? initialVerdict ?? null;
+  const hudPreviewVerdict = ctrl.hudDismissed ? null : effectiveVerdict;
   const hudPreviewCoach = ctrl.hudDismissed ? null : ctrl.snapshot.coach;
 
   return (
@@ -308,7 +457,12 @@ function HoldUpPwaShell({
         onOpenShortcuts={() => setShortcutsOpen(true)}
       />
 
-      <main id="main-content" className="app-shell" tabIndex={-1}>
+      <main
+        id="main-content"
+        className="app-shell"
+        tabIndex={-1}
+        style={MAIN_SHELL_STYLE}
+      >
         <div style={SHELL_CONTAINER_STYLE}>
           {!ctrl.consent.accepted && !ctrl.privacyModalOpen ? (
             <ConsentOnboarding
@@ -386,6 +540,17 @@ function HoldUpPwaShell({
                   lang={effectiveLang}
                 />
 
+                <VoiceActivityPill
+                  cameraActive={ctrl.snapshot.cameraActive}
+                  mode={ctrl.snapshot.mode}
+                  live={ctrl.snapshot.liveState}
+                  muted={ctrl.muted}
+                  assistantSpeaking={assistantSpeaking}
+                  micRms={micRms}
+                  lang={effectiveLang}
+                  onInterruptSpeech={handleInterruptSpeech}
+                />
+
                 <ConversationBar
                   transcripts={ctrl.snapshot.transcripts}
                   mode={ctrl.snapshot.mode}
@@ -396,7 +561,7 @@ function HoldUpPwaShell({
 
               <div style={COLUMN_STACK_STYLE}>
                 <VerdictCard
-                  verdict={ctrl.snapshot.verdict}
+                  verdict={effectiveVerdict}
                   checking={ctrl.snapshot.checking}
                   mode={ctrl.snapshot.mode}
                   lang={effectiveLang}
@@ -404,6 +569,11 @@ function HoldUpPwaShell({
                     ctrl.logDose(medId);
                   }}
                   onRepeat={ctrl.repeatLastVerdict}
+                />
+
+                <ConfidenceBreakdownCard
+                  verdict={effectiveVerdict}
+                  lang={effectiveLang}
                 />
 
                 <HudPreviewFrame
@@ -419,7 +589,7 @@ function HoldUpPwaShell({
 
                 <CaregiverAlertCard
                   profile={effectiveProfile}
-                  lastVerdict={ctrl.snapshot.verdict}
+                  lastVerdict={effectiveVerdict}
                   lang={effectiveLang}
                   onQuickLogDose={(medId) => {
                     ctrl.logDose(medId);
@@ -453,7 +623,7 @@ function HoldUpPwaShell({
 
               <CaregiverAlertCard
                 profile={effectiveProfile}
-                lastVerdict={ctrl.snapshot.verdict}
+                lastVerdict={effectiveVerdict}
                 lang={effectiveLang}
                 onQuickLogDose={(medId) => {
                   ctrl.logDose(medId);
@@ -499,6 +669,33 @@ function HoldUpPwaShell({
           ) : null}
         </div>
       </main>
+
+      <footer
+        className="app-footer"
+        aria-label="Submission and hardware resources"
+        style={FOOTER_STYLE}
+      >
+        <div style={FOOTER_INNER_STYLE}>
+          <p style={FOOTER_CAPTION_STYLE}>
+            HoldUp: Hands-free label verification for Meta AI Glasses. Personal health profile stays on this device.
+          </p>
+
+          <div style={FOOTER_LINKS_ROW_STYLE}>
+            {FOOTER_RESOURCE_LINKS.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary app-footer-link"
+                style={FOOTER_LINK_STYLE}
+              >
+                <span>{item.label}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </footer>
 
       {ctrl.privacyModalOpen ? (
         <ConsentOnboarding
@@ -551,6 +748,7 @@ export function App(props?: AppProps): React.JSX.Element {
     <HoldUpPwaShell
       route={route}
       controllerOptions={props?.controllerOptions}
+      initialVerdict={props?.initialVerdict}
     />
   );
 }
