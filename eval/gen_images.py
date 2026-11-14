@@ -16,12 +16,14 @@ Resumable: specs already in renders.jsonl are skipped.
 from __future__ import annotations
 
 import argparse
+import base64
 import io
+import os
 import random
 import time
 
-from common import (CHECK_MODEL, DATA, IMAGE_MODELS, append_jsonl, client, gen_json, ledger, log,
-                    pmap, read_jsonl, with_retries)
+from common import (CHECK_MODEL, DATA, IMAGE_MODELS, _redact, _rest_resp, append_jsonl, client, gen_json,
+                    ledger, load_env, log, part_bytes, pmap, read_jsonl, with_retries)
 
 FIELDS = ["product", "ingredient", "strength", "dosing", "expiry", "allergens", "may_contain", "barcode"]
 KEY_FIELDS = {"medication": ["product", "strength"], "food": ["product", "allergens"]}
@@ -78,7 +80,49 @@ def render_prompt(s: dict, back: bool = False) -> str:
 
 
 def render(prompt: str, model_order: list[str]) -> tuple[bytes, str]:
-    from google.genai import types
+    try:
+        from google.genai import types
+    except ImportError:
+        load_env()
+        import requests
+
+        last = None
+        for model in model_order:
+            def call_rest(model=model):
+                t0 = time.time()
+                r = None
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                    payload = {
+                        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                        "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "1:1"}},
+                    }
+                    resp = requests.post(
+                        url,
+                        headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"]},
+                        json=payload,
+                        timeout=120,
+                    )
+                    if resp.status_code != 200:
+                        raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:240]}")
+                    rj = resp.json()
+                    r = _rest_resp(rj)
+                    for c in rj.get("candidates") or []:
+                        for p in (c.get("content") or {}).get("parts") or []:
+                            inl = p.get("inlineData") or {}
+                            if not p.get("thought") and inl.get("data"):
+                                ledger("gen_images.render", model, r, time.time() - t0, True, None)
+                                return base64.b64decode(inl["data"])
+                    raise RuntimeError("empty response (no image part)")
+                except Exception:
+                    ledger("gen_images.render", model, r, time.time() - t0, False, None)
+                    raise
+            try:
+                return with_retries(call_rest, tries=4, label=f"render-{model}"), model
+            except Exception as e:
+                last = e
+                log(f"render fallback from {model}: {_redact(str(e))[:120]}")
+        raise RuntimeError(f"all image models failed: {_redact(str(last))}")
 
     last = None
     for model in model_order:
@@ -146,8 +190,6 @@ def expected_fields(s: dict) -> dict:
 
 
 def check(img: bytes, s: dict, back: bool) -> dict:
-    from google.genai import types
-
     exp = expected_fields(s)
     exp_txt = "\n".join(f"- {k}: {v}" for k, v in exp.items() if v)
     prompt = (
@@ -161,7 +203,7 @@ def check(img: bytes, s: dict, back: bool) -> dict:
         "printed or not visible, legible=false and box_2d=[]. Be strict: illegible smudges or misspellings in digits are "
         f"not legible/matching.\n\nExpected ({'BACK side view' if back else 'main label'}):\n{exp_txt}"
     )
-    contents = [types.Part.from_bytes(data=img, mime_type="image/jpeg"), prompt]
+    contents = [part_bytes(img, "image/jpeg"), prompt]
     data, _, _ = gen_json(CHECK_MODEL, contents, schema=CHECK_SCHEMA, thinking="high", max_tokens=8192,
                           feature="gen_images.check", label="check")
     return data

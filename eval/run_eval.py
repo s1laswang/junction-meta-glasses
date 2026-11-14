@@ -21,8 +21,8 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
-from common import (DATA, EVAL_DIR, OUT, REPO, SHARED, VERIFY_MODEL, append_jsonl, gen_json, log, pmap,
-                    read_jsonl)
+from common import (DATA, EVAL_DIR, OUT, REPO, SHARED, VERIFY_MODEL, append_jsonl, gen_json, log,
+                    part_bytes, pmap, read_jsonl)
 from normalize import COMPARE, canon_allergens
 from safety import verdict as py_verdict
 
@@ -104,9 +104,7 @@ THINKING = os.environ.get("VERIFY_THINKING", "low")
 
 
 def predict_one(img_bytes: bytes, prompt: str, schema: dict, mime="image/jpeg"):
-    from google.genai import types
-
-    contents = [types.Part.from_bytes(data=img_bytes, mime_type=mime), USER_TEXT]
+    contents = [part_bytes(img_bytes, mime), USER_TEXT]
     data, _, dt = gen_json(VERIFY_MODEL, contents, schema=schema, system=prompt, thinking=THINKING,
                            max_tokens=4096, feature="eval.verify_label", label="verify")
     return data, dt

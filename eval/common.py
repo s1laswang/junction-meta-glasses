@@ -5,6 +5,7 @@ repo-root .env (gitignored, chmod 600 on freighter).
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import random
@@ -14,6 +15,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Callable, Iterable
 
 REPO = Path(__file__).resolve().parent.parent
@@ -36,15 +38,18 @@ def load_env() -> None:
     if os.environ.get("GEMINI_API_KEY"):
         return
     cands = [Path(os.environ["HOLDUP_ENV_FILE"])] if os.environ.get("HOLDUP_ENV_FILE") else []
-    for p in (*cands, REPO / ".env", Path.home() / "junction-meta-glasses" / ".env"):
+    for p in (*cands, REPO / ".env", Path.home() / "junction-meta-glasses" / ".env", Path.home() / "momin" / ".env"):
         if p.exists():
             for line in p.read_text().splitlines():
                 line = line.strip()
                 if not line or line.startswith("#") or "=" not in line:
                     continue
+                if line.startswith("export "):
+                    line = line[7:].strip()
                 k, v = line.split("=", 1)
                 os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
-            break
+            if os.environ.get("GEMINI_API_KEY"):
+                break
     if not os.environ.get("GEMINI_API_KEY"):
         sys.exit("GEMINI_API_KEY not set (looked in env and repo .env)")
 
@@ -168,6 +173,27 @@ def ledger(feature: str, model: str, resp: Any, latency: float, ok: bool, thinki
     append_jsonl(LEDGER, row)
 
 
+def _rest_resp(rj: dict) -> SimpleNamespace:
+    um = rj.get("usageMetadata") or {}
+    return SimpleNamespace(
+        usage_metadata=SimpleNamespace(
+            prompt_token_count=um.get("promptTokenCount"),
+            candidates_token_count=um.get("candidatesTokenCount"),
+            thoughts_token_count=um.get("thoughtsTokenCount"),
+            cached_content_token_count=um.get("cachedContentTokenCount"),
+        )
+    )
+
+
+def part_bytes(data: bytes, mime: str = "image/jpeg") -> Any:
+    try:
+        from google.genai import types
+
+        return types.Part.from_bytes(data=data, mime_type=mime)
+    except ImportError:
+        return {"inlineData": {"mimeType": mime, "data": base64.b64encode(data).decode("ascii")}}
+
+
 def gen_cfg(schema: dict | None = None, system: str | None = None, thinking: str | None = "low",
             max_tokens: int = 4096, json_out: bool = True, extra: dict | None = None):
     from google.genai import types
@@ -192,7 +218,55 @@ def gen_json(model: str, contents: Any, schema: dict | None = None, system: str 
     """generateContent with JSON output; returns (parsed, raw_text, latency_s).
 
     Temperature is left at the model default (team playbook)."""
-    cfg = gen_cfg(schema, system, thinking, max_tokens)
+    try:
+        cfg = gen_cfg(schema, system, thinking, max_tokens)
+    except ImportError:
+        load_env()
+        import requests
+
+        parts = (
+            [{"text": contents}]
+            if isinstance(contents, str)
+            else [{"text": x} if isinstance(x, str) else x for x in contents]
+        )
+        gcfg: dict[str, Any] = {"maxOutputTokens": max_tokens, "responseMimeType": "application/json"}
+        if schema is not None:
+            gcfg["responseJsonSchema"] = schema
+        if thinking:
+            gcfg["thinkingConfig"] = {"thinkingLevel": thinking}
+        payload: dict[str, Any] = {"contents": [{"role": "user", "parts": parts}], "generationConfig": gcfg}
+        if system:
+            payload["systemInstruction"] = {"parts": [{"text": system}]}
+
+        def call_rest():
+            t0 = time.time()
+            r = None
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                resp = requests.post(
+                    url,
+                    headers={"x-goog-api-key": os.environ["GEMINI_API_KEY"]},
+                    json=payload,
+                    timeout=120,
+                )
+                dt = time.time() - t0
+                if resp.status_code != 200:
+                    raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:240]}")
+                rj = resp.json()
+                r = _rest_resp(rj)
+                cands = rj.get("candidates") or []
+                cparts = ((cands[0].get("content") or {}).get("parts") or []) if cands else []
+                txt = "".join(p.get("text", "") for p in cparts if not p.get("thought"))
+                if not txt:
+                    raise RuntimeError("empty response")
+                parsed = parse_json(txt)
+            except Exception:
+                ledger(feature or label, model, r, time.time() - t0, False, thinking)
+                raise
+            ledger(feature or label, model, r, dt, True, thinking)
+            return parsed, txt, dt
+
+        return with_retries(call_rest, label=label or model)
 
     def call():
         t0 = time.time()

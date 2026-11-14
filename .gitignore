@@ -15,7 +15,8 @@ android-dat/**/build/
 android-dat/local.properties
 android-dat/.idea/
 # eval data (large) lives on freighter /data/silas/junction-meta-glasses
-eval/out/
+eval/out/*
+!eval/out/results.json
 eval/synthetic/
 
 # server usage ledger (metadata only)
