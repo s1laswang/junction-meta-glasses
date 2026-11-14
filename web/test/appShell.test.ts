@@ -75,7 +75,7 @@ function renderApp(props?: AppProps): string {
   return renderToStaticMarkup(props ? createElement(App, props) : createElement(App));
 }
 
-test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding when unaccepted, JudgeDemoTour, ViewfinderStage, VoiceActivityPill, VerdictCard, ConversationBar, HudPreviewFrame, CaregiverAlertCard, and resource footer", () => {
+test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding when unaccepted, JudgeDemoTour, ViewfinderStage, VoiceActivityPill, VerdictCard, ScheduleChecklistCard, ConversationBar, HudPreviewFrame, CaregiverAlertCard, and resource footer", () => {
   const storage = createMemoryStorage();
   const html = renderApp({
     initialUrl: `${BASE_URL}/`,
@@ -124,12 +124,24 @@ test("App at / renders AppHeader, skip link #main-content, ConsentOnboarding whe
   assert.ok(html.includes("verdict-ready-title"));
   assert.ok(html.includes("Ready to check"));
   assert.equal(html.includes("confidence-breakdown-card"), false);
+  assert.equal(html.includes("safety-rule-explainer-card"), false);
+
+  assert.ok(html.includes("schedule-checklist-card"));
+  assert.ok(html.includes("Did I Take My Pills?"));
+  assert.ok(html.includes('data-action="verify-med"'));
+  assert.ok(html.includes('data-action="log-dose"'));
 
   assert.ok(html.includes("hpf-root"));
   assert.ok(html.includes('data-waveguide-viewport="600x600"'));
 
   assert.ok(html.includes("caregiver-share-actions"));
   assert.ok(html.includes("Preview Outgoing Family Message"));
+
+  const readyVerdictIdx = html.indexOf("verdict-ready-title");
+  const scheduleCheckIdx = html.indexOf("schedule-checklist-card");
+  const hudPreviewCheckIdx = html.indexOf("hpf-root");
+  assert.ok(readyVerdictIdx > 0 && scheduleCheckIdx > readyVerdictIdx);
+  assert.ok(hudPreviewCheckIdx > scheduleCheckIdx);
 
   const footerStartIdx = html.indexOf('aria-label="Submission and hardware resources"');
   assert.ok(html.includes('class="app-footer"'));
@@ -203,12 +215,14 @@ test("App renders ConfidenceBreakdownCard between VerdictCard and HudPreviewFram
 
   const verdictCardIdx = passedHtml.indexOf("Yes: Amlodipine 5 mg, your evening pill");
   const confidenceCardIdx = passedHtml.indexOf('id="confidence-breakdown-heading"');
+  const scheduleCardIdx = passedHtml.indexOf("schedule-checklist-card");
   const hudPreviewIdx = passedHtml.indexOf('id="hpf-heading"');
   const caregiverIdx = passedHtml.indexOf("caregiver-share-actions");
 
   assert.ok(verdictCardIdx > 0);
   assert.ok(confidenceCardIdx > verdictCardIdx);
-  assert.ok(hudPreviewIdx > confidenceCardIdx);
+  assert.ok(scheduleCardIdx > confidenceCardIdx);
+  assert.ok(hudPreviewIdx > scheduleCardIdx);
   assert.ok(caregiverIdx > hudPreviewIdx);
   assert.equal(passedHtml.includes(EM_DASH), false);
   assert.equal(passedHtml.includes(EN_DASH), false);
@@ -241,12 +255,13 @@ test("App renders ConfidenceBreakdownCard between VerdictCard and HudPreviewFram
       initialVerdict: passedVerdict
     });
     assert.ok(localizedHtml.includes("confidence-breakdown-card"));
+    assert.ok(localizedHtml.includes("schedule-checklist-card"));
     assert.equal(localizedHtml.includes(EM_DASH), false);
     assert.equal(localizedHtml.includes(EN_DASH), false);
   }
 });
 
-test("App with initialUrl=?tab=profile renders ProfileManager, saved medications, and CaregiverAlertCard", () => {
+test("App with initialUrl=?tab=profile renders ScheduleChecklistCard, SafetyRuleExplainerCard, ProfileManager, saved medications, CaregiverAlertCard, and localized fi/sv output", () => {
   const storage = createMemoryStorage();
   const html = renderApp({
     initialUrl: `${BASE_URL}/?tab=profile`,
@@ -258,15 +273,53 @@ test("App with initialUrl=?tab=profile renders ProfileManager, saved medications
   assert.equal(html.includes('id="panel-check"'), false);
   assert.equal(html.includes('id="panel-device"'), false);
 
+  assert.ok(html.includes("schedule-checklist-card"));
+  assert.ok(html.includes("Did I Take My Pills?"));
+  assert.ok(html.includes('data-action="verify-med"'));
+  assert.ok(html.includes('data-action="log-dose"'));
+
+  assert.ok(html.includes("safety-rule-explainer-card"));
+  assert.ok(html.includes('id="safety-rule-explainer-heading"'));
+  assert.ok(html.includes("6 Deterministic Personal Safety Guardrails"));
+  assert.ok(html.includes("80% Never-Guess Dose Gate"));
+  assert.ok(html.includes("HARD GATE &gt;= 80%"));
+  assert.ok(html.includes("STRENGTH_MIN_CONF = 0.80"));
+  assert.ok(html.includes("3 SAVED MEDS"));
+
   for (const med of DEMO_PROFILE.meds) {
     assert.ok(html.includes(med.name), `Expected medication ${med.name} in profile tab`);
     assert.ok(html.includes(med.strength), `Expected strength ${med.strength} in profile tab`);
   }
 
+  assert.ok(html.includes("profile-manager"));
   assert.ok(html.includes("NSAIDs"));
   assert.ok(html.includes("caregiver-share-actions"));
   assert.equal(html.includes(EM_DASH), false);
   assert.equal(html.includes(EN_DASH), false);
+
+  const fiHtml = renderApp({
+    initialUrl: `${BASE_URL}/?lang=fi&tab=profile`,
+    controllerOptions: { storage: createMemoryStorage() }
+  });
+  assert.ok(fiHtml.includes("schedule-checklist-card"));
+  assert.ok(fiHtml.includes("Otinko lääkkeeni tänään?"));
+  assert.ok(fiHtml.includes("safety-rule-explainer-card"));
+  assert.ok(fiHtml.includes("6 determinististä henkilökohtaista turvasääntöä"));
+  assert.ok(fiHtml.includes("80 % ei-arvausta-annosraja"));
+  assert.equal(fiHtml.includes(EM_DASH), false);
+  assert.equal(fiHtml.includes(EN_DASH), false);
+
+  const svHtml = renderApp({
+    initialUrl: `${BASE_URL}/?lang=sv&tab=profile`,
+    controllerOptions: { storage: createMemoryStorage() }
+  });
+  assert.ok(svHtml.includes("schedule-checklist-card"));
+  assert.ok(svHtml.includes("Tog jag mina mediciner idag?"));
+  assert.ok(svHtml.includes("safety-rule-explainer-card"));
+  assert.ok(svHtml.includes("6 deterministiska personliga säkerhetsspärrar"));
+  assert.ok(svHtml.includes("80 % gissa-aldrig-dosgräns"));
+  assert.equal(svHtml.includes(EM_DASH), false);
+  assert.equal(svHtml.includes(EN_DASH), false);
 });
 
 test("App with initialUrl=?tab=device renders DeviceResiliencePanel with real SVG QR codes, EvalProofCard, and HudPreviewFrame", () => {
@@ -347,6 +400,9 @@ test("App with initialUrl=/hud renders pure #000000 .hud-root HudApp without pho
   assert.equal(hudHtml.includes('aria-label="Submission and hardware resources"'), false);
   assert.equal(hudHtml.includes("voice-activity-pill"), false);
   assert.equal(hudHtml.includes("confidence-breakdown-card"), false);
+  assert.equal(hudHtml.includes("schedule-checklist-card"), false);
+  assert.equal(hudHtml.includes("Did I Take My Pills?"), false);
+  assert.equal(hudHtml.includes("safety-rule-explainer-card"), false);
   assert.equal(hudHtml.includes("/judge-handout.html"), false);
   assert.equal(hudHtml.includes("/printable-props.html"), false);
   assert.equal(hudHtml.includes('class="skip-link"'), false);
@@ -363,6 +419,8 @@ test("App with initialUrl=/hud renders pure #000000 .hud-root HudApp without pho
   assert.ok(sessionHudHtml.includes("SESSION hup-4k9m"));
   assert.ok(sessionHudHtml.includes("SPEAK"));
   assert.equal(sessionHudHtml.includes('class="app-footer"'), false);
+  assert.equal(sessionHudHtml.includes("schedule-checklist-card"), false);
+  assert.equal(sessionHudHtml.includes("safety-rule-explainer-card"), false);
   assert.equal(writes.length, 0);
   assert.equal(sessionHudHtml.includes(EM_DASH), false);
 });
