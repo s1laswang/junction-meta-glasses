@@ -77,6 +77,7 @@ test("web/vite.config.ts proxies /api, /ingest, /deck, handouts, and WebSocket r
   assert.equal(proxy["/deck"], HTTP_BACKEND);
   assert.equal(proxy["/printable-props.html"], HTTP_BACKEND);
   assert.equal(proxy["/judge-handout.html"], HTTP_BACKEND);
+  assert.equal(proxy["/architecture-poster.html"], HTTP_BACKEND);
   assert.deepEqual(proxy["/live"], { target: WS_BACKEND, ws: true });
   assert.deepEqual(proxy["/hud-ws"], { target: WS_BACKEND, ws: true });
 });
@@ -130,6 +131,7 @@ test("dev proxy routes match server/src/index.ts backend endpoints and built JS 
     "/deck",
     "/printable-props.html",
     "/judge-handout.html",
+    "/architecture-poster.html",
     "/live",
     "/hud-ws"
   ]) {
@@ -138,7 +140,16 @@ test("dev proxy routes match server/src/index.ts backend endpoints and built JS 
 
   assert.deepEqual(
     Object.keys(proxy).sort(),
-    ["/api", "/deck", "/hud-ws", "/ingest", "/judge-handout.html", "/live", "/printable-props.html"]
+    [
+      "/api",
+      "/architecture-poster.html",
+      "/deck",
+      "/hud-ws",
+      "/ingest",
+      "/judge-handout.html",
+      "/live",
+      "/printable-props.html"
+    ]
   );
 
   if (existsSync(distAssetsUrl)) {

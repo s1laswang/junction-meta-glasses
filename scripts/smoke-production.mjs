@@ -152,6 +152,15 @@ async function runSmoke() {
     assert.match(handoutHtml, /STRENGTH_MIN_CONF = 0\.80/);
     assert.match(handoutHtml, /\/hud-ws/);
 
+    const posterRes = await fetch(`${baseUrl}/architecture-poster.html`);
+    probedCount++;
+    assert.equal(posterRes.status, 200, "GET /architecture-poster.html must return 200");
+    assert.equal(posterRes.headers.get("x-powered-by"), null);
+    assert.match(posterRes.headers.get("content-type") ?? "", /text\/html/i);
+    const posterHtml = await posterRes.text();
+    assert.match(posterHtml, /<svg/i);
+    assert.match(posterHtml, /STRENGTH_MIN_CONF = 0\.80/);
+
     const webmanifestRes = await fetch(`${baseUrl}/manifest.webmanifest`);
     probedCount++;
     assert.equal(webmanifestRes.status, 200, "GET /manifest.webmanifest must return 200");

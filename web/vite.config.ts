@@ -19,6 +19,7 @@ export default defineConfig({
       "/deck": "http://localhost:8787",
       "/printable-props.html": "http://localhost:8787",
       "/judge-handout.html": "http://localhost:8787",
+      "/architecture-poster.html": "http://localhost:8787",
       "/live": { target: "ws://localhost:8787", ws: true },
       "/hud-ws": { target: "ws://localhost:8787", ws: true }
     }

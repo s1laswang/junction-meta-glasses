@@ -161,6 +161,11 @@ export function createApp(opts?: { repoRoot?: string }) {
     if (!fs.existsSync(handoutHtml)) { next(); return; }
     res.sendFile(handoutHtml);
   });
+  const posterHtml = path.join(root, "docs", "architecture-poster.html");
+  app.get("/architecture-poster.html", (_req, res, next) => {
+    if (!fs.existsSync(posterHtml)) { next(); return; }
+    res.sendFile(posterHtml);
+  });
 
   const dist = path.join(root, "web", "dist");
   app.use(express.static(dist, { index: "index.html", maxAge: "1h", dotfiles: "allow" }));
