@@ -18,13 +18,43 @@ import {
   type MediaProblem,
   type PermState,
 } from "../src/lib/media.ts";
+import { Sonar } from "../src/lib/sonar.ts";
 
+const storageBacking = new Map<string, string>();
+const localStorageShim = {
+  get length() {
+    return storageBacking.size;
+  },
+  key(index: number): string | null {
+    return Array.from(storageBacking.keys())[index] ?? null;
+  },
+  getItem(key: string): string | null {
+    return storageBacking.has(key) ? storageBacking.get(key)! : null;
+  },
+  setItem(key: string, value: string): void {
+    storageBacking.set(key, String(value));
+  },
+  removeItem(key: string): void {
+    storageBacking.delete(key);
+  },
+  clear(): void {
+    storageBacking.clear();
+  },
+};
+
+Object.defineProperty(globalThis, "localStorage", { value: localStorageShim, configurable: true, writable: true });
 Object.defineProperty(globalThis, "React", { value: React, configurable: true, writable: true });
 const { CueArrow, Icon, LEVEL_WORD, Logo, VerdictGlyph } = await import("../src/components/Icons.tsx");
+const { announce, onAnnounce } = await import("../src/lib/feedback.ts");
+const { Announcer } = await import("../src/components/Announcer.tsx");
 
 type QueryResultState = "granted" | "denied" | "prompt";
 
-const windowShim: { isSecureContext: boolean } = {
+const windowShim: {
+  isSecureContext: boolean;
+  AudioContext?: unknown;
+  webkitAudioContext?: unknown;
+} = {
   isSecureContext: true,
 };
 
@@ -869,4 +899,394 @@ test("pcm-capture worklet preserves fractional carry across 44.1 kHz, 24 kHz lin
   assert.ok(h48.posted[0]!.msg.rms < 1e-6);
   const filteredOut = new Int16Array(h48.posted[0]!.msg.pcm);
   assert.ok(filteredOut.every((v) => v === 0));
+});
+
+type AudioParamEvent = {
+  op: string;
+  value?: number;
+  time: number;
+  timeConstant?: number;
+};
+
+class FakeSonarAudioParam {
+  value = 0;
+  events: AudioParamEvent[] = [];
+
+  setTargetAtTime(target: number, startTime: number, timeConstant: number): void {
+    this.value = target;
+    this.events.push({ op: "setTargetAtTime", value: target, time: startTime, timeConstant });
+  }
+
+  setValueAtTime(value: number, startTime: number): void {
+    this.value = value;
+    this.events.push({ op: "setValueAtTime", value, time: startTime });
+  }
+
+  linearRampToValueAtTime(value: number, endTime: number): void {
+    this.value = value;
+    this.events.push({ op: "linearRampToValueAtTime", value, time: endTime });
+  }
+
+  exponentialRampToValueAtTime(value: number, endTime: number): void {
+    this.value = value;
+    this.events.push({ op: "exponentialRampToValueAtTime", value, time: endTime });
+  }
+
+  cancelScheduledValues(startTime: number): void {
+    this.events.push({ op: "cancelScheduledValues", time: startTime });
+  }
+}
+
+class FakeSonarOscillator {
+  type: OscillatorType = "sine";
+  frequency = new FakeSonarAudioParam();
+  connectedTo: unknown[] = [];
+  startedAt: number[] = [];
+  stoppedAt: number[] = [];
+  throwOnStop = false;
+
+  connect<T>(dest: T): T {
+    this.connectedTo.push(dest);
+    return dest;
+  }
+
+  start(when = 0): void {
+    this.startedAt.push(when);
+  }
+
+  stop(when = 0): void {
+    if (this.throwOnStop) throw new Error("InvalidStateError");
+    this.stoppedAt.push(when);
+  }
+}
+
+class FakeSonarBiquadFilter {
+  type: BiquadFilterType = "lowpass";
+  frequency = new FakeSonarAudioParam();
+  connectedTo: unknown[] = [];
+
+  connect<T>(dest: T): T {
+    this.connectedTo.push(dest);
+    return dest;
+  }
+}
+
+class FakeSonarGainNode {
+  gain = new FakeSonarAudioParam();
+  connectedTo: unknown[] = [];
+
+  connect<T>(dest: T): T {
+    this.connectedTo.push(dest);
+    return dest;
+  }
+}
+
+class FakeSonarAudioContext {
+  static instances: FakeSonarAudioContext[] = [];
+  static throwOnConstruct = false;
+  static rejectOnResume = false;
+  static initialState: AudioContextState = "suspended";
+
+  state: AudioContextState = FakeSonarAudioContext.initialState;
+  currentTime = 4.0;
+  destination = { kind: "sonar-destination" };
+  oscillators: FakeSonarOscillator[] = [];
+  filters: FakeSonarBiquadFilter[] = [];
+  gains: FakeSonarGainNode[] = [];
+  resumeCalls = 0;
+
+  constructor() {
+    if (FakeSonarAudioContext.throwOnConstruct) {
+      throw new Error("NotSupportedError: Web Audio disabled");
+    }
+    FakeSonarAudioContext.instances.push(this);
+  }
+
+  static reset(): void {
+    FakeSonarAudioContext.instances = [];
+    FakeSonarAudioContext.throwOnConstruct = false;
+    FakeSonarAudioContext.rejectOnResume = false;
+    FakeSonarAudioContext.initialState = "suspended";
+  }
+
+  createOscillator(): OscillatorNode {
+    const o = new FakeSonarOscillator();
+    this.oscillators.push(o);
+    return o as unknown as OscillatorNode;
+  }
+
+  createBiquadFilter(): BiquadFilterNode {
+    const f = new FakeSonarBiquadFilter();
+    this.filters.push(f);
+    return f as unknown as BiquadFilterNode;
+  }
+
+  createGain(): GainNode {
+    const g = new FakeSonarGainNode();
+    this.gains.push(g);
+    return g as unknown as GainNode;
+  }
+
+  async resume(): Promise<void> {
+    this.resumeCalls++;
+    if (FakeSonarAudioContext.rejectOnResume) {
+      throw new Error("NotAllowedError: gesture required");
+    }
+    if (this.state === "suspended") {
+      this.state = "running";
+    }
+  }
+}
+
+test("Announcer renders polite status and assertive alert atomic sr-only regions and supports rapid identical message re-announcement", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+
+  const ssrHtml = renderToStaticMarkup(createElement(Announcer));
+  assert.equal(
+    ssrHtml,
+    '<div class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>' +
+      '<div class="sr-only" role="alert" aria-live="assertive" aria-atomic="true"></div>',
+  );
+
+  const announcerSrc = readFileSync(new URL("../src/components/Announcer.tsx", import.meta.url), "utf8");
+  assert.ok(announcerSrc.includes('set("")'));
+  assert.ok(announcerSrc.includes("setTimeout(() => set(msg), 60)"));
+
+  let politeRegion = "";
+  let assertiveRegion = "";
+  const politeHistory: string[] = [];
+  const assertiveHistory: string[] = [];
+
+  const unsubMirror = onAnnounce((msg, p) => {
+    if (p === "assertive") {
+      assertiveRegion = "";
+      assertiveHistory.push(assertiveRegion);
+      setTimeout(() => {
+        assertiveRegion = msg;
+        assertiveHistory.push(assertiveRegion);
+      }, 60);
+    } else {
+      politeRegion = "";
+      politeHistory.push(politeRegion);
+      setTimeout(() => {
+        politeRegion = msg;
+        politeHistory.push(politeRegion);
+      }, 60);
+    }
+  });
+
+  const secondaryLog: Array<{ msg: string; p: "polite" | "assertive" }> = [];
+  const unsubSecondary = onAnnounce((msg, p) => secondaryLog.push({ msg, p }));
+
+  announce("Turn box left");
+  assert.equal(politeRegion, "");
+  assert.equal(assertiveRegion, "");
+  t.mock.timers.tick(60);
+  assert.equal(politeRegion, "Turn box left");
+
+  announce("Turn box left");
+  assert.equal(politeRegion, "");
+  t.mock.timers.tick(59);
+  assert.equal(politeRegion, "");
+  t.mock.timers.tick(1);
+  assert.equal(politeRegion, "Turn box left");
+
+  announce("Warning: contains peanuts", "assertive");
+  assert.equal(assertiveRegion, "");
+  assert.equal(politeRegion, "Turn box left");
+  t.mock.timers.tick(60);
+  assert.equal(assertiveRegion, "Warning: contains peanuts");
+
+  announce("Warning: contains peanuts", "assertive");
+  assert.equal(assertiveRegion, "");
+  t.mock.timers.tick(60);
+  assert.equal(assertiveRegion, "Warning: contains peanuts");
+
+  assert.deepEqual(politeHistory, ["", "Turn box left", "", "Turn box left"]);
+  assert.deepEqual(assertiveHistory, ["", "Warning: contains peanuts", "", "Warning: contains peanuts"]);
+
+  unsubSecondary();
+  announce("Camera stopped", "polite");
+  t.mock.timers.tick(60);
+  assert.equal(politeRegion, "Camera stopped");
+  assert.equal(secondaryLog.length, 4);
+
+  unsubMirror();
+  announce("After unmount", "assertive");
+  t.mock.timers.tick(60);
+  assert.equal(assertiveRegion, "Warning: contains peanuts");
+});
+
+test("Sonar handles missing or throwing AudioContext, webkitAudioContext fallback, suspended resume rejection, and closed recreation", async () => {
+  FakeSonarAudioContext.reset();
+  delete windowShim.AudioContext;
+  delete windowShim.webkitAudioContext;
+
+  const headlessSonar = new Sonar();
+  assert.equal(headlessSonar.active, false);
+  assert.doesNotThrow(() => headlessSonar.unlock());
+  assert.doesNotThrow(() => headlessSonar.set(0.75));
+  assert.doesNotThrow(() => headlessSonar.duck(true));
+  assert.doesNotThrow(() => headlessSonar.stop());
+  assert.equal(headlessSonar.active, false);
+
+  FakeSonarAudioContext.throwOnConstruct = true;
+  windowShim.AudioContext = FakeSonarAudioContext;
+  const throwingSonar = new Sonar();
+  assert.doesNotThrow(() => throwingSonar.unlock());
+  assert.doesNotThrow(() => throwingSonar.set(0.9));
+  assert.equal(throwingSonar.active, false);
+
+  FakeSonarAudioContext.reset();
+  delete windowShim.AudioContext;
+  windowShim.webkitAudioContext = FakeSonarAudioContext;
+  FakeSonarAudioContext.rejectOnResume = true;
+
+  const webkitSonar = new Sonar();
+  webkitSonar.unlock();
+  await Promise.resolve();
+  assert.equal(FakeSonarAudioContext.instances.length, 1);
+  assert.equal(FakeSonarAudioContext.instances[0]!.resumeCalls, 1);
+
+  FakeSonarAudioContext.rejectOnResume = false;
+  FakeSonarAudioContext.instances[0]!.state = "closed";
+  webkitSonar.unlock();
+  await Promise.resolve();
+  assert.equal(FakeSonarAudioContext.instances.length, 2);
+  assert.equal(FakeSonarAudioContext.instances[1]!.state, "running");
+
+  webkitSonar.stop();
+  delete windowShim.webkitAudioContext;
+});
+
+test("Sonar maps clamped readiness 0..1 to 220..660 Hz through 1200 Hz lowpass filter and ducks gain to 0.25x during speech", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+  FakeSonarAudioContext.reset();
+  windowShim.AudioContext = FakeSonarAudioContext;
+
+  const sonar = new Sonar();
+  t.after(() => {
+    sonar.stop();
+    delete windowShim.AudioContext;
+  });
+
+  sonar.unlock();
+  const ctx = FakeSonarAudioContext.instances[0]!;
+  ctx.currentTime = 2.5;
+
+  sonar.set(-0.4);
+  assert.equal(sonar.active, true);
+  assert.equal(ctx.oscillators.length, 1);
+  assert.equal(ctx.filters.length, 1);
+  assert.equal(ctx.gains.length, 1);
+
+  const osc = ctx.oscillators[0]!;
+  const lp = ctx.filters[0]!;
+  const gain = ctx.gains[0]!;
+
+  assert.equal(osc.type, "sine");
+  assert.equal(lp.type, "lowpass");
+  assert.equal(lp.frequency.value, 1200);
+  assert.deepEqual(osc.connectedTo, [lp]);
+  assert.deepEqual(lp.connectedTo, [gain]);
+  assert.deepEqual(gain.connectedTo, [ctx.destination]);
+  assert.equal(osc.startedAt.length, 1);
+
+  const freqEvents = osc.frequency.events;
+  assert.equal(freqEvents[freqEvents.length - 1]?.value, 220);
+  assert.equal(freqEvents[freqEvents.length - 1]?.timeConstant, 0.12);
+
+  const expectedNormalGain = 0.35 * 0.09;
+  assert.ok(Math.abs(gain.gain.value - expectedNormalGain) < 1e-9);
+
+  sonar.set(0.5);
+  assert.equal(freqEvents[freqEvents.length - 1]?.value, 440);
+
+  sonar.set(1.8);
+  assert.equal(freqEvents[freqEvents.length - 1]?.value, 660);
+
+  ctx.currentTime = 3.0;
+  sonar.duck(true);
+  const duckedEvent = gain.gain.events[gain.gain.events.length - 1]!;
+  assert.ok(Math.abs((duckedEvent.value ?? 0) - expectedNormalGain * 0.25) < 1e-9);
+  assert.equal(duckedEvent.timeConstant, 0.08);
+  assert.equal(duckedEvent.time, 3.0);
+
+  sonar.duck(false);
+  const unduckedEvent = gain.gain.events[gain.gain.events.length - 1]!;
+  assert.ok(Math.abs((unduckedEvent.value ?? 0) - expectedNormalGain) < 1e-9);
+
+  sonar.volume = 5;
+  sonar.set(0.25);
+  assert.equal(freqEvents[freqEvents.length - 1]?.value, 330);
+  assert.ok(Math.abs(gain.gain.value - 0.09) < 1e-9);
+
+  sonar.volume = -2;
+  sonar.set(0.25);
+  assert.equal(gain.gain.value, 0);
+});
+
+test("Sonar fires 700 ms 990 Hz readiness ticks only at >= 0.8 when unducked and auto-stops after 1500 ms idle", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+  FakeSonarAudioContext.reset();
+  windowShim.AudioContext = FakeSonarAudioContext;
+
+  const sonar = new Sonar();
+  t.after(() => {
+    sonar.stop();
+    delete windowShim.AudioContext;
+  });
+
+  sonar.unlock();
+  const ctx = FakeSonarAudioContext.instances[0]!;
+  ctx.currentTime = 10.0;
+
+  sonar.set(0.79);
+  assert.equal(ctx.oscillators.length, 1);
+  t.mock.timers.tick(700);
+  assert.equal(ctx.oscillators.length, 1);
+
+  sonar.set(0.8);
+  t.mock.timers.tick(700);
+  assert.equal(ctx.oscillators.length, 2);
+  const tickOsc1 = ctx.oscillators[1]!;
+  const tickGain1 = ctx.gains[1]!;
+  assert.equal(tickOsc1.type, "triangle");
+  assert.equal(tickOsc1.frequency.value, 990);
+  assert.deepEqual(tickOsc1.startedAt, [10.0]);
+  assert.deepEqual(tickOsc1.stoppedAt, [10.09]);
+  assert.equal(tickGain1.gain.events[0]?.op, "setValueAtTime");
+  assert.ok(Math.abs((tickGain1.gain.events[1]?.value ?? 0) - 0.35 * 0.08) < 1e-9);
+
+  sonar.duck(true);
+  sonar.set(0.92);
+  t.mock.timers.tick(700);
+  assert.equal(ctx.oscillators.length, 2);
+
+  sonar.duck(false);
+  sonar.set(0.92);
+  t.mock.timers.tick(700);
+  assert.equal(ctx.oscillators.length, 3);
+
+  sonar.set(0.6);
+  t.mock.timers.tick(700);
+  assert.equal(ctx.oscillators.length, 3);
+  assert.equal(sonar.active, true);
+
+  sonar.set(0.65);
+  t.mock.timers.tick(1499);
+  assert.equal(sonar.active, true);
+
+  const mainOsc = ctx.oscillators[0]!;
+  const mainGain = ctx.gains[0]!;
+  mainOsc.throwOnStop = true;
+  ctx.currentTime = 15.0;
+
+  t.mock.timers.tick(1);
+  assert.equal(sonar.active, false);
+  const gainOps = mainGain.gain.events;
+  assert.equal(gainOps[gainOps.length - 2]?.op, "cancelScheduledValues");
+  assert.equal(gainOps[gainOps.length - 1]?.op, "setTargetAtTime");
+  assert.equal(gainOps[gainOps.length - 1]?.value, 0);
+  assert.equal(gainOps[gainOps.length - 1]?.timeConstant, 0.08);
 });
