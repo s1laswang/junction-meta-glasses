@@ -1,0 +1,40 @@
+{
+  "name": "HoldUp: Hands-Free Label Assistant",
+  "short_name": "HoldUp",
+  "description": "Hands-free medication and allergen label assistant for blind and low-vision users on Meta AI glasses.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0f17",
+  "theme_color": "#0b0f17",
+  "categories": ["accessibility", "health", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Display HUD",
+      "short_name": "Display HUD",
+      "description": "Open the Meta Ray-Ban Display heads-up verdict view",
+      "url": "/hud",
+      "icons": [
+        {
+          "src": "/icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}

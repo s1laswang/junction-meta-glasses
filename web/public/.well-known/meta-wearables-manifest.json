@@ -1,0 +1,16 @@
+{
+  "name": "HoldUp",
+  "short_name": "HoldUp",
+  "description": "Hands-free medication and allergen label assistant",
+  "start_url": "/hud",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
