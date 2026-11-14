@@ -56,7 +56,7 @@ ${meds || "- none saved"}
 - Avoid: ${p.avoid.join(", ") || "nothing saved"}`;
 }
 
-type Opts = { lang: string; voice: boolean };
+type Opts = { lang: string; voice: boolean; verifyFn?: typeof verify };
 
 export class LiveProxy implements LiveLike {
   private session: Session | null = null;
@@ -173,7 +173,7 @@ export class LiveProxy implements LiveLike {
     setTimeout(() => void this.connect(), backoffMs(this.reconnects, 300, 4000));
   }
 
-  private onMessage(m: LiveServerMessage) {
+  onMessage(m: LiveServerMessage) {
     if (m.sessionResumptionUpdate) {
       this.resumable = !!m.sessionResumptionUpdate.resumable;
       if (m.sessionResumptionUpdate.newHandle) {
@@ -217,7 +217,7 @@ export class LiveProxy implements LiveLike {
       this.send({ type: "transcript", role: "assistant", text: this.botText.trim(), final: false });
     }
     if (sc.interrupted) {
-      // barge-in: the client must flush its playback queue
+      this.send({ type: "interrupted" });
       this.send({ type: "status", live: "open", detail: "interrupted" });
     }
     if (sc.turnComplete || sc.interrupted) {
@@ -236,7 +236,7 @@ export class LiveProxy implements LiveLike {
     } catch (e) { log("live.tool_response_failed", { name: fc.name ?? "", err: errSummary(e) }); }
   }
 
-  private async onTool(fc: FunctionCall) {
+  async onTool(fc: FunctionCall) {
     const t = Date.now();
     this.toolCalls++;
     const args = (fc.args ?? {}) as Record<string, unknown>;
@@ -255,18 +255,23 @@ export class LiveProxy implements LiveLike {
           this.respond(fc, { level: "unsure", speech: "I can't see anything yet. Hold the item up in front of your face." });
           return;
         }
+        this.send({ type: "checking", phase: "start" });
         this.send({ type: "coach", cue: "hold_still", text: "Hold still, reading…" });
-        const r = await verify(frames.map((f) => f.data), this.hub.profile, typeof args.question === "string" ? args.question : undefined, "verify_live");
-        if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
-        if (this.stopped) return;
-        this.send({ type: "verdict", verdict: r.verdict });
-        const v = r.verdict;
-        this.respond(fc, {
-          level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
-          guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
-          instruction: "Say `speech` word for word (translate faithfully if needed), then stop. No disclaimer, add nothing.",
-        });
-        log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_frames: r.frames });
+        try {
+          const r = await (this.opts.verifyFn ?? verify)(frames.map((f) => f.data), this.hub.profile, typeof args.question === "string" ? args.question : undefined, "verify_live");
+          if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
+          if (this.stopped) return;
+          this.send({ type: "verdict", verdict: r.verdict });
+          const v = r.verdict;
+          this.respond(fc, {
+            level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
+            guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
+            instruction: "Say `speech` word for word (translate faithfully if needed), then stop. No disclaimer, add nothing.",
+          });
+          log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_frames: r.frames });
+        } finally {
+          this.send({ type: "checking", phase: "end" });
+        }
       } else {
         this.respond(fc, { error: `unknown tool ${fc.name}` });
       }
@@ -315,7 +320,10 @@ export class LiveProxy implements LiveLike {
         return;
       }
       const r = this.logDose(id);
-      if (r.ok) this.text(`(The user just logged a dose of ${r.med}. Confirm in three or four words.)`);
+      if (r.ok) {
+        if (this.hub.lastVerdict) this.send({ type: "verdict", verdict: { ...this.hub.lastVerdict, takenToday: true } });
+        this.text(`(The user just logged a dose of ${r.med}. Confirm in three or four words.)`);
+      }
     }
   }
 
