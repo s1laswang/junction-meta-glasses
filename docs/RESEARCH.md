@@ -1,82 +1,44 @@
-# HoldUp Problem, Epidemiological, Economic & Adoption Research (`docs/RESEARCH.md`)
+# HoldUp: problem research (sources for the deck)
 
-HoldUp addresses a daily, high-consequence accessibility gap faced by blind, low-vision, and older adults: verifying medication cartons and food allergen panels independently with both hands free. Every epidemiological figure below cites established public-health registries, and every bandwidth, inference-cost, and 3-year Total Cost of Ownership (TCO) figure is reproduced deterministically from `eval/unit_economics.py` and `eval/unit_economics.json`.
+Owners: **Chintufp** (story and deck lead) and the `pitch` agent. Every number on a slide must appear here with a working source URL. Add new findings under your own heading. If you change a number that is already used on a slide, tell the pitch agent or the CEO so the deck gets updated.
 
----
-
-## 1. Vision Impairment Prevalence: Global & Finnish Context
-
-### 1.1 Global Scale (WHO World Report on Vision)
-- According to the **World Health Organization (WHO) *World Report on Vision***, at least **2.2 billion people globally** live with a near or distance vision impairment.
-- Globally, vision loss increases sharply with age due to age-related macular degeneration (AMD), diabetic retinopathy, glaucoma, cataracts, and uncorrected presbyopia, intersecting directly with the age cohorts managing chronic multi-medication regimens.
-
-### 1.2 Finland Registry Data (THL & Nakovammaisten liitto)
-- **Finnish Register of Visual Impairment** (*Nakovammarekisteri*, maintained by **Nakovammaisten liitto ry** under the statutory authority of the **Finnish Institute for Health and Welfare, THL**): Epidemiological population estimates place the number of visually impaired people in Finland between **~55,000 and ~80,000 residents** (depending on clinical vs. functional survey definitions; `BRIEF.md` and `docs/PLAN.md` use the ~80,000 functional low-vision population benchmark).
-- **Over 80% aged 65 and older**: More than four out of five people registered with visual impairment in Finland are aged **65+**, with age-related macular degeneration (*silmanpohjan ikarappeuma*) accounting for the single largest diagnostic share among older adults.
-- **Beyond severe blindness**: Hundreds of thousands of additional older adults in Finland experience functional near-vision decline (reduced contrast sensitivity, glare intolerance, or central scotomas) that makes 6-to-8-point pharmaceutical typography and low-contrast foil expiry stamps unreadable in ordinary home lighting, even when they do not qualify as legally blind.
+Status (Sat 14 Nov, 17:45): first pass by the `pitch` agent. Chintufp's findings go in the section at the bottom.
 
 ---
 
-## 2. Polypharmacy, Lookalike Packaging & Nordic Generic Substitution
+## Numbers used in the deck
 
-### 2.1 Daily Polypharmacy Risk at Home
-Older adults aged 65+ frequently manage **3 to 8+ concurrent prescription and over-the-counter (OTC) medications** across distinct morning, midday, and evening schedules, alongside chronic contraindications (such as avoiding non-steroidal anti-inflammatory drugs, NSAIDs, when taking antihypertensives, anticoagulants, or renal-sensitive therapies).
-
-At the kitchen counter or bedside, visual ambiguity clusters into four recurring failure modes:
-1. **Lookalike white generic cartons**: Multiple prescription boxes from the same Nordic generic manufacturer share identical white card stock, corporate stripe geometry, and layout, differing only in drug name or milligram strength (`Amlodipin 5 mg` vs. `Amlodipin 10 mg`, or morning `Metformin 500 mg` vs. evening `Amlodipin 5 mg`).
-2. **Mandatory pharmacy generic substitution (*laakevaihto*)**: Under Finland's Medicines Act (*Laakelaki* 395/1987, generic substitution introduced in 2003), Finnish pharmacies routinely substitute a prescribed product for the lowest-price bioequivalent reference-price generic at each 3-month refill unless prohibited. A patient whose doctor prescribed **Norvasc 5 mg** may receive **Amlodipin Orion 5 mg** on one refill and **Amlodipiini 5 mg** in a differently shaped carton three months later:
-   - Tactile muscle memory (recognizing "the blue-striped box") breaks immediately upon generic substitution.
-   - Pharmaceutical Braille embossing (EU Directive 2001/83/EC Art. 56a) helps only the small minority of older adults who read Braille fluently (most people who lose sight after age 65 do not read Braille), and Braille never encodes the patient's *personal* morning/evening schedule, allergy profile, or whether today's dose was already taken.
-   - HoldUp's deterministic safety engine (`server/src/safety.ts`) resolves `amlodipiini` = `amlodipin` = `amlodipinbesilat` = `norvasc` -> canonical INN `amlodipine` across **49 Nordic and international brand/generic aliases** (`Burana`/`Ibumax` -> `ibuprofen`, `Marevan`/`Waran` -> `warfarin`, `Cardace` -> `ramipril`, `Somac` -> `pantoprazole`, `Losec` -> `omeprazole`, `Heinix` -> `cetirizine`, `Ventoline`/`Buventol` -> `salbutamol`, `Amorion` -> `amoxicillin`), plus **10 pharmacological avoid classes** (`NSAIDs`, anticoagulants, beta blockers, ACE inhibitors, penicillins, statins, PPIs, antihistamines, opioids, benzodiazepines).
-3. **Comma decimals & pharmacy dispensing stickers (*annostusohjetarra*)**: Nordic strengths and stickers use comma decimals (`2,5 mg`, `0,5 mg`) and Nordic units (`KY` alongside `IU`, `mikrog` alongside `mcg`). Naive OCR string comparison either rejects valid matches or confuses `2,5 mg` with `25 mg`. `server/src/verify.ts` and `server/src/safety.ts` normalize Nordic comma decimals (`2,5 mg` -> `2.5 mg`), evaluate combination strengths (`500 mg + 30 mg`), convert units (`1000 mcg` == `1 mg`), and enforce `STRENGTH_MIN_CONF = 0.80` so partial digits never pass.
-4. **Hidden food allergens in multilingual ingredient lists**: Fine-print grocery wrappers list **EU-14 regulated allergens** (Regulation (EU) No 1169/2011) in dense Finnish, Swedish, and English ingredient blocks (`maapahkina` / `jordnot` / `arachis oil` -> `peanut`; `hasselpahkina` / `hasselnotter` -> `tree nut`; `hera` / `vassle` / `kaseiini` -> `milk`). Front-of-pack marketing labels routinely omit full allergen warnings; HoldUp (`ALLERGEN_MIN_CONF = 0.60` in `server/src/safety.ts`) refuses to clear a food item when `allergens.value === null` (front of box) and coaches the wearer to flip to the ingredient panel.
-
----
-
-## 3. Competitive Landscape & 3-Year TCO Analysis
-
-### 3.1 Why Existing Workarounds Fall Short in Daily Use
-- **Smartphone OCR apps (Seeing AI, Google Lookout)**: Free on phones, but physically require **three hands** (two hands to steady and rotate a curved pill bottle or hold a mobility cane + glass of water, plus a third hand to hold and blind-aim a smartphone at 30 cm). They dump raw unprioritized text when pointed at a barcode or blank flap, provide zero body-relative aiming cues, have zero awareness of the user's prescriptions or allergies, and happily read partial occluded text aloud without a dosage confidence gate.
-- **Human video assistance (Be My Eyes volunteers, Aira paid agents)**: Connects a live stranger to the user's camera. Across **4 checks/day (`1,440` checks/year)**, human video assistance forces **1,440 intimate privacy disclosures per year** of prescription boxes, patient name stickers, and home counters, adds `30 to 90 s` call-setup friction (impractical at 06:30 or 23:00), or costs **EUR 65/month (`EUR 2,340` over 3 years)** on paid daily interpreter plans.
-- **Dedicated proprietary assistive cameras (OrCam MyEye class)**: Clip-on optical readers provide hands-free OCR without cloud calls, but carry an upfront hardware barrier of **EUR 3,800 to EUR 4,500 (midpoint EUR 4,150)**, dump raw text with zero personal medication schedule, drug-class avoid rules, or duplicate-dose protection, give no conversational 2-way framing guidance, and carry visible specialized-medical-device stigma compared to mainstream Ray-Ban eyewear.
-
-### 3.2 Feature, Safety & TCO Comparison Matrix
-
-All cost and bandwidth rows below are computed directly from `eval/unit_economics.json` (`4` checks/day = `120` checks/month = `4,320` checks over 3 years; `1 USD = 0.92 EUR`).
-
-| Dimension | HoldUp on Meta Ray-Ban Gen 2 / Display | Phone OCR Apps (Seeing AI, Lookout) | Human Video Assistance (Be My Eyes / Aira) | Dedicated Assistive Camera (OrCam MyEye Class) |
+| # | Claim on the slide | Number | Source | Notes / caveats |
 |---|---|---|---|---|
-| **Hands required during check** | **0 hands on camera** (both hands free to rotate bottle, open blister pack, or hold cane/water) | **1 hand holding & blind-aiming phone** (leaves only 1 hand for curved bottle/blister) | **1 hand holding phone** (unless paired with separate paid smart-glasses plan) | **0 hands on camera** (magnetic temple clip-on) |
-| **Physical aiming coaching** | **Active ~1 fps body-relative voice + HUD cues** (*"Turn it around"*, *"Tilt away from light"*) via `gemini-3.8-live` | None (silent or raw text gibberish when aimed at rear barcode or glare) | Human verbal directions (after `30-90 s` connection wait) | Audible beep only; no conversational 3D rotation or glare guidance |
-| **Personal med, drug-class & EU-14 allergen check** | **Yes, deterministic (`server/src/safety.ts`)**: matches saved schedule, 49 Nordic/INN brands, 10 drug classes, EU-14 allergens (EN/FI/SV), expiry & same-day `doseLog` | **No**: raw OCR text dump; user must mentally parse chemical synonyms & strengths | **Ad-hoc human**: depends on volunteer/agent reading fine print accurately; no persistent `doseLog` | **No**: raw text reading only; zero prescription, drug-class, expiry, or allergen logic |
-| **`< 0.80` zero-guess dose safety gate** | **Hard code gate (`STRENGTH_MIN_CONF = 0.80`)**: refuses uncertain strengths -> `UNSURE` + pharmacist handoff (`0` confident-wrong doses in `eval/calibration_curve.json`) | **No**: reads partial/misrecognized OCR tokens (`5 mg` vs `50 mg`) without calibrated abstention | Human judgment (variable lighting/video compression quality; uncalibrated) | **No**: reads whatever character segments local OCR extracts without strength threshold gating |
-| **Privacy & health-record locality** | **On-device `localStorage` profile only**; RAM-only 8-frame `FrameRing` cleared on WS close; zero human stranger sees prescriptions; hardware LED + bystander face refusal (`8/8` pass in `eval/coaching_eval.json`) | Local or cloud OCR depending on mode; no prescription profile stored | **Low privacy**: live human stranger views home interior, prescription labels, and patient name stickers (`1,440x/yr`) | **High** (offline on-device processing), but zero personal profile features |
-| **Complete offline fallback** | **Yes (`web/src/camera/barcode.ts`)**: on-device `BarcodeDetector` matches saved EAN/UPC/QR codes + `doseLog` at `0 KB` network use | Partial on-device OCR, still unguided and unpersonalized | **None** (requires live video uplink) | **Yes** (offline OCR only; no personal schedule/allergy check) |
-| **Multimodal low-vision HUD** | **Ray-Ban Display `/hud`** (`#000000` transparent waveguide, `<= 65%` fill, 4-channel shape + icon + badge + high-luma color, Neural Band input) + WCAG AAA phone UI | Phone screen only (hard to view while aiming rear camera away from face) | Phone screen only | Audio-only (no waveguide visual confirmation card) |
-| **Upfront hardware cost** | **EUR 329.00** (consumer Ray-Ban Meta Gen 2; mainstream zero-stigma eyewear) | EUR 0 incremental (requires existing smartphone) | EUR 0 incremental on phone (or EUR 329+ with glasses) | **EUR 3,800 - 4,500** (`EUR 4,150.00` midpoint) |
-| **Annual cloud / service cost (`1,440` checks/yr)** | **EUR 2.48 - 4.23 / yr** (`EUR 0.00294`/check standard cached; `EUR 0.35/mo`; uncached native-audio ceiling `EUR 10.79/yr`) | EUR 0 | EUR 0 (unpaid volunteer wait) or **EUR 324 - 780 / yr** (Aira EUR 27-65/mo plans) | EUR 0 |
-| **3-Year TCO (`4,320` checks)** | **EUR 341.68** (`EUR 336.44` economy; `EUR 337.88` with 30% local barcode scans; `EUR 361.36` uncached ceiling) | EUR 0 incremental (fails hands-free & personalized safety requirements) | **EUR 2,340.00** (paid daily plan phone-only; **EUR 2,669.00** with glasses -> **85.4% higher**) | **EUR 4,150.00** midpoint -> **HoldUp saves EUR 3,808.32 (91.8% savings / 12.1x reduction)** |
+| 1 | People worldwide with a near or distance vision impairment | **at least 2.2 billion** (at least 1 billion preventable or not yet addressed) | WHO fact sheet *Blindness and vision impairment* (updated 10 Feb 2026): https://www.who.int/news-room/fact-sheets/detail/blindness-and-visual-impairment | Most of them are over 50. Includes presbyopia (826 million near-vision cases), so it's a broad definition. Use it for scale only, not as our addressable market. |
+| 2 | People with a visual impairment in Finland | **about 55,000**, of whom **about 45,000 are 65 or older** | Näkövammaisten liitto (Finnish Federation of the Visually Impaired), statement 2024: https://api.hankeikkuna.fi/asiakirjat/8d6085fb-a2c7-43ae-a41f-f8e57eb03f3a/75d5bfe3-e96c-4167-9e88-e8c3f014617f/LAUSUNTO_20240806192246.PDF ; Näkövammarekisteri yearbook 2024 (THL + NKL): https://cms.nkl.fi/sites/default/files/2026-04/Nakovammarekisterin%20vuosikirja%202024.pdf | **Correction:** PLAN.md says "about 80,000". The NKL and registry figure is ~55,000 (an estimate based on THL's Terveys 2011 survey; ~74% low vision, ~22% blind). Another NKL publication gives "at most 60,000". The deck uses 55,000. |
+| 3 | Older people with visual impairment who had difficulty reading medication labels | **97%** (152 of 156), despite optical aids; sighted controls **4%** (7 of 158) | McCann RM et al., *Help needed in medication self-management for people with visual impairment: case–control study*. Br J Gen Pract 2012;62(601):e530–7. https://pmc.ncbi.nlm.nih.gov/articles/PMC3404330 | Northern Ireland, community-dwelling adults aged 65+, n = 314. |
+| 4 | …who had difficulty telling their different tablets apart | **24%** (38 of 156) vs **0** controls | same paper | |
+| 5 | …who needed help managing medication | **29% vs 13%**, OR **2.8** (95% CI 1.6–5.0; 2.6 age-adjusted) | same paper | The help mostly came from family and informal networks. |
+| 6 | Finns aged 75+ with excessive polypharmacy (10+ different medicines bought in Aug–Nov) | **21.6% (2025)**, 21.0% (2024), 20.9% (2023) | Fimea indicator, data from Kela / Kanta Prescription Centre: https://fimea.fi/en/excessive-polypharmacy-in-the-elderly | Four-month purchase window, not a point-in-time count. Rising every year since 2020. "1 in 5" on the slide. |
+| 7 | Braille on medicine packaging | The EU requires the **product name** in Braille (for invented names, followed by the strength). Nothing else is required: not the pharmacy dosing sticker, the expiry date or allergens. | Directive 2001/83/EC Art. 56a (inserted by 2004/27/EC): https://legislation.gov.uk/eudr/2001/83/article/56a/data.pdf ; Fimea guidance: https://fimea.fi/en/marketing_authorisations/product_information/braille_and_package_leaflets_for_the_visually_impaired | The pharmacy label with the patient's own dosing is printed, not in Braille. Food packaging has no Braille requirement. |
+| 8 | Blind users already use Meta glasses for visual help | **Be My Eyes on Ray-Ban Meta**: "Hey Meta, Be My Eyes" calls a sighted volunteer who sees the glasses' camera. Available in **21 markets**. | Meta accessibility page: https://www.meta.com/ai-glasses/accessibility/ ; Meta help: https://www.meta.com/help/ai-glasses/1524316621830425/ ; Be My Eyes: https://www.bemyeyes.com/be-my-eyes-smartglasses/ | Evidence for adoption: the hardware and the habit already exist in this community. HoldUp is the private, instant alternative to calling a person for medicines. |
 
-### 3.3 Measured Bandwidth & Unit Economics Breakdown (`eval/unit_economics.json`)
-Measured directly across all `7` demo label fixtures in `web/public/fixtures/` (`mean 60.39 KB` at `768x768` normal mode; `mean 19.34 KB` at `512x512` JPEG `0.50` slow-network mode) plus `server/src/prompts/live.md` (`891` est. tokens), `shared/verify_prompt.md` (`1,281` est. tokens), and `shared/label_schema.json` (`340` est. tokens):
+## Supporting numbers (not on a slide yet)
 
-- **Normal 12-second Live check (`1.0 fps`, `768 px`)**: `724.64 KB` JPEG video (`12` frames) + `384.0 KB` `16 kHz` PCM16 audio uplink + `240.0 KB` typical `5 s` `24 kHz` PCM16 audio downlink = **`1,348.64 KB` (`~899.1 kbps`)** total media. Crucially, `verify_label` pulls the 2 sharpest frames directly from `Hub.ring` in server RAM, adding **`0.0 KB` extra phone-to-server upload**.
-- **Slow-network RTT-adaptive 12-second check (`> 650 ms` RTT -> `0.5 fps`, `512 px`, JPEG `0.50`)**: Drops JPEG payload from `724.64 KB` to **`116.02 KB`** (**`84.0%` video bandwidth saved**) and total check media from `1,348.64 KB` to **`740.02 KB`** (**`45.1%` total bandwidth saved**).
-- **HTTP Snapshot fallback (`POST /api/verify`)**: Sends only 2 adaptive `512 px` frames (`38.67 KB` raw / `51.99 KB` JSON wire, `6.24 MB/month` at 120 checks/month) with local `speechSynthesis` (`0 KB` audio bandwidth).
-- **Public rehabilitation budget leverage (`100` users over 3 years)**: Equipping `100` visually impaired residents with **HoldUp + Ray-Ban Meta Gen 2** costs **`EUR 34,168`** total over 3 years versus **`EUR 415,000`** for OrCam-class hardware, saving **`EUR 380,832`** or allowing a public assistive-device clinic to serve **`1,214` residents on the exact same budget that previously served `100`**.
+| Claim | Number | Source | Notes |
+|---|---|---|---|
+| Population of Finland aged 65+ | **23.6% (end of 2024)**; 24% and 1,347,494 people at the end of 2025 | Statistics Finland: https://www.stat.fi/en/statistics/vaerak ; https://stat.fi/en/news/Finland-in-Figures-2026-ageing-Finland-is-visible-in-numbers | |
+| Global cost of medication errors | **US$ 42 billion a year** (~1% of global health spending) | WHO *Medication Without Harm* (2017): https://www.who.int/initiatives/medication-without-harm | Older estimate (2017). It traces to an IMS Institute report, not WHO's own study. Use with care, if at all. |
+| Global productivity loss from vision impairment | **~US$ 411 billion a year (PPP)** | WHO fact sheet (row 1) | |
+| Blind patients on chronic medication without any coping method | **68.3%** (n = 82, South Africa) | https://pmc.ncbi.nlm.nih.gov/articles/PMC9772741/ | Small, non-Nordic sample. Background only. |
+| Label design for low vision | Larger print, consistent layout, left-justified text and yellow highlighting improve reading speed for older and low-vision adults | Leat et al.: https://pmc.ncbi.nlm.nih.gov/articles/PMC4860753 | Supports the HUD and app design (large type, signal yellow). |
+
+## Still missing (TODO, ideally from Chintufp)
+
+- [ ] A Finnish number for medication errors or adverse drug events among older people living at home (THL, Fimea or HUS).
+- [ ] Food allergy prevalence in Finland or the EU (for the food scenario), ideally from an official source.
+- [ ] How many visually impaired Finns use a smartphone screen reader (NKL member surveys?). This supports the PWA path.
+- [ ] Any NKL statement on medicine identification as a daily problem (a quote would be great for the hook slide).
+- [ ] Contact at NKL for the pilot (name and role), if we reach anyone during the weekend.
 
 ---
 
-## 4. Zero-Cloud Pharmacy Onboarding & Finnish Public Adoption Pathway
+## Chintufp's findings
 
-Full operational governance, 12-week cohort milestones (`N = 24` at Iiris Center, Itakeskus), and partner sign-offs are specified in [`docs/PILOT_PLAN.md`](PILOT_PLAN.md).
-
-### 4.1 Zero-Cloud Pharmacy Counter QR (`holdup://rx` in `web/src/pairing/pharmacyQr.ts`)
-Manual touchscreen entry of milligram strengths and 13-digit EAN codes is error-prone for low-vision users, whereas connecting directly to Finland's national **Kanta *Reseptikeskus*** requires multi-year statutory integration and centralizes sensitive health records.
-- **How `holdup://rx` works at pickup (*laakeneuvonta*)**: Alongside the standard Finnish dosage instruction sticker (*annostusohjetarra*), an offline browser utility at the pharmacy counter (target pilot partner: **Yliopiston Apteekki**) encodes a compact Base64URL `PharmacyRxPayload` (`v: 1`, commercial name, canonical INN, strength, schedule slots, EAN-13/Vnr barcode, and drug-class `avoid` tags) into a `25 mm x 25 mm` QR code placed on a non-Braille flap (preserving mandatory EU/Fimea carton Braille embossing).
-- **Zero PII & 100% local merge**: The QR payload contains **zero patient names, zero Finnish personal identity codes (*henkilotunnus* / HETU), and zero prescription IDs**. Scanning runs `parsePharmacyQrUri()` and `mergePharmacyPayload()` entirely on the user's phone, reads the import aloud in Finnish, Swedish, or English for confirmation, deduplicates refills by barcode or INN + strength without overwriting `doseLog`, and enables immediate **zero-network offline barcode verification** (`web/src/camera/barcode.ts`).
-
-### 4.2 Regulatory Boundary & Three Finnish Scale Channels
-1. **EU MDR Art. 2(1) Non-Medical Assistive Boundary (`docs/PRIVACY.md`)**: HoldUp performs optical reading of printed packaging plus deterministic comparison against a user-owned checklist without diagnosing, prescribing, or modifying therapy, and enforces mandatory pharmacist handoff on any `< 0.80` strength uncertainty or warning.
-2. **Public Medical Rehabilitation (*Laakinnallisen kuntoutuksen apuvalinepalvelut*, Health Care Act 1326/2010 Section 29)**: **HUS *Apuvalinekeskus*** (vision rehabilitation / *naonkuntoutus*) and Finland's 21 wellbeing services counties (*hyvinvointialueet*) loan daily-living electronic reading aids free of charge to eligible residents. HoldUp's **91.8% 3-year TCO reduction** vs. EUR 4,150 specialized readers makes mainstream smart glasses economically compelling for municipal procurement.
-3. **Kela Work & Study Assistive Devices (Act 566/2005) & Nationwide Pharmacy Rollout**: Working-age and student blind users qualify for Kela rehabilitation funding (*ammatillisen kuntoutuksen apuvalineet*) supported by **Nakovammaisten liitto** advisors, while older adults purchasing consumer Ray-Ban Meta glasses gain zero-cost counter onboarding across **Yliopiston Apteekki** and **Suomen Apteekkariliitto** pharmacies.
+_(Add yours here: claim, number, source URL, notes. If one duplicates a row above, keep whichever has the better primary source and delete the other.)_

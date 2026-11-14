@@ -1,134 +1,10 @@
-import http from "node:http";
-import https from "node:https";
-import { syncBuiltinESMExports } from "node:module";
 import { GoogleGenAI } from "@google/genai";
-import { HttpsProxyAgent } from "https-proxy-agent";
 import { env } from "./env.ts";
 
-function splitHostPort(raw: string): { host: string; port: string } {
-  const s = raw.trim().toLowerCase();
-  if (!s) return { host: "", port: "" };
-  if (s.startsWith("[")) {
-    const end = s.indexOf("]");
-    if (end === -1) return { host: s, port: "" };
-    const rest = s.slice(end + 1);
-    return { host: s.slice(1, end), port: rest.startsWith(":") ? rest.slice(1) : "" };
-  }
-  const first = s.indexOf(":");
-  const last = s.lastIndexOf(":");
-  if (first !== -1 && first === last) {
-    return { host: s.slice(0, first).replace(/\.$/, ""), port: s.slice(first + 1) };
-  }
-  return { host: s.replace(/\.$/, ""), port: "" };
-}
-
-function ipv4ToInt(ip: string): number | null {
-  const parts = ip.split(".");
-  if (parts.length !== 4) return null;
-  let n = 0;
-  for (const p of parts) {
-    if (!/^\d+$/.test(p)) return null;
-    const oct = Number(p);
-    if (oct < 0 || oct > 255) return null;
-    n = ((n << 8) | oct) >>> 0;
-  }
-  return n;
-}
-
-export function shouldBypassProxy(host: string, noProxy?: string): boolean {
-  const { host: h, port: hPort } = splitHostPort(host);
-  if (!h || h === "localhost" || h.endsWith(".localhost") || h === "127.0.0.1" || h === "::1") {
-    return true;
-  }
-  const rawList = noProxy ?? process.env.NO_PROXY ?? process.env.no_proxy ?? "";
-  for (const token of rawList.split(/[,\s]+/)) {
-    const item = token.trim().toLowerCase();
-    if (!item) continue;
-    if (item === "*") return true;
-    if (item.includes("/")) {
-      const [netStr, bitsStr] = item.split("/");
-      const hostIp = ipv4ToInt(h);
-      const netIp = ipv4ToInt(netStr);
-      const bits = Number(bitsStr);
-      if (hostIp !== null && netIp !== null && Number.isInteger(bits) && bits >= 0 && bits <= 32) {
-        const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
-        if (((hostIp & mask) >>> 0) === ((netIp & mask) >>> 0)) return true;
-      }
-      continue;
-    }
-    const { host: eHost, port: ePort } = splitHostPort(item);
-    if (ePort && hPort && ePort !== hPort) continue;
-    if (ePort && !hPort) continue;
-    const domain = eHost.replace(/^\*?\./, "");
-    if (!domain) continue;
-    if (h === domain || h.endsWith(`.${domain}`)) return true;
-  }
-  return false;
-}
-
-export class ProxyAwareHttpsAgent extends https.Agent {
-  readonly proxyAgent: HttpsProxyAgent<string>;
-  readonly directAgent: https.Agent;
-
-  constructor(proxyUrl: string, options?: https.AgentOptions) {
-    super(options);
-    this.proxyAgent = new HttpsProxyAgent(proxyUrl, options);
-    this.directAgent = new https.Agent(options);
-  }
-
-  addRequest(req: http.ClientRequest, options: https.RequestOptions, ...rest: unknown[]): void {
-    const rawHost = String(options?.hostname || options?.host || "");
-    if (shouldBypassProxy(rawHost)) {
-      (this.directAgent as any).addRequest(req, options, ...rest);
-      return;
-    }
-    (this.proxyAgent as any).addRequest(req, { ...options, secureEndpoint: true }, ...rest);
-  }
-
-  override destroy(): void {
-    this.directAgent.destroy();
-    this.proxyAgent.destroy();
-    super.destroy();
-  }
-}
-
-const proxyUrl = (
-  process.env.HTTPS_PROXY ||
-  process.env.https_proxy ||
-  process.env.HTTP_PROXY ||
-  process.env.http_proxy ||
-  ""
-).trim();
-
-if (proxyUrl) {
-  process.env.NODE_USE_ENV_PROXY ??= "1";
-  if (URL.canParse(proxyUrl)) {
-    const mergedNoProxy = ["localhost", "127.0.0.1", "::1", process.env.NO_PROXY, process.env.no_proxy]
-      .filter(Boolean)
-      .join(",");
-    (http as any).setGlobalProxyFromEnv?.({ ...process.env, NO_PROXY: mergedNoProxy, no_proxy: mergedNoProxy });
-    https.globalAgent = new ProxyAwareHttpsAgent(proxyUrl);
-    const origRequest = https.request.bind(https);
-    (https as any).request = (...args: any[]) => {
-      const first = args[0];
-      if (
-        first &&
-        typeof first === "object" &&
-        !(first instanceof URL) &&
-        first.agent === undefined &&
-        typeof first.createConnection === "function" &&
-        first.createConnection.name === "tlsConnect"
-      ) {
-        args[0] = { ...first, agent: https.globalAgent };
-      }
-      return (origRequest as any)(...args);
-    };
-    syncBuiltinESMExports();
-  }
-}
-
+// SDK 3.x defaults to apiVersion "v1", where the Live (BidiGenerateContent) endpoint 404s. v1beta works for all.
 export const ai = new GoogleGenAI({ apiKey: env.apiKey, httpOptions: { apiVersion: "v1beta" } });
 
+/** Small semaphore: the key is shared across teams, keep concurrent unary calls capped. */
 export class Semaphore {
   private q: (() => void)[] = [];
   constructor(private free: number) {}
@@ -159,5 +35,6 @@ export function classify(e: unknown): ErrKind {
 }
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Exponential backoff with full jitter. attempt 0 -> up to base ms. */
 export const backoffMs = (attempt: number, base = 500, cap = 8000) =>
   Math.round(Math.random() * Math.min(cap, base * 2 ** attempt));

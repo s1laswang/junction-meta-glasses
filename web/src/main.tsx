@@ -1,27 +1,21 @@
-import "./styles/tokens.css";
-import "./styles/app.css";
-import "./hud/hud.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import "./styles.css";
 import { App } from "./App.tsx";
-import { registerServiceWorker } from "./pwa/registerSw.ts";
+import { Hud } from "./screens/Hud.tsx";
+import { accessKey } from "./lib/key.ts";
 
-export function shouldRegisterPwaServiceWorker(pathname: string): boolean {
-  const normalized = typeof pathname === "string" ? pathname.trim() : "";
-  return normalized !== "/hud" && normalized !== "/hud/";
-}
+accessKey(); // read ?key= once, store it, and strip it from the address bar
 
-if (typeof document !== "undefined") {
-  if (typeof window !== "undefined" && shouldRegisterPwaServiceWorker(window.location.pathname)) {
-    void registerServiceWorker();
-  }
+const isHud = location.pathname.replace(/\/+$/, "").endsWith("/hud");
 
-  const rootEl = document.getElementById("root");
-  if (rootEl) {
-    createRoot(rootEl).render(
-      <StrictMode>
-        <App />
-      </StrictMode>
-    );
-  }
+if (isHud) document.body.classList.add("hud-body");
+
+createRoot(document.getElementById("root")!).render(<StrictMode>{isHud ? <Hud /> : <App />}</StrictMode>);
+
+// Service worker: caches the app shell so offline mode still loads. Skipped in dev to avoid stale bundles.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
 }
