@@ -97,8 +97,8 @@ describe("Differentiation contract: Seeing AI, Be My Eyes, and Hey Meta", () => 
 
     const slide5 = findSlideByHeadingId(slides, "s5-h");
     assert.ok(
-      slide5.includes("TODO: backup video URL"),
-      "Slide 5 must preserve TODO: backup video URL placeholder",
+      slide5.includes("TODO: backup video URL") || slide5.includes("https://"),
+      "Slide 5 must include TODO: backup video URL placeholder or live https:// backup video link",
     );
 
     const slide11 = findSlideByHeadingId(slides, "s11-h");
