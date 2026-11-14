@@ -1,11 +1,9 @@
-// Deterministic safety check: LabelRead x Profile -> Verdict. No network, no model. Unit-tested.
 import type { LabelRead, Med, Profile, Verdict } from "../../shared/types.ts";
 
 export const STRENGTH_MIN_CONF = 0.8;
 const NAME_MIN_CONF = 0.6;
 const ALLERGEN_MIN_CONF = 0.6;
 
-// ---------- normalisation ----------
 export function norm(s: string | null | undefined): string {
   return (s ?? "")
     .toLowerCase()
@@ -17,7 +15,6 @@ export function norm(s: string | null | undefined): string {
 }
 const words = (s: string) => norm(s).split(/[\s,/+()-]+/).filter((w) => w.length > 1);
 
-// Brand / local name -> INN ingredient. Small, demo-relevant, extendable.
 const BRANDS: Record<string, string> = {
   norvasc: "amlodipine", amlodipin: "amlodipine", amlodipiini: "amlodipine", amlodipinbesilat: "amlodipine",
   burana: "ibuprofen", advil: "ibuprofen", nurofen: "ibuprofen", ibumax: "ibuprofen", ibuprofeeni: "ibuprofen", brufen: "ibuprofen",
@@ -69,7 +66,6 @@ const BRANDS: Record<string, string> = {
   coversyl: "perindopril", perindopriili: "perindopril",
 };
 
-// Drug classes for the avoid list / drug allergies.
 const CLASSES: Record<string, string[]> = {
   nsaid: ["ibuprofen", "naproxen", "diclofenac", "aspirin", "ketoprofen", "etoricoxib", "celecoxib", "meloxicam", "dexketoprofen"],
   penicillin: ["penicillin", "amoxicillin", "ampicillin", "phenoxymethylpenicillin", "flucloxacillin", "dicloxacillin", "pivmecillinam"],
@@ -107,7 +103,6 @@ const CLASS_LABELS: Record<string, string> = {
   ace_inhibitor: "an ACE inhibitor", ppi: "a PPI", antihistamine: "an antihistamine",
 };
 
-// Allergen synonyms (base allergen -> label terms). Matching is substring on normalised words.
 const ALLERGENS: Record<string, string[]> = {
   peanut: ["peanut", "peanuts", "arachis", "arachis oil", "groundnut", "groundnuts", "maapahkina", "maapahkinaa", "maapahkinat", "maapahkinoita", "maapahkinaoljy", "jordnot", "jordnotter", "jordnotsolja"],
   "tree nut": ["tree nut", "tree nuts", "hazelnut", "hazelnuts", "almond", "almonds", "cashew", "cashews", "walnut", "walnuts",
@@ -155,7 +150,6 @@ const ALLERGENS: Record<string, string[]> = {
     "rikkidioksidi", "rikkidioksidia", "sulfiitti", "sulfiitit", "sulfiitteja", "natriumdisulfiitti", "kaliumdisulfiitti",
     "svaveldioxid", "sulfit", "sulfiter", "natriumdisulfit", "kaliumdisulfit"],
 };
-// Profile allergy wording -> base allergens.
 function allergyBases(allergy: string): string[] {
   const a = norm(allergy).replace(/(?:-|\s)*allerg(?:y|ic|ies|ia|i)\b/g, " ").replace(/\s+/g, " ").trim();
   if (/^(nut|nuts|pahkina|pahkinat|notter)$/.test(a)) return ["peanut", "tree nut"];
@@ -179,7 +173,6 @@ const UNIT: Record<string, { unit: string; f: number }> = {
   mikrogrammaa: { unit: "mg", f: 0.001 }, microgram: { unit: "mg", f: 0.001 },
   ml: { unit: "ml", f: 1 }, iu: { unit: "iu", f: 1 }, ky: { unit: "iu", f: 1 }, "%": { unit: "%", f: 1 },
 };
-/** "5mg" / "5 MG" / "2,5 mg" / "0.5 g" / "500 mg/5 ml" -> list of normalised amounts (mass in mg). */
 export function parseStrength(s: string | null | undefined): Strength[] {
   if (!s) return [];
   const t = s.toLowerCase().replace(/(\d),(\d)/g, "$1.$2").replace(/[µμ]/g, "u");
@@ -215,7 +208,6 @@ export function sameStrength(a: string | null | undefined, b: string | null | un
 }
 export const fmtStrength = (s: string) => s.replace(/(\d)\s*(mg|g|mcg|ug|µg|mikrog|ml|iu|ky)\b/gi, "$1 $2");
 
-/** Resolve free text (product or ingredient) to a set of INN ingredient tokens. */
 export function ingredientsOf(...texts: (string | null | undefined)[]): Set<string> {
   const out = new Set<string>();
   for (const t of texts) {
@@ -229,7 +221,6 @@ export function ingredientsOf(...texts: (string | null | undefined)[]): Set<stri
   }
   return out;
 }
-// Pack words, forms and manufacturers that must never count as an ingredient match.
 const STOP = new Set(("tablet tablets tabletti tabletit tablettia capsule capsules kapseli kapselit film-coated filmdragerade " +
   "kalvopaallysteinen kalvopaallysteiset oral solution liuos pill pills strong forte retard depot mite " +
   "orion teva ratiopharm sandoz mylan krka actavis accord zentiva stada vitabalans hexal pfizer bayer " +
@@ -237,7 +228,6 @@ const STOP = new Set(("tablet tablets tabletti tabletit tablettia capsule capsul
 function hasWord(hay: string, needle: string): boolean {
   return new RegExp(`(^|[^a-z])${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z]|$)`).test(hay);
 }
-/** Levenshtein, small strings only. */
 function lev(a: string, b: string): number {
   if (Math.abs(a.length - b.length) > 2) return 99;
   const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
@@ -260,7 +250,6 @@ export function matchMed(read: LabelRead, meds: Med[]): Med | undefined {
     const want = medIngredients(m);
     let score = 0;
     for (const w of want) for (const g of got) if (fuzzyEq(w, g)) score += w === norm(m.ingredient) ? 2 : 1;
-    // brand name printed exactly as saved
     if (m.name && read.product.value && hasWord(norm(read.product.value), norm(m.name))) score += 1;
     if (score && (!best || score > best.score || (score === best.score && sameStrength(m.strength, read.strength.value))))
       best = { m, score };
@@ -290,7 +279,6 @@ export function avoidHits(read: LabelRead, avoid: string[]): string[] {
 export type AllergenHit = { allergy: string; found: string; mayContain: boolean };
 export function allergenHits(read: LabelRead, allergies: string[]): AllergenHit[] {
   const declared = (read.allergens.value ?? []).map((x) => ({ raw: x, n: norm(x), may: /may contain|voi sisaltaa|saattaa sisaltaa|kan innehalla|traces?/.test(norm(x)) }));
-  // medication excipients / drug allergies via ingredient too
   const ingr = ingredientsOf(read.ingredient.value, read.product.value);
   const hits: AllergenHit[] = [];
   for (const allergy of allergies) {
@@ -322,7 +310,6 @@ export function allergenHits(read: LabelRead, allergies: string[]): AllergenHit[
   return hits;
 }
 
-/** ISO "YYYY-MM" or "YYYY-MM-DD" -> expired as of `now`? (month precision = end of that month) */
 export function isExpired(expiry: string | null | undefined, now = new Date()): boolean | undefined {
   const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(expiry ?? "");
   if (!m) return undefined;
@@ -347,13 +334,11 @@ export function dosesToday(profile: Profile, medId: string, now = new Date()): n
   return profile.doseLog.filter((d) => d.medId === medId && d.ts >= start.getTime() && d.ts <= now.getTime()).length;
 }
 
-// ---------- output limits ----------
 export function clampHeadline(s: string): string {
   const w = s.trim().split(/\s+/);
   return w.length <= 8 ? s.trim() : w.slice(0, 8).join(" ").replace(/[,.;:]$/, "");
 }
 export function clampSpeech(s: string): string {
-  // sentence boundary = .!? followed by whitespace, so "2.5 mg" never splits
   return s.trim().split(/(?<=[.!?])\s+/).slice(0, 2).join(" ").trim();
 }
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -369,7 +354,6 @@ function scheduleWord(m: Med): string | undefined {
   return undefined;
 }
 
-// ---------- main ----------
 export function checkLabel(read: LabelRead, profile: Profile, now = new Date()): Verdict {
   const reasons: string[] = [];
   const v = (level: Verdict["level"], headline: string, speech: string, extra: Partial<Verdict> = {}): Verdict => ({
@@ -384,7 +368,6 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
     return v("unsure", "Can't read the label yet", `I can't read the label yet. ${guidance ?? "Turn it slowly so the front faces you."}`);
   }
 
-  // Safety signals that apply to every kind.
   const allergyHits = read.allergens.confidence >= 0.3 || read.kind === "medication" ? allergenHits(read, profile.allergies) : [];
   const avoid = avoidHits(read, profile.avoid);
   const expired = read.expiry.value && read.expiry.confidence >= 0.7 ? isExpired(read.expiry.value, now) : undefined;
@@ -414,7 +397,6 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
       const why = avoid.length ? ` and your list says to avoid ${avoid[0].includes("NSAID") ? "NSAIDs" : avoid[0].replace(/ is .*/, "")}` : "";
       return v("warning", `${label}: not on your list`, `This is ${label}. It isn't on your medication list${why}.`);
     }
-    // matched a saved med
     if (avoid.length) return v("warning", `${label}: on your avoid list`, `This is ${label}. Your profile says to avoid it.`, { matchedMedId: med.id });
     if (!strengthOk) {
       reasons.push(read.strength.value ? `strength confidence ${read.strength.confidence.toFixed(2)} < ${STRENGTH_MIN_CONF}` : "strength not readable");
@@ -435,7 +417,6 @@ export function checkLabel(read: LabelRead, profile: Profile, now = new Date()):
       `${taken >= perDay ? "This is" : "Yes,"} ${label}, ${yours}. ${takenSpeech}`, { matchedMedId: med.id, takenToday: taken > 0 });
   }
 
-  // food / other
   const what = productName || (read.kind === "food" ? "this food" : "this item");
   const exp = read.expiry.value && read.expiry.confidence >= 0.7 ? read.expiry.value : undefined;
   if (allergyHits.length) {
