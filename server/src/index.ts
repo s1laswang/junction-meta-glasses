@@ -8,7 +8,7 @@ import { Modality } from "@google/genai";
 import type { ClientMsg, DeviceState } from "../../shared/types.ts";
 import { env, REPO_ROOT } from "./env.ts";
 import { ai, unaryGate } from "./gemini.ts";
-import { addHud, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
+import { addHud, getHub, getOrCreateHub, hasHud, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
 import { ledger, stats } from "./ledger.ts";
 import { LiveProxy } from "./live.ts";
 import { errSummary, log, shortId } from "./log.ts";
@@ -129,6 +129,7 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
   const id = sessionParam && /^[\w-]{4,64}$/.test(sessionParam) ? sessionParam : crypto.randomUUID();
   const hub = getOrCreateHub(id);
   hub.clients.add(ws);
+  if (hub.device || hasHud(hub)) hub.replayClient(ws);
   log("ws.live.connect", { session: shortId(id) });
   const err = (code: string, message: string) => safeSend(ws, JSON.stringify({ type: "error", code, message, recoverable: true }));
 

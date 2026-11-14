@@ -138,9 +138,12 @@ test("POST /ingest/frame rejects small invalid body with 400 and accepts valid J
 
 test("WebSocket /live and /hud-ws protocol, errors, and /ingest/state fan-out", async () => {
   const live = openWs(`${wsBase}/live?session=test1`);
+  await live.ready;
   const hud = openWs(`${wsBase}/hud-ws?session=test1`);
   try {
-    await Promise.all([live.ready, hud.ready]);
+    await hud.ready;
+    const hudMsg = await live.next();
+    assert.deepEqual(hudMsg, { type: "hud", connected: true });
 
     live.ws.send(JSON.stringify({ type: "ping", t: 98765 }));
     const pong = await live.next();
