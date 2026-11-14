@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HoldUp pitch deck</title>
+<meta name="description" content="HoldUp: a hands-free label checker for blind and low-vision people on Meta AI glasses, powered by Gemini Live. Junction 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@500&family=Atkinson+Hyperlegible+Next:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+/* Tokens copied from web/src/styles.css ("night pharmacy"). Do not add ad-hoc colours. */
+:root {
+  --bg: #0b1018; --surface: #141b27; --surface-2: #1c2535; --border: #33435b;
+  --text: #f5f2e9; --muted: #b3bdcc; --accent: #ffd23f; --on-accent: #0b1018;
+  --match: #4fe3a2; --warning: #ff9b52; --unsure: #a3cbff; --danger: #ff6f6f; --rec: #ff4d4d;
+  --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 14px; --line: 2px;
+  --W: 1280px; --H: 720px;
+  color-scheme: dark;
+}
+@media (prefers-contrast: more) {
+  :root { --bg:#000; --surface:#000; --surface-2:#0d0d0d; --border:#fff; --text:#fff; --muted:#e6e6e6; --accent:#ffe14d; --match:#6dffbe; --warning:#ffb070; --unsure:#c2dcff; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+body { overflow: hidden; }
+p, h1, h2, h3, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+.sr-only { position:absolute!important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+/* ---------- stage: fixed 1280x720 canvas scaled to the window ---------- */
+#stage { position: fixed; inset: 0; display: grid; place-items: center; }
+#deck { width: var(--W); height: var(--H); position: relative; transform-origin: center center; }
+.slide {
+  position: absolute; inset: 0; width: var(--W); height: var(--H);
+  padding: 44px 64px 58px; display: flex; flex-direction: column; gap: 18px;
+  background: var(--bg); overflow: hidden;
+}
+.slide[hidden] { display: none; }
+.slide::after { /* viewfinder corner, the product's signature mark */
+  content: ""; position: absolute; right: 28px; top: 24px; width: 26px; height: 26px;
+  border-top: 4px solid var(--accent); border-right: 4px solid var(--accent); border-radius: 0 6px 0 0; opacity: .9;
+}
+.foot { position: absolute; left: 64px; right: 64px; bottom: 20px; display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); }
+.foot .src { max-width: 1000px; }
+
+/* ---------- type scale: 16 / 20 / 24 / 36 / 56 / 84 ---------- */
+.eyebrow { font-size: 16px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: 84px; line-height: 1.0; font-weight: 800; letter-spacing: -.025em; }
+h2 { font-size: 36px; line-height: 1.1; font-weight: 800; letter-spacing: -.015em; max-width: 1120px; }
+h3 { font-size: 22px; line-height: 1.2; font-weight: 800; }
+.lede { font-size: 24px; line-height: 1.4; color: var(--muted); max-width: 980px; }
+.body { font-size: 20px; line-height: 1.4; }
+.small { font-size: 16px; line-height: 1.4; color: var(--muted); }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.accent { color: var(--accent); }
+b, strong { font-weight: 800; }
+code { font-family: var(--mono); font-size: .9em; color: var(--text); background: var(--surface-2); padding: 1px 6px; border-radius: 6px; }
+
+/* ---------- building blocks ---------- */
+.row { display: flex; gap: 24px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.card { background: var(--surface); border: var(--line) solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+.card.hl { border-color: var(--accent); }
+.card p, .card li { font-size: 17px; line-height: 1.35; }
+.card .small { font-size: 15px; }
+.bul li { position: relative; padding-left: 22px; font-size: 17px; line-height: 1.35; }
+.bul li + li { margin-top: 6px; }
+.bul li::before { content: ""; position: absolute; left: 2px; top: .55em; width: 9px; height: 9px; background: var(--accent); border-radius: 2px; }
+.stat .num { font-size: 48px; font-weight: 800; line-height: 1; letter-spacing: -.02em; color: var(--accent); font-variant-numeric: tabular-nums; }
+.stat .num small { font-size: 28px; }
+.stat p { font-size: 16px; line-height: 1.33; }
+.stat .src { font-size: 13px; color: var(--muted); }
+.todo { display: inline-block; font-family: var(--mono); font-size: .85em; color: var(--on-accent); background: var(--accent); padding: 1px 8px; border-radius: 6px; font-weight: 500; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; border: var(--line) solid var(--border); border-radius: 10px; padding: 4px 10px; color: var(--muted); }
+
+/* verdict rows: shape + word + colour, never colour alone */
+.verdicts { display: flex; flex-direction: column; gap: 12px; }
+.vrow { display: grid; grid-template-columns: 44px 128px 1fr; gap: 14px; align-items: center; background: var(--surface); border-left: 6px solid var(--vc); border-radius: 10px; padding: 12px 16px; }
+.vrow .w { font-weight: 800; font-size: 18px; color: var(--vc); text-transform: uppercase; letter-spacing: .06em; }
+.vrow q { font-size: 18px; line-height: 1.35; quotes: "\201C" "\201D"; }
+.vrow.match { --vc: var(--match); } .vrow.warning { --vc: var(--warning); } .vrow.unsure { --vc: var(--unsure); }
+
+/* loop steps */
+.loop { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.step { background: var(--surface); border: var(--line) solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+.step .n { font-family: var(--mono); font-size: 15px; color: var(--accent); }
+.step h3 { font-size: 22px; }
+.step p { font-size: 15.5px; line-height: 1.38; color: var(--muted); }
+.step p b { color: var(--text); }
+
+/* tables */
+table { border-collapse: collapse; width: 100%; font-size: 16.5px; line-height: 1.3; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+th { font-size: 14px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+td:first-child { font-weight: 700; white-space: nowrap; }
+tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
+
+/* hook */
+.hook { justify-content: center; }
+.hook h1 { max-width: 760px; }
+.hook .art { position: absolute; right: 64px; top: 120px; }
+.title-tag { font-size: 28px; font-weight: 700; color: var(--text); }
+
+/* bars (latency) */
+.bars { display: flex; flex-direction: column; gap: 14px; }
+.bar { display: grid; grid-template-columns: 190px 1fr; align-items: center; gap: 14px; }
+.bar .lab { font-size: 14px; line-height: 1.2; }
+.bar .lab b { display: block; font-size: 20px; }
+.track { position: relative; height: 22px; border-bottom: 1px solid var(--border); }
+.seg { position: absolute; top: 3px; height: 16px; border-radius: 4px; }
+.seg.range { background: var(--accent); }
+.seg.old { background: var(--muted); }
+.axis { display: grid; grid-template-columns: 190px 1fr; gap: 14px; }
+.ticks { position: relative; height: 18px; font-size: 13px; color: var(--muted); font-family: var(--mono); }
+.ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+
+/* nav (screen only) */
+#nav { position: fixed; right: 16px; bottom: 12px; display: flex; gap: 8px; align-items: center; z-index: 10; }
+#nav button { min-width: 44px; min-height: 44px; border-radius: 12px; border: var(--line) solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 18px; font-weight: 700; cursor: pointer; }
+#nav button:hover { border-color: var(--muted); background: var(--surface-2); }
+#count { font-family: var(--mono); font-size: 15px; color: var(--muted); min-width: 64px; text-align: center; }
+.foot .pg { visibility: hidden; }
+#progress { position: fixed; left: 0; top: 0; height: 4px; background: var(--accent); width: 0; z-index: 10; transition: width .25s; }
+@media (prefers-reduced-motion: reduce) { #progress { transition: none; } }
+
+/* ---------- print: one slide per 13.333in x 7.5in page (1280x720 at 96 dpi) ---------- */
+@page { size: 13.333in 7.5in; margin: 0; }
+@media print {
+  html, body { height: auto; overflow: visible; background: var(--bg); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #stage { position: static; display: block; }
+  #deck { transform: none !important; width: auto; height: auto; }
+  .slide, .slide[hidden] { display: flex !important; position: relative; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  #nav, #progress { display: none !important; }
+  .foot .pg { visibility: visible; }
+}
+</style>
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+<p id="live" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+
+<div id="stage">
+<main id="deck" aria-roledescription="slide deck" aria-label="HoldUp pitch">
+
+<!-- 1 HOOK -->
+<section class="slide hook" aria-roledescription="slide" aria-labelledby="s1-h">
+  <p class="eyebrow">HoldUp · Junction 2026 · Meta AI glasses × Gemini</p>
+  <h1 id="s1-h">Which one is the evening pill?</h1>
+  <p class="lede" style="max-width:700px">Three white boxes on a kitchen counter. One is blood pressure, one is a painkiller you must avoid, one is for diabetes. If you can't read the print, they are the same box.</p>
+  <p class="title-tag"><span class="accent">HoldUp.</span> Hold it up. Know it's the right one.</p>
+  <p class="small" style="max-width:700px">A hands-free label checker for blind and low-vision people, on Meta AI glasses, powered by Gemini Live.</p>
+  <svg class="art" width="420" height="440" viewBox="0 0 420 440" role="img" aria-labelledby="s1-art-t">
+    <title id="s1-art-t">Three identical white medicine boxes. Yellow viewfinder brackets frame the middle one, with a green round check mark: that is the right one.</title>
+    <g fill="#f5f2e9" stroke="#0b1018" stroke-width="2">
+      <g transform="translate(10,150)"><rect width="110" height="190" rx="8"/><rect x="16" y="24" width="70" height="8" rx="3" fill="#b3bdcc" stroke="none"/><rect x="16" y="40" width="50" height="6" rx="3" fill="#b3bdcc" stroke="none"/><rect x="16" y="150" width="78" height="22" rx="3" fill="#33435b" stroke="none" opacity=".25"/></g>
+      <g transform="translate(155,120)"><rect width="110" height="190" rx="8"/><rect x="16" y="24" width="70" height="8" rx="3" fill="#b3bdcc" stroke="none"/><rect x="16" y="40" width="50" height="6" rx="3" fill="#b3bdcc" stroke="none"/><rect x="16" y="150" width="78" height="22" rx="3" fill="#33435b" stroke="none" opacity=".25"/></g>
+      <g transform="translate(300,150)"><rect width="110" height="190" rx="8"/><rect x="16" y="24" width="70" height="8" rx="3" fill="#b3bdcc" stroke="none"/><rect x="16" y="40" width="50" height="6" rx="3" fill="#b3bdcc" stroke="none"/><rect x="16" y="150" width="78" height="22" rx="3" fill="#33435b" stroke="none" opacity=".25"/></g>
+    </g>
+    <path d="M135 140V100h40M245 100h40v40M285 290v40h-40M175 330h-40v-40" stroke="#ffd23f" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <g transform="translate(176,10)"><circle cx="34" cy="34" r="32" fill="#4fe3a2"/><path d="M19 35l10 10 20-22" stroke="#0b1018" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <text x="210" y="400" text-anchor="middle" font-family="Atkinson Hyperlegible Next, system-ui, sans-serif" font-size="22" font-weight="800" fill="#f5f2e9">Yes. Amlodipine 5 mg,</text>
+    <text x="210" y="428" text-anchor="middle" font-family="Atkinson Hyperlegible Next, system-ui, sans-serif" font-size="22" font-weight="800" fill="#f5f2e9">your evening pill.</text>
+  </svg>
+  <div class="foot"><span>Silas · Momin010 · ivarakerholm-wq · Chintufp</span><span class="pg">1</span></div>
+</section>
+
+<!-- 2 PROBLEM -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s2-h">
+  <p class="eyebrow">Problem and audience</p>
+  <h2 id="s2-h">With low vision, the print on a medicine box fails.</h2>
+  <div class="grid4">
+    <div class="card stat"><p class="num">97%</p><p>of older people with visual impairment struggled to read medication labels, despite optical aids (controls: 4%).</p><p class="src">McCann et al., BJGP 2012, n = 314</p></div>
+    <div class="card stat"><p class="num">24%</p><p>had difficulty telling their different tablets apart. In the sighted control group, none did.</p><p class="src">McCann et al. 2012</p></div>
+    <div class="card stat"><p class="num">2.8×</p><p>the odds of needing help to manage medication (29% vs 13%). Help mostly comes from family.</p><p class="src">McCann et al. 2012</p></div>
+    <div class="card stat"><p class="num">1 in 5</p><p>Finns aged 75+ bought 10 or more different medicines in four months (21.6%, 2025).</p><p class="src">Fimea, Kela Kanta Prescription Centre</p></div>
+  </div>
+  <div class="grid2" style="grid-template-columns: 1.1fr 1fr">
+    <div class="card">
+      <h3>Who it is for</h3>
+      <ul class="bul">
+        <li><b>Blind and low-vision people</b> who manage their own medicines and food allergies: about <b>55,000 in Finland, ~45,000 of them aged 65+</b>; 2.2 billion people worldwide have a vision impairment.</li>
+        <li><b>Older adults whose sight is fading</b>, with look-alike boxes.</li>
+        <li>The <b>home-care nurses, pharmacists and family</b> who check for them today.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What exists today</h3>
+      <ul class="bul">
+        <li><b>Braille on the box</b> gives the name (EU law): not the pharmacy dosing sticker, expiry or allergens.</li>
+        <li><b>Phone OCR apps</b> need a third hand and read everything, with no idea what matters to <i>you</i>.</li>
+        <li><b>Calling a person</b> costs independence, and medication is private.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span class="src">Sources and URLs: docs/RESEARCH.md (WHO 2026 fact sheet; NKL/THL Näkövammarekisteri; Fimea; McCann et al. BJGP 2012; Directive 2001/83/EC Art. 56a)</span><span class="pg">2</span></div>
+</section>
+
+<!-- 3 WHY GLASSES -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s3-h">
+  <p class="eyebrow">Why glasses, not a phone</p>
+  <h2 id="s3-h">The camera is already looking at what your hands are holding.</h2>
+  <div class="grid4">
+    <div class="card"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#ffd23f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V6a1.5 1.5 0 0 1 3 0v4M10 10V4.5a1.5 1.5 0 0 1 3 0V10M13 10V5.5a1.5 1.5 0 0 1 3 0V11M16 11V8a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-2.7L3.5 14a1.6 1.6 0 0 1 2.6-1.8L7 13.5"/></svg><h3>Hands</h3><p>Both hands stay on the box, the cane, the glass of water. No third hand for a phone.</p></div>
+    <div class="card"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#ffd23f" stroke-width="2" stroke-linecap="round"><path d="M4 9V5h4M16 5h4v4M20 15v4h-4M8 19H4v-4"/><rect x="9" y="8" width="6" height="8" rx="1"/></svg><h3>Aim</h3><p>First-person view: no blind aiming. The stream lets HoldUp <b>coach</b> you: “turn it around… a bit closer”.</p></div>
+    <div class="card"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#ffd23f" stroke-width="2" stroke-linecap="round"><path d="M3 10v4h4l5 4V6L7 10z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg><h3>Audio</h3><p>Open-ear speakers and mic on your face. Ears stay open to the room; answers stay close.</p></div>
+    <div class="card"><svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#ffd23f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="13" r="3.5"/><circle cx="17.5" cy="13" r="3.5"/><path d="M10 13h4M3 11l1-4M21 11l-1-4"/></svg><h3>Display</h3><p>On Ray-Ban Display, a big verdict card in the lens. Shape + word + colour, for people with some sight.</p></div>
+  </div>
+  <div class="card hl">
+    <h3>Beyond mirroring the phone</h3>
+    <p class="body">A phone app takes a snapshot and reads whatever text it finds. HoldUp watches a continuous first-person stream, talks you into a readable view, and then answers <b>one personal question</b>: is this the right one <i>for me</i>, now? It works on <b>Ray-Ban Meta</b> (camera via the Device Access Toolkit, audio over Bluetooth) and <b>Ray-Ban Display</b> (HUD Web App + Neural Band), and falls back to the phone camera when the glasses aren't available.</p>
+  </div>
+  <div class="foot"><span></span><span class="pg">3</span></div>
+</section>
+
+<!-- 4 PRODUCT LOOP -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s4-h">
+  <p class="eyebrow">The product</p>
+  <h2 id="s4-h">One loop: ask, coach, read, check, answer, log.</h2>
+  <ol class="loop">
+    <li class="step"><span class="n">01</span><h3>Ask</h3><p><b>“Is this my evening pill?”</b> By voice, typed text, the big button, or a Bluetooth play/pause tap.</p></li>
+    <li class="step"><span class="n">02</span><h3>Coach</h3><p>Gemini Live watches ~1 frame/s and gives <b>one physical cue at a time</b>. Cue arrow on screen and HUD, plus an earcon and a vibration.</p></li>
+    <li class="step"><span class="n">03</span><h3>Read</h3><p><code>verify_label</code>: the 2 sharpest recent frames, strict JSON schema, <b>a confidence for every field</b>, null when not legible.</p></li>
+    <li class="step"><span class="n">04</span><h3>Check</h3><p>Deterministic rules against <b>your on-device profile</b>: medicines, strengths, schedule, allergies, avoid list, expiry, today's doses.</p></li>
+    <li class="step"><span class="n">05</span><h3>Answer</h3><p>Spoken <b>word for word</b> from the checker, with a verdict card on the phone and in the lens.</p></li>
+    <li class="step"><span class="n">06</span><h3>Log</h3><p><b>“I took it”</b> saves the dose on the phone, so next time: “You already took it today.”</p></li>
+  </ol>
+  <div class="verdicts" role="list" aria-label="The three verdicts, as spoken">
+    <div class="vrow match" role="listitem"><svg width="40" height="40" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="32" fill="#4fe3a2"/><path d="M21 37l10 10 20-22" stroke="#0b1018" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="w">Match</span><q>Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.</q></div>
+    <div class="vrow warning" role="listitem"><svg width="40" height="40" viewBox="0 0 72 72" aria-hidden="true"><path d="M36 5l33 60H3z" fill="#ff9b52"/><path d="M36 26v18" stroke="#0b1018" stroke-width="7" stroke-linecap="round"/><circle cx="36" cy="54" r="4" fill="#0b1018"/></svg><span class="w">Warning</span><q>This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.</q></div>
+    <div class="vrow unsure" role="listitem"><svg width="40" height="40" viewBox="0 0 72 72" aria-hidden="true"><path d="M36 3l33 33-33 33L3 36z" fill="#a3cbff"/><path d="M28 29a8 8 0 1 1 11 7.4c-2 .9-3 2.4-3 4.6v1" stroke="#0b1018" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="36" cy="52" r="3.8" fill="#0b1018"/></svg><span class="w">Not sure</span><q>It looks like Metformin, but I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist.</q></div>
+  </div>
+  <div class="foot"><span class="src">Verdict wording comes from <code>server/src/safety.ts</code> templates; medicine names shortened here (the demo profile stores “amlodipine besilate”).</span><span class="pg">4</span></div>
+</section>
+
+<!-- 5 DEMO -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s5-h">
+  <p class="eyebrow">Live demo · 3 minutes</p>
+  <h2 id="s5-h">Watch it on the glasses.</h2>
+  <div class="grid2" style="grid-template-columns: 1.25fr 1fr; flex:1">
+    <div class="card hl" style="justify-content:center; align-items:center; text-align:center; gap:14px">
+      <svg width="120" height="120" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#ffd23f"/><path d="M7 12V8h4M21 8h4v4M25 20v4h-4M11 24H7v-4" stroke="#0b1018" stroke-width="2.6" fill="none" stroke-linecap="round"/><rect x="12.5" y="11" width="7" height="10" rx="1.2" fill="#0b1018"/></svg>
+      <p class="body"><b>Stage: glasses POV + phone screen mirrored</b></p>
+      <p class="small">Backup video if hardware or Wi-Fi fails: <span class="todo">TODO: backup video URL (recorded Sun 06:30–08:30)</span></p>
+    </div>
+    <ol class="card" style="gap:14px">
+      <li class="body"><b class="accent">1 · Coach.</b> Box held label-away. “The label is on the other side. Turn it around… a bit closer.”</li>
+      <li class="body"><b class="accent">2 · Match.</b> “Yes, Amlodipine 5 mg, your evening pill.” Green card in the lens. “I took it.”</li>
+      <li class="body"><b class="accent">3 · Catch.</b> Ibuprofen: warning, NSAID on the avoid list. Covered strength: “I can't read the strength confidently.”</li>
+      <li class="body"><b class="accent">4 · Break it.</b> Wi-Fi off: snapshot, then offline barcode mode. Glasses off: back to the phone camera.</li>
+    </ol>
+  </div>
+  <div class="foot"><span class="src">Full script with fallbacks: docs/DEMO_SCRIPT.md</span><span class="pg">5</span></div>
+</section>
+
+<!-- 6 ARCHITECTURE -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s6-h">
+  <p class="eyebrow">Architecture</p>
+  <h2 id="s6-h">One server, three thin clients, one Gemini key (server-side).</h2>
+  <svg width="1136" height="450" viewBox="0 0 1136 450" role="img" aria-labelledby="s6-t s6-d" style="font-family: var(--font)">
+    <title id="s6-t">HoldUp architecture diagram</title>
+    <desc id="s6-d">Ray-Ban Meta glasses stream camera frames through the Android DAT bridge to the server, and act as a Bluetooth headset for the phone. The phone web app streams microphone audio and phone camera frames to the server over a WebSocket and plays the reply audio. The server proxies Gemini Live, runs verify_label with Gemini Flash and the deterministic safety check, and pushes verdicts and coaching cues to the Ray-Ban Display HUD web app.</desc>
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b3bdcc"/></marker></defs>
+    <g font-size="15" fill="#f5f2e9">
+      <!-- glasses column -->
+      <rect x="0" y="0" width="250" height="118" rx="14" fill="#141b27" stroke="#33435b" stroke-width="2"/>
+      <text x="16" y="30" font-weight="800" font-size="19">Ray-Ban Meta Gen 2</text>
+      <text x="16" y="56" fill="#b3bdcc">Camera via Device Access</text><text x="16" y="76" fill="#b3bdcc">Toolkit · capture LED on</text>
+      <text x="16" y="102" fill="#b3bdcc">Mic + speakers: Bluetooth</text>
+      <rect x="0" y="332" width="250" height="118" rx="14" fill="#141b27" stroke="#ffd23f" stroke-width="2"/>
+      <text x="16" y="362" font-weight="800" font-size="19">Ray-Ban Display HUD</text>
+      <text x="16" y="388" fill="#b3bdcc">Web App at /hud/ · 600×600</text><text x="16" y="408" fill="#b3bdcc">Neural Band: Repeat · I took it</text>
+      <text x="16" y="428" fill="#b3bdcc">· Dismiss (arrows + Enter)</text>
+      <!-- bridge + phone -->
+      <rect x="290" y="0" width="230" height="118" rx="14" fill="#141b27" stroke="#33435b" stroke-width="2"/>
+      <text x="306" y="30" font-weight="800" font-size="19">Android DAT bridge</text>
+      <text x="306" y="56" fill="#b3bdcc">Kotlin · 720×1280 @ 2 fps in</text><text x="306" y="76" fill="#b3bdcc">JPEG ≤ 1 fps out · worn,</text><text x="306" y="96" fill="#b3bdcc">battery, connected state</text>
+      <rect x="290" y="166" width="230" height="150" rx="14" fill="#141b27" stroke="#33435b" stroke-width="2"/>
+      <text x="306" y="196" font-weight="800" font-size="19">Phone PWA (React)</text>
+      <text x="306" y="222" fill="#b3bdcc">Mic PCM16 16 kHz · frames</text><text x="306" y="242" fill="#b3bdcc">768 px + sharpness score</text>
+      <text x="306" y="262" fill="#b3bdcc">Profile in localStorage</text><text x="306" y="282" fill="#b3bdcc">Snapshot + offline barcode</text><text x="306" y="302" fill="#b3bdcc">Device panel · consent</text>
+      <!-- server -->
+      <rect x="630" y="0" width="260" height="450" rx="14" fill="#1c2535" stroke="#ffd23f" stroke-width="2"/>
+      <text x="646" y="30" font-weight="800" font-size="19">Server · Node + TS</text>
+      <text x="646" y="52" fill="#b3bdcc" font-size="14">one HTTPS origin via cloudflared</text>
+      <g font-size="15">
+        <text x="646" y="88"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">/live</tspan> Live proxy, 3 tools</text>
+        <text x="646" y="120">Frame ring (8, memory only)</text>
+        <text x="646" y="152">Speculative verify cache</text>
+        <text x="646" y="184"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">verify_label</tspan> reader</text>
+        <text x="646" y="216"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">safety.ts</tspan> rules, no model</text>
+        <text x="646" y="248"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">/hud-ws</tspan> fan-out + replay</text>
+        <text x="646" y="280"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">/ingest</tspan> glasses frames, state</text>
+        <text x="646" y="312"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">/api/verify</tspan> snapshot mode</text>
+        <text x="646" y="344"><tspan fill="#ffd23f" font-family="Atkinson Hyperlegible Mono, monospace">/api/stats</tspan> usage ledger</text>
+        <text x="646" y="376" fill="#b3bdcc">Redacting logger: no content</text>
+      </g>
+      <!-- gemini -->
+      <rect x="920" y="0" width="216" height="140" rx="14" fill="#141b27" stroke="#33435b" stroke-width="2"/>
+      <text x="936" y="30" font-weight="800" font-size="19">Gemini Live API</text>
+      <text x="936" y="56" fill="#b3bdcc">gemini-3.8-live</text><text x="936" y="76" fill="#b3bdcc">+ 2 fallback models</text><text x="936" y="100" fill="#b3bdcc">audio + video in,</text><text x="936" y="120" fill="#b3bdcc">audio + tool calls out</text>
+      <rect x="920" y="166" width="216" height="118" rx="14" fill="#141b27" stroke="#33435b" stroke-width="2"/>
+      <text x="936" y="196" font-weight="800" font-size="19">Gemini Flash</text>
+      <text x="936" y="222" fill="#b3bdcc">gemini-3.8-flash</text><text x="936" y="244" fill="#b3bdcc">JSON schema + per-field</text><text x="936" y="264" fill="#b3bdcc">confidence · 2 fallbacks</text>
+      <rect x="920" y="310" width="216" height="78" rx="14" fill="#141b27" stroke="#33435b" stroke-width="2"/>
+      <text x="936" y="340" font-weight="800" font-size="19">Gemini TTS</text>
+      <text x="936" y="366" fill="#b3bdcc">optional · browser voice</text>
+    </g>
+    <g stroke="#b3bdcc" stroke-width="2" fill="none" marker-end="url(#ar)">
+      <path d="M250 50H286"/>
+      <path d="M520 50H626"/>
+      <path d="M125 118V240H286" stroke-dasharray="6 5"/>
+      <path d="M520 230H626"/>
+      <path d="M626 270H524"/>
+      <path d="M890 70H916"/>
+      <path d="M916 110H894"/>
+      <path d="M890 225H916"/>
+      <path d="M890 350H916"/>
+      <path d="M626 400H254"/>
+    </g>
+    <g font-size="13" fill="#b3bdcc">
+      <text x="132" y="232">Bluetooth audio (HFP)</text>
+      <text x="530" y="222">audio, frames</text><text x="530" y="290">voice, cues,</text><text x="530" y="306">verdicts</text>
+      <text x="350" y="392">verdicts, cues, device state</text>
+    </g>
+  </svg>
+  <div class="foot"><span class="src">Code: server/src (index, live, verify, speculate, safety, hub, ledger) · web/src · android-dat/ · shared/types.ts contract</span><span class="pg">6</span></div>
+</section>
+
+<!-- 7 GEMINI DEPTH -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s7-h">
+  <p class="eyebrow">Gemini inside the loop</p>
+  <h2 id="s7-h">Realtime Live with tool calls, plus a strict, honest reader.</h2>
+  <div class="grid3" style="grid-template-columns: 1fr 1fr 1.25fr">
+    <div class="card">
+      <h3>Live API, mid-session tools</h3>
+      <ul class="bul">
+        <li>Audio + video in, native audio out, transcripts, barge-in.</li>
+        <li>Tools: <code>verify_label</code>, <code>show_cue</code> (non-blocking, silent), <code>log_dose</code>.</li>
+        <li>Session resumption + context compression: drops keep context.</li>
+        <li><b>Hard rule:</b> Live never states a name, dose, expiry or allergen from its own view; it calls the reader and speaks the result word for word.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Schema-constrained reading</h3>
+      <ul class="bul">
+        <li><code>responseJsonSchema</code>: every field is <code>{value, confidence}</code>, null when not legible.</li>
+        <li>Never infers strength from a brand; never completes a half-read word.</li>
+        <li>Reads Finnish and Swedish packs; ingredient mapped to its English INN name.</li>
+        <li>Thinking low, 8 s timeout, retry, fallback chain.</li>
+      </ul>
+    </div>
+    <div class="card hl">
+      <h3>Speculative verify</h3>
+      <p class="small" style="color:var(--text)">While you are still asking, the server already reads the sharpest new frame (one call in flight, ≥ 2 s apart). The tool call is answered from that cache, or joins the read in flight.</p>
+      <div class="bars" role="img" aria-labelledby="s7-chart-t">
+        <span id="s7-chart-t" class="sr-only">Latency from server logs. Question to first spoken audio: 5.8 seconds before speculative verify, 0.8 to 3.3 seconds now. One verify call: 2.7 to 3.7 seconds. Cache hit: under 5 milliseconds.</span>
+        <div class="bar"><div class="lab"><b>0.8–3.3 s</b>question → first audio, now</div><div class="track"><div class="seg range" style="left:13.3%; width:41.7%"></div></div></div>
+        <div class="bar"><div class="lab"><b>5.8 s</b>before speculative verify</div><div class="track"><div class="seg old" style="left:0; width:96.7%"></div></div></div>
+        <div class="bar"><div class="lab"><b>2.7–3.7 s</b>one verify call (Flash)</div><div class="track"><div class="seg range" style="left:45%; width:16.7%"></div></div></div>
+        <div class="bar"><div class="lab"><b>&lt; 5 ms</b>speculative cache hit</div><div class="track"><div class="seg range" style="left:0; width:4px"></div></div></div>
+        <div class="axis" aria-hidden="true"><span></span><div class="ticks"><span style="left:0">0</span><span style="left:50%">3 s</span><span style="left:100%">6 s</span></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="padding:12px 20px">
+    <p style="font-size:16.5px"><b class="accent">Why Gemini specifically:</b> one API gives us realtime audio+video with tool calls mid-conversation, schema-constrained vision with thinking control, native-audio voices, TTS, and image generation to build our own eval set. Every call is metered: <code>/api/stats</code> reports p50/p95 latency, first-audio time, tool latency and tokens per feature from a metadata-only ledger.</p>
+  </div>
+  <div class="foot"><span class="src">Latency: server logs and /api/stats, Sat 14 Nov 2026, demo laptop over venue Wi-Fi. <span class="todo">TODO: refresh p50/p95 from /api/stats after rehearsal</span></span><span class="pg">7</span></div>
+</section>
+
+<!-- 8 TRUST -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s8-h">
+  <p class="eyebrow">Trust and safety</p>
+  <h2 id="s8-h">It never guesses a dose. It doesn't keep your pictures.</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>Honest answers</h3>
+      <ul class="bul">
+        <li><b>Per-field confidence</b>, shown on the card: “What I read, and how sure I am”.</li>
+        <li>A strength counts only at confidence ≥ 0.8. A “yes, it's yours” also needs a confident name (≥ 0.8) and a readable label. Otherwise: <b>Not sure</b>, plus how to turn the box.</li>
+        <li><b>Deterministic rules, no model</b> (<code>safety.ts</code>, unit-tested): wrong strength, not on your list, avoid list by drug class (NSAIDs), allergen synonyms (arachis oil → peanut, whey → milk, Finnish, Swedish), expired, already taken today.</li>
+        <li>Not a medical device: uncertain cases go to a pharmacist.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Privacy by design</h3>
+      <ul class="bul">
+        <li><b>Consent first</b>: three plain cards before the camera can run. Withdraw any time.</li>
+        <li><b>Camera only during a check</b>: you start it, CAMERA ON badge and sound, <b>auto-stop after 45 s</b> without a label, paused when the app is in the background.</li>
+        <li><b>Profile lives on the phone</b> (localStorage). It travels with a check and is held only in server memory.</li>
+        <li><b>No server storage</b>: up to 8 frames in a memory ring, dropped when the session ends. No image, audio or transcript logs.</li>
+        <li><b>Bystanders</b>: both models are told to ignore people and never describe faces. The glasses' capture LED is on while streaming.</li>
+        <li><b>One button deletes everything</b> on the phone.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span class="src">Full data flow: docs/PRIVACY.md · <span class="todo">TODO: paid Gemini API tier? If yes add “Google does not train on these requests”</span></span><span class="pg">8</span></div>
+</section>
+
+<!-- 9 RESILIENCE -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s9-h">
+  <p class="eyebrow">Resilience</p>
+  <h2 id="s9-h">A degradation ladder that says what still works.</h2>
+  <table>
+    <caption class="sr-only">What breaks and what HoldUp does</caption>
+    <thead><tr><th scope="col">What breaks</th><th scope="col">What HoldUp does</th></tr></thead>
+    <tbody>
+      <tr><td>Gemini Live error or quota</td><td>Walks a 3-model Live chain; if all fail, says so and switches to <b>snapshot mode</b>: HTTP verify of the sharpest frames, answer read out by the phone.</td></tr>
+      <tr><td>Gemini socket drop</td><td>Reconnects with the session-resumption handle, so the conversation context is kept.</td></tr>
+      <tr><td>Phone connection drop</td><td>Backoff with jitter; after two failed tries, snapshot mode; back to live automatically when the socket returns.</td></tr>
+      <tr><td>No internet at all</td><td><b>Offline mode</b>: recognises <i>your saved medicines</i> by barcode on the device, and says plainly it can't read new labels.</td></tr>
+      <tr><td>Slow network</td><td>Frame rate and JPEG quality follow the measured round-trip time (1 → 0.5 → 0.33 fps); frames are skipped when the socket backs up.</td></tr>
+      <tr><td>Reader fails</td><td>One retry, then 2 fallback models; if still nothing: “Not sure”, never a made-up answer.</td></tr>
+      <tr><td>Glasses off or disconnected</td><td>Announces it and switches to the phone camera; low battery (≤ 15%) is spoken.</td></tr>
+      <tr><td>Permission denied</td><td>Plain-language, per-platform steps to fix it, plus photo and typed-question paths.</td></tr>
+      <tr><td>Audio route changes</td><td>“Audio now through …”, and the microphone restarts.</td></tr>
+    </tbody>
+  </table>
+  <div class="foot"><span class="src">All states are visible live in the in-app device panel (mode, RTT, Live state, model, frames, glasses, HUD, auto-stop timer).</span><span class="pg">9</span></div>
+</section>
+
+<!-- 10 EVAL -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s10-h">
+  <p class="eyebrow">Evaluation · Gemini as a workforce</p>
+  <h2 id="s10-h">We measure what matters: confident wrong answers.</h2>
+  <ol class="loop" style="grid-template-columns: repeat(5, 1fr)">
+    <li class="step"><span class="n">01 · Flash</span><h3>Specs</h3><p>Gemini writes ground-truth labels: Nordic medicine packs, look-alikes, food with allergen synonyms.</p></li>
+    <li class="step"><span class="n">02 · Image</span><h3>Render</h3><p>Gemini image models render a first-person photo of a hand holding each item.</p></li>
+    <li class="step"><span class="n">03 · Flash</span><h3>Check</h3><p>A separate call marks each field legible and boxes it; garbled renders are dropped.</p></li>
+    <li class="step"><span class="n">04 · CPU</span><h3>Degrade</h3><p>Blur, glare, rotation, crop, low light, back of box, at 3 severities.</p></li>
+    <li class="step"><span class="n">05 · Product</span><h3>Score</h3><p>The shipped prompt, schema and <code>safety.ts</code> run on every image and profile.</p></li>
+  </ol>
+  <div class="grid4">
+    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>images scored (synthetic) + <span class="todo">TODO</span> real photos</p></div>
+    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>confident-wrong strength reads (confidence ≥ 0.8)</p></div>
+    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>unsafe reassurances: system said “match” when the truth was a warning</p></div>
+    <div class="card stat"><p class="num"><span class="todo">TODO</span></p><p>strength accuracy when readable · calibration ECE <span class="todo">TODO</span></p></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Real photos as the cross-check</h3><p>30 labels photographed at head height by the team: Finnish pharmacy boxes, food allergen panels and deliberately hard cases (glare, curved bottles, tiny print). <span class="todo">TODO: real-photo results</span></p></div>
+    <div class="card"><h3>Honest caveat</h3><p>The legibility check uses the same model family as the reader, which may make synthetic ground truth easier. That is why the headline metric is <b>unsafe reassurance</b>, and why real photos are scored separately.</p></div>
+  </div>
+  <div class="foot"><span class="src">Method, per-condition tables and caveats: docs/EVAL.md <span class="todo">TODO: link once EVAL.md lands</span></span><span class="pg">10</span></div>
+</section>
+
+<!-- 11 ADOPTION -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s11-h">
+  <p class="eyebrow">Path to adoption</p>
+  <h2 id="s11-h">Pilot with the people who already help, on shipping glasses.</h2>
+  <div class="grid3">
+    <div class="card hl">
+      <h3>1 · Näkövammaisten liitto</h3>
+      <p>Finnish Federation of the Visually Impaired. Proposed 4-week home pilot with <span class="todo">TODO: n</span> members on their own medicines.</p>
+      <p class="small">Measure: confident-wrong answers (target 0), time to verdict, “would use daily”. <span class="todo">TODO: contact status</span></p>
+    </div>
+    <div class="card">
+      <h3>2 · Pharmacies</h3>
+      <p>The pharmacist adds a new prescription to the profile at pick-up (name, strength, schedule, barcode scan already in the app), and is the hand-off for every “Not sure”.</p>
+    </div>
+    <div class="card">
+      <h3>3 · Home-care nurses</h3>
+      <p>Wellbeing services counties' home care sets up the profile and checks the dose log on visits; HoldUp covers the hours in between.</p>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Why it's feasible</h3>
+      <ul class="bul">
+        <li>Runs on shipping hardware. Blind users already use Ray-Ban Meta with Be My Eyes, in 21 markets.</li>
+        <li>Phone-only works today as a PWA: no install, any phone with a browser.</li>
+        <li>Cost per check is metered by the ledger: <span class="todo">TODO: € per check from /api/stats tokens</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Business model (ideas)</h3>
+      <ul class="bul">
+        <li>Free for users. Paid by pharmacy chains as an adherence service.</li>
+        <li>Procured as an assistive aid by wellbeing services counties.</li>
+        <li>Bundled with glasses for accessibility programmes.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span class="src">Be My Eyes on Meta glasses: meta.com/ai-glasses/accessibility (see docs/RESEARCH.md)</span><span class="pg">11</span></div>
+</section>
+
+<!-- 12 TEAM + ASK -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s12-h">
+  <p class="eyebrow">Team and the ask</p>
+  <h2 id="s12-h">Help us put HoldUp on 20 faces in Finland.</h2>
+  <div class="grid2" style="grid-template-columns: 1fr 1.2fr">
+    <div class="card">
+      <h3>Team</h3>
+      <ul class="bul">
+        <li><b>Silas</b>: founder, product, presenter</li>
+        <li><b>Momin010</b>: hardware, glasses and DAT bridge</li>
+        <li><b>ivarakerholm-wq</b>: accessibility, real-label data, user feedback</li>
+        <li><b>Chintufp</b>: story, research, deck, video</li>
+        <li>Plus a Claude engineering team: server, web, glasses, eval agents</li>
+      </ul>
+      <p class="small"><span class="todo">TODO: real names and one-line backgrounds</span></p>
+    </div>
+    <div class="card hl">
+      <h3>The ask</h3>
+      <ul class="bul">
+        <li><b>Meta</b>: Device Access Toolkit camera access and Display Web Apps enabled for a Finnish pilot cohort; glasses for <b>20 testers</b>.</li>
+        <li><b>Google DeepMind</b>: Gemini API credits for the pilot, and Live API capacity in the EU.</li>
+        <li><b>Everyone</b>: an introduction to Näkövammaisten liitto, a pharmacy chain or a wellbeing services county.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="row" style="align-items:center; gap:28px; margin-top:auto; margin-bottom:24px">
+    <svg width="88" height="88" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#ffd23f"/><path d="M7 12V8h4M21 8h4v4M25 20v4h-4M11 24H7v-4" stroke="#0b1018" stroke-width="2.6" fill="none" stroke-linecap="round"/><rect x="12.5" y="11" width="7" height="10" rx="1.2" fill="#0b1018"/></svg>
+    <div><p style="font-size:44px; font-weight:800; letter-spacing:-.02em"><span class="accent">HoldUp.</span> Hold it up. Know it's the right one.</p>
+    <p class="small">github.com/s1laswang/junction-meta-glasses · Junction 2026 · Meta “AI Glasses for Everyone, Everyday” · Google DeepMind “Best Use of Gemini API”</p></div>
+  </div>
+  <div class="foot"><span></span><span class="pg">12</span></div>
+</section>
+
+</main>
+</div>
+
+<nav id="nav" aria-label="Slide navigation">
+  <button id="prev" type="button" aria-label="Previous slide">←</button>
+  <span id="count" aria-hidden="true">1 / 12</span>
+  <button id="next" type="button" aria-label="Next slide">→</button>
+</nav>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll(".slide")];
+  const deck = document.getElementById("deck");
+  const live = document.getElementById("live");
+  const count = document.getElementById("count");
+  const bar = document.getElementById("progress");
+  let i = 0;
+  slides.forEach((s, k) => s.setAttribute("aria-label", `Slide ${k + 1} of ${slides.length}`));
+  function fit() {
+    const sc = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    deck.style.transform = `scale(${sc})`;
+  }
+  function show(n, announce = true) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => (s.hidden = k !== i));
+    count.textContent = `${i + 1} / ${slides.length}`;
+    bar.style.width = `${((i + 1) / slides.length) * 100}%`;
+    if (location.hash !== `#${i + 1}`) history.replaceState(null, "", `#${i + 1}`);
+    if (announce) {
+      const h = slides[i].querySelector("h1, h2");
+      live.textContent = `Slide ${i + 1} of ${slides.length}: ${h ? h.textContent : ""}`;
+    }
+  }
+  document.getElementById("prev").addEventListener("click", () => show(i - 1));
+  document.getElementById("next").addEventListener("click", () => show(i + 1));
+  document.addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.target.closest && e.target.closest("button") && (e.key === " " || e.key === "Enter")) return;
+    if (["ArrowRight", "PageDown", " ", "Enter", "n"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    else if (["ArrowLeft", "PageUp", "Backspace", "p"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    else if (e.key === "Home") { e.preventDefault(); show(0); }
+    else if (e.key === "End") { e.preventDefault(); show(slides.length - 1); }
+  });
+  window.addEventListener("resize", fit);
+  window.addEventListener("beforeprint", () => slides.forEach((s) => (s.hidden = false)));
+  window.addEventListener("afterprint", () => show(i, false));
+  fit();
+  const start = parseInt(location.hash.slice(1), 10);
+  show(Number.isFinite(start) ? start - 1 : 0, false);
+})();
+</script>
+</body>
+</html>
