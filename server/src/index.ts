@@ -11,6 +11,7 @@ import { ai, unaryGate } from "./gemini.ts";
 import { addHud, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
 import { ledger, stats } from "./ledger.ts";
 import { requireKey, wsKeyOk } from "./auth.ts";
+import { parseGs1 } from "./gs1.ts";
 import { LiveProxy } from "./live.ts";
 import { errSummary, log, shortId } from "./log.ts";
 import { jpegSharpness, toProfile, verify } from "./verify.ts";
@@ -65,7 +66,7 @@ export function createApp() {
     }
     const profile = req.body?.profile ? toProfile(req.body.profile) : hub?.profile ?? toProfile(undefined);
     const t = Date.now();
-    const r = await verify(picked, profile, typeof req.body?.question === "string" ? req.body.question : undefined);
+    const r = await verify(picked, profile, typeof req.body?.question === "string" ? req.body.question : undefined, "verify", hub?.freshCode());
     log("api.verify", { level: r.verdict.level, model: r.model ?? "none", ms: Date.now() - t, n_frames: picked.length, src });
     res.json(r.verdict);
   });
@@ -107,6 +108,8 @@ export function createApp() {
       const sharpness = Number(req.query.sharpness) || jpegSharpness(buf);
       hub.addFrame({ data, sharpness, ts: Date.now(), bytes: buf.length, source: "glasses" });
       (hub.live as LiveProxy | undefined)?.frame(data);
+      // EU FMD DataMatrix on glasses frames (the phone decodes its own camera): throttled, self-disabling when slow
+      if (hub.has("datamatrix") && hub.live?.active) void hub.dm.maybe(buf, (c) => hub.setCode(c));
     } // no session, or the phone chose its own camera: frame dropped (never stored)
     res.status(204).end();
   });
@@ -177,6 +180,9 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
         hub.profile = toProfile(msg.profile);
         if (msg.lang) hub.profile.lang = String(msg.lang).slice(0, 16);
         if (live?.active) { log("ws.live.profile_update", { session: shortId(id) }); return; }
+        // feature flags: server FEATURES intersected with what the phone asked for (all, if it didn't say)
+        const want = Array.isArray(msg.features) ? new Set<string>(msg.features) : null;
+        hub.features = new Set(env.features.filter((f) => !want || want.has(f)));
         const proxy = new LiveProxy(hub, { lang: hub.profile.lang || "en", voice: msg.voice !== false });
         hub.live = proxy;
         markLatest(hub);
@@ -208,6 +214,15 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
         return;
       case "ping":
         safeSend(ws, JSON.stringify({ type: "pong", t: msg.t }));
+        return;
+      case "datamatrix": {
+        if (!hub.has("datamatrix") || typeof msg.raw !== "string") return;
+        const code = parseGs1(msg.raw);
+        if (code) { hub.setCode(code); log("dm_decoded", { n: 1, src: "phone" }); } // never log the code itself
+        return;
+      }
+      case "profile_add_result":
+        if (typeof msg.proposalId === "string") live?.resolveProposal(msg.proposalId, msg.accepted === true, msg.med);
         return;
       case "source":
         if (msg.source === "phone" || msg.source === "glasses") {

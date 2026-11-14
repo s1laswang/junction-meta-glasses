@@ -59,6 +59,20 @@ Server → client:
 
 **Session default (CEO decision, Sat 15:10):** on `/hud-ws`, `/ingest/frame` and `/ingest/state`, the `session` parameter is **optional**. When it's missing, the server attaches to the **most recently started live session** (single-wearer demo), so the Display Web App URL (`https://<host>/hud`) and the bridge never need a code re-entered. The server buffers the last verdict and device state and replays them to a HUD that connects late.
 
+### Push-to-10 features (server notes, Sat 19:00 contract)
+- **Flags.** Server env `FEATURES` (default `scene,datamatrix,addmed,sonar`) ∩ `start.features` (all, if omitted). `ready.features` lists what's on for the session. With every flag off, the Live tools, prompt and messages are exactly the M1 ones.
+- **`scene`** adds the Live tool `find_item({target?})`. Server: `server/src/find.ts`. Prompt `shared/find_prompt.md` + `shared/verify_prompt.md`, schema `shared/scene_schema.json` (each item's `read` is `label_schema.json`). Each package goes through the same safety check as a held item, so a scene item is never a `match` unless it would be one held up. The phone and HUD get `checking` start/end and a `verdict` with `mode:"scene"` and `items` (left to right; `position` is relative for 2–5 items). Speech is ≤ 2 sentences, e.g. "Your evening pill is the box on the right. The middle one is Ibuprofen 400 mg, not on your list." An uncertain best guess gets `unsure` with "I think it's the one on the right. Pick it up so I can check the label."
+- **`datamatrix`.** The phone sends `{type:"datamatrix", raw, ts}`. The server also decodes glasses frames itself (zxing-wasm with local wasm, at most one decode every 1.5 s, paused for 10 s after a decode slower than 150 ms). A code is used for the current item while it's < 10 s old. `checkLabel` adds `crossCheck` with these outcomes:
+  - agreement → "…, double-checked with the pack's code.";
+  - an expiry conflict, or a GTIN that belongs to a different saved med (or the print names an unlisted med) → `unsure`, "The printed label and the pack's code disagree. Please ask a pharmacist.";
+  - the code's expiry is in the past → `warning`;
+  - the GTIN is a saved med's but there's no legible text → `unsure`;
+  - the code's expiry fills in an illegible printed one.
+  Med GTINs compare with `Med.gtin`, or with `Med.barcode` (EAN-13). The parser `server/src/gs1.ts` is kept identical to `web/src/lib/gs1.ts`. Codes are never logged (only `dm_decoded` with counts).
+- **`addmed`** adds the Live tool `add_medication({schedule, name?})`. It needs the last held-item read (< 3 min old) with name and strength confidence ≥ 0.8, else the tool tells the model to coach. The server sends `{type:"profile_add", proposalId, med, speech}`. **Nothing is added** to the session profile until `{type:"profile_add_result", proposalId, accepted:true, med?}` arrives (an edited `med` is accepted). Then the server tells the model "saved", or "declined" on `accepted:false`. Proposals time out after 60 s, and the model is told that too. A duplicate (same ingredient and strength) is refused. `med.gtin` comes from a fresh DataMatrix.
+- **`sonar`** sends `{type:"readiness", value}` to the phone only, at most 4/s, on a change > 0.05: `max(0.6·sharpness, 0.35·sharpness + 0.65·readability·decay)`, where readability comes from the last speculative read and decays after 3 s. Sharpness alone tops out at 0.6. No extra Gemini calls.
+- `POST /api/verify {session}` (snapshot) also applies the session's fresh DataMatrix code.
+
 ### WebSocket `/hud-ws?session=<id>` (server → Display HUD)
 Pushes `{ type: "verdict"|"coach"|"status"|"device", ... }`, the same shapes as above. The HUD sends `{ type:"event", name:"repeat"|"log_dose"|"dismiss" }`.
 

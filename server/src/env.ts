@@ -14,7 +14,13 @@ const list = (one: string | undefined, all: string | undefined, def: string[]) =
   return one ? [one, ...def.filter((m) => m !== one)] : def;
 };
 
+export const ALL_FEATURES = ["scene", "datamatrix", "addmed", "sonar"] as const;
+export type Feature = (typeof ALL_FEATURES)[number];
+const isFeature = (s: string): s is Feature => (ALL_FEATURES as readonly string[]).includes(s);
+
 export const env = {
+  /** server-side feature flags (FEATURES env, default all); intersected with start.features per session */
+  features: (process.env.FEATURES ?? ALL_FEATURES.join(",")).split(",").map((s) => s.trim()).filter(isFeature),
   port: Number(process.env.PORT ?? 8787),
   apiKey: process.env.GEMINI_API_KEY ?? "",
   liveModels: list(process.env.LIVE_MODEL, process.env.LIVE_MODELS, ["gemini-3.8-live", "gemini-3.1-flash-live-preview", "gemini-2.5-flash-native-audio-latest"]),
