@@ -28,6 +28,16 @@ class DatStateTransitionTest {
             isAccessible = true
         }
 
+    private val setSdkErrorMethod: Method =
+        DatBridgeController::class.java.getDeclaredMethod("setSdkError", String::class.java).apply {
+            isAccessible = true
+        }
+
+    private val clearSdkErrorMethod: Method =
+        DatBridgeController::class.java.getDeclaredMethod("clearSdkError").apply {
+            isAccessible = true
+        }
+
     @Test
     fun i420ToNv21_chromaInterleavingAcrossMinimalPortraitLandscapeAnd720x1280Frames() {
         val minimalI420 = ByteBuffer.allocate(6).apply {
@@ -208,6 +218,83 @@ class DatStateTransitionTest {
     }
 
     @Test
+    fun i420ToNv21_signedByteExtremesBijectiveRoundTripAndEncoderPreconditions() {
+        val signedBoundaryY = byteArrayOf(
+            0x00, 0x01, 0x7E, 0x7F,
+            0x80.toByte(), 0x81.toByte(), 0xFE.toByte(), 0xFF.toByte(),
+            0x10, 0x20, 0xD0.toByte(), 0xE0.toByte(),
+            0x7F, 0x80.toByte(), 0x00, 0xFF.toByte(),
+        )
+        val signedBoundaryU = byteArrayOf(0x00, 0x7F, 0x80.toByte(), 0xFF.toByte())
+        val signedBoundaryV = byteArrayOf(0xFF.toByte(), 0x80.toByte(), 0x7F, 0x00)
+
+        val boundaryBuf = ByteBuffer.allocateDirect(24).apply {
+            put(signedBoundaryY)
+            put(signedBoundaryU)
+            put(signedBoundaryV)
+            flip()
+        }
+        val firstPass = YuvJpegEncoder.i420ToNv21(boundaryBuf, 4, 4)
+        val secondPass = YuvJpegEncoder.i420ToNv21(boundaryBuf, 4, 4)
+        val thirdPass = YuvJpegEncoder.i420ToNv21(boundaryBuf, 4, 4)
+        assertEquals(0, boundaryBuf.position())
+        assertEquals(24, boundaryBuf.limit())
+        assertArrayEquals(firstPass, secondPass)
+        assertArrayEquals(secondPass, thirdPass)
+
+        val expectedTail = byteArrayOf(
+            0xFF.toByte(), 0x00,
+            0x80.toByte(), 0x7F,
+            0x7F, 0x80.toByte(),
+            0x00, 0xFF.toByte(),
+        )
+        assertArrayEquals(signedBoundaryY, firstPass.copyOfRange(0, 16))
+        assertArrayEquals(expectedTail, firstPass.copyOfRange(16, 24))
+
+        val roundTripGeometries = listOf(
+            2 to 4,
+            4 to 2,
+            10 to 14,
+            14 to 10,
+            64 to 36,
+        )
+        for ((width, height) in roundTripGeometries) {
+            val yLen = width * height
+            val uvLen = yLen / 4
+            val srcY = ByteArray(yLen) { idx -> ((idx * 31 + 0x7D) and 0xFF).toByte() }
+            val srcU = ByteArray(uvLen) { idx -> ((idx * 53 + 0x80) and 0xFF).toByte() }
+            val srcV = ByteArray(uvLen) { idx -> ((idx * 97 + 0x01) and 0xFF).toByte() }
+            val i420Bytes = ByteArray(yLen + uvLen * 2).apply {
+                System.arraycopy(srcY, 0, this, 0, yLen)
+                System.arraycopy(srcU, 0, this, yLen, uvLen)
+                System.arraycopy(srcV, 0, this, yLen + uvLen, uvLen)
+            }
+            val nv21 = YuvJpegEncoder.i420ToNv21(ByteBuffer.wrap(i420Bytes), width, height)
+            val reconstructedI420 = deinterleaveNv21ToI420(nv21, width, height)
+            assertArrayEquals(i420Bytes, reconstructedI420)
+        }
+
+        for ((badW, badH) in listOf(0 to 4, 4 to 0, -4 to 4, 4 to -4, 3 to 4, 4 to 5)) {
+            assertThrowsIllegalArgument {
+                YuvJpegEncoder.encodeNv21ToJpeg(ByteArray(64), badW, badH)
+            }
+            assertThrowsIllegalArgument {
+                YuvJpegEncoder.encodeBufferToJpeg(ByteBuffer.allocate(64), badW, badH)
+            }
+        }
+
+        assertThrowsIllegalArgument {
+            YuvJpegEncoder.encodeNv21ToJpeg(ByteArray(0), 4, 4)
+        }
+        assertThrowsIllegalArgument {
+            YuvJpegEncoder.encodeNv21ToJpeg(ByteArray(23), 4, 4)
+        }
+        assertThrowsIllegalArgument {
+            YuvJpegEncoder.encodeBufferToJpeg(ByteBuffer.allocate(23), 4, 4)
+        }
+    }
+
+    @Test
     fun bridgeUiState_registrationAndDeviceTelemetryTransitions() {
         val initial = BridgeUiState()
         assertEquals("", initial.serverUrl)
@@ -258,6 +345,21 @@ class DatStateTransitionTest {
         )) {
             assertTrue(methodNames.contains(expectedMethod))
         }
+
+        try {
+            DatBridgeController.updateEndpoint("   ", "  hup-4k9m  ")
+            assertEquals("", DatBridgeController.uiState.value.serverUrl)
+            assertEquals("hup-4k9m", DatBridgeController.uiState.value.sessionCode)
+            setSdkErrorMethod.invoke(DatBridgeController, "Registration handshake stalled")
+            assertEquals("Registration handshake stalled", DatBridgeController.uiState.value.lastError)
+            clearSdkErrorMethod.invoke(DatBridgeController)
+            assertNull(DatBridgeController.uiState.value.lastError)
+        } finally {
+            DatBridgeController.updateEndpoint("", "")
+            clearSdkErrorMethod.invoke(DatBridgeController)
+        }
+        assertEquals(initial, DatBridgeController.uiState.value)
+        assertEquals(initial.hashCode(), DatBridgeController.uiState.value.hashCode())
 
         val machine = BridgeStateMachine()
         machine.updateEndpoint("  https://demo.trycloudflare.com///  ", "  hup-4k9m  ")
@@ -452,12 +554,24 @@ class DatStateTransitionTest {
         machine.requestStartStreaming()
         machine.onCameraPermissionResult(granted = true)
         machine.onSessionConnecting()
+        machine.onDeviceSessionState("IDLE")
+        assertEquals("Connecting session", machine.uiState.streamStatus)
+        machine.onDeviceSessionState("STOPPED")
+        assertEquals("Connecting session", machine.uiState.streamStatus)
         machine.onCameraOpening()
         assertEquals("Opening camera", machine.uiState.streamStatus)
         machine.onCameraAttachFailed("Camera busy in another app")
         assertFalse(machine.uiState.streaming)
         assertEquals("Error", machine.uiState.streamStatus)
         assertEquals("Camera busy in another app", machine.uiState.lastError)
+
+        machine.requestStartStreaming()
+        machine.onCameraPermissionResult(granted = true)
+        machine.onCameraOpening()
+        machine.onCameraStreamStartFailed("Glasses camera start rejected")
+        assertFalse(machine.uiState.streaming)
+        assertEquals("Error", machine.uiState.streamStatus)
+        assertEquals("Glasses camera start rejected", machine.uiState.lastError)
 
         machine.requestStartStreaming()
         machine.onCameraPermissionResult(granted = true)
@@ -729,6 +843,20 @@ class DatStateTransitionTest {
         assertEquals("https://next.trycloudflare.com", coordinator.uiState.serverUrl)
         assertEquals("", coordinator.uiState.sessionCode)
 
+        assertTrue(
+            coordinator.handleDeepLink(
+                SimulatedIntent(
+                    "holdupbridge://connect?server=https%3A%2F%2Fholdup.run.app%2Fbridge%2Bv1%2F&session=A1_-",
+                ),
+            ),
+        )
+        assertEquals("https://holdup.run.app/bridge+v1", coordinator.uiState.serverUrl)
+        assertEquals("A1_-", coordinator.uiState.sessionCode)
+        assertEquals(
+            "https://holdup.run.app/bridge+v1/ingest/frame?session=A1_-",
+            invokeBuildEndpointUrl(client, "ingest/frame").toString(),
+        )
+
         val maxSession = "M".repeat(BridgePreferences.MAX_SESSION_CODE_LENGTH)
         val urlPrefix = "https://holdup.run.app/"
         val exact256Server = urlPrefix + "p".repeat(BridgePreferences.MAX_SERVER_URL_LENGTH - urlPrefix.length)
@@ -748,6 +876,7 @@ class DatStateTransitionTest {
             "",
             "https://connect?server=https%3A%2F%2Fdemo.trycloudflare.com&session=hup-4k9m",
             "fb-viewapp://connect?server=https%3A%2F%2Fdemo.trycloudflare.com&session=hup-4k9m",
+            "intent://connect#Intent;scheme=holdupbridge;end",
             "holdupbridge:connect?server=https%3A%2F%2Fdemo.trycloudflare.com&session=hup-4k9m",
             "holdupbridge://wronghost?server=https%3A%2F%2Fdemo.trycloudflare.com&session=hup-4k9m",
             "holdupbridge://connect/v1?server=https%3A%2F%2Fdemo.trycloudflare.com&session=hup-4k9m",
@@ -762,6 +891,9 @@ class DatStateTransitionTest {
             "holdupbridge://connect?server=https%3A%2F%2Fevil.example%3Fextra%3D1&session=hup-4k9m",
             "holdupbridge://connect?server=https%3A%2F%2Fevil.example%23frag&session=hup-4k9m",
             "holdupbridge://connect?server=https%3A%2F%2Fevil.example%2F..%2Fetc&session=hup-4k9m",
+            "holdupbridge://connect?server=https%3A%2F%2Fevil.example%5Cadmin&session=hup-4k9m",
+            "holdupbridge://connect?server=https%3A%2F%2Fevil.example%00.trycloudflare.com&session=hup-4k9m",
+            "holdupbridge://connect?server=https%3A%2F%2Fevil.example%0D%0AX-Test%3A1&session=hup-4k9m",
             "holdupbridge://connect?server=https%3A%2F%2Fevil.example%3A0&session=hup-4k9m",
             "holdupbridge://connect?server=https%3A%2F%2Fevil.example%3A65536&session=hup-4k9m",
             "holdupbridge://connect?server=$over257Server&session=hup-4k9m",
@@ -769,6 +901,8 @@ class DatStateTransitionTest {
             "holdupbridge://connect?server=https%3A%2F%2Fvalid.trycloudflare.com&session=${"X".repeat(65)}",
             "holdupbridge://connect?server=https%3A%2F%2Fvalid.trycloudflare.com&session=bad+space",
             "holdupbridge://connect?server=https%3A%2F%2Fvalid.trycloudflare.com&session=bad%20space",
+            "holdupbridge://connect?server=https%3A%2F%2Fvalid.trycloudflare.com&session=hup%00null",
+            "holdupbridge://connect?server=https%3A%2F%2Fvalid.trycloudflare.com&session=hup%0D%0Ainj",
             "holdupbridge://connect?server=https%3A%2F%2Fvalid.trycloudflare.com&session=hup%26inject%3D1",
             "holdupbridge://connect?server=https%3A%2F%2Fvalid.trycloudflare.com&session=..%2Fetc",
             "holdupbridge://connect?server=https%3A%2F%2Fvalid.trycloudflare.com&session=hup%3Bdrop",
@@ -808,6 +942,21 @@ class DatStateTransitionTest {
         } catch (expected: IllegalArgumentException) {
             assertNotNull(expected.message)
         }
+    }
+
+    private fun deinterleaveNv21ToI420(nv21: ByteArray, width: Int, height: Int): ByteArray {
+        val ySize = width * height
+        val uvSize = ySize / 4
+        val out = ByteArray(ySize + uvSize * 2)
+        System.arraycopy(nv21, 0, out, 0, ySize)
+        var inOffset = ySize
+        for (i in 0 until uvSize) {
+            val vByte = nv21[inOffset++]
+            val uByte = nv21[inOffset++]
+            out[ySize + i] = uByte
+            out[ySize + uvSize + i] = vByte
+        }
+        return out
     }
 
     private fun formatRegistrationCardValue(uiState: BridgeUiState): String {
@@ -866,6 +1015,7 @@ class DatStateTransitionTest {
         private var lastPostedDeviceState: BridgeDeviceState? = null
         private var registrationRaw: String = "AVAILABLE"
         private var hasActiveSession: Boolean = false
+        private var sessionHasLeftIdle: Boolean = false
         private var hasActiveCamera: Boolean = false
         private var streamHasBeenActive: Boolean = false
 
@@ -987,6 +1137,7 @@ class DatStateTransitionTest {
         }
 
         fun onSessionConnecting() {
+            sessionHasLeftIdle = false
             uiState = uiState.copy(streamStatus = "Connecting session")
         }
 
@@ -995,12 +1146,14 @@ class DatStateTransitionTest {
                 setSdkError("Glasses session did not start; verify glasses are unfolded and connected")
             }
             hasActiveSession = false
+            sessionHasLeftIdle = false
             uiState = uiState.copy(streaming = false, streamStatus = "Session failed")
             publishDeviceState(force = true)
         }
 
         fun onCameraOpening() {
             hasActiveSession = true
+            sessionHasLeftIdle = true
             hasActiveCamera = true
             streamHasBeenActive = false
             uiState = uiState.copy(streamStatus = "Opening camera")
@@ -1013,20 +1166,36 @@ class DatStateTransitionTest {
             publishDeviceState(force = true)
         }
 
+        fun onCameraStreamStartFailed(description: String) {
+            setSdkError(description)
+            teardownStream("Error")
+        }
+
         fun onDeviceSessionState(rawState: String) {
             when (rawState) {
+                "STARTING",
+                "STARTED" -> {
+                    sessionHasLeftIdle = true
+                }
                 "PAUSED" -> {
+                    sessionHasLeftIdle = true
                     uiState = uiState.copy(streaming = false, streamStatus = "Session paused")
                     publishDeviceState(force = false)
                 }
                 "STOPPING" -> {
-                    uiState = uiState.copy(streaming = false, streamStatus = "Stopping")
-                    publishDeviceState(force = false)
+                    if (sessionHasLeftIdle) {
+                        uiState = uiState.copy(streaming = false, streamStatus = "Stopping")
+                        publishDeviceState(force = false)
+                    }
                 }
                 "STOPPED" -> {
-                    hasActiveSession = false
-                    teardownStream("Idle")
+                    if (sessionHasLeftIdle) {
+                        hasActiveSession = false
+                        sessionHasLeftIdle = false
+                        teardownStream("Idle")
+                    }
                 }
+                "IDLE" -> Unit
             }
         }
 
@@ -1085,6 +1254,7 @@ class DatStateTransitionTest {
         fun disconnect() {
             teardownStream("Idle")
             hasActiveSession = false
+            sessionHasLeftIdle = false
             uiState = uiState.copy(streaming = false, streamStatus = "Idle")
             publishDeviceState(force = true)
         }
