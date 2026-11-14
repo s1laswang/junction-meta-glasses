@@ -100,6 +100,68 @@ data class UiState(
     val code = sessionCode.trim()
     return if (server.isEmpty()) null else Pair(server, code)
   }
+
+  internal fun talkBackGlassesSummary(): String {
+    val labelName = deviceName?.ifBlank { "Glasses" } ?: return "No glasses found"
+    val linkPhrase =
+        when (linkState) {
+          LinkState.CONNECTED -> "connected"
+          LinkState.CONNECTING -> "connecting"
+          LinkState.DISCONNECTED -> "disconnected"
+          null -> "link status unknown"
+        }
+    val wearPhrase =
+        when (donState) {
+          DonState.DONNED -> "worn"
+          DonState.DOFFED -> "not worn"
+          else -> "wear state unknown"
+        }
+    val batteryPhrase =
+        when {
+          battery != null && charging -> "battery $battery percent, charging"
+          battery != null -> "battery $battery percent"
+          charging -> "battery level unknown, charging"
+          else -> "battery level unknown"
+        }
+    val thermalPhrase =
+        when {
+          thermal >= ThermalLevel.SEVERE -> ", thermal warning ${thermal.name.lowercase()}"
+          thermal != ThermalLevel.UNKNOWN && thermal != ThermalLevel.NONE ->
+              ", thermal ${thermal.name.lowercase()}"
+          else -> ""
+        }
+    return "$labelName, $linkPhrase, $wearPhrase, $batteryPhrase$thermalPhrase"
+  }
+
+  internal fun talkBackStreamSummary(): String {
+    val streamPhrase =
+        when (streamState) {
+          StreamState.STREAMING -> {
+            val detail =
+                listOf(frameSize.trim(), yuvLayout.trim()).filter { it.isNotEmpty() }.joinToString(" ")
+            if (detail.isEmpty()) "Camera streaming at 1 frame per second"
+            else "Camera streaming at 1 frame per second, $detail"
+          }
+          StreamState.PAUSED -> "Stream paused"
+          StreamState.STARTING -> "Stream starting"
+          else -> "Stream ${streamState.name.lowercase()}"
+        }
+    val uploadPhrase =
+        if (frameHttp.isBlank() || frameHttp == "\u2013" || frameHttp == "-") {
+          "no frame upload yet"
+        } else if (lastFrameKb > 0) {
+          "last upload $frameHttp, $lastFrameKb kilobytes"
+        } else {
+          "last upload $frameHttp"
+        }
+    val netPhrase =
+        when (netOk) {
+          true -> "network ok"
+          false -> "network failing, retrying with backoff"
+          null -> "network idle"
+        }
+    return "$streamPhrase, sent $framesSent, dropped $framesDropped, $uploadPhrase, $netPhrase"
+  }
 }
 
 /**
