@@ -28,12 +28,13 @@ export const mockCtl: Ctl = {
 
 let scenarioIndex = 0;
 
-/** Mirror to a HUD tab on the same machine (/hud?mock=1&session=CODE). */
+/** Mirror to a HUD tab in the same browser (/hud?mock=1), like the server's HUD fan-out. */
+export const MOCK_HUD_CHANNEL = "holdup-hud-mock";
 let hudChannel: BroadcastChannel | null = null;
-export function mockHudChannel(session: string) {
+export function mockHudChannel() {
   try {
     hudChannel?.close();
-    hudChannel = new BroadcastChannel("holdup-hud-" + session);
+    hudChannel = new BroadcastChannel(MOCK_HUD_CHANNEL);
   } catch {
     hudChannel = null;
   }

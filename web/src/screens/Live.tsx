@@ -84,6 +84,13 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
 
   const bannerIcon = s.banner?.tone === "bad" ? <Icon.alert /> : s.mode === "offline" ? <Icon.wifiOff /> : s.banner?.tone === "good" ? <Icon.check /> : <Icon.info />;
   const cameraOn = s.camera === "on" && s.source === "phone";
+  const viewLabel =
+    s.source === "glasses"
+      ? `Using glasses camera. ${s.device ? (s.device.connected !== false ? (s.device.worn !== false ? "Glasses streaming." : "Glasses not worn.") : "Glasses not connected.") : "Waiting for the glasses."}`
+      : cameraOn
+        ? `Camera on. Picture sharpness ${Math.round(s.sharpness * 100)} percent.`
+        : `Camera ${s.camera === "paused" ? "paused" : s.camera === "error" ? "unavailable" : "off"}.`;
+  const lastFinal = [...s.captions].reverse().find((c) => c.final && c.role !== "user");
 
   return (
     <>
@@ -146,14 +153,14 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
         </div>
       )}
 
-      <div className="viewfinder" aria-label={cameraOn ? "Camera preview, camera on" : "Camera preview, camera off"} role="img">
+      <div className="viewfinder" aria-label={viewLabel} role="img">
         {s.source === "phone" ? <video ref={videoRef} playsInline muted autoPlay aria-hidden="true" /> : null}
         {s.source === "glasses" ? (
           <div className="glasses-overlay">
             <div className="stack" style={{ alignItems: "center" }}>
               <Icon.glasses size={64} />
               <strong>Using glasses camera</strong>
-              <span className="muted">{s.device ? (s.device.connected ? (s.device.worn ? `Glasses streaming${s.device.battery != null ? ` · battery ${s.device.battery}%` : ""}` : "Glasses are not being worn") : "Glasses not connected") : "Waiting for the glasses bridge"}</span>
+              <span className="muted">{s.device ? (s.device.connected !== false ? (s.device.worn !== false ? `Glasses streaming${s.device.battery != null ? ` · battery ${s.device.battery}%` : ""}` : "Glasses are not being worn") : "Glasses not connected") : "Waiting for the glasses bridge"}</span>
             </div>
           </div>
         ) : !cameraOn ? (
@@ -192,8 +199,12 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
         <h2 id="caps-h" className="sr-only">
           Conversation
         </h2>
+        {/* finished caption lines only, so a screen reader isn't flooded by partial updates */}
+        <p className="sr-only" aria-live="polite" aria-atomic="true">
+          {lastFinal ? `${lastFinal.role === "assistant" ? "HoldUp" : "Note"}: ${lastFinal.text}` : ""}
+        </p>
         {s.captions.length ? (
-          <div className="captions" ref={capsRef} role="log" aria-live="polite" aria-relevant="additions text">
+          <div className="captions" ref={capsRef} role="log" aria-live="off" aria-label="Conversation captions" tabIndex={0}>
             {s.captions.map((c) => (
               <p key={c.id} className={`${c.role} ${c.final ? "" : "partial"}`}>
                 <span className="who">{c.role === "user" ? "You" : c.role === "assistant" ? "HoldUp" : "Note"}:</span>
@@ -246,7 +257,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
           Shortcut: Space or Enter, or tap your Bluetooth glasses or headset.
         </p>
         {s.running && s.mode === "snapshot" ? (
-          <button className="btn wide" style={{ marginTop: 8 }} onClick={() => void checker.stop()}>
+          <button className="btn small ghost wide" onClick={() => void checker.stop()}>
             Stop check
           </button>
         ) : null}

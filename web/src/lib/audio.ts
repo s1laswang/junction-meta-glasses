@@ -34,12 +34,28 @@ export class MicCapture {
     return this.stream?.getAudioTracks()[0]?.label ?? "";
   }
 
+  private moduleLoaded = false;
+
+  /** Create/resume the capture context synchronously inside a user gesture (iOS Safari needs this). */
+  prime() {
+    if (!AudioCtx) return;
+    if (!this.ctx || this.ctx.state === "closed") {
+      this.ctx = new AudioCtx();
+      this.moduleLoaded = false;
+    }
+    if (this.ctx.state === "suspended") void this.ctx.resume().catch(() => {});
+  }
+
   async start(stream: MediaStream) {
-    await this.stop();
+    await this.stop(true);
     if (!AudioCtx) throw new Error("Web Audio is not available in this browser");
     this.stream = stream;
-    this.ctx = new AudioCtx();
-    await this.ctx.audioWorklet.addModule("/pcm-capture-worklet.js");
+    this.prime();
+    if (!this.ctx) throw new Error("Web Audio is not available in this browser");
+    if (!this.moduleLoaded) {
+      await this.ctx.audioWorklet.addModule("/pcm-capture-worklet.js");
+      this.moduleLoaded = true;
+    }
     this.src = this.ctx.createMediaStreamSource(stream);
     this.node = new AudioWorkletNode(this.ctx, "pcm-capture", { processorOptions: { outRate: 16000, chunkMs: 100 } });
     this.node.port.onmessage = (e: MessageEvent<{ pcm: ArrayBuffer; rms: number }>) => {
@@ -55,7 +71,8 @@ export class MicCapture {
     if (this.ctx.state === "suspended") await this.ctx.resume();
   }
 
-  async stop() {
+  /** keepContext: reuse the AudioContext for a quick mic swap (no user gesture needed). */
+  async stop(keepContext = false) {
     try {
       this.src?.disconnect();
       this.node?.disconnect();
@@ -67,9 +84,10 @@ export class MicCapture {
     this.stream = null;
     this.node = null;
     this.src = null;
+    this.level = 0;
+    if (keepContext) return;
     const ctx = this.ctx;
     this.ctx = null;
-    this.level = 0;
     if (ctx && ctx.state !== "closed") await ctx.close().catch(() => {});
   }
 }

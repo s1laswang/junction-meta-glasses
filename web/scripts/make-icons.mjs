@@ -57,9 +57,15 @@ const SEGS = [
   [7, 12, 7, 8], [7, 8, 11, 8], [21, 8, 25, 8], [25, 8, 25, 12],
   [25, 20, 25, 24], [25, 24, 21, 24], [11, 24, 7, 24], [7, 24, 7, 20],
 ];
-function sample(x, y, { full, scale }) {
+const WHITE = [0xff, 0xff, 0xff];
+function sample(x, y, { full, scale, mono }) {
   // scale < 1 shrinks the mark into the maskable safe zone
   const u = (x - 16) / scale + 16, v = (y - 16) / scale + 16;
+  if (mono) {
+    // monochrome mask for the glasses app grid: shape only, transparent background
+    if (inRoundRect(u, v, 12.5, 11, 7, 10, 1.2) || SEGS.some(([a, b, c, d]) => nearSeg(u, v, a, b, c, d, 1.6))) return WHITE;
+    return null;
+  }
   const tile = full ? true : inRoundRect(x, y, 0, 0, 32, 32, 8);
   if (!tile) return null;
   if (inRoundRect(u, v, 12.5, 11, 7, 10, 1.2)) return INK;
@@ -86,4 +92,9 @@ function render(size, opts) {
 writeFileSync(join(out, "icon-192.png"), render(192, { full: false, scale: 1 }));
 writeFileSync(join(out, "icon-512.png"), render(512, { full: false, scale: 1 }));
 writeFileSync(join(out, "maskable-512.png"), render(512, { full: true, scale: 0.78 }));
-console.log("icons written to", out);
+// Ray-Ban Display HUD (docs/HUD_SPEC.md): PNG favicon > 52 px, and a monochrome app-grid icon
+const hudOut = join(out, "../hud");
+mkdirSync(hudOut, { recursive: true });
+writeFileSync(join(hudOut, "icon-96.png"), render(96, { full: false, scale: 1 }));
+writeFileSync(join(hudOut, "icon-mono.png"), render(128, { full: false, scale: 0.8, mono: true }));
+console.log("icons written to", out, "and", hudOut);

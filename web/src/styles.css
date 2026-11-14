@@ -890,8 +890,8 @@ legend {
   font-weight: 700;
 }
 .tag button {
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 48px;
+  min-height: 48px;
   border: 0;
   background: none;
   color: var(--muted);
@@ -1037,104 +1037,156 @@ details.panel[open] summary::after {
   color: var(--accent);
 }
 
-/* ---------- HUD (Ray-Ban Display, ~600x600, black = transparent) ---------- */
-body.hud-body,
-.hud {
+/* ---------- HUD (Ray-Ban Display: additive, black = transparent; sized from the viewport) ---------- */
+html:has(body.hud-body),
+body.hud-body {
   background: #000;
+  margin: 0;
+  height: 100%;
+  min-height: 0;
+}
+body.hud-body #root {
+  height: 100%;
 }
 .hud {
-  width: 100vw;
-  height: 100dvh;
-  max-width: 600px;
-  max-height: 600px;
-  margin: 0 auto;
+  --hud-accent: #ffd23f;
+  height: 100%;
+  box-sizing: border-box;
   color: #fff;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  padding: 28px;
-  gap: 16px;
+  grid-template-rows: 1fr auto auto;
+  gap: clamp(8px, 2.5vmin, 16px);
+  padding: clamp(14px, 5vmin, 32px);
   overflow: hidden;
 }
-.hud .top {
+.hud-main {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 22px;
-  font-weight: 700;
+  justify-content: center;
+  min-height: 0;
 }
-.hud .conn {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-}
-.hud .conn.on {
-  background: var(--match);
-  border-color: var(--match);
-}
-.hud .conn.retry {
-  background: transparent;
-  border-color: var(--warning);
-  border-style: dashed;
-}
-.hud .center {
+.hud-card {
+  width: 100%;
+  border: 4px solid #3a3a3a;
+  border-radius: 20px;
+  background: #000;
+  padding: clamp(12px, 4vmin, 24px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 16px;
+  gap: clamp(4px, 1.5vmin, 10px);
 }
-.hud .big {
-  font-size: 56px;
+.verdict-card {
+  border-color: var(--lvl);
+}
+.verdict-card.stale {
+  opacity: 0.55;
+  border-style: dashed;
+}
+.cue-card {
+  border-color: var(--hud-accent);
+  align-items: flex-start;
+}
+.hud-cue-glyph {
+  color: var(--hud-accent);
+  line-height: 0;
+}
+.hud-level {
+  color: var(--lvl);
   font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.06em;
+  font-size: clamp(1.25rem, 5vmin, 1.75rem);
 }
-.hud .sub {
-  font-size: 30px;
+.hud-glyph {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5em;
+  height: 1.5em;
+  border-radius: 8px;
+  background: var(--lvl);
+  color: #000;
+  font-weight: 800;
+  margin-right: 6px;
+}
+.hud-old {
+  color: #ddd;
+  letter-spacing: 0;
+}
+.hud-headline {
+  font-size: clamp(1.8rem, 7.5vmin, 2.8rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.hud-accent {
+  color: var(--hud-accent);
+}
+.hud-fields {
+  font-size: clamp(1.1rem, 4.2vmin, 1.4rem);
   font-weight: 700;
-  color: #e8e8e8;
+  color: #fff;
 }
-.hud .vrow {
-  display: flex;
-  align-items: center;
-  gap: 18px;
+.hud-small {
+  font-size: clamp(1rem, 3.4vmin, 1.15rem);
+  font-weight: 700;
+  color: #e6e6e6;
 }
-.hud .lvl {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.hud.match .lvl {
-  color: var(--match);
-}
-.hud.warning .lvl {
-  color: var(--warning);
-}
-.hud.unsure .lvl {
-  color: var(--unsure);
-}
-.hud .acts {
+.hud-acts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: clamp(6px, 2vmin, 12px);
 }
-.hud .acts button {
-  min-height: 64px;
+.hud button {
+  min-height: clamp(48px, 10vmin, 64px);
   background: #000;
   color: #fff;
-  border: 3px solid #555;
+  border: 3px solid #6a6a6a;
   border-radius: 14px;
   font: inherit;
-  font-size: 22px;
+  font-size: clamp(1rem, 4vmin, 1.375rem);
   font-weight: 800;
   cursor: pointer;
 }
-.hud .acts button:focus,
-.hud .acts button:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
-  outline: none;
+.hud button:disabled {
+  color: #8a8a8a;
+  border-color: #3a3a3a;
+}
+.hud button:focus-visible,
+.hud button:focus {
+  outline: 3px solid var(--hud-accent);
+  outline-offset: 3px;
+  border-color: var(--hud-accent);
+  color: var(--hud-accent);
+}
+.hud-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: clamp(0.9rem, 3.2vmin, 1.05rem);
+  font-weight: 700;
+  color: #d0d0d0;
+}
+.hud .hud-speak {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: clamp(0.9rem, 3.2vmin, 1.05rem);
+  border-width: 2px;
+}
+.hud-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+}
+.hud-dot.open {
+  background: #66bb6a;
+  border-color: #66bb6a;
+}
+.hud-dot.retry {
+  border-color: #ffca28;
+  border-style: dashed;
 }
 
 @media (prefers-reduced-motion: reduce) {
