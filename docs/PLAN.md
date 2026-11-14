@@ -5,14 +5,18 @@ Also entered for Google DeepMind "Best Use of Gemini API".
 
 ## Questions for Silas
 
-_Resolved:_ eval runs on the laptop at low priority (Silas, Sat ~19:00). Results stay out of the deck until the run finishes.
+_Resolved (Sat 18:50):_ eval on the laptop at low priority · submission = our main, fleet as contributors (`docs/FLEET_REQUEST.md`) · build all 4 features · one locked tunnel from 06:00 · Chintufp + Ivar do user outreach.
 
-1. **Hardware status.** Did Momin pick up the glasses at 15:30, and which ones (Ray-Ban Meta Gen 2 and/or Ray-Ban Display + Neural Band)? Whose **Android phone** (Android 12+) do we use, and has `android-dat/` compiled in Android Studio yet? Is Momin free for test slots 19:30 and 06:30 with the fleet running, or does Chintufp take the hardware role?
-2. **Overnight loan.** Can we keep the glasses overnight (Amanda Le's answer)? If not, the return time and Sunday re-pickup time.
-3. **Stable host.** The Display Web App URL is typed into the Meta AI app, and a quick tunnel changes it on every restart. Options: (a) Cloud Run, in which project? This laptop's gcloud points to `fixera-502707` (fonora.eu), which I haven't touched. (b) A named Cloudflare tunnel on a domain you own. (c) Keep a single quick tunnel alive from 06:00 to the end of the demo (the current default).
-4. **Gemini API tier.** Is the `.env` key on a billing-enabled (paid) project? If yes, the privacy slide can say Google doesn't use the prompts for training. If no, the wording is softer.
-5. **FR8 meta fleet.** OK for its meta team to work from the README's "where help is wanted" list, with me merging its `fr8/meta/*` output once it's on GitHub? I haven't touched the fleet.
-6. **Deck facts only you have:** team members' real names with one-line backgrounds; whether anyone has contacted Näkövammaisten liitto (or a pharmacy) and what pilot size we can claim; who presents (default: Silas); the backup video link once it's filmed.
+1. **ElevenLabs key (optional, recommended).** Put `ELEVENLABS_API_KEY` in `.env` (never committed). Plan: use it **only at build time on fixed phrases, never on user audio or images**, so no user data goes to a third party:
+   - (a) natural pre-rendered voice clips in EN/FI/SV for offline mode and the safety phrases, cached by the service worker, so offline mode speaks naturally instead of with the robotic browser voice;
+   - (b) generated earcons and the sonar tone.
+
+   Gemini Live stays the live voice (DeepMind story).
+2. **Hardware status.** Did Momin get the glasses, and which pairs? Whose Android phone? Is Momin free for 19:30 and 06:30 with the fleet running? (Chintufp is the backup.)
+3. **Overnight loan:** Amanda Le's answer, or the return and Sunday pickup times.
+4. **Gemini API tier:** is the key on a paid project? It decides the wording of the privacy slide.
+5. **Fleet relay:** please have Momin post `docs/FLEET_REQUEST.md` to the fleet. I won't edit `~/momin/fleet`.
+6. **Deck facts only you have:** team names with one-line backgrounds; the presenter (default: Silas); the pilot claim (only what NKL or a pharmacy actually said); the backup video link.
 
 ---
 
@@ -35,6 +39,49 @@ Self-score at 18:45: **7.3/10** (Creativity 8, Technical execution 6.5, Real-wor
    - Meta mentors review the demo.
 
 Hosting: **one locked cloudflared tunnel** on the demo laptop from Sun 06:00. Contract: `shared/types.ts` (Sat 19:00 additions).
+
+## 0b. Scoring checklist (official rubric, JUDGING.md: 4 criteria × 25%)
+The overall winner comes from peer review (top 5), then a 7-person grand jury, so the demo must land for non-experts too. A box is ticked only when the evidence is **visible in the demo or deck**, not just present in the code.
+
+**Creativity and use case (25)**
+- [ ] One sharp audience and problem in the first 15 s (blind or low-vision person: "which one is my evening pill?")
+- [ ] Shows why glasses beat a phone: both hands busy, no aiming, private open-ear audio, glance at the HUD
+- [ ] Signature moment 1, **"Which one?"**: three look-alike boxes, an answer by position (scene mode)
+- [ ] Signature moment 2, **guided capture**: coaching plus the readiness sonar until readable
+- [ ] Signature moment 3, **double-checked with the pack's own EU code** (DataMatrix)
+- [ ] Goes beyond mirroring a phone app (first-person, hands-free, continuous)
+
+**Technical execution (25)**
+- [ ] Runs **live on real Meta glasses** (DAT camera bridge plus Display HUD), with a backup video
+- [ ] The Android bridge APK is built (freighter) and installed. The HUD is loaded as a Display Web App
+- [ ] Gemini Live with tool calls, schema extraction with per-field confidence, speculative verify; latency p50/p95 on a slide
+- [ ] **Eval:** confident-wrong rate, unsafe reassurance, calibration, real photos, Gemini vs Gemma comparison
+- [ ] Shown live: permissions, errors, connectivity loss (Wi-Fi off), device state (glasses off → phone camera), performance trade-offs (adaptive fps)
+- [ ] Tests green on main (unit tests, smoke, robust); one-command README
+
+**Real-world value and feasibility (25)**
+- [ ] Sized problem with sources (Finland about 55k visually impaired, about 45k aged 65+; medication-error stats) in `docs/RESEARCH.md`
+- [ ] **Real user voice:** at least one session or quote (`docs/USER_FEEDBACK.md`); a Meta mentor review
+- [ ] Adoption path: NKL pilot, pharmacies (DataMatrix at pickup), home-care nurses; positioned as an information aid, not a medical device (EU MDR)
+- [ ] Unit cost per check from `/api/stats` token counts; runs on glasses people can buy today
+- [ ] Works in Finnish and Swedish, not just English
+
+**UX: input, accessibility and trust (25)**
+- [ ] Voice-first with no screen needed; hold-up-to-add setup; the phone screen-reader flow tested (TalkBack)
+- [ ] Multimodal output: voice, earcons, haptics, HUD shapes plus words (never colour alone); WCAG 2.2 AA (axe clean)
+- [ ] Input options: voice, glasses tap or media key, Neural Band or touchpad on the HUD, large phone buttons, text
+- [ ] Trust you can see:
+  - never guesses doses (the thumb-over-strength demo);
+  - per-field confidence;
+  - the "double-checked" badge;
+  - consent first;
+  - camera only during a check, with a 45 s auto-stop;
+  - on-device profile with delete all;
+  - an access key on the tunnel;
+  - bystanders ignored
+- [ ] Graceful failure is always spoken ("I'm not sure, ask a pharmacist")
+
+**DeepMind (stackable):** problem → integration → innovation → why Gemini (native-audio Live + tool calls mid-stream, structured multimodal extraction, spatial `box_2d` scene understanding, model comparison chart, Gemini as the eval workforce, usage ledger).
 
 ## 1. Problem and audience
 
