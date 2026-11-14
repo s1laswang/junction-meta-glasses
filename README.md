@@ -103,20 +103,20 @@ Judges can trigger and inspect every fallback live via the in-app **Device & Res
 
 ## Verified Safety, Optical & Latency Benchmarks
 
-Every metric below is measured from real Gemini API runs and deterministic safety checks committed in `eval/*.json` (full methodology and per-case tables in [`docs/EVAL.md`](docs/EVAL.md)):
+Every metric below is measured from real Gemini API runs, loopback transport benchmarks, and deterministic safety checks committed across `22` JSON artifacts in `eval/*.json` (full methodology and per-case tables in [`docs/EVAL.md`](docs/EVAL.md)):
 
 | Benchmark / Dimension | Artifact (`eval/*.json`) | Measured Result |
 |---|---|---|
-| **Never-Guess Safety Invariant (`STRENGTH_MIN_CONF = 0.80`)** | All `16` `eval/*.json` suites (`165` label reads) | **`0` confident-wrong dose reads** across every clean, thumb-occluded, curved-bottle, blister-glare, low-light, motion-blurred, bystander-PII, LASA polypharmacy, and 6-language European package check; **`0` false-safe allergen verdicts** |
+| **Never-Guess Safety Invariant (`STRENGTH_MIN_CONF = 0.80`)** | All `16` label-reading suites (`200` real-model reads across `22` `eval/*.json` files) | **`0` confident-wrong dose reads** across every clean, thumb-occluded, curved-bottle, blister-glare, low-light, motion-blurred, partial-view, debossed-expiry, bystander-PII, LASA polypharmacy, and 6-language European package evaluation; **`0` false-safe allergen verdicts** |
 | **Core 4-Suite Label Verification (`53` cases)** | `eval/combined_summary.json` | **`98.1%` (`52/53`) overall verdict accuracy**, **`100.0%` clean field accuracy**, **`98.2%` occluded/unreadable abstention**, `gemini-3.8-flash` latency **`p50 = 3537.1 ms`** (`p95 = 5638.1 ms`) |
 | **Strength Confidence Calibration (`16` reads)** | `eval/calibration_curve.json` | **`ECE = 0.0138`**, **`Brier = 0.0005`**, **`100.0%` clean recall & `100.0%` unreadable abstention** at `0.80` (`0.9875` clean mean confidence vs `0.0000` heavy/occluded; `p50 = 3424.9 ms`) |
 | **Curved Bottles, Jars & Silver Blister Foil Glare (`10` cases)** | `eval/curved_blister_results.json` | **`10/10` (`100.0%`) verdict accuracy**, `100.0%` readable recall on curved bottles & embossed foil, `100.0%` abstention on `55 deg` wrap-around, specular glare & torn pockets, `0` wrong doses (`p50 = 3987.5 ms`) |
 | **Low-Light, Flashlight Hotspot & Hand-Tremor Blur (`12` cases)** | `eval/lighting_motion_results.json` | **`12/12` (`100.0%`) verdict accuracy**, `100.0%` recall at `25%` dim indoor light & `3 px` tremor blur, `100.0%` abstention on `3%` near-dark, overexposed glare & `22-24 px` swipe blur, `0` wrong doses (`p50 = 3559.9 ms`) |
-| **LASA Polypharmacy, Double-Dose & Drug-Class Traps (`10` cases)** | `eval/polypharmacy_confusion_results.json` | **`10/10` (`100.0%`) verdict accuracy** catching `2/2` same-day double doses, `3/3` look-alike/combo strength traps (`10 mg` vs `5 mg`, `850 mg` vs `500 mg`, `500+30 mg`), `2/2` Nordic brand allergy/avoid traps (`Amorion`, `Eliquis`), and `2,5 mg` comma decimals (`p50 = 2978.4 ms`) |
-| **6-Language European Packaging (`12` cases)** | `eval/multilingual_labels_results.json` | **`12/12` (`100.0%`) verdict accuracy** across **`fi`, `sv`, `de`, `fr`, `es`, `en`**, `100.0%` allergen recall, `0` false-safe allergens, `100.0%` missing-panel abstention, `0` wrong doses (`p50 = 3249.6 ms`) |
-| **Multi-Stage Physical Coaching Trajectories (`4` trajectories, `8` calls)** | `eval/coaching_trajectories.json` | **`4/4` (`100.0%`) pre-coaching abstentions** -> **`4/4` (`100.0%`) sharpest frame selected first** (`FrameRing(8).pick(2)`) -> **`4/4` (`100.0%`) post-coaching verdict accuracy**, `0` wrong doses (`p50 = 3536.5 ms`) |
+| **LASA Polypharmacy, Double-Dose & Expiry Formats (`20` cases)** | `eval/polypharmacy_confusion_results.json`, `eval/expiry_formats_results.json` | **`10/10` (`100.0%`) LASA/double-dose/drug-class accuracy** (`2/2` double doses, `3/3` look-alike/combo strengths, `2/2` Nordic brand traps, `2,5 mg` comma decimals; `p50 = 2978.4 ms`) and **`10/10` (`100.0%`) Nordic/debossed expiry accuracy** (`8/8` expired catches, `10/10` ISO normalization; `p50 = 3367.2 ms`) |
+| **6-Language European & Adversarial Allergen Labels (`22` cases)** | `eval/multilingual_labels_results.json`, `eval/allergen_adversarial_results.json` | **`12/12` (`100.0%`) verdict accuracy** across **`fi`, `sv`, `de`, `fr`, `es`, `en`** (`p50 = 3249.6 ms`) plus **`10/10` (`100.0%`) botanical/Nordic/excipient allergen catches** (`p50 = 3545.8 ms`), **`100.0%` allergen recall**, **`0` false-safe allergens**, `0` wrong doses |
+| **Multi-Stage Coaching & Partial-View Fusion (`20` calls)** | `eval/coaching_trajectories.json`, `eval/multiframe_recovery_results.json` | **`4/4` (`100.0%`) pre-coaching abstentions -> `4/4` sharpest frame picked first -> `4/4` post-coaching accuracy** (`p50 = 3536.5 ms`), plus **`6/6` (`100.0%`) single-frame partial-view abstentions -> `6/6` paired-frame `FrameRing.pick(2)` recovery** (`p50 = 3519.0 ms`) |
 | **Bystander & Background PII Red-Team (`8` scenes + `8` probes)** | `eval/bystander_privacy_results.json`, `eval/coaching_eval.json` | **`0` bystander or background PII leaks across `8/8` (`100.0%`) red-team scenes** (badges, IBAN screens, mail, SMS lockscreens, bystanders) and **`8/8` (`5.00/5`)** coaching/privacy/Finnish-switch judge pass rate (refusal `2574.8 ms`) |
-| **Gemini Live First-Audio & 3-Model Fallback Chains** | `eval/live_models_probe.json`, `eval/model_comparison.json` | **`gemini-3.8-live` `582 ms` first-audio latency** (`706 ms` WS connect; `3/3` Live models reachable, fallback `489 ms`) and **`100.0%` accuracy / `0` wrong doses across all `3` Flash fallback models** (`36` calls, `p50` down to `1310.4 ms`) |
+| **Gemini Live, `/hud-ws` Sub-2ms Fan-Out, Fallbacks & `/api/tts`** | `eval/live_models_probe.json`, `eval/e2e_websocket_live.json`, `eval/hud_latency_bandwidth.json`, `eval/model_comparison.json`, `eval/tts_multilingual_audio.json` | **`gemini-3.8-live` `582 ms` first-audio latency** (`706 ms` WS connect; `3/3` Live models reachable, fallback `489 ms`), **`1.17 ms` `/ingest/frame` & `1.78 ms` `/hud-ws` late-join replay** (`674 B` verdict wire; E2E frame-to-HUD verdict `p50 = 2738.8 ms`), **`100.0%` accuracy across all `3` Flash fallback models** (`36` calls, `p50` down to `1310.4 ms`), and **`6/6` (`100.0%`) valid 24 kHz WAVs on `/api/tts`** (`en`/`fi`/`sv`, `p50 = 3910.9 ms`) |
 | **Slow-Network Bandwidth & 3-Year Assistive TCO** | `eval/unit_economics.json` | **`84.0%` slow-network video savings** (`724.64 KB -> 116.02 KB` JPEG above `650 ms` RTT), **`EUR 0.00294`/check** (`EUR 0.35/mo`), and **`EUR 341.68` vs `EUR 4,150.00` 3-year TCO = `91.8%` savings** (`12.1x` lower than OrCam midpoint; `85.4%` lower than `EUR 2,340.00` Aira daily plan) |
 
 ---
@@ -137,11 +137,12 @@ npm start
 npm run tunnel
 ```
 
-Run the full automated verification gate (`394` unit tests across `54` suites, TypeScript check, production build, DAT bridge verifier, ephemeral HTTP probe, and submission/link/eval hygiene checks), plus the live Gemini smoke test when `GEMINI_API_KEY` is set:
+Run the full automated verification gate (`456` unit tests across `64` suites, TypeScript check, production build, DAT bridge verifier, ephemeral HTTP probe, production route smoke check, and submission/link/eval hygiene checks), plus the live Gemini smoke test when `GEMINI_API_KEY` is set:
 
 ```bash
 node scripts/verify-all.mjs
 node scripts/verify-submission.mjs
+node scripts/smoke-production.mjs
 npm -w server run smoke
 ```
 
@@ -163,10 +164,12 @@ npm -w server run smoke
 | [`docs/IOS_DAT_PARITY.md`](docs/IOS_DAT_PARITY.md) | iOS Swift 6 Meta Wearables DAT SDK 1.0.1 companion wire-contract parity guide (`MWDATCore` & `MWDATCamera`) |
 | [`docs/MENTOR_QA.md`](docs/MENTOR_QA.md) | 18 engineering Q&As for Meta booth mentors (Display Web Apps, Android/iOS DAT 1.0.1, safety calibration & EU MDR) |
 | [`docs/PILOT_PLAN.md`](docs/PILOT_PLAN.md) | 12-week Helsinki pilot blueprint (`N = 24`) with Nakovammaisten liitto (Iiris Center) and pharmacy counter QR onboarding |
+| [`docs/FINLAND_PHARMACY_INTEGRATION.md`](docs/FINLAND_PHARMACY_INTEGRATION.md) | Zero-cloud Finnish community pharmacy counter `holdup://rx` thermal QR specification (`MAXX` / `Salix` vs Kanta) |
 | [`docs/PRIVACY.md`](docs/PRIVACY.md) | End-to-end data flow, retention matrix, log redaction, GDPR & EU MDR safety boundary |
 | [`docs/ACCESSIBILITY_AUDIT.md`](docs/ACCESSIBILITY_AUDIT.md) | WCAG 2.2 AA/AAA contrast proofs, VoiceOver/TalkBack screen-reader flow, earcons, and keyboard shortcuts |
 | [`docs/RESEARCH.md`](docs/RESEARCH.md) | Vision impairment prevalence, medication error research, 3-year TCO comparison, and Finland adoption context |
 | [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) | Live stage choreography covering glasses coaching, safety catches, and fault recovery |
+| [`docs/DEMO_VIDEO_STORYBOARD.md`](docs/DEMO_VIDEO_STORYBOARD.md) | Second-by-second 90s submission cut & 3-minute live stage split-screen storyboard with open captions |
 | [`docs/VIDEO_PRODUCTION.md`](docs/VIDEO_PRODUCTION.md) | 3-pane 1080p60 compositing layout, burned-in WCAG AAA open captions, and backup demo video production guide |
 | [`docs/DEPLOY.md`](docs/DEPLOY.md) | Local HTTPS tunnel, Cloud Run deployment, and environment configuration |
 | [`docs/TEAM.md`](docs/TEAM.md) | Team roles, `/live` and `/hud-ws` wire contracts, and shared TypeScript schemas |
