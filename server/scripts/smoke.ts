@@ -1,3 +1,7 @@
+// End-to-end smoke test: boots the server in-process on a free port, opens /live like the phone would,
+// sends a profile, one JPEG frame and a text question, and prints the message types and timings it gets back.
+// Also checks /hud-ws (no session -> follows latest), /ingest/state, /api/verify and /api/health.
+// Usage: npm -w server run smoke [-- path/to/label.jpg "question"]
 import fs from "node:fs";
 import path from "node:path";
 import WebSocket from "ws";
@@ -24,16 +28,20 @@ const t0 = Date.now();
 const ms = () => Date.now() - t0;
 let fail = false;
 
-const hud = new WebSocket(`ws://localhost:${port}/hud-ws`);
+// HUD first, without session: it must get the verdict of the latest live session
+const KQ = process.env.HOLDUP_KEY ? `key=${encodeURIComponent(process.env.HOLDUP_KEY)}` : "";
+const KH: Record<string, string> = process.env.HOLDUP_KEY ? { "x-holdup-key": process.env.HOLDUP_KEY } : {};
+const hud = new WebSocket(`ws://localhost:${port}/hud-ws${KQ ? "?" + KQ : ""}`);
 const hudTypes: string[] = [];
 hud.on("message", (d) => hudTypes.push(JSON.parse(d.toString()).type));
 
 const session = "smoke-" + Math.random().toString(36).slice(2, 8);
-const ws = new WebSocket(`ws://localhost:${port}/live?session=${session}`);
+const ws = new WebSocket(`ws://localhost:${port}/live?session=${session}${KQ ? "&" + KQ : ""}`);
 const counts: Record<string, number> = {};
 const timeline: string[] = [];
 let tQuestion = 0, tFirstAudio = 0, tVerdict = 0, verdict: any, model = "", audioBytes = 0, finalAssistant = "";
 let afterVerdictFinal = false;
+let frameTimer: NodeJS.Timeout | undefined, tChecking = 0, firstWords = "";
 
 const done = new Promise<void>((resolve) => {
   ws.on("open", () => {
@@ -45,19 +53,25 @@ const done = new Promise<void>((resolve) => {
     if (m.type !== "audio" && !(m.type === "transcript" && !m.final)) timeline.push(`${ms()}ms ${m.type}${"live" in m ? ":" + m.live : ""}${m.type === "coach" ? ":" + m.cue : ""}${m.type === "transcript" ? ":" + m.role : ""}`);
     if (m.type === "ready") {
       model = m.model;
-      ws.send(JSON.stringify({ type: "frame", data: jpeg, w: 768, h: 768, sharpness: 0.9, ts: Date.now() }));
+      // ~1 fps camera, like the phone; the question comes after the item has been in view for a moment
+      const sendFrame = () => ws.readyState === 1 && ws.send(JSON.stringify({ type: "frame", data: jpeg, w: 768, h: 768, sharpness: 0.8 + Math.random() * 0.1, ts: Date.now() }));
+      sendFrame();
+      frameTimer = setInterval(sendFrame, 1000);
       setTimeout(() => {
-        ws.send(JSON.stringify({ type: "frame", data: jpeg, w: 768, h: 768, sharpness: 0.85, ts: Date.now() }));
         tQuestion = Date.now();
         ws.send(JSON.stringify({ type: "text", text: question }));
         ws.send(JSON.stringify({ type: "ping", t: 42 }));
-      }, 1000);
+      }, Number(process.env.SMOKE_QUESTION_DELAY_MS ?? 3000));
     }
+    if (m.type === "checking" && m.phase === "start" && !tChecking) tChecking = Date.now();
+    if (m.type === "transcript" && m.role === "assistant" && !firstWords && tQuestion) firstWords = m.text;
     if (m.type === "audio") { audioBytes += m.data.length * 0.75; if (!tFirstAudio && tQuestion) tFirstAudio = Date.now(); }
     if (m.type === "verdict") { verdict = m.verdict; tVerdict = Date.now(); }
     if (m.type === "transcript" && m.role === "assistant" && m.final) {
       finalAssistant = m.text;
-      if (verdict) { afterVerdictFinal = true; resolve(); }
+      // done once the model has actually spoken the verdict (not just an ack like "Let me look.")
+      const key = (verdict?.speech ?? "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 14);
+      if (verdict && key && m.text.toLowerCase().replace(/[^a-z0-9]/g, "").includes(key)) { afterVerdictFinal = true; resolve(); }
     }
     if (m.type === "error") console.log("error msg:", m.code, m.message);
   });
@@ -65,7 +79,9 @@ const done = new Promise<void>((resolve) => {
   setTimeout(resolve, 45_000);
 });
 await done;
-await fetch(`${base}/ingest/state`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connected: true, worn: true, battery: 0.8, streaming: true }) });
+clearInterval(frameTimer);
+// give the HUD a moment, then test ingest/state fan-out
+await fetch(`${base}/ingest/state`, { method: "POST", headers: { "content-type": "application/json", ...KH }, body: JSON.stringify({ connected: true, worn: true, battery: 0.8, streaming: true }) });
 await new Promise((r) => setTimeout(r, 300));
 ws.send(JSON.stringify({ type: "event", name: "stop" }));
 await new Promise((r) => setTimeout(r, 300));
@@ -75,20 +91,23 @@ console.log("model:", model);
 console.log("message counts:", JSON.stringify(counts));
 console.log("timeline:\n  " + timeline.join("\n  "));
 console.log(`audio received: ${(audioBytes / 1024).toFixed(0)} KiB PCM16 24 kHz (~${(audioBytes / 48000).toFixed(1)} s)`);
-console.log(`question -> first audio: ${tFirstAudio ? tFirstAudio - tQuestion : "n/a"} ms; question -> verdict: ${tVerdict ? tVerdict - tQuestion : "n/a"} ms`);
+console.log(`question -> first audio: ${tFirstAudio ? tFirstAudio - tQuestion : "n/a"} ms; -> checking: ${tChecking ? tChecking - tQuestion : "n/a"} ms; -> verdict: ${tVerdict ? tVerdict - tQuestion : "n/a"} ms`);
+console.log("first assistant words:", JSON.stringify(firstWords));
+console.log(JSON.stringify({ metric: "smoke", model, first_audio_ms: tFirstAudio ? tFirstAudio - tQuestion : null, checking_ms: tChecking ? tChecking - tQuestion : null, verdict_ms: tVerdict ? tVerdict - tQuestion : null, disclaimer: /medical advice|healthcare professional/i.test(finalAssistant) }));
 if (verdict) console.log("verdict:", JSON.stringify({ level: verdict.level, headline: verdict.headline, speech: verdict.speech, matchedMedId: verdict.matchedMedId, strength: verdict.read.strength, reasons: verdict.reasons }));
 console.log("assistant said (final):", finalAssistant);
 console.log("== /hud-ws (no session) ==\n types:", JSON.stringify(hudTypes));
 
+// snapshot path
 const tv = Date.now();
-const vr = await fetch(`${base}/api/verify`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ frames: [jpeg], profile, question }) });
+const vr = await fetch(`${base}/api/verify`, { method: "POST", headers: { "content-type": "application/json", ...KH }, body: JSON.stringify({ frames: [jpeg], profile, question }) });
 const vj: any = await vr.json();
 console.log("== /api/verify ==\n", vr.status, `${Date.now() - tv} ms`, JSON.stringify({ level: vj.level, headline: vj.headline }));
 const h = await (await fetch(`${base}/api/health`)).json();
 console.log("== /api/health ==\n", JSON.stringify(h));
 
 const checks = {
-  ready: !!model, audio: audioBytes > 0, transcripts: (counts.transcript ?? 0) > 0, verdict: !!verdict,
+  ready: !!model, checking: (counts.checking ?? 0) >= 2, audio: audioBytes > 0, transcripts: (counts.transcript ?? 0) > 0, verdict: !!verdict,
   spokeAfterVerdict: afterVerdictFinal, pong: (counts.pong ?? 0) > 0,
   hudVerdict: hudTypes.includes("verdict"), hudDevice: hudTypes.includes("device"), snapshotVerdict: vr.ok && !!vj.level,
 };

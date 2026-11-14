@@ -33,12 +33,37 @@ test("strength normalisation", () => {
 });
 
 test("match: amlodipine 5 mg by brand-agnostic ingredient, not taken today", () => {
-  const v = checkLabel(read({ product: f("Amlodipin Orion"), ingredient: f("amlodipine"), strength: f("5 mg", 0.92) }), profile, NOW);
+  const v = checkLabel(read({ product: f("Amlodipin Orion"), ingredient: f("amlodipine"), strength: f("5 mg", 0.92), expiry: f("2027-08") }), profile, NOW);
   assert.equal(v.level, "match");
   assert.equal(v.matchedMedId, "aml");
   assert.equal(v.takenToday, false);
-  assert.match(v.speech, /Amlodipine 5 mg, your evening pill\. You haven't taken it today\./);
+  assert.equal(v.speech, "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.");
   assert.ok(words(v.headline) <= 8 && sentences(v.speech) <= 2);
+});
+
+test("match with unreadable expiry (null or conf < 0.7): still match, says it couldn't read the date", () => {
+  for (const expiry of [f<string>(null, 0.1), f("2024-11", 0.5)]) {
+    const v = checkLabel(read({ ingredient: f("amlodipine"), strength: f("5 mg"), expiry }), profile, NOW);
+    assert.equal(v.level, "match");
+    assert.equal(v.speech, "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today, and I couldn't read the expiry date.");
+    assert.ok(v.reasons.includes("expiry not readable"));
+    assert.ok(sentences(v.speech) <= 2);
+  }
+});
+
+test("legible past expiry (EXP 11/2024) on a matching med is a warning", () => {
+  const v = checkLabel(read({ ingredient: f("amlodipine"), strength: f("5 mg"), expiry: f("2024-11", 0.9) }), profile, NOW);
+  assert.equal(v.level, "warning");
+  assert.match(v.speech, /This box expired in November 2024/);
+  assert.ok(words(v.headline) <= 8 && sentences(v.speech) <= 2);
+  assert.ok(v.reasons.some((r) => r.startsWith("expired")));
+});
+
+test("spoken name drops the salt form (amlodipine besilate -> Amlodipine)", () => {
+  const p = { ...profile, meds: [{ ...profile.meds[0], ingredient: "amlodipine besilate" }] };
+  const v = checkLabel(read({ ingredient: f("amlodipine"), strength: f("5 mg"), expiry: f("2027-08") }), p, NOW);
+  assert.equal(v.level, "match");
+  assert.match(v.speech, /^Yes, Amlodipine 5 mg, your evening pill\./);
 });
 
 test("match via brand name in product only (Norvasc)", () => {
@@ -54,6 +79,13 @@ test("unsure when strength confidence < 0.8 or missing", () => {
   assert.ok(sentences(low.speech) <= 2);
   const missing = checkLabel(read({ ingredient: f("amlodipine"), strength: f(null, 0.1) }), profile, NOW);
   assert.equal(missing.level, "unsure");
+});
+
+test("blurry label: plausible name at 0.7 + readability 0.4 is unsure, never a match", () => {
+  const v = checkLabel(read({ product: f("Amlodipine Orion", 0.7), strength: f("5 mg", 0.85), readability: 0.4, guidance: "Move it closer to your face." }), profile, NOW);
+  assert.equal(v.level, "unsure");
+  assert.match(v.speech, /might be Amlodipine/);
+  assert.match(v.speech, /Move it closer/);
 });
 
 test("warning: wrong strength", () => {

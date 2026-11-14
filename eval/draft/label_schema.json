@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["medication", "food", "other", "unreadable"] },
+    "product": { "$ref": "#/$defs/strField" },
+    "ingredient": { "$ref": "#/$defs/strField" },
+    "strength": { "$ref": "#/$defs/strField" },
+    "dosing": { "$ref": "#/$defs/strField" },
+    "expiry": { "$ref": "#/$defs/strField" },
+    "allergens": {
+      "type": "object",
+      "properties": {
+        "value": { "type": ["array", "null"], "items": { "type": "string" } },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "required": ["value", "confidence"]
+    },
+    "barcode": { "$ref": "#/$defs/strField" },
+    "readability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "guidance": { "type": "string" }
+  },
+  "required": ["kind", "product", "ingredient", "strength", "dosing", "expiry", "allergens", "barcode", "readability"],
+  "$defs": {
+    "strField": {
+      "type": "object",
+      "properties": {
+        "value": { "type": ["string", "null"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "required": ["value", "confidence"]
+    }
+  }
+}
