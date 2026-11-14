@@ -29,8 +29,8 @@ About 55,000 people in Finland are visually impaired, most of them over 65, and 
 Gemini's output never decides safety alone. A deterministic `safety.ts` turns the structured read into a verdict (match, warning or unsure), using confidence gates and an optional cross-check against the EU FMD DataMatrix on the pack.
 
 ## 3. What's innovative and technically impressive
-- **Speculative verify:** while the user is still asking, the server already reads the sharpest new frame. The Live tool call is answered from that cache in under 5 ms, so time from question to first audio fell from **5.8 s to about 0.8–1.8 s**.
-- **Calibrated abstention, measured:** across **1,740 images**, **0 of 754 confident strength reads were wrong** (95% upper bound 0.4%), and calibration ECE is 0.022 (0.018–0.028). End-to-end unsafe reassurance was 1.0% (0.78–1.37%), and the two causes found were fixed (`docs/EVAL.md`).
+- **Speculative verify:** while the user is still asking, the server already reads the sharpest new frame. The Live tool call is answered from that cache in under 5 ms, so time from question to first audio fell from **5.8 s (one run, before the change) to p50 2.1 s / p95 3.4 s** (n = 26 live sessions, `docs/evidence/`).
+- **Calibrated abstention, measured:** across **1,740 images**, **0 of 754 confident strength reads were wrong** (95% upper bound 0.4%), and calibration ECE is 0.022 (0.018–0.028). End-to-end silent unsafe reassurance fell from 1.0% (49/4,730) to **0.06% (3/4,730, CI 0.02–0.19%)** after the allergen gate. The cost: safe foods get "not sure" more often (`docs/EVAL.md`).
 - **The AI read must agree with the pack's own machine code** (GS1 DataMatrix: GTIN and expiry) before HoldUp says "double-checked".
 - **Gemini on both sides:** Gemini builds the test set, Gemini is tested on it, and fixed rules plus confidence gates keep it honest.
 

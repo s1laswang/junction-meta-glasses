@@ -20,6 +20,7 @@
 | Strength when hidden | abstains 98.4% |
 | All fields when visible (n = 4,776) | 82.4% correct, 15.9% abstained, 1.7% wrong |
 | **Confident-wrong product names** (conf ≥ 0.8) | **42 / 1,173 = 3.6%**. Mostly the name read without the strength suffix (e.g. "Pamol" vs "Pamol 24 mg/ml"). Strength is a separate field, gated at 0.8 |
+| **Weak fields, confident-wrong** (conf ≥ 0.8) | All fields 158 / 4,151 = 3.8%. **Allergens 66 / 304 = 21.7%** (22 confident misses). **Dosing 16 / 101 = 15.8%**. Allergen reads are the weakest field. That's why "none of your allergens" now needs conf ≥ 0.95 and readability ≥ 0.8 (v2 below), and why the safety verdict never uses the dosing field |
 | Calibration ECE, all answered fields (n = 4,406) | 0.022 (0.018–0.028) |
 | **Unsafe reassurance, end to end** (n = 4,730 image × profile verdicts) | **49 = 1.0% (0.78–1.37%)** with the v1 `safety.ts`; **3 = 0.06% (0.02–0.19%)** re-scored with main's `safety.ts` (v2) |
 | Unsafe for "not on my list" and "wrong strength" scenarios (n = 2,560) | **0** |
@@ -70,8 +71,8 @@ These calls built the eval set:
 
 All were interactive calls, with no Batch API. The ledger with per-call tokens and latency is in `eval/out/ledger.jsonl`.
 
-## Extra suites (FR8 fleet, `eval/suites/*`)
-About 25 targeted suites (prompt injection, insulin and inhalers, Nordic dose pouches, comma decimals, DataMatrix, sunglass glare and others) run against the same prompt and `safety.ts`. Each has its own README and `results.json`.
+## Regression probes (FR8 fleet, `eval/suites/*`)
+There are 49 small targeted suites (prompt injection, insulin and inhalers, Nordic dose pouches, comma decimals, DataMatrix, sunglass glare and others), each with n = 12 cases, run against the same prompt and `safety.ts`. They all pass. Treat them as **regression probes** that guard known failure modes, **not as evidence of accuracy**: they were written alongside the code they test. The evidence is the 1,740-image eval above.
 
 `eval/suites/model_comparison` is a **small** paired comparison (n = 12 cases per model):
 - `gemini-3.8-flash` and `gemini-3.5-flash`: 12/12 correct verdicts, 0 confident-wrong;
