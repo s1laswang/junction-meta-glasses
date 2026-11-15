@@ -1,0 +1,95 @@
+{
+  "id": "rt_f05_007__specular_glare",
+  "spec_id": "rt_f05_007",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held box is Vitamin D3 25 mcg, whereas the user's saved medication is Vitamin B12 25 mcg.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "D3-vitamiini Orion 25 mikrog",
+    "ingredient": "Vitamin D3",
+    "strength": "25 mcg",
+    "expiry": "2028-08",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "B12-vitamiini Orion 25 mikrog",
+        "ingredient": "Vitamin B12",
+        "strength": "25 mcg",
+        "schedule": [
+          "08:00"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "D3-vitamiini Orion",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "colecalciferol",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "25 mcg",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75,
+    "guidance": "Turn the box around to see directions and expiry date."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410400001080(17)280800(10)RT01(21)SN007"
+}

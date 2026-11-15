@@ -56,15 +56,23 @@ export function jpegSharpness(buf: Buffer): number {
   return Math.max(0, Math.min(1, buf.length / px / 0.35));
 }
 export function jpegSize(buf: Buffer): { w: number; h: number } | undefined {
-  if (buf[0] !== 0xff || buf[1] !== 0xd8) return undefined;
+  if (buf.length < 4 || buf[0] !== 0xff || buf[1] !== 0xd8) return undefined;
   let i = 2;
-  while (i + 9 < buf.length) {
+  while (i < buf.length) {
     if (buf[i] !== 0xff) { i++; continue; }
-    const marker = buf[i + 1];
-    const len = buf.readUInt16BE(i + 2);
-    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker))
-      return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) };
-    i += 2 + len;
+    while (i < buf.length && buf[i] === 0xff) i++;
+    if (i >= buf.length) return undefined;
+    const marker = buf[i++];
+    if (marker === 0xd9 || marker === 0xda) return undefined;
+    if (marker === 0x00 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd8)) continue;
+    if (i + 2 > buf.length) return undefined;
+    const len = buf.readUInt16BE(i);
+    if (len < 2) return undefined;
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      if (len < 8 || i + 8 > buf.length) return undefined;
+      return { h: buf.readUInt16BE(i + 3), w: buf.readUInt16BE(i + 5) };
+    }
+    i += len;
   }
   return undefined;
 }

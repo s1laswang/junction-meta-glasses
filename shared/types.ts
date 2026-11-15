@@ -80,7 +80,10 @@ export type ServerMsg =
   | { type: "ready"; model: string; session: string; features?: FeatureFlag[] }
   | { type: "audio"; data: string }
   | { type: "transcript"; role: "user" | "assistant"; text: string; final: boolean }
-  | { type: "coach"; cue: CoachCue; text: string }
+  // `say` (added Sun 05:20, CEO): a cue from the on-server field detector; the phone speaks it itself, also in live mode
+  | { type: "coach"; cue: CoachCue; text: string; say?: boolean }
+  // added Sun 05:20 (CEO): FieldSpotter boxes for the newest frame (SPOTTER=1). box = [ymin, xmin, ymax, xmax], 0..1000
+  | { type: "fields"; fields: { label: "product" | "strength" | "expiry" | "allergens"; box: [number, number, number, number]; score: number }[] }
   | { type: "verdict"; verdict: Verdict }
   | { type: "status"; live: LiveState; detail?: string }
   | { type: "device"; device: DeviceState }
@@ -97,6 +100,9 @@ export type ServerMsg =
   | { type: "hud_event"; name: "log_dose" | "repeat" | "dismiss" }
   // added Sat 18:30 (CEO): a dose logged by voice (Gemini log_dose tool); phone mirrors it into its on-device log
   | { type: "dose_logged"; medId: string; ts: number }
+  // added Sun 05:10 (CEO): the spoken answer did not match the rule's sentence (wrong/missing strength, dropped
+  // caution, missing name, or silence). The phone stops playback and speaks `speech` itself.
+  | { type: "correction"; speech: string; reasons: string[] }
   // added Sat 19:00 (CEO): label readiness 0..1 for the sonar tone (server readability from speculative reads,
   // blended with frame sharpness); at most ~4/s
   | { type: "readiness"; value: number }

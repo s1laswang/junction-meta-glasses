@@ -1,0 +1,96 @@
+{
+  "id": "rt_f29_017__thumb_over_digit",
+  "spec_id": "rt_f29_017",
+  "family": "F29_drug_class_avoid_and_allergy_brands",
+  "trap_category": "avoid_or_drug_allergy",
+  "trap_explanation": "Amorion contains amoxicillin, a penicillin-class antibiotic that is unsafe for a user with a penicillin allergy.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Amorion 500 mg",
+    "ingredient": "amoxicillin",
+    "strength": "500 mg",
+    "expiry": "2027-09",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Amorion",
+        "ingredient": "amoxicillin",
+        "strength": "500 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "penicillin"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "AMORION",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": null,
+      "confidence": 0.3
+    },
+    "strength": {
+      "value": "500 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-09",
+      "confidence": 0.92
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.7,
+    "guidance": "Move your thumb away from the center of the box."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "contains amoxicillin (allergy: penicillin)"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410405223468(17)270900(10)RT01(21)SN017"
+}

@@ -1,0 +1,101 @@
+{
+  "id": "rt_f28_009__thumb_over_digit",
+  "spec_id": "rt_f28_009",
+  "family": "F28_medication_allergenic_excipients",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Matches the user's saved progesterone 100 mg, but contains refined arachis (peanut) oil which is unsafe for a peanut-allergic user.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Progesterone Ratiopharm 100 mg",
+    "ingredient": "progesterone",
+    "strength": "100 mg",
+    "expiry": "2027-12",
+    "allergens": [
+      "peanut",
+      "soy"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Progesterone",
+        "ingredient": "progesterone",
+        "strength": "100 mg",
+        "schedule": [
+          "bedtime"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "peanut"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Progesterone Ratiopharm",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "progesterone",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "100 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-12",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": [
+        "soy"
+      ],
+      "confidence": 0.9
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": false,
+  "pack_gs1_raw": "(01)05012345225566(17)271200(10)RT01(21)SN009"
+}

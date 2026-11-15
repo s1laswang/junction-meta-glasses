@@ -1,0 +1,95 @@
+{
+  "id": "rt_f03_016__specular_glare",
+  "spec_id": "rt_f03_016",
+  "family": "F03_insulin_analog_crossmatch",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The user's saved medication is rapid-acting insulin lispro 100 IU/ml, whereas this pack contains long-acting basal insulin glargine 100 IU/ml.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Lantus SoloStar 100 KY/ml",
+    "ingredient": "insulin glargine",
+    "strength": "100 IU/ml",
+    "expiry": "2028-04",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Humalog KwikPen",
+        "ingredient": "insulin lispro",
+        "strength": "100 IU/ml",
+        "schedule": [
+          "08:00"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Lantus SoloStar",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "insulin glargine",
+      "confidence": 0.98
+    },
+    "strength": {
+      "value": "100 IU/ml",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "readability": 0.85,
+    "guidance": "Turn the box to check the side for expiry date."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06419876543210(17)280400(10)RT01(21)SN016"
+}

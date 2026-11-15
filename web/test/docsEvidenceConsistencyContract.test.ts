@@ -340,7 +340,7 @@ describe("Cross-repo docs, deck, and evidence parity contract", () => {
 
     const deckSlides = extractSlides(readRepoFile("deck/index.html"));
     const slide7 = findSlideText(deckSlides, "s7-h");
-    const slide10 = findSlideText(deckSlides, "s10-h");
+    const slide10 = findSlideText(deckSlides, "s11-h");
     const geminiDoc = readRepoFile("GEMINI.md");
     const evalDoc = readRepoFile("docs/EVAL.md");
     const demoScript = readRepoFile("docs/DEMO_SCRIPT.md");
@@ -361,7 +361,7 @@ describe("Cross-repo docs, deck, and evidence parity contract", () => {
       "0.018",
       "0.028",
     ]) {
-      assert.ok(slide10.includes(token), `Deck Slide 10 (#s10-h) must include "${token}"`);
+      assert.ok(slide10.includes(token), `Deck Slide 10 (#s11-h) must include "${token}"`);
     }
 
     for (const token of ["3.4 s p50", "5.6 s p95", "1,740"]) {
@@ -446,13 +446,13 @@ describe("Cross-repo docs, deck, and evidence parity contract", () => {
     assert.equal(roundToDecimals((88 / 130) * 100, 1), 67.7);
     assert.equal(Math.round((88 / 130) * 100), 68);
 
-    const slide10 = findSlideText(extractSlides(readRepoFile("deck/index.html")), "s10-h");
+    const slide10 = findSlideText(extractSlides(readRepoFile("deck/index.html")), "s11-h");
     const geminiDoc = readRepoFile("GEMINI.md");
     const evalDoc = readRepoFile("docs/EVAL.md");
     const demoScript = readRepoFile("docs/DEMO_SCRIPT.md");
 
     for (const token of ["0.06%", "3/4,730", "0.02", "0.19%", "49 = 1.0%", "34% vs 68%"]) {
-      assert.ok(slide10.includes(token), `Deck Slide 10 (#s10-h) must include "${token}"`);
+      assert.ok(slide10.includes(token), `Deck Slide 10 (#s11-h) must include "${token}"`);
     }
 
     for (const token of ["1.0% (49/4,730)", "0.06% (3/4,730", "0.02", "0.19%"]) {

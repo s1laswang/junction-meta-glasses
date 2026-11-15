@@ -1,0 +1,93 @@
+{
+  "id": "rt_f04_014__specular_glare",
+  "spec_id": "rt_f04_014",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains sodium bicarbonate 500 mg instead of the user's saved potassium bicarbonate 500 mg.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Natriumbikarbonaatti Orion 500 mg",
+    "ingredient": "sodium bicarbonate",
+    "strength": "500 mg",
+    "expiry": "2029-05",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Kaliumbikarbonaatti 500 mg",
+        "ingredient": "potassium bicarbonate",
+        "strength": "500 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Natriumbikarbonaatti Orion",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "sodium bicarbonate",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "500 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "expiry": {
+      "value": "2029-05",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410100556677(17)290500(10)RT01(21)SN014"
+}

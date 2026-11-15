@@ -1,0 +1,91 @@
+{
+  "id": "rt_f27_008__clean",
+  "spec_id": "rt_f27_008",
+  "family": "F27_mollusc_and_crustacean_traps",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Contains squid (molluscs), which is unsafe for a user with a shellfish allergy.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Bläckfiskringar",
+    "ingredient": "",
+    "strength": "",
+    "expiry": "2027-09",
+    "allergens": [
+      "gluten",
+      "molluscs"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "shellfish"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "food",
+    "product": {
+      "value": "ICA Bläckfiskringar",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "squid rings",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-09",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": [
+        "molluscs",
+        "wheat",
+        "gluten"
+      ],
+      "confidence": 0.95
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.95
+  },
+  "baseline_verdict": {
+    "level": "info",
+    "reasons": [
+      "no listed allergen matches your profile"
+    ],
+    "matchedMedId": null
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "contains molluscs (allergy: shellfish)"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true
+}
