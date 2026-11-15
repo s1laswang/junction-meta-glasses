@@ -308,6 +308,7 @@ export function Hud() {
             </p>
             <p className="hud-headline">{verdict.headline}</p>
             {keyFields.length ? <p className="hud-fields">{keyFields.join(" · ")}</p> : null}
+            {verdict.crossCheck ? <p className="hud-small">{verdict.crossCheck.agrees === true ? "✓ Double-checked with pack code" : verdict.crossCheck.agrees === false ? "⚠ Pack code mismatch" : "Pack code read"}</p> : null}
             {verdict.matchedMedId && verdict.takenToday != null ? <p className="hud-small">{verdict.takenToday ? "Already taken today" : "Not taken today"}</p> : null}
             {verdict.reasons[0] ? <p className="hud-small">{verdict.reasons[0]}</p> : null}
           </section>
