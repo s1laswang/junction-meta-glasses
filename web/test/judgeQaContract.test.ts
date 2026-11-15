@@ -504,6 +504,12 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     const safetyTs = readRepoFile("server/src/safety.ts");
     const verdictsTs = readRepoFile("web/src/lib/verdicts.ts");
     const redteam = JSON.parse(readRepoFile("eval/results/redteam_v1.json")) as RedTeamV1Summary;
+    const v3Safety = JSON.parse(readRepoFile("eval/results/v3_heldout_safety.json")) as {
+      images_scored: number;
+      standard_eval_scenarios: {
+        merged_main_safety_ts: { n: number; unsafe_k: number; unsafe_rate_pct: number };
+      };
+    };
     const judgeProbes = readRepoFile("server/test/judge-probes.test.ts");
 
     assert.ok(serverGs1.includes("export function parseGs1"));
@@ -517,6 +523,10 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     assert.equal(redteam.overall_baseline_safety_ts.unsafe_rate_pct, 8.79);
     assert.equal(redteam.overall_current_safety_ts.unsafe_k, 13);
     assert.equal(redteam.overall_current_safety_ts.unsafe_rate_pct, 0.57);
+    assert.equal(v3Safety.images_scored, 1060);
+    assert.equal(v3Safety.standard_eval_scenarios.merged_main_safety_ts.n, 3033);
+    assert.equal(v3Safety.standard_eval_scenarios.merged_main_safety_ts.unsafe_k, 4);
+    assert.equal(v3Safety.standard_eval_scenarios.merged_main_safety_ts.unsafe_rate_pct, 0.13);
     assert.ok(judgeProbes.includes("probe 7"));
     assert.ok(judgeProbes.includes("probe 21"));
 
@@ -547,6 +557,11 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       "in-sample",
       "7/7",
       "server/test/judge-probes.test.ts",
+      "1 / 536",
+      "0.19%",
+      `${v3Safety.standard_eval_scenarios.merged_main_safety_ts.unsafe_k} / ${formatInt(v3Safety.standard_eval_scenarios.merged_main_safety_ts.n)}`,
+      `${v3Safety.standard_eval_scenarios.merged_main_safety_ts.unsafe_rate_pct.toFixed(2)}%`,
+      formatInt(v3Safety.images_scored),
     ]) {
       assert.ok(secE.answer.includes(token), `Section (e) answer must cite ${token}`);
     }
@@ -555,6 +570,7 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
   test("section (f) cites exact token counts from api-stats-snapshot.json and GDPR/privacy invariants from PRIVACY.md", () => {
     const stats = JSON.parse(readRepoFile("docs/evidence/api-stats-snapshot.json")) as ApiStatsSnapshot;
     const privacyMd = readRepoFile("docs/PRIVACY.md");
+    const deckHtml = readRepoFile("deck/index.html");
 
     const v = stats.features.verify;
     const vs = stats.features.verify_spec;
@@ -576,6 +592,7 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     assert.equal(avgVerifyIn, 2571);
     assert.equal(avgVerifyOutThinking, 229);
 
+    assert.ok(deckHtml.includes("$0.003 per label read"));
     assert.ok(privacyMd.includes("three plain-language cards"));
     assert.ok(privacyMd.includes("auto-stops after 45 s"));
     assert.ok(privacyMd.includes("last 8 frames"));
@@ -599,6 +616,8 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       `${vs.calls}`,
       "gemini-3.8-flash",
       "sub-cent",
+      "~$0.003",
+      "Slide 12",
       "3-card",
       "45 s",
       "8",
