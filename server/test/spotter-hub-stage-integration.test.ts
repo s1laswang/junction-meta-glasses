@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import type http from "node:http";
 import type { AddressInfo } from "node:net";
+import os from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
 import type { LabelRead, ServerMsg, Verdict } from "../../shared/types.ts";
@@ -19,14 +20,22 @@ process.env.HOLDUP_QUIET = "1";
 const { env, REPO_ROOT, SERVER_DIR } = await import("../src/env.ts");
 const { SPOT, SpotThrottle, decode, detect, letterbox, spotterAvailable } = await import("../src/spotter.ts");
 const { Hub, getHub, markLatest } = await import("../src/hub.ts");
+const { Speculator } = await import("../src/speculate.ts");
 const { startServer } = await import("../src/index.ts");
 
 const origApiKey = env.apiKey;
+const origLedgerPath = env.ledgerPath;
+const ledgerTmpDir = fs.mkdtempSync(path.join(fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir(), "holdup-spotter-hub-stage-"));
+env.ledgerPath = path.join(ledgerTmpDir, "ledger.jsonl");
+process.on("exit", () => {
+  fs.rmSync(ledgerTmpDir, { recursive: true, force: true });
+});
 const realDateNow = Date.now;
 
 afterEach(() => {
   Date.now = realDateNow;
   env.apiKey = origApiKey;
+  env.ledgerPath = path.join(ledgerTmpDir, "ledger.jsonl");
   if (origHoldupKey === undefined) delete process.env.HOLDUP_KEY;
   else process.env.HOLDUP_KEY = origHoldupKey;
   process.env.SPOTTER = "1";
@@ -36,6 +45,8 @@ afterEach(() => {
 after(() => {
   Date.now = realDateNow;
   env.apiKey = origApiKey;
+  env.ledgerPath = origLedgerPath;
+  fs.rmSync(ledgerTmpDir, { recursive: true, force: true });
   if (origHoldupKey === undefined) delete process.env.HOLDUP_KEY;
   else process.env.HOLDUP_KEY = origHoldupKey;
   if (origSpotter === undefined) delete process.env.SPOTTER;
@@ -524,6 +535,7 @@ test("WebSocket and ingest integration routes { type: 'fields' } to phone client
       stop() {},
       frame() {},
     } as unknown as LiveLike;
+    hub.spec = new Speculator(hub.ring, () => false);
     hub.features.add("sonar");
     hub.source = "glasses";
     markLatest(hub);
