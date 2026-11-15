@@ -6,6 +6,8 @@ import type { DeviceState, FeatureFlag, Gs1Code, Profile, ServerMsg, Verdict, Ve
 import { FrameRing, emptyProfile, type Frame } from "./verify.ts";
 import { Speculator } from "./speculate.ts";
 import { DmThrottle } from "./dm.ts";
+import { SpotThrottle, spotterAvailable, type FieldBox } from "./spotter.ts";
+import { SpotCoach } from "./spotcoach.ts";
 import type { Feature } from "./env.ts";
 import { log, shortId } from "./log.ts";
 
@@ -13,9 +15,13 @@ export interface LiveLike {
   handleEvent(name: string): void;
   stop(reason: string): void;
   readonly active: boolean;
+  /** A check is running or the assistant is speaking: no detector cues now. Optional for test doubles. */
+  readonly busy?: boolean;
   /** Numbers for the /stage projector (no content). Optional so test doubles needn't implement it. */
   stats?(): LiveStats;
 }
+
+const SPOTTER_ON = spotterAvailable();
 
 export type VerifySource = "cache" | "inflight" | "fresh" | "scene";
 export type LiveStats = {
@@ -76,6 +82,10 @@ export class Hub {
   /** Last GS1 DataMatrix seen for the current item (phone-decoded or server-decoded glasses frame). Never logged. */
   lastCode?: { code: Gs1Code; ts: number };
   dm = new DmThrottle();
+  /** FieldSpotter (SPOTTER=1): boxes for the newest frame, and the cue state machine */
+  spot = new SpotThrottle();
+  spotCoach = new SpotCoach();
+  lastFields?: { fields: FieldBox[]; ts: number };
   private readiness = { value: -1, sentAt: 0, sharp: 0 };
   private frameLog: { ts: number; bytes: number }[] = [];
   private lastMetrics = "";
@@ -106,6 +116,14 @@ export class Hub {
       const r = lr.read.kind === "unreadable" ? 0 : lr.read.readability;
       v = Math.max(v, 0.35 * s + 0.65 * r * decay);
     }
+    // FieldSpotter: the tone tracks the dose itself. Dose box in view -> ready; product but no dose -> capped.
+    const lf = this.lastFields;
+    if (lf && Date.now() - lf.ts < 2500) {
+      const dose = Math.max(0, ...lf.fields.filter((x) => x.label === "strength").map((x) => x.score));
+      const product = lf.fields.some((x) => x.label === "product" && x.score >= 0.5);
+      if (dose >= 0.5) v = Math.max(v, 0.45 + 0.5 * dose * s);
+      else if (product) v = Math.min(v, 0.55);
+    }
     v = Math.round(Math.max(0, Math.min(1, v)) * 100) / 100;
     const now = Date.now();
     if (Math.abs(v - this.readiness.value) <= 0.05 || now - this.readiness.sentAt < 250) return;
@@ -119,6 +137,9 @@ export class Hub {
     if (msg.type === "verdict") {
       this.lastVerdict = msg.verdict;
       this.lastCoach = undefined;
+      // the user just got an answer: no detector cues for a few seconds, and start the cue logic fresh
+      this.spotCoach.reset();
+      this.spotCoach.quietUntil = Date.now() + 6000;
     }
     if (msg.type === "coach") this.lastCoach = msg;
     if (msg.type === "status") this.lastStatus = msg;
@@ -168,9 +189,24 @@ export class Hub {
     if (this.frameLog.length > 64) this.frameLog.shift();
     this.spec.onFrame(f);
     this.updateReadiness(f.sharpness);
+    if (SPOTTER_ON && this.live?.active) this.spot.maybe(f.data, (fields) => this.onFields(f, fields));
+  }
+  /** FieldSpotter result for one frame: boxes to the phone, readiness from the dose box, and a spoken cue if warranted. */
+  private onFields(f: Frame, fields: FieldBox[]) {
+    if (!this.live?.active) return;
+    const now = Date.now();
+    this.lastFields = { fields, ts: now };
+    this.emit({ type: "fields", fields }, { hud: false });
+    this.updateReadiness();
+    if (this.live.busy) this.spotCoach.quietUntil = Math.max(this.spotCoach.quietUntil, now + 2500);
+    const cue = this.spotCoach.push(fields, f.sharpness, now);
+    if (cue) {
+      log("spotter.cue", { session: shortId(this.id), kind: cue.kind });
+      this.emit({ type: "coach", cue: cue.cue, text: cue.text, say: true });
+    }
   }
   /** Privacy: drop frames and cached reads. */
-  dropFrames() { this.ring.clear(); this.spec.clear(); this.lastCode = undefined; }
+  dropFrames() { this.ring.clear(); this.spec.clear(); this.lastCode = undefined; this.lastFields = undefined; this.spotCoach.reset(); }
   /** Tell the phone(s) whether a HUD is attached to this session. */
   hudChanged() {
     const s = JSON.stringify({ type: "hud", connected: hudsFor(this).length > 0 });

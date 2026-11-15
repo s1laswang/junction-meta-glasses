@@ -215,9 +215,13 @@ function TagList({ id, title, help, items, onChange }: { id: string; title: stri
         onSubmit={(e) => {
           e.preventDefault();
           const t = v.trim();
-          if (t && !items.some((x) => x.toLowerCase() === t.toLowerCase())) {
-            onChange([...items, t]);
-            announce(`${t} added.`);
+          if (t) {
+            if (!items.some((x) => x.toLowerCase() === t.toLowerCase())) {
+              onChange([...items, t]);
+              announce(`${t} added.`);
+            } else {
+              announce(`${t} is already in ${title}.`);
+            }
           }
           setV("");
         }}
