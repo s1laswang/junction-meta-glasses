@@ -76,7 +76,7 @@ function assertValidAxeReport(data: AxeEvidence, expectedCount: number): void {
   }
 }
 
-describe("axe-core WCAG 2.2 A+AA baseline and full 32-screen audit contract", () => {
+describe("axe-core WCAG 2.2 A+AA baseline and full 35-screen audit contract", () => {
   test("docs/evidence/a11y-axe.json preserves the 6-screen baseline with 0 violations for README parity", () => {
     assert.ok(fs.existsSync(BASELINE_EVIDENCE_PATH), "docs/evidence/a11y-axe.json must exist");
     const data = JSON.parse(fs.readFileSync(BASELINE_EVIDENCE_PATH, "utf8")) as AxeEvidence;
@@ -95,14 +95,14 @@ describe("axe-core WCAG 2.2 A+AA baseline and full 32-screen audit contract", ()
     );
   });
 
-  test("docs/evidence/a11y-axe-full.json exists, parses cleanly, and reports 0 violation nodes across 32 distinct screens and slides", () => {
+  test("docs/evidence/a11y-axe-full.json exists, parses cleanly, and reports 0 violation nodes across 35 distinct screens and slides", () => {
     assert.ok(fs.existsSync(FULL_EVIDENCE_PATH), "docs/evidence/a11y-axe-full.json must exist");
     const data = JSON.parse(fs.readFileSync(FULL_EVIDENCE_PATH, "utf8")) as AxeEvidence;
-    assertValidAxeReport(data, 32);
-    assert.equal(data.screenCount, 32, "screenCount must equal 32");
+    assertValidAxeReport(data, 35);
+    assert.equal(data.screenCount, 35, "screenCount must equal 35");
   });
 
-  test("docs/evidence/a11y-axe-full.json covers onboarding, permissions, check states, verdicts, scene, AddSheet, DevicePanel, Profile, MedEditor, Privacy, AccessKey, HUD, and all 12 deck slides", () => {
+  test("docs/evidence/a11y-axe-full.json covers onboarding, permissions, check states, verdicts, scene, AddSheet, DevicePanel, Profile, MedEditor, Privacy, AccessKey, HUD, Stage, and all 13 deck slides", () => {
     const data = JSON.parse(fs.readFileSync(FULL_EVIDENCE_PATH, "utf8")) as AxeEvidence;
     const labelsLower = data.results.map((r) => r.label.toLowerCase());
 
@@ -127,10 +127,12 @@ describe("axe-core WCAG 2.2 A+AA baseline and full 32-screen audit contract", ()
       "access-key",
       "hud: idle",
       "hud: verdict",
+      "stage: coaching",
+      "stage: verdict",
       "deck: slides",
     ];
 
-    for (let s = 2; s <= 12; s++) {
+    for (let s = 2; s <= 13; s++) {
       requiredSubstrings.push(`deck: slide ${s}`);
     }
 
@@ -150,8 +152,14 @@ describe("axe-core WCAG 2.2 A+AA baseline and full 32-screen audit contract", ()
       assert.ok(new URL(h.url).pathname.startsWith("/hud"), `HUD audit URL must target /hud/: ${h.url}`);
     }
 
+    const stageScreens = data.results.filter((r) => r.label.toLowerCase().startsWith("stage:"));
+    assert.equal(stageScreens.length, 2, "must audit both stage coaching and stage verdict states");
+    for (const st of stageScreens) {
+      assert.ok(new URL(st.url).pathname.startsWith("/stage"), `stage audit URL must target /stage: ${st.url}`);
+    }
+
     const deckScreens = data.results.filter((r) => r.label.toLowerCase().startsWith("deck:"));
-    assert.equal(deckScreens.length, 12, `expected 12 deck slides audited, found ${deckScreens.length}`);
+    assert.equal(deckScreens.length, 13, `expected 13 deck slides audited, found ${deckScreens.length}`);
     for (const d of deckScreens) {
       assert.ok(new URL(d.url).pathname.startsWith("/deck"), `deck audit URL must target /deck/: ${d.url}`);
     }
@@ -205,7 +213,7 @@ describe("axe-core WCAG 2.2 A+AA baseline and full 32-screen audit contract", ()
     assert.match(renderedDlInner, /<dd class="conf " aria-label="confidence 94 percent">94%<\/dd>/);
   });
 
-  test("scripts/a11y-audit.mjs supports default 6-screen baseline, --full 32-screen mode, --out file output, WCAG 2.2 A+AA tags, 3 viewports, and zero comments or dashes", () => {
+  test("scripts/a11y-audit.mjs supports default 6-screen baseline, --full 35-screen mode, --out file output, WCAG 2.2 A+AA tags, 3 viewports, and zero comments or dashes", () => {
     assert.ok(fs.existsSync(SCRIPT_PATH), "scripts/a11y-audit.mjs must exist");
     const script = fs.readFileSync(SCRIPT_PATH, "utf8");
     const selfSource = fs.readFileSync(TEST_FILE, "utf8");

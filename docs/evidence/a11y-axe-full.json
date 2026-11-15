@@ -1,233 +1,254 @@
 {
   "tool": "axe-core via @axe-core/playwright",
   "tags": "WCAG 2.0/2.1/2.2 A+AA",
-  "base": "http://localhost:34185",
-  "when": "2026-11-15T01:00:24.984Z",
+  "base": "http://localhost:43783",
+  "when": "2026-11-15T03:22:15.341Z",
   "totalViolationNodes": 0,
-  "screenCount": 32,
+  "screenCount": 35,
   "results": [
     {
       "label": "phone: welcome",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 18,
       "incomplete": 0
     },
     {
       "label": "phone: consent card 1",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 21,
       "incomplete": 0
     },
     {
       "label": "phone: consent card 2",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 21,
       "incomplete": 0
     },
     {
       "label": "phone: consent card 3",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 21,
       "incomplete": 0
     },
     {
       "label": "phone: permission step",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 20,
       "incomplete": 0
     },
     {
       "label": "phone: permission recovery",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 22,
       "incomplete": 0
     },
     {
       "label": "phone: check idle",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 27,
       "incomplete": 2
     },
     {
       "label": "phone: check running / coaching",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
-      "passes": 27,
+      "passes": 28,
       "incomplete": 2
     },
     {
       "label": "phone: verdict match",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 32,
       "incomplete": 2
     },
     {
       "label": "phone: verdict warning",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 32,
       "incomplete": 2
     },
     {
       "label": "phone: verdict unsure",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 32,
       "incomplete": 2
     },
     {
       "label": "phone: scene 3-box",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 32,
       "incomplete": 2
     },
     {
       "label": "phone: add-sheet modal",
-      "url": "http://localhost:34185/?mock=1",
+      "url": "http://localhost:43783/?mock=1",
       "violations": [],
       "passes": 16,
       "incomplete": 1
     },
     {
       "label": "phone: device panel",
-      "url": "http://localhost:34185/?mock=1&debug=1",
+      "url": "http://localhost:43783/?mock=1&debug=1",
       "violations": [],
-      "passes": 29,
+      "passes": 30,
       "incomplete": 2
     },
     {
       "label": "phone: profile",
-      "url": "http://localhost:34185/?mock=1&debug=1",
+      "url": "http://localhost:43783/?mock=1&debug=1",
       "violations": [],
-      "passes": 28,
+      "passes": 29,
       "incomplete": 1
     },
     {
       "label": "phone: med-editor modal",
-      "url": "http://localhost:34185/?mock=1&debug=1",
+      "url": "http://localhost:43783/?mock=1&debug=1",
       "violations": [],
       "passes": 17,
       "incomplete": 0
     },
     {
       "label": "phone: privacy",
-      "url": "http://localhost:34185/?mock=1&debug=1",
+      "url": "http://localhost:43783/?mock=1&debug=1",
       "violations": [],
-      "passes": 26,
+      "passes": 27,
       "incomplete": 1
     },
     {
       "label": "phone: access-key",
-      "url": "http://localhost:34185/",
+      "url": "http://localhost:43783/",
       "violations": [],
       "passes": 23,
       "incomplete": 0
     },
     {
       "label": "hud: idle",
-      "url": "http://localhost:34185/hud/?mock=1",
+      "url": "http://localhost:43783/hud/?mock=1",
       "violations": [],
       "passes": 15,
       "incomplete": 0
     },
     {
       "label": "hud: verdict",
-      "url": "http://localhost:34185/hud/?mock=1",
+      "url": "http://localhost:43783/hud/?mock=1",
       "violations": [],
       "passes": 16,
       "incomplete": 1
     },
     {
-      "label": "deck: slides",
-      "url": "http://localhost:39547/deck/#1",
-      "violations": [],
-      "passes": 21,
-      "incomplete": 1
-    },
-    {
-      "label": "deck: slide 2",
-      "url": "http://localhost:39547/deck/#2",
-      "violations": [],
-      "passes": 19,
-      "incomplete": 1
-    },
-    {
-      "label": "deck: slide 3",
-      "url": "http://localhost:39547/deck/#3",
-      "violations": [],
-      "passes": 17,
-      "incomplete": 1
-    },
-    {
-      "label": "deck: slide 4",
-      "url": "http://localhost:39547/deck/#4",
-      "violations": [],
-      "passes": 24,
-      "incomplete": 1
-    },
-    {
-      "label": "deck: slide 5",
-      "url": "http://localhost:39547/deck/#5",
-      "violations": [],
-      "passes": 19,
-      "incomplete": 1
-    },
-    {
-      "label": "deck: slide 6",
-      "url": "http://localhost:39547/deck/#6",
-      "violations": [],
-      "passes": 21,
-      "incomplete": 1
-    },
-    {
-      "label": "deck: slide 7",
-      "url": "http://localhost:39547/deck/#7",
+      "label": "stage: coaching",
+      "url": "http://localhost:43783/stage?mock=1",
       "violations": [],
       "passes": 23,
       "incomplete": 1
     },
     {
-      "label": "deck: slide 8",
-      "url": "http://localhost:39547/deck/#8",
+      "label": "stage: verdict",
+      "url": "http://localhost:43783/stage?mock=1",
       "violations": [],
-      "passes": 19,
+      "passes": 23,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slides",
+      "url": "http://localhost:45065/deck/#1",
+      "violations": [],
+      "passes": 22,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 2",
+      "url": "http://localhost:45065/deck/#2",
+      "violations": [],
+      "passes": 20,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 3",
+      "url": "http://localhost:45065/deck/#3",
+      "violations": [],
+      "passes": 18,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 4",
+      "url": "http://localhost:45065/deck/#4",
+      "violations": [],
+      "passes": 25,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 5",
+      "url": "http://localhost:45065/deck/#5",
+      "violations": [],
+      "passes": 22,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 6",
+      "url": "http://localhost:45065/deck/#6",
+      "violations": [],
+      "passes": 22,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 7",
+      "url": "http://localhost:45065/deck/#7",
+      "violations": [],
+      "passes": 24,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 8",
+      "url": "http://localhost:45065/deck/#8",
+      "violations": [],
+      "passes": 20,
       "incomplete": 1
     },
     {
       "label": "deck: slide 9",
-      "url": "http://localhost:39547/deck/#9",
+      "url": "http://localhost:45065/deck/#9",
       "violations": [],
-      "passes": 19,
+      "passes": 20,
       "incomplete": 1
     },
     {
       "label": "deck: slide 10",
-      "url": "http://localhost:39547/deck/#10",
+      "url": "http://localhost:45065/deck/#10",
       "violations": [],
-      "passes": 19,
+      "passes": 20,
       "incomplete": 1
     },
     {
       "label": "deck: slide 11",
-      "url": "http://localhost:39547/deck/#11",
+      "url": "http://localhost:45065/deck/#11",
       "violations": [],
-      "passes": 19,
+      "passes": 20,
       "incomplete": 1
     },
     {
       "label": "deck: slide 12",
-      "url": "http://localhost:39547/deck/#12",
+      "url": "http://localhost:45065/deck/#12",
       "violations": [],
-      "passes": 19,
+      "passes": 20,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 13",
+      "url": "http://localhost:45065/deck/#13",
+      "violations": [],
+      "passes": 20,
       "incomplete": 1
     }
   ]

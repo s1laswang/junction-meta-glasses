@@ -415,6 +415,15 @@ async function runFullAudit(deckUrl) {
   await audit(hud, "hud: verdict");
   await hudCtx.close();
 
+  const stageCtx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const stage = await stageCtx.newPage();
+  await stage.goto(`${base}/stage?mock=1`, { waitUntil: "networkidle" });
+  await stage.locator(".stage-cue.on").waitFor({ state: "visible", timeout: 10000 });
+  await audit(stage, "stage: coaching");
+  await stage.locator(".stage-lens .verdict-card").waitFor({ state: "visible", timeout: 15000 });
+  await audit(stage, "stage: verdict");
+  await stageCtx.close();
+
   const deckCtx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   await deckCtx.route(
     (u) => u.hostname.includes("fonts.g"),
