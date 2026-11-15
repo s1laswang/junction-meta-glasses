@@ -448,6 +448,7 @@ export class Checker {
         haptic.coach(m.cue);
         // with spoken answers off, the screen reader is the only voice: read the cue
         if (!loadSettings().voice) announce(m.text);
+        else if (m.say) speak(m.text); // detector cue: Gemini doesn't say these, so the phone does, in live mode too
         else if (this.s.mode !== "live" || IS_MOCK) {
           const cid = cuePhraseId(m.cue, m.text);
           if (cid) speakPhrase(cid, m.text);

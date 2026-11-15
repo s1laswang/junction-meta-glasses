@@ -146,7 +146,14 @@ export class LiveProxy implements LiveLike {
   }
 
   get active() { return !this.stopped; }
-  private send(msg: ServerMsg) { this.hub.emit(msg); }
+  private inCheck = false; private lastAudioAt = 0;
+  private send(msg: ServerMsg) {
+    if (msg.type === "checking") this.inCheck = msg.phase === "start";
+    else if (msg.type === "audio") this.lastAudioAt = Date.now();
+    this.hub.emit(msg);
+  }
+  /** A check is running or the assistant spoke in the last 1.5 s. */
+  get busy() { return this.inCheck || Date.now() - this.lastAudioAt < 1500; }
 
   async start() {
     this.idleTimer = setInterval(() => {
