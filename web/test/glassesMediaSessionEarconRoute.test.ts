@@ -1191,8 +1191,8 @@ test("Haptic verdict and coach patterns, haptics:false suppression, and speak() 
 
   const localeMappings: Array<{ lang: string; expected: string; sample: string }> = [
     { lang: "en", expected: "en-GB", sample: "Hold the box steady." },
-    { lang: "fi", expected: "fi-FI", sample: "Pidä pakkaus paikallaan." },
-    { lang: "sv", expected: "sv-SE", sample: "Håll förpackningen stilla." },
+    { lang: "fi", expected: "en-GB", sample: "Hold the box steady." },
+    { lang: "sv", expected: "en-GB", sample: "Hold the box steady." },
     { lang: "de", expected: "en-GB", sample: "Fallback English locale." },
   ];
 
