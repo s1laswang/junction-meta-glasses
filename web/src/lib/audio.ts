@@ -68,7 +68,7 @@ export class MicCapture {
     const sink = this.ctx.createGain();
     sink.gain.value = 0;
     this.node.connect(sink).connect(this.ctx.destination);
-    if (this.ctx.state === "suspended") await this.ctx.resume();
+    if (this.ctx.state === "suspended") void this.ctx.resume().catch(() => {});
   }
 
   /** keepContext: reuse the AudioContext for a quick mic swap (no user gesture needed). */
@@ -111,7 +111,7 @@ export class PcmPlayer {
       this.gain = this.ctx.createGain();
       this.gain.connect(this.ctx.destination);
     }
-    if (this.ctx.state === "suspended") await this.ctx.resume().catch(() => {});
+    if (this.ctx.state === "suspended") void this.ctx.resume().catch(() => {});
   }
 
   get context() {
