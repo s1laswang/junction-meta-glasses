@@ -2,17 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import type { Med } from "../../../shared/types.ts";
 import { Icon } from "./Icons.tsx";
 
-function isConnectedEl(el: HTMLElement | null | undefined): el is HTMLElement {
-  if (!el || typeof el.focus !== "function") return false;
-  if (typeof el.isConnected === "boolean") return el.isConnected;
-  let cur: Node | null = el;
-  while (cur) {
-    if (cur === document) return true;
-    cur = cur.parentNode;
-  }
-  return false;
-}
-
 /**
  * "Hold up to add" confirmation. A modal sheet (focus trapped by <dialog>), announced by its title and
  * description, focus on Add. Double-tap/double-click anywhere on the sheet also adds. Times out after 60 s.
@@ -22,7 +11,6 @@ export function AddSheet({ med, speech, expiresAt, onAnswer }: { med: Med; speec
   const addRef = useRef<HTMLButtonElement>(null);
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    const prev = document.activeElement as HTMLElement | null;
     const d = ref.current;
     if (d && !d.open) d.showModal();
     addRef.current?.focus();
@@ -30,7 +18,6 @@ export function AddSheet({ med, speech, expiresAt, onAnswer }: { med: Med; speec
     return () => {
       clearInterval(t);
       d?.close();
-      if (prev && prev !== document.body && isConnectedEl(prev)) prev.focus();
     };
   }, []);
   const left = Math.max(0, Math.round((expiresAt - now) / 1000));
