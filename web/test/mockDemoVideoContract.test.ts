@@ -108,10 +108,21 @@ function parseTrackInfo(buf: Buffer, trak: Box): {
   return { handler, codec, width: dims.width, height: dims.height };
 }
 
+function extractSlide5(deckHtml: string): string {
+  const idIdx = deckHtml.indexOf('id="s5-h"');
+  assert.ok(idIdx >= 0, 'Expected Slide 5 heading id="s5-h" in deck/index.html');
+  const openIdx = deckHtml.lastIndexOf("<section", idIdx);
+  const closeTag = "</section>";
+  const closeIdx = deckHtml.indexOf(closeTag, idIdx);
+  assert.ok(openIdx >= 0 && closeIdx > idIdx, "Expected Slide 5 <section>...</section> wrapper");
+  return deckHtml.slice(openIdx, closeIdx + closeTag.length);
+}
+
 describe("Mock demo video contract (docs/demo/holdup-mock-demo.mp4)", () => {
   const mp4Path = path.join(REPO_DIR, "docs", "demo", "holdup-mock-demo.mp4");
   const scriptPath = path.join(REPO_DIR, "scripts", "record-mock-demo.mjs");
   const docPath = path.join(REPO_DIR, "docs", "demo", "README.md");
+  const deckPath = path.join(REPO_DIR, "deck", "index.html");
   const testPath = path.join(REPO_DIR, "web", "test", "mockDemoVideoContract.test.ts");
 
   test("holdup-mock-demo.mp4 exists within size budget and has valid +faststart 1280x720 H.264+AAC MP4 structure (60..90s)", () => {
@@ -185,6 +196,30 @@ describe("Mock demo video contract (docs/demo/holdup-mock-demo.mp4)", () => {
       assert.equal(readmeSrc.toLowerCase().includes(claim.toLowerCase()), false, `README must not claim "${claim}"`);
       assert.equal(scriptSrc.toLowerCase().includes(claim.toLowerCase()), false, `Script must not claim "${claim}"`);
     }
+  });
+
+  test("deck/index.html Slide 5 (#s5-h) replaces backup video TODO with labelled SIMULATION / MOCK video links", () => {
+    const deckSrc = fs.readFileSync(deckPath, "utf8");
+    const slide5 = extractSlide5(deckSrc);
+    const ghVideoUrl = [
+      "https:",
+      "",
+      "github.com",
+      "s1laswang",
+      "junction-meta-glasses",
+      "blob",
+      "main",
+      "docs",
+      "demo",
+      "holdup-mock-demo.mp4",
+    ].join("/");
+
+    assert.equal(slide5.includes("TODO: backup video"), false, "Slide 5 must have zero TODO: backup video");
+    assert.ok(slide5.includes("docs/demo/holdup-mock-demo.mp4"), "Slide 5 must link to docs/demo/holdup-mock-demo.mp4");
+    assert.ok(slide5.includes(ghVideoUrl), "Slide 5 must include the GitHub MP4 URL");
+    assert.ok(slide5.includes("SIMULATION / MOCK"), "Slide 5 must label backup video SIMULATION / MOCK");
+    assert.ok(slide5.includes("?mock=1"), "Slide 5 must cite ?mock=1 mode");
+    assert.ok(slide5.includes("not physical hardware"), "Slide 5 must state not physical hardware");
   });
 
   test("new code and documentation files contain zero code comments and zero em dashes", () => {
