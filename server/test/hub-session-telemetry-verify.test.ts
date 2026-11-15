@@ -216,7 +216,7 @@ test("orphanDevice adoption, floatingHuds, explicit addHud, markLatest, hudChang
   assert.deepEqual(phone2.sent, [{ type: "hud", connected: false }]);
 });
 
-test("Hub.dropFrames() resets ring, spec, lastCode, and readiness so subsequent checks neither blend stale sharpness nor suppress initial sonar", async (t) => {
+test("Hub.dropFrames() resets ring, spec, lastCode, lastFields, and spotCoach for subsequent checks", async (t) => {
   const prevLedger = env.ledgerPath;
   const ledgerFile = path.join(os.tmpdir(), `holdup-hub-drop-${process.pid}.jsonl`);
   const origGenerate = ai.models.generateContent;
@@ -251,12 +251,13 @@ test("Hub.dropFrames() resets ring, spec, lastCode, and readiness so subsequent 
   hub.live = { active: true, handleEvent() {}, stop() {} };
 
   hub.setCode({ raw: "010641000123456717280800", gtin: "06410001234567", expiry: "2028-08" });
+  hub.lastFields = { fields: [{ label: "strength", box: [400, 300, 500, 700], score: 0.9 }], ts: now };
   assert.ok(hub.lastCode);
   assert.equal(hub.freshCode()?.gtin, "06410001234567");
 
   hub.addFrame({ data: "S1_" + "A".repeat(180), sharpness: 1.0, ts: now, bytes: 200, source: "phone" });
   assert.equal(hub.ring.length, 1);
-  assert.deepEqual(phone.sent, [{ type: "readiness", value: 0.6 }]);
+  assert.deepEqual(phone.sent, [{ type: "readiness", value: 0.9 }]);
 
   now += 300;
   const deadline1 = origNow() + 1000;
@@ -264,30 +265,27 @@ test("Hub.dropFrames() resets ring, spec, lastCode, and readiness so subsequent 
     await new Promise((r) => setTimeout(r, 5));
   }
   assert.ok(hub.spec.latest());
-  assert.deepEqual(phone.sent.at(-1), { type: "readiness", value: 0.87 });
 
   hub.dropFrames();
   assert.equal(hub.ring.length, 0);
   assert.equal(hub.spec.latest(), undefined);
   assert.equal(hub.lastCode, undefined);
+  assert.equal(hub.lastFields, undefined);
   assert.equal(hub.freshCode(), undefined);
 
+  now += 300;
   phone.sent = [];
   const f2 = { data: "S2_" + "B".repeat(240), sharpness: 0.25, ts: now, bytes: 250, source: "phone" as const };
-  hub.ring.push(f2);
-  hub.spec.onFrame(f2);
+  hub.addFrame(f2);
+  assert.deepEqual(phone.sent, [{ type: "readiness", value: 0.15 }]);
 
+  now += 300;
   const deadline2 = origNow() + 1000;
   while (!hub.spec.latest() && origNow() < deadline2) {
     await new Promise((r) => setTimeout(r, 5));
   }
   assert.ok(hub.spec.latest());
-  assert.deepEqual(phone.sent, [{ type: "readiness", value: 0.52 }]);
-
-  hub.dropFrames();
-  phone.sent = [];
-  hub.updateReadiness(0.52 / 0.6);
-  assert.deepEqual(phone.sent, [{ type: "readiness", value: 0.52 }]);
+  assert.deepEqual(phone.sent.at(-1), { type: "readiness", value: 0.61 });
 });
 
 test("Hub.updateReadiness() formula, decay window, unreadable read, clamping, rate-limiting, delta suppression, and client-only routing", (t) => {

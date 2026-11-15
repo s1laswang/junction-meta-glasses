@@ -448,6 +448,7 @@ export class Checker {
         haptic.coach(m.cue);
         // with spoken answers off, the screen reader is the only voice: read the cue
         if (!loadSettings().voice) announce(m.text);
+        else if (m.say) speak(m.text); // detector cue: Gemini doesn't say these, so the phone does, in live mode too
         else if (this.s.mode !== "live" || IS_MOCK) {
           const cid = cuePhraseId(m.cue, m.text);
           if (cid) speakPhrase(cid, m.text);
@@ -475,6 +476,14 @@ export class Checker {
         break;
       case "interrupted":
         this.player.flush();
+        break;
+      case "correction":
+        // the spoken answer did not match the rule's sentence: stop it and say the rule's sentence ourselves
+        this.player.flush();
+        earcon.alert();
+        speak(m.speech);
+        announce(`Corrected answer: ${m.speech}`, "assertive");
+        this.set({ banner: { tone: "warn", title: "Corrected answer", detail: "The spoken answer didn't match the check, so HoldUp repeated the checked sentence." } });
         break;
       case "checking":
         if (m.phase === "start") {
