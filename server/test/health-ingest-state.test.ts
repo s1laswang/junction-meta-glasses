@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import type http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { after, afterEach, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
@@ -23,7 +24,7 @@ const origModelsGet = ai.models.get;
 const origGenerateContent = ai.models.generateContent;
 const origDateNow = Date.now;
 
-const ledgerTmpDir = fs.mkdtempSync("/dev/shm/holdup-f4-ingest-");
+const ledgerTmpDir = fs.mkdtempSync(path.join(fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir(), "holdup-f4-ingest-"));
 env.ledgerPath = path.join(ledgerTmpDir, "ledger.jsonl");
 process.env.HOLDUP_QUIET = "1";
 
