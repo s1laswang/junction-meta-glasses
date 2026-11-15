@@ -1,4 +1,3 @@
-process.env.TZ = "Europe/Helsinki";
 import { pathToFileURL } from "node:url";
 import readline from "node:readline";
 
