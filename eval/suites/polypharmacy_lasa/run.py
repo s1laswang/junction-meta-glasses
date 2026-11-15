@@ -19,7 +19,7 @@ SUITE_NAME = "polypharmacy_lasa"
 MODEL = "gemini-3.8-flash"
 CONF_THRESHOLD = 0.8
 NOW_ISO = "2026-11-14T20:00:00Z"
-DOSE_TS_1, DOSE_TS_2 = 1794679200000, 1794682800000
+DOSE_TS_1, DOSE_TS_2 = 1794643200000, 1794682800000
 RESULTS_PATH = SUITE_DIR / "results.json"
 
 MED_AML = {"id": "aml", "name": "Amlodipine", "ingredient": "amlodipine", "strength": "5 mg", "schedule": ["evening"]}
