@@ -438,15 +438,23 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
       for (const expectedPhrase of [
         "continuous first-person stream",
         "one personal question",
+        "built for",
         "Ray-Ban Meta",
         "camera via the Device Access Toolkit",
-        "audio over Bluetooth",
+        "the bridge APK compiles and its tests pass",
         "Ray-Ban Display",
         "HUD Web App + Neural Band",
-        "falls back to the phone camera when the glasses aren't available",
+        "Today the full loop runs on the phone camera",
+        "with the glasses as a Bluetooth headset",
+        "docs/HARDWARE_LOG.md",
       ]) {
         assert.ok(beyondBody.includes(expectedPhrase), `Slide 3 Beyond mirroring card must include "${expectedPhrase}"`);
       }
+      assert.equal(
+        beyondBody.toLowerCase().includes("it runs on ray-ban meta"),
+        false,
+        "Slide 3 must not claim unverified on-glasses execution",
+      );
 
       assert.match(webCheckerSrc, /source:\s*"phone"\s*\|\s*"glasses"/);
       assert.match(webCheckerSrc, /async\s+setSource\(\s*src:\s*"phone"\s*\|\s*"glasses"/);
@@ -637,9 +645,11 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
       assert.deepEqual(leadFor("sv", "warning"), { lead: "Varning." });
       assert.deepEqual(leadFor("sv", "unsure"), { lead: "Jag är inte säker." });
       assert.deepEqual(leadFor("en-US", "match"), {});
-      assert.ok(speakInstruction("en", "Stop.").startsWith("Say `speech` word for word, then stop."));
-      assert.ok(speakInstruction("fi", "Stop.").startsWith("First say `lead` exactly as written, then say `speech` translated faithfully"));
-      assert.ok(speakInstruction("sv", "Stop.").startsWith("First say `lead` exactly as written, then say `speech` translated faithfully"));
+      assert.equal(speakInstruction("en", "Stop."), "Say `speech` word for word, then stop. Stop.");
+      const expectedNordicInstruction =
+        "First say `lead` exactly as written, then say the rest of `speech` translated faithfully into the user's language (do not repeat the opener; keep medicine names, numbers and dates exact, using a decimal comma like 2,5 mg when speaking numbers), then stop. Stop.";
+      assert.equal(speakInstruction("fi", "Stop."), expectedNordicInstruction);
+      assert.equal(speakInstruction("sv", "Stop."), expectedNordicInstruction);
 
       assert.ok(
         steps[5].body.includes("I took it") &&
