@@ -230,7 +230,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <li class="step"><span class="n">02</span><h3>Coach</h3><p>Gemini Live watches ~1 frame/s and gives <b>one physical cue at a time</b>. Cue arrow on screen and HUD, plus an earcon and a vibration.</p></li>
     <li class="step"><span class="n">03</span><h3>Read</h3><p><code>verify_label</code>: up to 2 sharpest frames from the last 1.5 s (often 1 on the glasses at ~1 fps), strict JSON schema, <b>a confidence for every field</b>, null when not legible.</p></li>
     <li class="step"><span class="n">04</span><h3>Check</h3><p>Deterministic rules against <b>your on-device profile</b>: medicines, strengths, schedule, allergies, avoid list, expiry, today's doses.</p></li>
-    <li class="step"><span class="n">05</span><h3>Answer</h3><p>The checker writes the sentence; Live is instructed to say it as written (FI/SV: fixed openers, details translated). The verdict card on the phone and in the lens is deterministic.</p></li>
+    <li class="step"><span class="n">05</span><h3>Answer</h3><p>The checker writes the sentence and Live says it. The server then <b>checks what was said</b>; on a mismatch the phone repeats the checked sentence (FI/SV: fixed openers, details translated). The verdict card on the phone and in the lens is deterministic.</p></li>
     <li class="step"><span class="n">06</span><h3>Log</h3><p><b>“I took it”</b> saves the dose on the phone, so next time: “You already took it today.”</p></li>
   </ol>
   <div class="verdicts" role="list" aria-label="The three verdicts, as spoken">
@@ -252,6 +252,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <p class="small">Backup video (<b>SIMULATION / MOCK <code>?mock=1</code>, not physical hardware</b>): <a href="../docs/demo/holdup-mock-demo.mp4" style="color:var(--accent)">docs/demo/holdup-mock-demo.mp4</a> (<a href="https://github.com/s1laswang/junction-meta-glasses/blob/main/docs/demo/holdup-mock-demo.mp4" style="color:var(--accent)">GitHub</a> &middot; <a href="../docs/demo/README.md" style="color:var(--accent)">notes</a>; 06:30 glasses slot: <code>docs/HARDWARE_LOG.md</code>)</p>
     </div>
     <ol class="card" style="gap:14px">
+      <li class="body"><b class="accent">First · Which one?</b> Three look-alike boxes on the table. &ldquo;Your evening pill is the box on the right. The middle one is ibuprofen.&rdquo;</li>
       <li class="body"><b class="accent">1 · Coach.</b> Box held label-away. “The label is on the other side. Turn it around… a bit closer.”</li>
       <li class="body"><b class="accent">2 · Match.</b> “Yes, Amlodipine 5 mg, your evening pill.” Green card in the lens. “I took it.”</li>
       <li class="body"><b class="accent">3 · Catch.</b> Ibuprofen: warning, NSAID on the avoid list. Covered strength: “I can't read the strength confidently.”</li>
@@ -344,9 +345,9 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <h3>Live API, mid-session tools</h3>
       <ul class="bul">
         <li>Audio + video in, native audio out, transcripts, barge-in.</li>
-        <li>Tools: <code>verify_label</code>, <code>show_cue</code> (non-blocking, silent), <code>log_dose</code>.</li>
+        <li>Tools: <code>verify_label</code>, <code>find_item</code> (which one?), <code>add_medication</code> (set up by voice), <code>show_cue</code> (non-blocking, silent), <code>log_dose</code>.</li>
         <li>Session resumption + context compression: drops keep context.</li>
-        <li><b>Hard rule:</b> Live never states a name, dose, expiry or allergen from its own view; it calls the reader and is instructed to say the checker's sentence as written (not enforced; the card is deterministic).</li>
+        <li><b>Hard rule:</b> Live never states a name, dose, expiry or allergen from its own view; it calls the reader and says the checker's sentence. The server checks what was said after every verdict and the phone repeats the checked sentence on a mismatch (16 live verdicts checked, 1 corrected).</li>
       </ul>
     </div>
     <div class="card">
@@ -472,15 +473,15 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   </ol>
   <div class="grid4">
     <div class="card stat"><p class="num">1,740</p><p>images scored: 172 Gemini-written labels → 210 renders (170 front, 40 back) → a sampled mix: 170 clean, 40 back-of-box, ~1,530 degraded (6 types, 3 severities). 0 API errors</p></div>
-    <div class="card stat"><p class="num">0<small>/754</small></p><p>confident-wrong strength reads (confidence ≥ 0.8). 95% upper bound 0.4%. Product names: 42/1,173 (3.6%) confident-wrong, mostly strength missing from the name</p></div>
-    <div class="card stat"><p class="num">0.06%</p><p>silent unsafe reassurances end to end, after the allergen gate: 3/4,730 (CI 0.02–0.19%; was 49 = 1.0%). Cost: safe foods now get "not sure" more often (34% vs 68% told "allergen-free")</p></div>
+    <div class="card stat"><p class="num">0<small>/754</small></p><p>confident-wrong strength reads (confidence ≥ 0.8). 95% upper bound 0.4%. <b>Held-out set (1,060 new images, never used for tuning): 1/536 (0.19%, CI 0.03–1.05%)</b>, an eye-drop strength misread under motion blur. Product names: 42/1,173 (3.6%) confident-wrong</p></div>
+    <div class="card stat"><p class="num">0.06%</p><p>silent unsafe reassurances end to end, after the allergen gate: 3/4,730 (CI 0.02–0.19%; was 49 = 1.0%). Cost: safe foods now get "not sure" more often (34% vs 68%). <b>Held-out: 4/3,033 = 0.13% (CI 0.05–0.34%)</b>; harder unseen look-alike cases 14/4,041 = 0.35%</p></div>
     <div class="card stat"><p class="num">0%</p><p>wrong strength when readable (83% read, 17% abstained, n=926) · calibration ECE 0.022</p></div>
   </div>
   <div class="grid2">
-    <div class="card"><h3>Next: real photos</h3><p>Synthetic labels are the start. Scoring the team's own photos of Finnish pharmacy boxes and food panels comes next, reported separately (not yet scored).</p></div>
-    <div class="card"><h3>Honest caveat</h3><p>The legibility check uses the same model family as the reader, which may make synthetic ground truth easier. That is why the headline metric is <b>unsafe reassurance</b>, and why real photos are scored separately.</p></div>
+    <div class="card"><h3>Red-teamed with Gemini</h3><p>32 attack families, 2,264 adversarial labels (look-alike names, 2.5 vs 25 mg, stickers over print, text on the pack telling the model what to say). Silent unsafe answers: 199 (8.8%) before the new guards, 13 (0.57%) after. That is in-sample: the guards came from those failures, and all 199 are pinned as tests. Real photos are not yet scored.</p></div>
+    <div class="card"><h3>Gemini made the data, two small models learned from it</h3><p>Trained on Verda GPUs from the 1,740 labelled images: a 13 MB detector that finds the dose on a CPU (96.8% right when it says "dose in view", held out, n = 348), and a PaliGemma 2 (Gemma) detector that finds it 91.4% of the time. Caveat: all of this is synthetic and self-graded.</p></div>
   </div>
-  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json. gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">11</span></div>
+  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json, v3_results.json (held-out, checked by a different model). gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">11</span></div>
 </section>
 
 <!-- 12 ADOPTION -->
