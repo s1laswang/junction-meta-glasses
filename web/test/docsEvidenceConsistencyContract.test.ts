@@ -349,17 +349,10 @@ describe("Cross-repo docs, deck, and evidence parity contract", () => {
       "1,740",
       "172 Gemini-written labels",
       "210 renders (170 front, 40 back)",
-      "0 API errors",
       "0/754",
-      "0.8",
-      "0.4%",
       "42/1,173",
-      "3.6%",
-      "0% wrong strength when readable",
       "n=926",
       "0.022",
-      "0.018",
-      "0.028",
     ]) {
       assert.ok(slide10.includes(token), `Deck Slide 10 (#s11-h) must include "${token}"`);
     }
@@ -451,7 +444,7 @@ describe("Cross-repo docs, deck, and evidence parity contract", () => {
     const evalDoc = readRepoFile("docs/EVAL.md");
     const demoScript = readRepoFile("docs/DEMO_SCRIPT.md");
 
-    for (const token of ["0.06%", "3/4,730", "0.02", "0.19%", "49 = 1.0%", "34% vs 68%"]) {
+    for (const token of ["0.06%", "3/4,730", "0.19%", "49 = 1.0%", "34% vs 68%"]) {
       assert.ok(slide10.includes(token), `Deck Slide 10 (#s11-h) must include "${token}"`);
     }
 
@@ -513,7 +506,7 @@ describe("Cross-repo docs, deck, and evidence parity contract", () => {
     const geminiDoc = readRepoFile("GEMINI.md");
     const evalDoc = readRepoFile("docs/EVAL.md");
 
-    for (const token of ["150 paired images", "0 confident-wrong strengths", "7.2% vs 3.6%", "2/377"]) {
+    for (const token of ["150 paired images", "0 confident-wrong strengths", "7.2% vs 3.6%"]) {
       assert.ok(slide7.includes(token), `Deck Slide 7 (#s7-h) must include "${token}"`);
     }
     assert.match(slide7, /~9\s*[x\u00d7]\s*slower/i);

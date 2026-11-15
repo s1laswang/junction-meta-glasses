@@ -228,9 +228,9 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <ol class="loop">
     <li class="step"><span class="n">01</span><h3>Ask</h3><p><b>“Is this my evening pill?”</b> By voice, typed text, the big button, or a Bluetooth play/pause tap.</p></li>
     <li class="step"><span class="n">02</span><h3>Coach</h3><p>Gemini Live watches ~1 frame/s and gives <b>one physical cue at a time</b>. Cue arrow on screen and HUD, plus an earcon and a vibration.</p></li>
-    <li class="step"><span class="n">03</span><h3>Read</h3><p><code>verify_label</code>: up to 2 sharpest frames from the last 1.5 s (often 1 on the glasses at ~1 fps), strict JSON schema, <b>a confidence for every field</b>, null when not legible.</p></li>
+    <li class="step"><span class="n">03</span><h3>Read</h3><p><code>verify_label</code>: the sharpest recent frames, strict JSON schema, <b>a confidence for every field</b>, null when not legible.</p></li>
     <li class="step"><span class="n">04</span><h3>Check</h3><p>Deterministic rules against <b>your on-device profile</b>: medicines, strengths, schedule, allergies, avoid list, expiry, today's doses.</p></li>
-    <li class="step"><span class="n">05</span><h3>Answer</h3><p>The checker writes the sentence and Live says it. The server then <b>checks what was said</b>; on a mismatch the phone repeats the checked sentence (FI/SV: fixed openers, details translated). The verdict card on the phone and in the lens is deterministic.</p></li>
+    <li class="step"><span class="n">05</span><h3>Answer</h3><p>The checker writes the sentence, Live says it, and the server <b>checks what was said</b>. On a mismatch the phone repeats the checked sentence.</p></li>
     <li class="step"><span class="n">06</span><h3>Log</h3><p><b>“I took it”</b> saves the dose on the phone, so next time: “You already took it today.”</p></li>
   </ol>
   <div class="verdicts" role="list" aria-label="The three verdicts, as spoken">
@@ -345,9 +345,9 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <h3>Live API, mid-session tools</h3>
       <ul class="bul">
         <li>Audio + video in, native audio out, transcripts, barge-in.</li>
-        <li>Tools: <code>verify_label</code>, <code>find_item</code> (which one?), <code>add_medication</code> (set up by voice), <code>show_cue</code> (non-blocking, silent), <code>log_dose</code>.</li>
-        <li>Session resumption + context compression: drops keep context.</li>
-        <li><b>Hard rule:</b> Live never states a name, dose, expiry or allergen from its own view; it calls the reader and says the checker's sentence. The server checks what was said after every verdict and the phone repeats the checked sentence on a mismatch (16 live verdicts checked, 1 corrected).</li>
+        <li>Five tools: <code>verify_label</code>, <code>find_item</code>, <code>add_medication</code>, <code>show_cue</code>, <code>log_dose</code>.</li>
+        <li>Session resumption: drops keep context.</li>
+        <li><b>Hard rule:</b> Live never states a dose from its own view. What it says is checked against the rule's sentence (16 checked, 1 corrected).</li>
       </ul>
     </div>
     <div class="card">
@@ -356,24 +356,24 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
         <li><code>responseJsonSchema</code>: every field is <code>{value, confidence}</code>, null when not legible.</li>
         <li>Never infers strength from a brand; never completes a half-read word.</li>
         <li>Reads Finnish and Swedish packs; ingredient mapped to its English INN name.</li>
-        <li>Thinking low, 8 s timeout, retry, fallback chain.</li>
+        <li>8 s timeout, retry, fallback chain.</li>
       </ul>
     </div>
     <div class="card hl">
       <h3>Speculative verify</h3>
-      <p class="small" style="color:var(--text)">While you are still asking, the server already reads the sharpest new frame (one call in flight, ≥ 2 s apart). The tool call is answered from that cache, or joins the read in flight.</p>
+      <p class="small" style="color:var(--text)">While you are still asking, the server already reads the sharpest new frame. The tool call is answered from that cache.</p>
       <div class="bars" role="img" aria-labelledby="s7-chart-t">
         <span id="s7-chart-t" class="sr-only">Latency from server logs. Question to first spoken audio: 5.8 seconds before speculative verify (one run), now median 2.1 seconds, 95th percentile 3.4 seconds over 26 sessions. One verify call: median 3.4 seconds, 95th percentile 5.6 seconds (1,740 eval calls). Cache hit: under 5 milliseconds.</span>
-        <div class="bar"><div class="lab"><b>2.1 s p50 · 3.4 s p95</b>question → first audio, now (n=26 sessions)</div><div class="track"><div class="seg range" style="left:35%; width:22.5%"></div></div></div>
+        <div class="bar"><div class="lab"><b>2.1 s p50</b>question → first audio now (3.4 s p95, n=26)</div><div class="track"><div class="seg range" style="left:35%; width:22.5%"></div></div></div>
         <div class="bar"><div class="lab"><b>5.8 s</b>before speculative verify</div><div class="track"><div class="seg old" style="left:0; width:96.7%"></div></div></div>
-        <div class="bar"><div class="lab"><b>3.4 s p50 · 5.6 s p95</b>one verify call (Flash, n=1,740)</div><div class="track"><div class="seg range" style="left:57%; width:36%"></div></div></div>
+        <div class="bar"><div class="lab"><b>3.4 s p50</b>one verify call (5.6 s p95, n=1,740)</div><div class="track"><div class="seg range" style="left:57%; width:36%"></div></div></div>
         <div class="bar"><div class="lab"><b>&lt; 5 ms</b>speculative cache hit</div><div class="track"><div class="seg range" style="left:0; width:4px"></div></div></div>
         <div class="axis" aria-hidden="true"><span></span><div class="ticks"><span style="left:0">0</span><span style="left:50%">3 s</span><span style="left:100%">6 s</span></div></div>
       </div>
     </div>
   </div>
   <div class="card" style="padding:12px 20px">
-    <p style="font-size:16.5px"><b class="accent">Why Gemini specifically:</b> one API gives us realtime audio+video with tool calls mid-conversation, schema-constrained vision with thinking control, native-audio voices, TTS, and image generation to build our own eval set. Every call is metered: <code>/api/stats</code> reports p50/p95 latency, first-audio time, tool latency and tokens per feature from a metadata-only ledger. Measured on 150 paired images: all models 0 confident-wrong strengths, but Gemma 4 31B was confidently wrong on other fields twice as often (7.2% vs 3.6%, mostly allergens), gave the only unsafe reassurances (2/377) and was ~9× slower.</p>
+    <p style="font-size:16.5px"><b class="accent">Why Gemini specifically:</b> realtime audio+video, mid-call tools and schema-constrained vision in one API (<code>/api/stats</code>). 150 paired images: 0 confident-wrong strengths for all; Gemma 4 31B twice as often wrong elsewhere (7.2% vs 3.6%), ~9× slower.</p>
   </div>
   <div class="foot"><span class="src">Latency: server logs and /api/stats, Sat 14 Nov 2026, demo laptop over venue Wi-Fi; verify p50/p95 from the 1,740-call eval (docs/EVAL.md).</span><span class="pg">7</span></div>
 </section>
@@ -472,16 +472,16 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <li class="step"><span class="n">05 · Product</span><h3>Score</h3><p>The shipped prompt, schema and <code>safety.ts</code> run on every image and profile.</p></li>
   </ol>
   <div class="grid4">
-    <div class="card stat"><p class="num">1,740</p><p>images scored: 172 Gemini-written labels → 210 renders (170 front, 40 back) → a sampled mix: 170 clean, 40 back-of-box, ~1,530 degraded (6 types, 3 severities). 0 API errors</p></div>
-    <div class="card stat"><p class="num">0<small>/754</small></p><p>confident-wrong strength reads (confidence ≥ 0.8). 95% upper bound 0.4%. <b>Held-out set (1,060 new images, never used for tuning): 1/536 (0.19%, CI 0.03–1.05%)</b>, an eye-drop strength misread under motion blur. Product names: 42/1,173 (3.6%) confident-wrong</p></div>
-    <div class="card stat"><p class="num">0.06%</p><p>silent unsafe reassurances end to end, after the allergen gate: 3/4,730 (CI 0.02–0.19%; was 49 = 1.0%). Cost: safe foods now get "not sure" more often (34% vs 68%). <b>Held-out: 4/3,033 = 0.13% (CI 0.05–0.34%)</b>; harder unseen look-alike cases 14/4,041 = 0.35%</p></div>
-    <div class="card stat"><p class="num">0%</p><p>wrong strength when readable (83% read, 17% abstained, n=926) · calibration ECE 0.022</p></div>
+    <div class="card stat"><p class="num">1,740</p><p>test images: 172 Gemini-written labels, 210 renders (170 front, 40 back), plus degraded copies</p></div>
+    <div class="card stat"><p class="num">0<small>/754</small></p><p>confident-wrong strength reads. <b>Held-out: 1/536</b> (0.19%). Product names: 42/1,173</p></div>
+    <div class="card stat"><p class="num">0.06%</p><p>silent unsafe answers, 3/4,730 (was 49 = 1.0%). <b>Held-out: 4/3,033 = 0.13%</b></p></div>
+    <div class="card stat"><p class="num">0%</p><p>wrong strength when readable (n=926). ECE 0.022</p></div>
   </div>
   <div class="grid2">
-    <div class="card"><h3>Red-teamed with Gemini</h3><p>32 attack families, 2,264 adversarial labels (look-alike names, 2.5 vs 25 mg, stickers over print, text on the pack telling the model what to say). Silent unsafe answers: 199 (8.8%) before the new guards, 13 (0.57%) after. That is in-sample: the guards came from those failures, and all 199 are pinned as tests. Real photos are not yet scored.</p></div>
-    <div class="card"><h3>Gemini made the data, two small models learned from it</h3><p>Trained on Verda GPUs from the 1,740 labelled images: a 13 MB detector that finds the dose on a CPU (96.8% right when it says "dose in view", held out, n = 348), and a PaliGemma 2 (Gemma) detector that finds it 91.4% of the time. Caveat: all of this is synthetic and self-graded.</p></div>
+    <div class="card"><h3>Red-teamed with Gemini</h3><p>32 attack families, 2,264 labels: silent unsafe 199 → 13 (in-sample, all pinned as tests).</p></div>
+    <div class="card"><h3>Gemini made the data, two small models learned</h3><p>A 13 MB dose detector and a PaliGemma 2 detector, trained on Verda. All synthetic; real photos not yet scored.</p></div>
   </div>
-  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json, v3_results.json (held-out, checked by a different model). gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">11</span></div>
+  <div class="foot"><span class="src">docs/EVAL.md · eval/results (v1, held-out v3) · cost of the allergen gate: safe foods cleared 34% vs 68%</span><span class="pg">11</span></div>
 </section>
 
 <!-- 12 ADOPTION -->
