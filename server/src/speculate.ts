@@ -27,6 +27,7 @@ export class Speculator {
   private sceneChangedAfterCache = false;
   /** frame time of the last detected scene change; reads of frames older than this are never served */
   private lastChangeTs = 0;
+  private gen = 0;
   hits = 0; misses = 0;
 
   /** called whenever a background read lands (readiness sonar) */
@@ -35,7 +36,7 @@ export class Speculator {
   /** Latest speculative read (any age), for the readiness sonar. */
   latest() { return this.cache; }
 
-  clear() { this.cache = undefined; this.inflight = undefined; clearTimeout(this.timer); }
+  clear() { this.gen++; this.cache = undefined; this.inflight = undefined; this.sceneChangedAfterCache = false; this.lastChangeTs = 0; clearTimeout(this.timer); }
 
   /** Call on every new frame (phone or glasses). */
   onFrame(f: Frame) {
@@ -61,8 +62,10 @@ export class Speculator {
     this.lastStart = Date.now();
     const frameTs = Math.max(...frames.map((x) => x.ts));
     const best = frames[0];
+    const gen = this.gen;
     const promise = this.reader(frames.map((x) => x.data), undefined, "verify_spec")
       .then((r): Cached | undefined => {
+        if (gen !== this.gen) return undefined;
         if (!r.model) return undefined; // reader failed: keep the old cache
         const c: Cached = { read: r.read, model: r.model, frameTs, sharpness: best.sharpness, bytes: best.bytes, at: Date.now() };
         // only a read of frames taken after the last scene change may become the cache
@@ -95,8 +98,16 @@ export class Speculator {
     }
     const inf = this.inflight;
     if (inf && t - inf.frameTs < SPEC.stableMs && inf.frameTs >= this.lastChangeTs) {
+      const gen = this.gen;
       const c = await Promise.race([inf.promise, new Promise<undefined>((r) => setTimeout(() => r(undefined), maxWaitMs))]);
-      if (c && c.read.kind !== "unreadable") {
+      if (
+        c &&
+        gen === this.gen &&
+        c.read.kind !== "unreadable" &&
+        c.read.readability >= SPEC.minReadability &&
+        !this.sceneChangedAfterCache &&
+        c.frameTs >= this.lastChangeTs
+      ) {
         this.hits++;
         ledger({ feature: "verify_cache", model: c.model ?? "none", latency_s: (Date.now() - t) / 1000, ok: true, source: "inflight" });
         return { read: c.read, model: c.model, source: "inflight" };

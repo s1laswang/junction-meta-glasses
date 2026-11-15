@@ -35,6 +35,10 @@ export function App() {
 
   // focus management: move focus to the screen heading on every tab change
   useEffect(() => {
+    if (s.authNeeded) {
+      document.title = "Access key needed · HoldUp";
+      return;
+    }
     if (["check", "profile", "privacy"].includes(screen)) {
       h1.current?.focus();
       document.title = `${TITLES[screen]} · HoldUp`;
@@ -43,7 +47,7 @@ export function App() {
       announce(pendingAnnounce.current, "assertive");
       pendingAnnounce.current = null;
     }
-  }, [screen]);
+  }, [screen, s.authNeeded]);
 
   if (s.authNeeded)
     return (

@@ -87,7 +87,7 @@ export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: {
                 {x.label}
                 <input type="checkbox" role="switch" checked={st.features[x.flag]} onChange={() => toggleFeature(x.flag)} aria-describedby={`feat-${x.flag}`} />
               </label>
-              <p id={`feat-${x.flag}`} className="muted" style={{ fontSize: "1rem", marginTop: -4, marginBottom: 8 }}>
+              <p id={`feat-${x.flag}`} className="muted" style={{ fontSize: "1rem", marginTop: 6, marginBottom: 8 }}>
                 {x.help}
               </p>
             </div>
@@ -153,7 +153,7 @@ export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: {
       </section>
 
       <p className="muted" style={{ fontSize: "1rem" }}>
-        HoldUp is not a medical device. When it isn't sure, it says so. Ask a pharmacist about anything uncertain.
+        HoldUp is a research prototype, not a CE-marked medical device. When it isn't sure, it says so. Ask a pharmacist about anything uncertain.
       </p>
     </div>
   );

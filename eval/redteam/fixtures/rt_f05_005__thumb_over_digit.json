@@ -1,0 +1,95 @@
+{
+  "id": "rt_f05_005__thumb_over_digit",
+  "spec_id": "rt_f05_005",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held box is Vitamin A 800 mcg, whereas the user's saved medication is Vitamin K1 800 mcg.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "A-vitamiini Teva 800 mikrog",
+    "ingredient": "Vitamin A",
+    "strength": "800 mcg",
+    "expiry": "2028-01",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "K1-vitamiini Teva 800 mikrog",
+        "ingredient": "Vitamin K1",
+        "strength": "800 mcg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "A-vitamiini Teva",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "vitamin A",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "800 mcg",
+      "confidence": 0.9
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75,
+    "guidance": "Turn the box around to see the instructions and expiry."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410400001066(17)280100(10)RT01(21)SN005"
+}

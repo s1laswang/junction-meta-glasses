@@ -1,0 +1,93 @@
+{
+  "id": "rt_f03_003__specular_glare",
+  "spec_id": "rt_f03_003",
+  "family": "F03_insulin_analog_crossmatch",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Held pack is basal insulin detemir 100 KY/ml, whereas the user's saved medication is rapid-acting insulin aspart 100 IU/ml.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Levemir FlexPen 100 KY/ml",
+    "ingredient": "insulin detemir",
+    "strength": "100 KY/ml",
+    "expiry": "2027-06",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "NovoRapid FlexPen",
+        "ingredient": "insulin aspart",
+        "strength": "100 IU/ml",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Levemir FlexPen",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "insulin detemir",
+      "confidence": 0.98
+    },
+    "strength": {
+      "value": "100 KY/ml",
+      "confidence": 0.92
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-06",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06412345001042(17)270600(10)RT01(21)SN003"
+}

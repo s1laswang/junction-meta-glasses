@@ -1,0 +1,93 @@
+{
+  "id": "rt_f03_006__clean",
+  "spec_id": "rt_f03_006",
+  "family": "F03_insulin_analog_crossmatch",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Held pack is basal insulin glargine 100 IU/ml, whereas the user's saved medication is intermediate-acting insulin isophane 100 IU/ml.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Abasaglar KwikPen 100 IU/ml",
+    "ingredient": "insulin glargine",
+    "strength": "100 IU/ml",
+    "expiry": "2029-05",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Protaphane Penfill",
+        "ingredient": "insulin isophane",
+        "strength": "100 IU/ml",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Abasaglar KwikPen",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "insulin glargine",
+      "confidence": 0.98
+    },
+    "strength": {
+      "value": "100 IU/ml",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2029-05",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.95
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05012345001073(17)290500(10)RT01(21)SN006"
+}
