@@ -1,0 +1,1686 @@
+{
+  "tool": "Playwright Chromium + CDP Accessibility.getFullAXTree + DOM MutationObserver",
+  "engine": "Headless Chromium 131.0.6778.33 (Blink AXTree via CDP)",
+  "viewportPhone": {
+    "width": 390,
+    "height": 844,
+    "hasTouch": true,
+    "isMobile": true,
+    "device": "Android 14 Pixel 8 Chrome"
+  },
+  "viewportHud": {
+    "width": 600,
+    "height": 600,
+    "device": "Meta Ray-Ban Display Web App"
+  },
+  "when": "2026-11-14T23:38:36.500Z",
+  "allPassed": true,
+  "summary": {
+    "journeysAudited": 19,
+    "phoneJourneysAudited": 17,
+    "hudJourneysAudited": 2,
+    "totalChecks": 37,
+    "passedChecks": 37,
+    "failedChecks": 0,
+    "totalAxNodesInspected": 2671,
+    "totalInteractiveAxNodes": 151,
+    "unnamedInteractiveAxNodes": 0,
+    "titleTransitionsVerified": [
+      "HoldUp",
+      "Check · HoldUp",
+      "Profile · HoldUp",
+      "Privacy · HoldUp"
+    ],
+    "verdictFocusHandoffsVerified": 4,
+    "modalDialogsVerified": 2,
+    "touchTargets": {
+      "phonePrimaryButtons": {
+        "count": 65,
+        "minHeightPx": 48,
+        "medianHeightPx": 56,
+        "maxHeightPx": 104,
+        "allMeet48px": true
+      },
+      "phoneAllButtons": {
+        "count": 156,
+        "minHeightPx": 48,
+        "medianHeightPx": 48,
+        "maxHeightPx": 104,
+        "allMeet48px": true
+      },
+      "phoneAllInteractive": {
+        "count": 195,
+        "minHeightPx": 16,
+        "medianHeightPx": 56,
+        "maxHeightPx": 104
+      },
+      "hudPrimaryButtons": {
+        "count": 6,
+        "minHeightPx": 60,
+        "medianHeightPx": 60,
+        "maxHeightPx": 60,
+        "allMeet48px": true
+      },
+      "hudAllInteractive": {
+        "count": 8,
+        "minHeightPx": 44,
+        "medianHeightPx": 60,
+        "maxHeightPx": 60
+      },
+      "sub48pxSecondaryControls": [
+        {
+          "journey": "privacy",
+          "surface": "phone",
+          "tag": "input",
+          "type": "range",
+          "name": "Readiness tone volume: 35%",
+          "widthPx": 302,
+          "heightPx": 16
+        },
+        {
+          "journey": "hud-verdict",
+          "surface": "hud",
+          "tag": "button",
+          "type": "button",
+          "name": "Speak off",
+          "widthPx": 107,
+          "heightPx": 44
+        },
+        {
+          "journey": "hud-scene",
+          "surface": "hud",
+          "tag": "button",
+          "type": "button",
+          "name": "Speak on",
+          "widthPx": 103,
+          "heightPx": 44
+        }
+      ]
+    },
+    "liveRegionAnnouncementsVerified": 10,
+    "liveRegionDuplicateOrEmptyClobbers": 0,
+    "hudSpeechCancelChecksVerified": 3
+  },
+  "checks": [
+    {
+      "id": "axtree-onboarding-welcome",
+      "category": "axtree_and_touch_targets",
+      "journey": "onboarding-welcome",
+      "surface": "phone",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "HoldUp",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "HoldUp"
+      },
+      "axNodeCount": 30,
+      "visibleAxNodeCount": 26,
+      "interactiveAxNodeCount": 1,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "HoldUp"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: Continue"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 1,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56
+        },
+        "primaryButtons": {
+          "count": 1,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 1,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-onboarding-consent-1",
+      "category": "axtree_and_touch_targets",
+      "journey": "onboarding-consent-1",
+      "surface": "phone",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "1 of 3: What HoldUp captures",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "1 of 3: What HoldUp captures"
+      },
+      "axNodeCount": 50,
+      "visibleAxNodeCount": 38,
+      "interactiveAxNodeCount": 1,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "1 of 3: What HoldUp captures"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: Next"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 1,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56
+        },
+        "primaryButtons": {
+          "count": 1,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 1,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-onboarding-consent-2",
+      "category": "axtree_and_touch_targets",
+      "journey": "onboarding-consent-2",
+      "surface": "phone",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "2 of 3: Where it goes",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "2 of 3: Where it goes"
+      },
+      "axNodeCount": 53,
+      "visibleAxNodeCount": 41,
+      "interactiveAxNodeCount": 2,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "2 of 3: Where it goes"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: Next",
+        "button: Back"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56
+        },
+        "primaryButtons": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-onboarding-consent-3",
+      "category": "axtree_and_touch_targets",
+      "journey": "onboarding-consent-3",
+      "surface": "phone",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "3 of 3: What stays on this phone",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "3 of 3: What stays on this phone"
+      },
+      "axNodeCount": 55,
+      "visibleAxNodeCount": 43,
+      "interactiveAxNodeCount": 3,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "3 of 3: What stays on this phone"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: I agree",
+        "button: Not now",
+        "button: Back"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 3,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56
+        },
+        "primaryButtons": {
+          "count": 3,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 3,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-onboarding-permission-step",
+      "category": "axtree_and_touch_targets",
+      "journey": "onboarding-permission-step",
+      "surface": "phone",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "Camera and microphone",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "Camera and microphone"
+      },
+      "axNodeCount": 38,
+      "visibleAxNodeCount": 31,
+      "interactiveAxNodeCount": 2,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Camera and microphone"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: Allow camera and microphone",
+        "button: Not now"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56
+        },
+        "primaryButtons": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-onboarding-permission-recovery",
+      "category": "axtree_and_touch_targets",
+      "journey": "onboarding-permission-recovery",
+      "surface": "phone",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "HoldUp can't use the camera or microphone yet",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "HoldUp can't use the camera or microphone yet"
+      },
+      "axNodeCount": 74,
+      "visibleAxNodeCount": 63,
+      "interactiveAxNodeCount": 2,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "HoldUp can't use the camera or microphone yet"
+        },
+        {
+          "level": 2,
+          "name": "How to turn it on"
+        },
+        {
+          "level": 2,
+          "name": "You can still use HoldUp"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: Try again",
+        "button: Continue without them"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56
+        },
+        "primaryButtons": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-check-idle",
+      "category": "axtree_and_touch_targets",
+      "journey": "check-idle",
+      "surface": "phone",
+      "passed": true,
+      "title": "Check · HoldUp",
+      "h1Text": "Check a label",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "Check a label"
+      },
+      "axNodeCount": 126,
+      "visibleAxNodeCount": 80,
+      "interactiveAxNodeCount": 11,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Check a label"
+        },
+        {
+          "level": 2,
+          "name": "Conversation"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "link: Skip to content",
+        "button: Check",
+        "button: Profile",
+        "button: Privacy",
+        "button: Phone camera",
+        "button: Glasses camera",
+        "button: Take a photo instead",
+        "DisclosureTriangle: Device state +",
+        "button: Start check",
+        "textbox: Or type a question",
+        "button: Ask"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 20,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104
+        },
+        "primaryButtons": {
+          "count": 6,
+          "minHeightPx": 56,
+          "medianHeightPx": 64,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 18,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-check-coaching",
+      "category": "axtree_and_touch_targets",
+      "journey": "check-coaching",
+      "surface": "phone",
+      "passed": true,
+      "title": "Check · HoldUp",
+      "h1Text": "Check a label",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "body",
+        "id": null,
+        "tabIndex": null,
+        "text": "Skip to contentCheck started. Camera and microphone on. Hold the"
+      },
+      "axNodeCount": 161,
+      "visibleAxNodeCount": 115,
+      "interactiveAxNodeCount": 11,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Check a label"
+        },
+        {
+          "level": 2,
+          "name": "Conversation"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "link: Skip to content",
+        "button: Check",
+        "button: Profile",
+        "button: Privacy",
+        "button: Phone camera",
+        "button: Glasses camera",
+        "button: Take a photo instead",
+        "DisclosureTriangle: Device state +",
+        "button: Stop",
+        "textbox: Or type a question",
+        "button: Ask"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 20,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104
+        },
+        "primaryButtons": {
+          "count": 6,
+          "minHeightPx": 56,
+          "medianHeightPx": 64,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 18,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-check-verdict-match",
+      "category": "axtree_and_touch_targets",
+      "journey": "check-verdict-match",
+      "surface": "phone",
+      "passed": true,
+      "title": "Check · HoldUp",
+      "h1Text": "Check a label",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h2",
+        "id": "verdict-h",
+        "tabIndex": "-1",
+        "text": "Amlodipine 5 mg"
+      },
+      "axNodeCount": 233,
+      "visibleAxNodeCount": 180,
+      "interactiveAxNodeCount": 15,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Check a label"
+        },
+        {
+          "level": 2,
+          "name": "Amlodipine 5 mg"
+        },
+        {
+          "level": 2,
+          "name": "Conversation"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "link: Skip to content",
+        "button: Check",
+        "button: Profile",
+        "button: Privacy",
+        "button: Repeat",
+        "button: I took it",
+        "button: Dismiss",
+        "button: Phone camera",
+        "button: Glasses camera",
+        "button: Take a photo instead",
+        "DisclosureTriangle: Device state +",
+        "button: Stop",
+        "DisclosureTriangle: What I read, and how sure I am",
+        "textbox: Or type a question",
+        "button: Ask"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 24,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104
+        },
+        "primaryButtons": {
+          "count": 7,
+          "minHeightPx": 48,
+          "medianHeightPx": 64,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 21,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-check-verdict-warning",
+      "category": "axtree_and_touch_targets",
+      "journey": "check-verdict-warning",
+      "surface": "phone",
+      "passed": true,
+      "title": "Check · HoldUp",
+      "h1Text": "Check a label",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h2",
+        "id": "verdict-h",
+        "tabIndex": "-1",
+        "text": "Ibuprofen: not on your list"
+      },
+      "axNodeCount": 279,
+      "visibleAxNodeCount": 226,
+      "interactiveAxNodeCount": 14,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Check a label"
+        },
+        {
+          "level": 2,
+          "name": "Ibuprofen: not on your list"
+        },
+        {
+          "level": 2,
+          "name": "Conversation"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "link: Skip to content",
+        "button: Check",
+        "button: Profile",
+        "button: Privacy",
+        "button: Repeat",
+        "button: Dismiss",
+        "button: Phone camera",
+        "button: Glasses camera",
+        "button: Take a photo instead",
+        "DisclosureTriangle: Device state +",
+        "button: Stop",
+        "DisclosureTriangle: What I read, and how sure I am",
+        "textbox: Or type a question",
+        "button: Ask"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 23,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104
+        },
+        "primaryButtons": {
+          "count": 6,
+          "minHeightPx": 56,
+          "medianHeightPx": 64,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 20,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-check-verdict-unsure",
+      "category": "axtree_and_touch_targets",
+      "journey": "check-verdict-unsure",
+      "surface": "phone",
+      "passed": true,
+      "title": "Check · HoldUp",
+      "h1Text": "Check a label",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h2",
+        "id": "verdict-h",
+        "tabIndex": "-1",
+        "text": "Can't read the strength"
+      },
+      "axNodeCount": 332,
+      "visibleAxNodeCount": 279,
+      "interactiveAxNodeCount": 14,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Check a label"
+        },
+        {
+          "level": 2,
+          "name": "Can't read the strength"
+        },
+        {
+          "level": 2,
+          "name": "Conversation"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "link: Skip to content",
+        "button: Check",
+        "button: Profile",
+        "button: Privacy",
+        "button: Repeat",
+        "button: Dismiss",
+        "button: Phone camera",
+        "button: Glasses camera",
+        "button: Take a photo instead",
+        "DisclosureTriangle: Device state +",
+        "button: Stop",
+        "DisclosureTriangle: What I read, and how sure I am",
+        "textbox: Or type a question",
+        "button: Ask"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 23,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104
+        },
+        "primaryButtons": {
+          "count": 6,
+          "minHeightPx": 56,
+          "medianHeightPx": 64,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 20,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-check-verdict-scene",
+      "category": "axtree_and_touch_targets",
+      "journey": "check-verdict-scene",
+      "surface": "phone",
+      "passed": true,
+      "title": "Check · HoldUp",
+      "h1Text": "Check a label",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h2",
+        "id": "verdict-h",
+        "tabIndex": "-1",
+        "text": "Your evening pill: on the right"
+      },
+      "axNodeCount": 448,
+      "visibleAxNodeCount": 381,
+      "interactiveAxNodeCount": 15,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Check a label"
+        },
+        {
+          "level": 2,
+          "name": "Your evening pill: on the right"
+        },
+        {
+          "level": 2,
+          "name": "Conversation"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "link: Skip to content",
+        "button: Check",
+        "button: Profile",
+        "button: Privacy",
+        "button: Repeat",
+        "button: I took it",
+        "button: Dismiss",
+        "button: Phone camera",
+        "button: Glasses camera",
+        "button: Take a photo instead",
+        "DisclosureTriangle: Device state +",
+        "button: Stop",
+        "DisclosureTriangle: What I read, and how sure I am",
+        "textbox: Or type a question",
+        "button: Ask"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 24,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104
+        },
+        "primaryButtons": {
+          "count": 7,
+          "minHeightPx": 48,
+          "medianHeightPx": 64,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 21,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      },
+      "sceneDetails": {
+        "itemCount": 3,
+        "currentCount": 1,
+        "overlayBoxCount": 3,
+        "overlayHidden": true
+      }
+    },
+    {
+      "id": "axtree-check-addsheet-modal",
+      "category": "axtree_and_touch_targets",
+      "journey": "check-addsheet-modal",
+      "surface": "phone",
+      "passed": true,
+      "title": "Check · HoldUp",
+      "h1Text": "Check a label",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "button",
+        "id": null,
+        "tabIndex": null,
+        "text": "Add"
+      },
+      "axNodeCount": 122,
+      "visibleAxNodeCount": 68,
+      "interactiveAxNodeCount": 2,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 2,
+          "name": "Add Lisinopril 10 mg, morning, to your list?"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: Add",
+        "button: Cancel"
+      ],
+      "dialogNodes": [
+        {
+          "name": "Add Lisinopril 10 mg, morning, to your list?",
+          "modal": true
+        }
+      ],
+      "ignoredBackgroundAxNodes": 21,
+      "modalOpen": true,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 2,
+          "minHeightPx": 72,
+          "medianHeightPx": 88,
+          "maxHeightPx": 104
+        },
+        "primaryButtons": {
+          "count": 2,
+          "minHeightPx": 72,
+          "medianHeightPx": 88,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 2,
+          "minHeightPx": 72,
+          "medianHeightPx": 88,
+          "maxHeightPx": 104,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-profile",
+      "category": "axtree_and_touch_targets",
+      "journey": "profile",
+      "surface": "phone",
+      "passed": true,
+      "title": "Profile · HoldUp",
+      "h1Text": "Profile",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "button",
+        "id": null,
+        "tabIndex": null,
+        "text": "Load demo profile"
+      },
+      "axNodeCount": 196,
+      "visibleAxNodeCount": 181,
+      "interactiveAxNodeCount": 18,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Profile"
+        },
+        {
+          "level": 2,
+          "name": "My medicines"
+        },
+        {
+          "level": 2,
+          "name": "Allergies"
+        },
+        {
+          "level": 2,
+          "name": "Avoid"
+        },
+        {
+          "level": 2,
+          "name": "Language"
+        },
+        {
+          "level": 2,
+          "name": "Dose log"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "link: Skip to content",
+        "button: Set up by voice",
+        "button: Load demo profile",
+        "button: Check",
+        "button: Profile",
+        "button: Privacy",
+        "button: Add medicine",
+        "combobox: Language HoldUp speaks",
+        "textbox: Add to Allergies",
+        "button: Add",
+        "textbox: Add to Avoid",
+        "button: Add",
+        "button: Edit Amlodipine 5 mg",
+        "button: Edit Metformin 500 mg",
+        "button: Edit Atorvastatin 20 mg",
+        "button: Remove tree nuts",
+        "button: Remove peanut",
+        "button: Remove NSAIDs"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 17,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 64
+        },
+        "primaryButtons": {
+          "count": 5,
+          "minHeightPx": 48,
+          "medianHeightPx": 64,
+          "maxHeightPx": 64,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 14,
+          "minHeightPx": 48,
+          "medianHeightPx": 48,
+          "maxHeightPx": 64,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      },
+      "initialScreenTransitionFocus": {
+        "title": "Profile · HoldUp",
+        "activeTag": "h1",
+        "activeTabIndex": "-1",
+        "activeText": "Profile"
+      }
+    },
+    {
+      "id": "axtree-profile-mededitor-modal",
+      "category": "axtree_and_touch_targets",
+      "journey": "profile-mededitor-modal",
+      "surface": "phone",
+      "passed": true,
+      "title": "Profile · HoldUp",
+      "h1Text": "Profile",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "input",
+        "id": "m-name",
+        "tabIndex": null,
+        "text": ""
+      },
+      "axNodeCount": 117,
+      "visibleAxNodeCount": 81,
+      "interactiveAxNodeCount": 15,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 2,
+          "name": "Edit Amlodipine"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "textbox: Name on the box",
+        "textbox: Active ingredient",
+        "textbox: Strength",
+        "textbox: Barcode (optional)",
+        "button: Scan",
+        "textbox: Pack code GTIN (optional)",
+        "button: Scan pack code",
+        "textbox: Notes (optional)",
+        "button: Save",
+        "button: Cancel",
+        "button: Remove",
+        "checkbox: morning",
+        "checkbox: midday",
+        "checkbox: evening",
+        "checkbox: night"
+      ],
+      "dialogNodes": [
+        {
+          "name": "Edit Amlodipine",
+          "modal": true
+        }
+      ],
+      "ignoredBackgroundAxNodes": 17,
+      "modalOpen": true,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 15,
+          "minHeightPx": 48,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56
+        },
+        "primaryButtons": {
+          "count": 5,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 5,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-privacy",
+      "category": "axtree_and_touch_targets",
+      "journey": "privacy",
+      "surface": "phone",
+      "passed": true,
+      "title": "Privacy · HoldUp",
+      "h1Text": "Privacy",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "Privacy"
+      },
+      "axNodeCount": 182,
+      "visibleAxNodeCount": 148,
+      "interactiveAxNodeCount": 15,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Privacy"
+        },
+        {
+          "level": 2,
+          "name": "Your data"
+        },
+        {
+          "level": 2,
+          "name": "Features"
+        },
+        {
+          "level": 2,
+          "name": "Feedback"
+        },
+        {
+          "level": 2,
+          "name": "Ray-Ban Display"
+        },
+        {
+          "level": 2,
+          "name": "Delete everything"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "link: Skip to content",
+        "button: Check",
+        "button: Profile",
+        "button: Privacy",
+        "button: Withdraw consent",
+        "switch: Which one?",
+        "switch: Pack code double-check",
+        "switch: Hold up to add",
+        "switch: Readiness tone",
+        "slider: Readiness tone volume: 35%",
+        "switch: Quiet mode (no readiness tone, softer sounds)",
+        "switch: Spoken answers",
+        "switch: Sounds (earcons)",
+        "switch: Vibration",
+        "button: Delete all my data"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 14,
+          "minHeightPx": 16,
+          "medianHeightPx": 56,
+          "maxHeightPx": 64
+        },
+        "primaryButtons": {
+          "count": 3,
+          "minHeightPx": 64,
+          "medianHeightPx": 64,
+          "maxHeightPx": 64,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 5,
+          "minHeightPx": 48,
+          "medianHeightPx": 64,
+          "maxHeightPx": 64,
+          "allMeet48px": true
+        },
+        "sub48pxControls": [
+          {
+            "journey": "privacy",
+            "surface": "phone",
+            "tag": "input",
+            "type": "range",
+            "name": "Readiness tone volume: 35%",
+            "widthPx": 302,
+            "heightPx": 16
+          }
+        ]
+      }
+    },
+    {
+      "id": "axtree-access-key-401",
+      "category": "axtree_and_touch_targets",
+      "journey": "access-key-401",
+      "surface": "phone",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "Access key needed",
+      "h1TabIndex": "-1",
+      "activeFocus": {
+        "tag": "h1",
+        "id": null,
+        "tabIndex": "-1",
+        "text": "Access key needed"
+      },
+      "axNodeCount": 40,
+      "visibleAxNodeCount": 35,
+      "interactiveAxNodeCount": 2,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "Access key needed"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "textbox: Access key",
+        "button: Save and try again"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 2,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56
+        },
+        "primaryButtons": {
+          "count": 1,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 1,
+          "minHeightPx": 56,
+          "medianHeightPx": 56,
+          "maxHeightPx": 56,
+          "allMeet48px": true
+        },
+        "sub48pxControls": []
+      }
+    },
+    {
+      "id": "axtree-hud-verdict",
+      "category": "axtree_and_touch_targets",
+      "journey": "hud-verdict",
+      "surface": "hud",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "HoldUp display",
+      "h1TabIndex": null,
+      "activeFocus": {
+        "tag": "button",
+        "id": null,
+        "tabIndex": null,
+        "text": "I took it"
+      },
+      "axNodeCount": 48,
+      "visibleAxNodeCount": 41,
+      "interactiveAxNodeCount": 4,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "HoldUp display"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: Repeat",
+        "button: I took it",
+        "button: Dismiss",
+        "button: Speak off"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 4,
+          "minHeightPx": 44,
+          "medianHeightPx": 60,
+          "maxHeightPx": 60
+        },
+        "primaryButtons": {
+          "count": 3,
+          "minHeightPx": 60,
+          "medianHeightPx": 60,
+          "maxHeightPx": 60,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 4,
+          "minHeightPx": 44,
+          "medianHeightPx": 60,
+          "maxHeightPx": 60,
+          "allMeet48px": false
+        },
+        "sub48pxControls": [
+          {
+            "journey": "hud-verdict",
+            "surface": "hud",
+            "tag": "button",
+            "type": "button",
+            "name": "Speak off",
+            "widthPx": 107,
+            "heightPx": 44
+          }
+        ]
+      }
+    },
+    {
+      "id": "axtree-hud-scene",
+      "category": "axtree_and_touch_targets",
+      "journey": "hud-scene",
+      "surface": "hud",
+      "passed": true,
+      "title": "HoldUp",
+      "h1Text": "HoldUp display",
+      "h1TabIndex": null,
+      "activeFocus": {
+        "tag": "button",
+        "id": null,
+        "tabIndex": null,
+        "text": "I took it"
+      },
+      "axNodeCount": 87,
+      "visibleAxNodeCount": 77,
+      "interactiveAxNodeCount": 4,
+      "unnamedInteractiveCount": 0,
+      "headings": [
+        {
+          "level": 1,
+          "name": "HoldUp display"
+        }
+      ],
+      "headingOrderValid": true,
+      "readingOrderControls": [
+        "button: Repeat",
+        "button: I took it",
+        "button: Dismiss",
+        "button: Speak on"
+      ],
+      "dialogNodes": [],
+      "ignoredBackgroundAxNodes": 0,
+      "modalOpen": false,
+      "touchTargets": {
+        "allInteractive": {
+          "count": 4,
+          "minHeightPx": 44,
+          "medianHeightPx": 60,
+          "maxHeightPx": 60
+        },
+        "primaryButtons": {
+          "count": 3,
+          "minHeightPx": 60,
+          "medianHeightPx": 60,
+          "maxHeightPx": 60,
+          "allMeet48px": true
+        },
+        "allButtons": {
+          "count": 4,
+          "minHeightPx": 44,
+          "medianHeightPx": 60,
+          "maxHeightPx": 60,
+          "allMeet48px": false
+        },
+        "sub48pxControls": [
+          {
+            "journey": "hud-scene",
+            "surface": "hud",
+            "tag": "button",
+            "type": "button",
+            "name": "Speak on",
+            "widthPx": 103,
+            "heightPx": 44
+          }
+        ]
+      }
+    },
+    {
+      "id": "focus-handoff-verdict-match",
+      "category": "focus_handoff_and_modal_trap",
+      "journey": "check-verdict-match",
+      "passed": true,
+      "activeElement": {
+        "tag": "h2",
+        "id": "verdict-h",
+        "tabIndex": "-1",
+        "text": "Amlodipine 5 mg"
+      }
+    },
+    {
+      "id": "focus-handoff-verdict-warning",
+      "category": "focus_handoff_and_modal_trap",
+      "journey": "check-verdict-warning",
+      "passed": true,
+      "activeElement": {
+        "tag": "h2",
+        "id": "verdict-h",
+        "tabIndex": "-1",
+        "text": "Ibuprofen: not on your list"
+      }
+    },
+    {
+      "id": "focus-handoff-verdict-unsure",
+      "category": "focus_handoff_and_modal_trap",
+      "journey": "check-verdict-unsure",
+      "passed": true,
+      "activeElement": {
+        "tag": "h2",
+        "id": "verdict-h",
+        "tabIndex": "-1",
+        "text": "Can't read the strength"
+      }
+    },
+    {
+      "id": "focus-handoff-verdict-scene",
+      "category": "focus_handoff_and_modal_trap",
+      "journey": "check-verdict-scene",
+      "passed": true,
+      "activeElement": {
+        "tag": "h2",
+        "id": "verdict-h",
+        "tabIndex": "-1",
+        "text": "Your evening pill: on the right"
+      }
+    },
+    {
+      "id": "modal-trap-and-escape-addsheet",
+      "category": "focus_handoff_and_modal_trap",
+      "journey": "check-addsheet-modal",
+      "passed": true,
+      "modalOpen": true,
+      "initialFocus": {
+        "tag": "button",
+        "id": null,
+        "tabIndex": null,
+        "text": "Add"
+      },
+      "ignoredBackgroundAxNodes": 21,
+      "outsideControlsExposedInAxTree": false,
+      "closedOnEscape": true,
+      "escapeAnnouncement": [
+        "Not added."
+      ]
+    },
+    {
+      "id": "modal-trap-and-escape-mededitor",
+      "category": "focus_handoff_and_modal_trap",
+      "journey": "profile-mededitor-modal",
+      "passed": true,
+      "modalOpen": true,
+      "ignoredBackgroundAxNodes": 17,
+      "outsideControlsExposedInAxTree": false,
+      "closedOnEscape": true
+    },
+    {
+      "id": "live-quiet-on",
+      "category": "live_region_single_announcement",
+      "action": "Toggle Quiet mode on",
+      "expectedRegion": "polite",
+      "expectedText": "Quiet mode on.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "polite: Quiet mode on."
+      ],
+      "finalRegionText": "Quiet mode on.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-quiet-off",
+      "category": "live_region_single_announcement",
+      "action": "Toggle Quiet mode off",
+      "expectedRegion": "polite",
+      "expectedText": "Quiet mode off.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "polite: Quiet mode off."
+      ],
+      "finalRegionText": "Quiet mode off.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-voice-off",
+      "category": "live_region_single_announcement",
+      "action": "Toggle Spoken answers off",
+      "expectedRegion": "polite",
+      "expectedText": "Spoken answers off.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "polite: Spoken answers off."
+      ],
+      "finalRegionText": "Spoken answers off.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-voice-on",
+      "category": "live_region_single_announcement",
+      "action": "Toggle Spoken answers on",
+      "expectedRegion": "polite",
+      "expectedText": "Spoken answers on.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "polite: Spoken answers on."
+      ],
+      "finalRegionText": "Spoken answers on.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-sounds-off",
+      "category": "live_region_single_announcement",
+      "action": "Toggle Sounds (earcons) off",
+      "expectedRegion": "polite",
+      "expectedText": "Sounds (earcons) off.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "polite: Sounds (earcons) off."
+      ],
+      "finalRegionText": "Sounds (earcons) off.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-sounds-on",
+      "category": "live_region_single_announcement",
+      "action": "Toggle Sounds (earcons) on",
+      "expectedRegion": "polite",
+      "expectedText": "Sounds (earcons) on.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "polite: Sounds (earcons) on."
+      ],
+      "finalRegionText": "Sounds (earcons) on.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-vibration-off",
+      "category": "live_region_single_announcement",
+      "action": "Toggle Vibration off",
+      "expectedRegion": "polite",
+      "expectedText": "Vibration off.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "polite: Vibration off."
+      ],
+      "finalRegionText": "Vibration off.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-vibration-on",
+      "category": "live_region_single_announcement",
+      "action": "Toggle Vibration on",
+      "expectedRegion": "polite",
+      "expectedText": "Vibration on.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "polite: Vibration on."
+      ],
+      "finalRegionText": "Vibration on.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-withdraw-consent",
+      "category": "live_region_single_announcement",
+      "action": "Withdraw consent",
+      "expectedRegion": "assertive",
+      "expectedText": "Consent withdrawn. The camera will stay off.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "assertive: Consent withdrawn. The camera will stay off."
+      ],
+      "finalRegionText": "Consent withdrawn. The camera will stay off.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "live-delete-all-data",
+      "category": "live_region_single_announcement",
+      "action": "Delete all my data",
+      "expectedRegion": "assertive",
+      "expectedText": "All your HoldUp data has been deleted from this phone.",
+      "nonEmptyMutationCount": 1,
+      "observedMessages": [
+        "assertive: All your HoldUp data has been deleted from this phone."
+      ],
+      "finalRegionText": "All your HoldUp data has been deleted from this phone.",
+      "emptyOrDuplicateClobber": false,
+      "passed": true
+    },
+    {
+      "id": "privacy-zero-leak-storage-after-delete",
+      "category": "live_region_single_announcement",
+      "action": "Verify zero holdup.* localStorage keys after Delete all my data",
+      "remainingHoldupKeysCount": 0,
+      "passed": true
+    },
+    {
+      "id": "hud-neural-band-and-bystander-speech",
+      "category": "hud_neural_band_and_bystander_privacy",
+      "journey": "hud-verdict",
+      "passed": true,
+      "initialVerdictFocus": "I took it",
+      "tabOrderFromAction": [
+        "I took it",
+        "Dismiss",
+        "Speak off"
+      ],
+      "enterTogglesSpeakOn": true,
+      "spokenUtterancesRecorded": 1,
+      "cancelOnSpeakOff": true,
+      "dismissedOnEscape": true,
+      "cancelOnEscape": true,
+      "dismissedOnEnter": true,
+      "cancelOnDismissEnter": true,
+      "hudLiveRegionUpdatesObserved": 9
+    }
+  ]
+}

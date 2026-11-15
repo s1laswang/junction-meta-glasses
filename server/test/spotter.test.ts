@@ -89,3 +89,21 @@ test("the real model loads and runs on a fixture image (skipped if the model or 
   assert.ok(r.w > 0 && r.h > 0);
   for (const f of r.fields) { assert.ok(f.score >= 0.4 && f.score <= 1); assert.ok(f.box.every((v) => v >= 0 && v <= 1000)); }
 });
+
+test("real model: dose in view on the box, gone when a thumb covers it, product still seen (the 'covering the dose' case)", async (t) => {
+  const model = path.join(REPO_ROOT, "web", "public", "models", "fieldspotter.onnx");
+  const open = path.join(REPO_ROOT, "server", "fixtures", "amlodipine.jpg");
+  const covered = path.join(REPO_ROOT, "server", "fixtures", "amlodipine_covered.jpg");
+  if (![model, open, covered].every((f) => fs.existsSync(f))) return t.skip("model or fixtures missing");
+  let a, b;
+  try { a = await detect(fs.readFileSync(open)); b = await detect(fs.readFileSync(covered)); } catch (e) { return t.skip(`runtime unavailable: ${(e as Error).message.slice(0, 80)}`); }
+  const score = (r: { fields: FieldBox[] }, label: string) => Math.max(0, ...r.fields.filter((f) => f.label === label).map((f) => f.score));
+  assert.ok(score(a, "strength") >= 0.6, `open strength ${score(a, "strength")}`);
+  assert.ok(score(b, "strength") < 0.6, `covered strength ${score(b, "strength")}`);
+  assert.ok(score(b, "product") >= 0.5, `covered product ${score(b, "product")}`);
+  // and the cue logic turns that sequence into the spoken cue
+  const c = new SpotCoach(); let now = 10_000;
+  c.push(a.fields, 0.8, (now += 1000)); c.push(a.fields, 0.8, (now += 1000));
+  c.push(b.fields, 0.8, (now += 1000));
+  assert.equal(c.push(b.fields, 0.8, (now += 1000))?.kind, "covered");
+});

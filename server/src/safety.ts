@@ -585,6 +585,22 @@ export function clampSpeech(s: string): string {
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const listAnd = (xs: string[]) => xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}`;
 
+const DAY_SLOTS = ["morning", "midday", "evening", "night"] as const;
+/** If every scheduled time of day for this med is later than now, the current part of the day ("morning"). */
+function tooEarlyFor(m: Med, now: Date): string | undefined {
+  const idx = (w: string) => (w === "morning" ? 0 : w === "noon" || w === "midday" ? 1 : w === "evening" ? 2 : w === "night" || w === "bedtime" ? 3 : -1);
+  const slots: number[] = [];
+  for (const raw of m.schedule.map((x) => x.toLowerCase())) {
+    const hm = /^(\d{1,2}):\d{2}$/.exec(raw);
+    if (hm) { const h = +hm[1]; slots.push(h < 11 ? 0 : h < 15 ? 1 : h < 21 ? 2 : 3); continue; }
+    for (const w of ["morning", "noon", "midday", "evening", "night", "bedtime"]) if (raw.includes(w)) slots.push(idx(w));
+  }
+  if (!slots.length) return undefined;
+  const h = now.getHours();
+  if (h < 5) return undefined; // small hours: don't second-guess a night dose
+  const cur = h < 11 ? 0 : h < 15 ? 1 : h < 21 ? 2 : 3;
+  return Math.min(...slots) - cur >= 2 ? DAY_SLOTS[cur] : undefined;
+}
 function scheduleWord(m: Med): string | undefined {
   const s = m.schedule.map((x) => x.toLowerCase());
   for (const w of ["morning", "noon", "evening", "night", "bedtime"]) if (s.some((x) => x.includes(w))) return w;
@@ -689,6 +705,12 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
       return v("warning", `${label}: expired ${monthYear(read.expiry.value!)}`,
         `This is ${label}, your medicine. This box expired in ${monthYear(read.expiry.value!)}, so ask a pharmacist for a new one.`, { matchedMedId: med.id });
     }
+    // An expiry that was read, but not confidently, and that looks past: not a green yes (judge-panel probe 17).
+    if (read.expiry.value && read.expiry.confidence >= 0.3 && read.expiry.confidence < 0.7 && isExpired(read.expiry.value, now) === true) {
+      reasons.push(`expiry may have passed (${read.expiry.value}, low confidence)`);
+      return v("unsure", `${label}: check the expiry date`,
+        `This looks like ${label}, your medicine, but the expiry date may have passed and I can't read it clearly. Turn the box to show the date, or ask someone to check it.`, { matchedMedId: med.id });
+    }
     // expiry unknown (not legible / low confidence): still a match, but say so
     const expiryUnknown = !read.expiry.value || read.expiry.confidence < 0.7;
     if (expiryUnknown) reasons.push("expiry not readable");
@@ -708,8 +730,10 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
       // speech stays <= 2 sentences: the expiry note joins the second sentence
       + (expiryUnknown ? ", and I couldn't read the expiry date." : ".");
     reasons.push(`matches ${med.id}`, `taken today: ${taken}/${perDay}`);
+    const early = taken < perDay ? tooEarlyFor(med, now) : undefined;
+    if (early) reasons.push(`asked in the ${early}, scheduled later`);
     return v(taken >= perDay ? "warning" : "match", taken >= perDay ? `${label}: already taken today` : `Yes: ${label}, ${yours}`.replace(", on your list", ""),
-      `${taken >= perDay ? "This is" : "Yes,"} ${label}, ${yours}. ${takenSpeech}`, { matchedMedId: med.id, takenToday: taken > 0 });
+      `${taken >= perDay ? "This is" : "Yes,"} ${label}, ${yours}${early ? `, but it's only ${early} now` : ""}. ${takenSpeech}`, { matchedMedId: med.id, takenToday: taken > 0 });
   }
 
   // food / other
