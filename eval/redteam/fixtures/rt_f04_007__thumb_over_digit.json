@@ -1,0 +1,94 @@
+{
+  "id": "rt_f04_007__thumb_over_digit",
+  "spec_id": "rt_f04_007",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains calcium gluconate 500 mg instead of the user's saved ferrous gluconate 500 mg.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Calcium Gluconate Krka 500 mg",
+    "ingredient": "calcium gluconate",
+    "strength": "500 mg",
+    "expiry": "2029-02",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Ferrous Gluconate 500 mg",
+        "ingredient": "ferrous gluconate",
+        "strength": "500 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Calcium Gluconate",
+      "confidence": 0.8
+    },
+    "ingredient": {
+      "value": "calcium gluconate",
+      "confidence": 0.85
+    },
+    "strength": {
+      "value": "500 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2029-02",
+      "confidence": 0.85
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.65,
+    "guidance": "Remove your finger or cover from the center of the box."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410100890123(17)290200(10)RT01(21)SN007"
+}

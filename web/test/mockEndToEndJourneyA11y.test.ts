@@ -1431,7 +1431,7 @@ test("Stage Demo abstention (blurry unreadable strength): returns unsure verdict
     }),
   );
   assert.match(html, /^<section class="verdict unsure" aria-labelledby="verdict-h">/);
-  assert.match(html, /<dt>Strength<\/dt><dd>Not readable<\/dd><span class="conf low" aria-label="confidence 31 percent">31%<\/span>/);
+  assert.match(html, /<dt>Strength<\/dt><dd>Not readable<\/dd><dd class="conf low" aria-label="confidence 31 percent">31%<\/dd>/);
   assert.doesNotMatch(html, /I took it|Log another dose/);
 
   teardownChecker(checker, stopListening);

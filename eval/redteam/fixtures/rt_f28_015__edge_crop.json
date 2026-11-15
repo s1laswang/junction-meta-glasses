@@ -1,0 +1,101 @@
+{
+  "id": "rt_f28_015__edge_crop",
+  "spec_id": "rt_f28_015",
+  "family": "F28_medication_allergenic_excipients",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Matches the user's saved levothyroxine 50 mcg, but contains lactose which conflicts with the user's lactose allergy.",
+  "perturbation": "edge_crop",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Levothyroxin Orion 50 mikrog",
+    "ingredient": "levothyroxine",
+    "strength": "50 mcg",
+    "expiry": "2029-11",
+    "allergens": [
+      "milk"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Levothyroxin",
+        "ingredient": "levothyroxine",
+        "strength": "50 mcg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "lactose"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Levothyroxin Orion",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "levothyroxine",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "50 mikrog",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.3
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.8,
+    "guidance": "Turn the box to see the side with the date."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": false,
+  "pack_gs1_raw": "(01)06410405551122(17)291100(10)RT01(21)SN015"
+}
