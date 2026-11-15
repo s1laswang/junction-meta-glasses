@@ -21,6 +21,16 @@ const SECRET_PREFIXES = [
   ["sk_", "test_"].join(""),
 ];
 
+const FORBIDDEN_SUBPROCESS_TOKENS = [
+  ["child_", "process"].join(""),
+  ["exec", "Sync"].join(""),
+  ["spawn", "Sync"].join(""),
+  ["execFile", "Sync"].join(""),
+  ["git ", "diff"].join(""),
+  ["git ", "status"].join(""),
+  ["git ", "log"].join(""),
+];
+
 type EvalV1Results = {
   conf_threshold: number;
   synthetic: {
@@ -51,6 +61,37 @@ type EvalV2SafetyRescore = {
     unsafe_reassurance_silent: {
       k: number;
       n: number;
+    };
+  };
+};
+
+type EvalV3Results = {
+  version: string;
+  evaluation_split: string;
+  conf_threshold: number;
+  synthetic: {
+    images_scored: number;
+    per_field: {
+      strength: {
+        confident_wrong: number;
+        k: {
+          confident: number;
+        };
+      };
+    };
+  };
+};
+
+type EvalV3HeldoutSafety = {
+  version: string;
+  evaluation_split: string;
+  images_scored: number;
+  standard_eval_scenarios: {
+    merged_main_safety_ts: {
+      n: number;
+      unsafe_k: number;
+      unsafe_rate_pct: number;
+      unsafe_wilson95_pct: [number, number];
     };
   };
 };
@@ -197,15 +238,15 @@ function parseWebVtt(vttContent: string): WebVttCue[] {
   return cues;
 }
 
-describe("2-minute Junction video script, WebVTT captions, and evidence parity contract", () => {
-  test("validates docs/VIDEO_SCRIPT.md <= 140 lines, 6 timecoded beats (0:00..2:00), table schema, Slide 5 link, and ?mock=1 fallback", () => {
+describe("2-minute Junction video script, WebVTT captions, stage-honesty, and held-out v3 parity contract", () => {
+  test("validates docs/VIDEO_SCRIPT.md <= 50 lines, 6 timecoded beats (0:00..2:00), table schema, Slide 5 link, and relative markdown targets", () => {
     const videoScript = readRepoFile("docs/VIDEO_SCRIPT.md");
     const deckHtml = readRepoFile("deck/index.html");
 
     const trimmed = videoScript.endsWith("\n") ? videoScript.slice(0, -1) : videoScript;
     const lines = trimmed.split(/\r?\n/);
     assert.ok(lines.length >= 25, `Expected substantive docs/VIDEO_SCRIPT.md, got ${lines.length} lines`);
-    assert.ok(lines.length <= 140, `docs/VIDEO_SCRIPT.md must be <= 140 lines, got ${lines.length}`);
+    assert.ok(lines.length <= 50, `docs/VIDEO_SCRIPT.md must be <= 50 lines, got ${lines.length}`);
 
     for (const colHeader of [
       "Timecode",
@@ -225,6 +266,7 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
     assert.ok(deckHtml.includes('id="s5-h"'), "Expected Slide 5 (#s5-h) in deck/index.html");
     assert.ok(videoScript.includes("#s5-h") && videoScript.includes("deck/index.html"));
     assert.ok(videoScript.includes("DEMO_SCRIPT.md"));
+    assert.ok(videoScript.includes("MORNING_BRIEF.md"));
     assert.ok(videoScript.includes("docs/video-captions.vtt"));
     assert.ok(videoScript.includes("?mock=1") && videoScript.includes("/hud/?mock=1"));
 
@@ -255,7 +297,7 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
 
     const docDir = path.join(REPO_DIR, "docs");
     const targets = extractMarkdownTargets(videoScript);
-    assert.ok(targets.length >= 4, "Expected relative markdown links in docs/VIDEO_SCRIPT.md");
+    assert.ok(targets.length >= 8, "Expected relative markdown links in docs/VIDEO_SCRIPT.md");
     for (const target of targets) {
       if (target.startsWith("#")) continue;
       const cleanPath = target.split("#")[0]?.split("?")[0] ?? "";
@@ -269,8 +311,9 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
     }
   });
 
-  test("enforces H1..H10 and docs/img/hw/ parity with FILMING_0630.md and SHOT_LIST.md, H8-before-H9 order, and /tmp ffmpeg outputs", () => {
+  test("enforces Source Asset Inventory parity: H1..H10, 08:00 Morning Brief step 5 side-angle clip, committed simulation reels, H8-before-H9 order, and /tmp ffmpeg outputs", () => {
     const videoScript = readRepoFile("docs/VIDEO_SCRIPT.md");
+    const morningBrief = readRepoFile("docs/MORNING_BRIEF.md");
     const filming0630 = readRepoFile("docs/FILMING_0630.md");
     const shotList = readRepoFile("docs/SHOT_LIST.md");
     const hardwareLog = readRepoFile("docs/HARDWARE_LOG.md");
@@ -289,6 +332,38 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
       extractHwPaths(videoScript),
       expectedHwFiles,
       "docs/VIDEO_SCRIPT.md must reference the exact 10 docs/img/hw/ captures from SHOT_LIST.md and FILMING_0630.md",
+    );
+
+    assert.ok(morningBrief.includes("5. **Film one take from the side"), "Expected step 5 side-angle take in docs/MORNING_BRIEF.md");
+    assert.ok(morningBrief.includes('"built for"'), "Expected \"built for\" stage-honesty note in docs/MORNING_BRIEF.md");
+
+    const invStart = videoScript.indexOf("## Source Asset Inventory");
+    const beatsStart = videoScript.indexOf("## Six Timecoded Beats");
+    assert.ok(invStart > 0 && beatsStart > invStart, "Expected Source Asset Inventory before Six Timecoded Beats");
+    const inventorySlice = videoScript.slice(invStart, beatsStart);
+
+    assert.ok(inventorySlice.includes("08:00"), "Expected 08:00 Morning Brief reference in Source Asset Inventory");
+    assert.ok(inventorySlice.includes("docs/MORNING_BRIEF.md") && inventorySlice.includes("step 5"));
+    assert.ok(inventorySlice.includes('"built for"'), "Expected \"built for\" wording note until step 5 is filmed");
+    assertMonotonicIndices(
+      inventorySlice,
+      ["Backwards box", "coaching", '"Yes, Amlodipine 5 mg"', "thumb over dose", '"not sure"'],
+      "Morning Brief step 5 single-take side-angle flow in Source Asset Inventory",
+    );
+
+    for (const simReelRel of ["docs/demo/holdup-mock-demo.mp4", "docs/evidence/states-reel.webm"]) {
+      const fullSimPath = path.join(REPO_DIR, simReelRel);
+      assert.equal(fs.existsSync(fullSimPath), true, `Expected committed simulation reel ${simReelRel} on disk`);
+      assert.ok(fs.statSync(fullSimPath).size > 0, `Expected non-empty simulation reel ${simReelRel}`);
+      assert.ok(inventorySlice.includes(simReelRel), `Source Asset Inventory must document ${simReelRel}`);
+    }
+    assert.ok(
+      /simulation\s*\/\s*mock/i.test(inventorySlice),
+      "Source Asset Inventory must explicitly label committed reels as simulation/mock",
+    );
+    assert.ok(
+      inventorySlice.includes("pending"),
+      "Source Asset Inventory must state simulation reels apply while H1-H10 hardware clips are pending",
     );
 
     const beat5Start = videoScript.indexOf("1:20-1:40");
@@ -337,14 +412,78 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
     }
   });
 
-  test("dynamically cross-checks all research, latency, eval, FieldSpotter, and safety.ts numbers in VIDEO_SCRIPT.md", () => {
+  test("enforces MORNING_BRIEF.md stage-honesty rules: zero overclaiming and exact >= 0.8 abstention wording in VIDEO_SCRIPT.md and video-captions.vtt", () => {
+    const morningBrief = readRepoFile("docs/MORNING_BRIEF.md");
     const videoScript = readRepoFile("docs/VIDEO_SCRIPT.md");
+    const vtt = readRepoFile("docs/video-captions.vtt");
+
+    assert.ok(morningBrief.includes("## Say these carefully on stage"), "Expected stage-honesty section in docs/MORNING_BRIEF.md");
+    assert.ok(morningBrief.includes("It only states a dose it can read clearly"), "Expected dose-honesty rule in docs/MORNING_BRIEF.md");
+
+    const forbiddenOverclaims = [
+      "zero dose guessing",
+      "zero guessing",
+      "never makes mistakes",
+      "zero mistakes",
+      "100% safe",
+    ];
+    for (const phrase of forbiddenOverclaims) {
+      assert.equal(
+        videoScript.toLowerCase().includes(phrase),
+        false,
+        `docs/VIDEO_SCRIPT.md must not overclaim "${phrase}"`,
+      );
+      assert.equal(
+        vtt.toLowerCase().includes(phrase),
+        false,
+        `docs/video-captions.vtt must not overclaim "${phrase}"`,
+      );
+    }
+
+    for (const honestPhrase of ["only states a dose at confidence >= 0.8", "abstains below 0.8"]) {
+      assert.ok(
+        videoScript.includes(honestPhrase),
+        `docs/VIDEO_SCRIPT.md must include exact honest wording "${honestPhrase}"`,
+      );
+      assert.ok(
+        vtt.includes(honestPhrase),
+        `docs/video-captions.vtt must include exact honest wording "${honestPhrase}"`,
+      );
+    }
+
+    assert.ok(videoScript.toLowerCase().includes("synthetic"), "docs/VIDEO_SCRIPT.md must explicitly call evals synthetic");
+    assert.ok(vtt.toLowerCase().includes("synthetic"), "docs/video-captions.vtt must explicitly call evals synthetic");
+    assert.ok(videoScript.toLowerCase().includes("prototype"), "docs/VIDEO_SCRIPT.md must call FieldSpotter a prototype");
+    assert.ok(vtt.toLowerCase().includes("prototype"), "docs/video-captions.vtt must call FieldSpotter a prototype");
+  });
+
+  test("dynamically cross-checks v1, v2, held-out v3, live-fidelity, $0.003 cost, latency, FieldSpotter, and safety.ts across Beat 6 and Cues 17-18", () => {
+    const videoScript = readRepoFile("docs/VIDEO_SCRIPT.md");
+    const vtt = readRepoFile("docs/video-captions.vtt");
     const researchDoc = readRepoFile("docs/RESEARCH.md");
     const safetyTs = readRepoFile("server/src/safety.ts");
+    const fidelityTs = readRepoFile("server/src/fidelity.ts");
+    const fidelityDoc = readRepoFile("docs/evidence/live-fidelity.md");
+    const deckHtml = readRepoFile("deck/index.html");
     const v1 = JSON.parse(readRepoFile("eval/results/v1_results.json")) as EvalV1Results;
     const v2 = JSON.parse(readRepoFile("eval/results/v2_safety_rescore.json")) as EvalV2SafetyRescore;
+    const v3 = JSON.parse(readRepoFile("eval/results/v3_results.json")) as EvalV3Results;
+    const v3Safety = JSON.parse(readRepoFile("eval/results/v3_heldout_safety.json")) as EvalV3HeldoutSafety;
     const fsEval = JSON.parse(readRepoFile("eval/results/fieldspotter.json")) as FieldSpotterEval;
     const stats = JSON.parse(readRepoFile("docs/evidence/api-stats-snapshot.json")) as ApiStatsSnapshot;
+
+    const beat6Start = videoScript.indexOf("1:40-2:00");
+    const postProdStart = videoScript.indexOf("## Post-Production Assembly");
+    assert.ok(beat6Start > 0 && postProdStart > beat6Start, "Expected Beat 6 (1:40-2:00) section");
+    const beat6Slice = videoScript.slice(beat6Start, postProdStart);
+
+    const cues = parseWebVtt(vtt);
+    const cue17 = cues.find((c) => c.id === "17");
+    const cue18 = cues.find((c) => c.id === "18");
+    assert.ok(cue17 && cue18, "Expected WebVTT Cue 17 and Cue 18");
+    assert.equal(cue17.startRaw, "01:40.000");
+    assert.equal(cue18.endRaw, "02:00.000");
+    const cues17And18 = `${cue17.text}\n${cue18.text}`;
 
     for (const researchFact of ["55,000", "45,000", "97%", "n = 314", "21.6%", "1 in 5"]) {
       assert.ok(researchDoc.includes(researchFact), `Expected "${researchFact}" in docs/RESEARCH.md`);
@@ -356,6 +495,7 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
     assert.equal(strengthGate, 0.8);
     assert.equal(allergenGate, 0.95);
     assert.ok(videoScript.includes(`< ${strengthGate}`), `Expected "< ${strengthGate}" strength gate`);
+    assert.ok(videoScript.includes(`>= ${strengthGate}`), `Expected ">= ${strengthGate}" strength gate`);
     assert.ok(videoScript.includes(`< ${allergenGate}`), `Expected "< ${allergenGate}" allergen gate`);
 
     const liveSessions = stats.features.live.ok;
@@ -364,24 +504,37 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
     assert.equal(liveSessions, 26);
     assert.equal(p50Audio, "2.1");
     assert.equal(p95Audio, "3.4");
-    assert.ok(videoScript.includes(`${p50Audio} s`), `Expected "${p50Audio} s" p50 first-audio latency`);
-    assert.ok(videoScript.includes(`${p95Audio} s`), `Expected "${p95Audio} s" p95 first-audio latency`);
-    assert.ok(videoScript.includes(`n = ${liveSessions}`), `Expected "n = ${liveSessions}" live sessions`);
-    assert.ok(videoScript.includes("5.8 s"), "Expected 5.8 s pre-speculative baseline");
+    assert.ok(beat6Slice.includes(`${p50Audio} s`) && beat6Slice.includes(`${p95Audio} s`) && beat6Slice.includes(`n = ${liveSessions}`));
+    assert.ok(beat6Slice.includes("5.8 s"), "Expected 5.8 s pre-speculative baseline in Beat 6");
+    assert.ok(cues17And18.includes(`${p50Audio} s`) && cues17And18.includes(`${p95Audio} s`) && cues17And18.includes(`${liveSessions} live sessions`));
 
-    const imagesFmt = formatThousands(v1.synthetic.images_scored);
-    const cwStrength = v1.synthetic.per_field.strength.confident_wrong;
-    const confStrength = v1.synthetic.per_field.strength.k.confident;
-    const upperBoundPct = roundToDecimals((3 / confStrength) * 100, 1).toFixed(1);
+    assert.ok(fidelityTs.includes("export function speechFidelity("), "Expected speechFidelity export in server/src/fidelity.ts");
+    const fidelityRow = /^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/m.exec(fidelityDoc);
+    assert.ok(fidelityRow, "Expected measured table row in docs/evidence/live-fidelity.md");
+    const checkedVerdicts = Number(fidelityRow[1]);
+    const correctedVerdicts = Number(fidelityRow[3]);
+    assert.equal(checkedVerdicts, 16);
+    assert.equal(correctedVerdicts, 1);
+    assert.ok(beat6Slice.includes("server/src/fidelity.ts") && beat6Slice.includes("docs/evidence/live-fidelity.md"));
+    assert.ok(
+      beat6Slice.includes(`\`${checkedVerdicts}\` live verdicts checked, \`${correctedVerdicts}\` auto-corrected`),
+      "Expected spoken-answer fidelity counts in Beat 6",
+    );
+    assert.ok(
+      cues17And18.includes(`${checkedVerdicts} live verdicts checked, ${correctedVerdicts} auto-corrected`),
+      "Expected spoken-answer fidelity counts in Cues 17-18",
+    );
+
+    const v1ImagesFmt = formatThousands(v1.synthetic.images_scored);
+    const v1CwStrength = v1.synthetic.per_field.strength.confident_wrong;
+    const v1ConfStrength = v1.synthetic.per_field.strength.k.confident;
+    const upperBoundPct = roundToDecimals((3 / v1ConfStrength) * 100, 1).toFixed(1);
     const eceStr = v1.synthetic.calibration_all.ece.toFixed(3);
-    assert.equal(imagesFmt, "1,740");
-    assert.equal(`${cwStrength} / ${confStrength}`, "0 / 754");
-    assert.equal(upperBoundPct, "0.4");
-    assert.equal(eceStr, "0.022");
-    assert.ok(videoScript.includes(imagesFmt), `Expected "${imagesFmt}" synthetic images`);
-    assert.ok(videoScript.includes(`${cwStrength} / ${confStrength}`), `Expected "${cwStrength} / ${confStrength}"`);
-    assert.ok(videoScript.includes(`${upperBoundPct}%`), `Expected "${upperBoundPct}%" 95% upper bound`);
-    assert.ok(videoScript.includes(eceStr), `Expected ECE "${eceStr}"`);
+    assert.equal(v1ImagesFmt, "1,740");
+    assert.equal(`${v1CwStrength} / ${v1ConfStrength}`, "0 / 754");
+    assert.ok(beat6Slice.includes(v1ImagesFmt) && beat6Slice.includes(`${v1CwStrength} / ${v1ConfStrength}`));
+    assert.ok(beat6Slice.includes(`${upperBoundPct}%`) && beat6Slice.includes(eceStr));
+    assert.ok(cues17And18.includes(v1ImagesFmt) && cues17And18.includes(`${v1CwStrength} / ${v1ConfStrength}`));
 
     const unsafeK = v2.unsafe_reassurance_silent.k;
     const unsafeN = formatThousands(v2.unsafe_reassurance_silent.n);
@@ -392,11 +545,46 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
     const baseN = formatThousands(v2.baseline.unsafe_reassurance_silent.n);
     const basePct = roundToDecimals((baseK / v2.baseline.unsafe_reassurance_silent.n) * 100, 2).toFixed(2);
     assert.equal(`${unsafeK} / ${unsafeN} = ${unsafePct}%`, "3 / 4,730 = 0.06%");
-    assert.equal(`${ciLow}-${ciHigh}%`, "0.02-0.19%");
-    assert.equal(`${baseK} / ${baseN} = ${basePct}%`, "49 / 4,730 = 1.04%");
-    assert.ok(videoScript.includes(`${unsafeK} / ${unsafeN} = ${unsafePct}%`));
-    assert.ok(videoScript.includes(`${ciLow}-${ciHigh}%`));
-    assert.ok(videoScript.includes(`${baseK} / ${baseN} = ${basePct}%`));
+    assert.ok(beat6Slice.includes(`${unsafeK} / ${unsafeN} = ${unsafePct}%`));
+    assert.ok(beat6Slice.includes(`${ciLow}-${ciHigh}%`) && beat6Slice.includes(`${baseK} / ${baseN} = ${basePct}%`));
+    assert.ok(cues17And18.includes(`${unsafeK} / ${unsafeN}`) && cues17And18.includes(`${unsafePct}%`));
+
+    assert.ok(v3.evaluation_split.includes("held-out") && v3Safety.evaluation_split.includes("held-out"));
+    assert.equal(v3.synthetic.images_scored, v3Safety.images_scored);
+    const v3ImagesFmt = formatThousands(v3.synthetic.images_scored);
+    const v3Cw = v3.synthetic.per_field.strength.confident_wrong;
+    const v3Conf = v3.synthetic.per_field.strength.k.confident;
+    const v3CwPct = roundToDecimals((v3Cw / v3Conf) * 100, 2).toFixed(2);
+    const v3UnsafeK = v3Safety.standard_eval_scenarios.merged_main_safety_ts.unsafe_k;
+    const v3UnsafeN = formatThousands(v3Safety.standard_eval_scenarios.merged_main_safety_ts.n);
+    const v3UnsafePct = v3Safety.standard_eval_scenarios.merged_main_safety_ts.unsafe_rate_pct.toFixed(2);
+    const v3CiLow = v3Safety.standard_eval_scenarios.merged_main_safety_ts.unsafe_wilson95_pct[0].toFixed(2);
+    const v3CiHigh = v3Safety.standard_eval_scenarios.merged_main_safety_ts.unsafe_wilson95_pct[1].toFixed(2);
+
+    assert.equal(v3ImagesFmt, "1,060");
+    assert.equal(`${v3Cw} / ${v3Conf}`, "1 / 536");
+    assert.equal(v3CwPct, "0.19");
+    assert.equal(`${v3UnsafeK} / ${v3UnsafeN}`, "4 / 3,033");
+    assert.equal(v3UnsafePct, "0.13");
+    assert.equal(`${v3CiLow}-${v3CiHigh}%`, "0.05-0.34%");
+
+    assert.ok(beat6Slice.includes("eval/results/v3_results.json") && beat6Slice.includes("eval/results/v3_heldout_safety.json"));
+    for (const v3Token of [v3ImagesFmt, `${v3Cw} / ${v3Conf}`, `${v3CwPct}%`, `${v3UnsafeK} / ${v3UnsafeN}`, `${v3UnsafePct}%`, "held-out"]) {
+      assert.ok(beat6Slice.includes(v3Token), `Expected held-out v3 token "${v3Token}" in Beat 6`);
+      assert.ok(cues17And18.includes(v3Token), `Expected held-out v3 token "${v3Token}" in Cues 17-18`);
+    }
+    assert.ok(beat6Slice.includes(`${v3CiLow}-${v3CiHigh}%`), "Expected held-out v3 Wilson CI in Beat 6");
+
+    const s12Start = deckHtml.indexOf('id="s12-h"');
+    const s13Start = deckHtml.indexOf('id="s13-h"');
+    assert.ok(s12Start > 0 && s13Start > s12Start, "Expected Slide 12 (#s12-h) in deck/index.html");
+    const slide12Slice = deckHtml.slice(s12Start, s13Start);
+    const costMatch = /\$([0-9]+\.[0-9]+)\s+per label read/i.exec(slide12Slice);
+    assert.ok(costMatch, "Expected measured cost per label read on Slide 12 of deck/index.html");
+    const costUsd = costMatch[1];
+    assert.equal(costUsd, "0.003");
+    assert.ok(beat6Slice.includes(`~$${costUsd}`) && beat6Slice.includes("per label read") && beat6Slice.includes("Slide 12"));
+    assert.ok(cues17And18.includes(`~$${costUsd} per label read`), "Expected ~$0.003 per label read in Cues 17-18");
 
     const onnxMb = roundToDecimals(fsEval.onnx.bytes / 1_000_000, 1).toFixed(1);
     const fsPrec = fsEval.strength_visible.precision.toFixed(1);
@@ -406,18 +594,17 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
     assert.equal(fsPrec, "96.8");
     assert.equal(fsValN, 348);
     assert.equal(fsCpuP50, "34.5");
-    assert.ok(videoScript.includes(`${onnxMb} MB`), `Expected "${onnxMb} MB" ONNX size`);
-    assert.ok(videoScript.includes(`${fsPrec}%`), `Expected "${fsPrec}%" FieldSpotter precision`);
-    assert.ok(videoScript.includes(`n = ${fsValN}`), `Expected "n = ${fsValN}" validation split`);
-    assert.ok(videoScript.includes(`${fsCpuP50} ms`), `Expected "${fsCpuP50} ms" ONNX CPU p50`);
+    assert.ok(beat6Slice.includes(`${onnxMb} MB`) && beat6Slice.includes(`${fsPrec}%`));
+    assert.ok(beat6Slice.includes(`n = ${fsValN}`) && beat6Slice.includes(`${fsCpuP50} ms`));
+    assert.ok(cues17And18.includes(`${onnxMb} MB`) && cues17And18.includes(`${fsPrec}%`));
   });
 
-  test("parses docs/video-captions.vtt as valid W3C WebVTT covering 00:00.000..02:00.000 with >= 14 monotonic cues, speakers, and audio descriptions", () => {
+  test("parses docs/video-captions.vtt as valid W3C WebVTT covering 00:00.000..02:00.000 with 18 contiguous non-overlapping cues, speakers, and audio descriptions", () => {
     const vtt = readRepoFile("docs/video-captions.vtt");
     assert.ok(vtt.startsWith("WEBVTT\n\n"), "docs/video-captions.vtt must start with WEBVTT header and blank line");
 
     const cues = parseWebVtt(vtt);
-    assert.ok(cues.length >= 14, `Expected >= 14 WebVTT cues, got ${cues.length}`);
+    assert.equal(cues.length, 18, `Expected 18 WebVTT cues (1..18), got ${cues.length}`);
     assert.equal(cues[0]?.startRaw, "00:00.000", "First cue must start at 00:00.000");
     assert.equal(cues[0]?.startMs, 0);
     assert.equal(cues[cues.length - 1]?.endRaw, "02:00.000", "Final cue must end at 02:00.000");
@@ -425,13 +612,15 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
 
     for (let i = 0; i < cues.length; i++) {
       const cue = cues[i];
+      assert.equal(cue.id, String(i + 1), `Expected sequential cue id ${i + 1}`);
       assert.ok(cue.startMs >= 0 && cue.endMs <= 120_000, `Cue ${i + 1} outside [0, 120000] ms`);
       assert.ok(cue.startMs < cue.endMs, `Cue ${i + 1} must satisfy start < end (${cue.startRaw} --> ${cue.endRaw})`);
       if (i > 0) {
         const prev = cues[i - 1];
-        assert.ok(
-          cue.startMs >= prev.endMs,
-          `Cue ${i + 1} (${cue.startRaw}) overlaps previous cue ending at ${prev.endRaw}`,
+        assert.equal(
+          cue.startMs,
+          prev.endMs,
+          `Cue ${i + 1} (${cue.startRaw}) must be contiguous and non-overlapping with previous cue ending at ${prev.endRaw}`,
         );
       }
     }
@@ -461,7 +650,7 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
     }
   });
 
-  test("enforces zero comments, zero em dashes, and zero leaked secrets across all 3 files", () => {
+  test("enforces zero comments, zero em dashes, zero leaked secrets, and zero git/subprocess calls (zip-safe)", () => {
     const targets = [
       "docs/VIDEO_SCRIPT.md",
       "docs/video-captions.vtt",
@@ -483,6 +672,15 @@ describe("2-minute Junction video script, WebVTT captions, and evidence parity c
           `${relPath} must not contain secret prefix "${secretPrefix}"`,
         );
       }
+    }
+
+    const selfSource = readRepoFile("web/test/videoScriptContract.test.ts");
+    for (const forbidden of FORBIDDEN_SUBPROCESS_TOKENS) {
+      assert.equal(
+        selfSource.includes(forbidden),
+        false,
+        `web/test/videoScriptContract.test.ts must stay zip-safe without "${forbidden}"`,
+      );
     }
 
     for (const block of extractFencedCodeBlocks(readRepoFile("docs/VIDEO_SCRIPT.md"))) {
