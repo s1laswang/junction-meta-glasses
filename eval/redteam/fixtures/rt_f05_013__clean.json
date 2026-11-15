@@ -1,0 +1,95 @@
+{
+  "id": "rt_f05_013__clean",
+  "spec_id": "rt_f05_013",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held bottle is Vitamin A 300 mcg, whereas the user's saved medication is Vitamin D3 300 mcg.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "A-vitamiini Orion 300 mikrog",
+    "ingredient": "Vitamin A",
+    "strength": "300 mcg",
+    "expiry": "2029-01",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "D3-vitamiini Orion 300 mikrog",
+        "ingredient": "Vitamin D3",
+        "strength": "300 mcg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Orion A-vitamiini",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "vitamin A",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "300 mcg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75,
+    "guidance": "Turn the bottle to see the back label."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410400001141(17)290100(10)RT01(21)SN013"
+}

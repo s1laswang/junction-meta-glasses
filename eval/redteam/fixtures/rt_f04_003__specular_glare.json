@@ -1,0 +1,95 @@
+{
+  "id": "rt_f04_003__specular_glare",
+  "spec_id": "rt_f04_003",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains calcium carbonate 500 mg instead of the user's saved lithium carbonate 500 mg.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Calcium Carbonate Sandoz 500 mg",
+    "ingredient": "calcium carbonate",
+    "strength": "500 mg",
+    "expiry": "2028-05",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Lithium Carbonate 500 mg",
+        "ingredient": "lithium carbonate",
+        "strength": "500 mg",
+        "schedule": [
+          "bedtime"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Calcium Carbonate Sandoz",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "calcium carbonate",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "500 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.3
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75,
+    "guidance": "Turn the box to read expiry and instructions."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05010100456789(17)280500(10)RT01(21)SN003"
+}

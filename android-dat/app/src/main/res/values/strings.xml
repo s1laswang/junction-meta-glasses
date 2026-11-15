@@ -4,4 +4,17 @@
     <string name="notification_channel_name">Glasses streaming</string>
     <string name="notification_title">HoldUp is using your glasses camera</string>
     <string name="notification_body">Frames go to your HoldUp session only. Open the app to stop.</string>
+    <string name="a11y_bridge_heading">HoldUp Bridge, glasses camera companion</string>
+    <string name="a11y_glasses_none">No glasses found</string>
+    <string name="a11y_state_post_idle">Not sent yet</string>
+    <string name="a11y_network_ok">Server reachable</string>
+    <string name="a11y_network_retrying">Connection failing, retrying automatically</string>
+    <string name="a11y_network_idle">Idle, waiting for first upload</string>
+    <string name="a11y_dismiss_error">Dismiss error alert</string>
+    <string name="a11y_state_glasses_connected">Glasses connected</string>
+    <string name="a11y_state_glasses_connecting">Connecting to glasses</string>
+    <string name="a11y_state_glasses_disconnected">Glasses disconnected</string>
+    <string name="a11y_state_stream_active">Camera streaming active</string>
+    <string name="a11y_state_stream_starting">Camera stream starting</string>
+    <string name="a11y_state_stream_stopped">Camera stream stopped</string>
 </resources>

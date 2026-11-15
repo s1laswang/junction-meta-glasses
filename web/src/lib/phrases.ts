@@ -1,9 +1,11 @@
+import type { CoachCue, Verdict } from "../../../shared/types.ts";
 // Offline/safety phrases pre-rendered with ElevenLabs (server/scripts/prerender-phrases.ts) and precached by
 // the service worker. playPhrase() plays the clip for the user's language. It returns false when no clip
 // exists (not rendered, or not cached yet), so callers fall back to speechSynthesis with the same text.
 type Manifest = { phrases: Record<string, Record<string, { file: string; text: string }>> };
 let manifest: Manifest | null | undefined;
 let current: HTMLAudioElement | undefined;
+let seq = 0;
 
 async function load(): Promise<Manifest | null> {
   if (manifest !== undefined) return manifest;
@@ -12,17 +14,42 @@ async function load(): Promise<Manifest | null> {
   return manifest;
 }
 
+export function stopPhrase(): void {
+  seq++;
+  const audio = current;
+  current = undefined;
+  if (!audio) return;
+  try {
+    audio.pause();
+  } catch {}
+  try {
+    audio.currentTime = 0;
+  } catch {}
+}
+
 export async function playPhrase(id: string, lang = "en"): Promise<boolean> {
+  const mySeq = ++seq;
   const m = await load();
   const p = m?.phrases[lang]?.[id] ?? m?.phrases.en?.[id];
   if (!p) return false;
+  if (mySeq !== seq) return true;
+  let next: HTMLAudioElement | undefined;
   try {
     current?.pause();
-    current = new Audio(p.file);
-    await current.play();
+    next = new Audio(p.file);
+    current = next;
+    await next.play();
+    if (mySeq !== seq) {
+      try {
+        next.pause();
+      } catch {}
+      return true;
+    }
     return true;
   } catch {
-    return false; // autoplay blocked or not cached: caller speaks the text instead
+    if (next && current === next) current = undefined;
+    if (mySeq !== seq) return true;
+    return false;
   }
 }
 
@@ -30,4 +57,33 @@ export async function playPhrase(id: string, lang = "en"): Promise<boolean> {
  *  `void sayPhrase("offline", profile.lang, text => speak(text), "You're offline. …")` */
 export async function sayPhrase(id: string, lang: string | undefined, speak: (t: string) => void, fallbackText: string) {
   if (!(await playPhrase(id, lang || "en"))) speak(fallbackText);
+}
+
+export function cuePhraseId(cue: CoachCue, text?: string): string | null {
+  switch (cue) {
+    case "closer":
+      return "cue_closer";
+    case "farther":
+      return "cue_further";
+    case "rotate_left":
+    case "rotate_right":
+      return "cue_rotate";
+    case "other_side":
+      return "cue_tilt";
+    case "more_light":
+      return "cue_more_light";
+    case "hold_still":
+      return text && /\bread/i.test(text) ? "cue_reading" : "cue_steady";
+    case "ok":
+      return text && /stop/i.test(text) ? "camera_off" : "cue_reading";
+    default:
+      return null;
+  }
+}
+
+export function verdictPhraseId(v: Verdict, via?: string | null): string | null {
+  if (/already took/i.test(v.speech) || v.headline.includes("already taken today")) return "already_taken";
+  if (via === "offline" && (v.headline === "Not one of your saved barcodes" || v.headline === "Pack code not on your list")) return "unknown_offline";
+  if (v.level === "unsure") return "not_sure";
+  return null;
 }

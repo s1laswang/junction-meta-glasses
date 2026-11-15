@@ -13,7 +13,7 @@ import { audioRoute, classifyError, explain, getCamera, getMic, type PermState }
 import { IS_MOCK, mockCtl, mockHudChannel } from "./mock.ts";
 import { loadProfile, loadSettings, logDose, newMedId, saveProfile, saveSettings, sessionCode } from "./storage.ts";
 import { AuthError } from "./key.ts";
-import { sayPhrase } from "./phrases.ts";
+import { sayPhrase, stopPhrase } from "./phrases.ts";
 import { findByBarcode, findByGtin, matchVerdict, offlineUnknownBarcode, offlineUnknownCode } from "./verdicts.ts";
 
 export type Mode = "live" | "snapshot" | "offline";
@@ -24,13 +24,7 @@ function speakPhrase(id: string, fallback: string, opts?: { interrupt?: boolean 
   if (!loadSettings().voice) return;
   void sayPhrase(id, loadProfile().lang, (t) => speak(t, opts), fallback);
 }
-
-function phraseIdFor(v: Verdict, via: Mode | null): string | null {
-  if (/already took/i.test(v.speech) || v.headline.includes("already taken today")) return "already_taken";
-  if (via === "offline" && (v.headline === "Not one of your saved barcodes" || v.headline === "Pack code not on your list")) return "unknown_offline";
-  if (v.level === "unsure") return "not_sure";
-  return null;
-}
+import { cuePhraseId, verdictPhraseId } from "./phrases.ts";
 export type Caption = { id: number; role: "user" | "assistant" | "system"; text: string; final: boolean };
 export type Banner = { tone: "info" | "warn" | "bad" | "good"; title: string; detail?: string; action?: "retry" | "settings" | "snapshot" } | null;
 
@@ -231,6 +225,7 @@ export class Checker {
     if (this.s.running) return;
     // everything that needs the user gesture happens before the first await (iOS Safari)
     stopSpeaking();
+    stopPhrase();
     primeSpeech();
     this.mic.prime();
     const unlocked = this.player.unlock();
@@ -271,6 +266,7 @@ export class Checker {
     this.stopFrames();
     this.stopBarcodeScan();
     this.stopCamera();
+    stopPhrase();
     await this.mic.stop();
     this.player.flush();
     if (this.autoStopTimer) clearTimeout(this.autoStopTimer);
@@ -438,6 +434,7 @@ export class Checker {
           // barge-in: the user is talking, stop the assistant mid-sentence
           this.player.flush();
           stopSpeaking();
+          stopPhrase();
           this.armAutoStop();
         }
         // the assistant is still talking: don't auto-stop mid-answer (QA #11)
@@ -451,6 +448,12 @@ export class Checker {
         haptic.coach(m.cue);
         // with spoken answers off, the screen reader is the only voice: read the cue
         if (!loadSettings().voice) announce(m.text);
+        else if (m.say) speak(m.text); // detector cue: Gemini doesn't say these, so the phone does, in live mode too
+        else if (this.s.mode !== "live" || IS_MOCK) {
+          const cid = cuePhraseId(m.cue, m.text);
+          if (cid) speakPhrase(cid, m.text);
+          else speak(m.text);
+        }
         this.armAutoStop();
         break;
       case "verdict":
@@ -473,6 +476,14 @@ export class Checker {
         break;
       case "interrupted":
         this.player.flush();
+        break;
+      case "correction":
+        // the spoken answer did not match the rule's sentence: stop it and say the rule's sentence ourselves
+        this.player.flush();
+        earcon.alert();
+        speak(m.speech);
+        announce(`Corrected answer: ${m.speech}`, "assertive");
+        this.set({ banner: { tone: "warn", title: "Corrected answer", detail: "The spoken answer didn't match the check, so HoldUp repeated the checked sentence." } });
         break;
       case "checking":
         if (m.phase === "start") {
@@ -509,8 +520,8 @@ export class Checker {
   private onServerStatus(live: LiveState, detail: string) {
     this.set({ serverLive: live, serverDetail: detail });
     if (live === "closed" && /auto-stop/i.test(detail)) {
-      speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");
       void this.stop("Stopped automatically after 45 seconds without a label. Camera off.");
+      speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");
       return;
     }
     if (live === "degraded" || live === "closed") {
@@ -600,7 +611,7 @@ export class Checker {
     announce(`${levelWord(v.level)}. ${v.headline}. ${v.speech}`, "assertive");
     // Gemini speaks verdicts itself in live mode; elsewhere the phone reads them out
     if (via !== "live" || IS_MOCK) {
-      const id = phraseIdFor(v, via);
+      const id = verdictPhraseId(v, via);
       if (id) speakPhrase(id, v.speech, { interrupt: false });
       else speak(v.speech, { interrupt: false });
     }
@@ -623,7 +634,7 @@ export class Checker {
     if (this.s.mode === "live" && this.live?.isOpen && !IS_MOCK) {
       this.live.send({ type: "event", name: "repeat" });
     } else if (v) {
-      const id = phraseIdFor(v, this.s.verdictVia);
+      const id = verdictPhraseId(v, this.s.verdictVia);
       if (id) speakPhrase(id, v.speech);
       else speak(v.speech);
     }
@@ -947,8 +958,8 @@ export class Checker {
     const at = Date.now() + AUTO_STOP_MS;
     this.set({ autoStopAt: at });
     this.autoStopTimer = setTimeout(() => {
-      speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");
       void this.stop("Stopped automatically after 45 seconds without a label. Camera off.");
+      speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");
     }, AUTO_STOP_MS);
   }
 

@@ -125,9 +125,9 @@ test("Consent cards cover 45-second auto-stop, memory-only Gemini processing, fa
   assert.ok(src.includes("People in view are ignored. HoldUp never describes faces."));
 
   assert.ok(src.includes("What stays on this phone"));
-  assert.ok(src.includes("Your medicine list, allergies and dose log are saved only on this phone."));
+  assert.ok(src.includes("Your medicine list, allergies and dose log are stored only on this phone. The server holds a copy in memory only while a check runs"));
   assert.ok(src.includes("You can delete everything with one button in Privacy."));
-  assert.ok(src.includes("HoldUp is not a medical device. It never guesses a dose, and when it isn't sure it tells you to ask a pharmacist."));
+  assert.ok(src.includes("HoldUp is a research prototype, not a CE-marked medical device. It only states a dose it can read clearly, and when it isn't sure it tells you to ask a pharmacist."));
 });
 
 test("Consent step cards wire ARIA progressbar attributes and explicit I agree, Not now, Next, and Back controls", () => {

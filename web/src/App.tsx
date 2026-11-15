@@ -27,6 +27,7 @@ export function App() {
   const checker = getChecker();
   const s = useSyncExternalStore(checker.subscribe, checker.get);
   const h1 = useRef<HTMLHeadingElement>(null);
+  const pendingAnnounce = useRef<string | null>(null);
 
   useEffect(() => {
     checker.onProfileChange = setProfile;
@@ -34,11 +35,19 @@ export function App() {
 
   // focus management: move focus to the screen heading on every tab change
   useEffect(() => {
+    if (s.authNeeded) {
+      document.title = "Access key needed · HoldUp";
+      return;
+    }
     if (["check", "profile", "privacy"].includes(screen)) {
       h1.current?.focus();
       document.title = `${TITLES[screen]} · HoldUp`;
     } else document.title = "HoldUp";
-  }, [screen]);
+    if (pendingAnnounce.current) {
+      announce(pendingAnnounce.current, "assertive");
+      pendingAnnounce.current = null;
+    }
+  }, [screen, s.authNeeded]);
 
   if (s.authNeeded)
     return (
@@ -145,20 +154,20 @@ export function App() {
             consent={consent}
             onReviewConsent={() => setScreen("consent")}
             onWithdraw={() => {
-              void checker.stop();
+              if (s.running) void checker.stop("Consent withdrawn. The camera will stay off.");
+              else announce("Consent withdrawn. The camera will stay off.", "assertive");
               try {
                 localStorage.removeItem("holdup.consent");
-              } catch {
-                /* ignore */
-              }
+              } catch {}
               setConsent(null);
+              return true;
             }}
             onDeleteAll={async () => {
               await checker.stop("Check stopped.");
               await deleteAllData();
               setConsent(null);
               setProfile(loadProfile());
-              announce("All your HoldUp data has been deleted from this phone.", "assertive");
+              pendingAnnounce.current = "All your HoldUp data has been deleted from this phone.";
               setScreen("consent");
             }}
           />

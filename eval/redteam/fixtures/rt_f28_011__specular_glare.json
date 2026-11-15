@@ -1,0 +1,98 @@
+{
+  "id": "rt_f28_011__specular_glare",
+  "spec_id": "rt_f28_011",
+  "family": "F28_medication_allergenic_excipients",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Matches the user's saved epinephrine 1 mg/ml, but contains sodium metabisulfite E223 which triggers the user's sulphites allergy.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Epinephrine Accord 1 mg/ml",
+    "ingredient": "epinephrine",
+    "strength": "1 mg/ml",
+    "expiry": "2027-04",
+    "allergens": [
+      "sulphites"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Epinephrine",
+        "ingredient": "epinephrine",
+        "strength": "1 mg/ml",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "sulphites"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Epinephrine Accord",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "epinephrine",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "1 mg/ml",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-04",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": [],
+      "confidence": 0.5
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.9
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": false,
+  "pack_gs1_raw": "(01)05012345337788(17)270400(10)RT01(21)SN011"
+}

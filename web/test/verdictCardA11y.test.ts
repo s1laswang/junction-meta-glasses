@@ -257,12 +257,12 @@ test("per-field confidence disclosure renders all readable and nonzero-confidenc
   const html = renderCard(makeVerdict({ level: "warning", read: fullRead, matchedMedId: undefined }));
 
   assert.match(html, /<details><summary class="muted" style="[^"]*min-height:48px[^"]*">What I read, and how sure I am<\/summary><dl class="fields">/);
-  assert.match(html, /<dt>Product<\/dt><dd>Chocolate oat bar<\/dd><span class="conf " aria-label="confidence 93 percent">93%<\/span>/);
-  assert.match(html, /<dt>Ingredient<\/dt><dd>rolled oats<\/dd><span class="conf " aria-label="confidence 70 percent">70%<\/span>/);
-  assert.match(html, /<dt>Strength<\/dt><dd>Not readable<\/dd><span class="conf low" aria-label="confidence 31 percent">31%<\/span>/);
-  assert.match(html, /<dt>Dosing<\/dt><dd>1 bar<\/dd><span class="conf low" aria-label="confidence 69 percent">69%<\/span>/);
-  assert.match(html, /<dt>Expiry<\/dt><dd>2027-03-12<\/dd><span class="conf " aria-label="confidence 88 percent">88%<\/span>/);
-  assert.match(html, /<dt>Allergens<\/dt><dd>hazelnut, oats, milk<\/dd><span class="conf " aria-label="confidence 92 percent">92%<\/span>/);
+  assert.match(html, /<dt>Product<\/dt><dd>Chocolate oat bar<\/dd><dd class="conf " aria-label="confidence 93 percent">93%<\/dd>/);
+  assert.match(html, /<dt>Ingredient<\/dt><dd>rolled oats<\/dd><dd class="conf " aria-label="confidence 70 percent">70%<\/dd>/);
+  assert.match(html, /<dt>Strength<\/dt><dd>Not readable<\/dd><dd class="conf low" aria-label="confidence 31 percent">31%<\/dd>/);
+  assert.match(html, /<dt>Dosing<\/dt><dd>1 bar<\/dd><dd class="conf low" aria-label="confidence 69 percent">69%<\/dd>/);
+  assert.match(html, /<dt>Expiry<\/dt><dd>2027-03-12<\/dd><dd class="conf " aria-label="confidence 88 percent">88%<\/dd>/);
+  assert.match(html, /<dt>Allergens<\/dt><dd>hazelnut, oats, milk<\/dd><dd class="conf " aria-label="confidence 92 percent">92%<\/dd>/);
   assert.doesNotMatch(html, /<dt>Barcode<\/dt>/);
 
   const dts = Array.from(html.matchAll(/<dt>([^<]+)<\/dt>/g), (m) => m[1]);
