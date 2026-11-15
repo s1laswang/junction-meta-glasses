@@ -25,11 +25,29 @@ export const eleven = {
 
 export const elevenEnabled = () => !!eleven.key;
 
+const elevenTimeout = () => AbortSignal.timeout(Math.max(100, Number(process.env.ELEVENLABS_TIMEOUT_MS) || 8000));
+
+function readFirstChunk(reader: ReadableStreamDefaultReader<Uint8Array>, signal: AbortSignal): ReturnType<ReadableStreamDefaultReader<Uint8Array>["read"]> {
+  if (signal.aborted) return Promise.reject(signal.reason ?? new Error("elevenlabs tts timeout"));
+  return new Promise((resolve, reject) => {
+    const onAbort = () => {
+      void reader.cancel().catch(() => {});
+      reject(signal.reason ?? new Error("elevenlabs tts timeout"));
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    reader.read().then(
+      (v) => { signal.removeEventListener("abort", onAbort); resolve(v); },
+      (e) => { signal.removeEventListener("abort", onAbort); reject(e); },
+    );
+  });
+}
+
 /** Streaming TTS. Resolves once the first audio byte has arrived (time-to-first-byte is ledgered as first_audio_s). */
 export async function elevenStream(text: string, lang = "en", feature = "tts_eleven"): Promise<{ body: ReadableStream<Uint8Array>; ttfbS: number }> {
-  const voice = eleven.voices[lang] ?? eleven.voices.en;
+  const voice = eleven.voices[lang] || eleven.voices.en;
   const t = Date.now();
-  const r = await fetch(`${eleven.base}/v1/text-to-speech/${voice}/stream?output_format=${eleven.format}`, {
+  const signal = elevenTimeout();
+  const r = await fetch(`${eleven.base}/v1/text-to-speech/${encodeURIComponent(voice)}/stream?output_format=${encodeURIComponent(eleven.format)}`, {
     method: "POST",
     headers: { "xi-api-key": eleven.key, "Content-Type": "application/json", Accept: "audio/mpeg" },
     body: JSON.stringify({
@@ -37,26 +55,45 @@ export async function elevenStream(text: string, lang = "en", feature = "tts_ele
       apply_text_normalization: "on", // Flash v2.5 doesn't normalise numbers by default ("5 mg")
       voice_settings: { stability: 0.7, similarity_boost: 0.75, style: 0, speed: 0.95, use_speaker_boost: true },
     }),
+    signal,
+  }).catch((e) => {
+    ledger({ feature, model: eleven.model, latency_s: (Date.now() - t) / 1000, ok: false });
+    throw e;
   });
   if (!r.ok || !r.body) {
     ledger({ feature, model: eleven.model, latency_s: (Date.now() - t) / 1000, ok: false });
     throw new Error(`elevenlabs tts HTTP ${r.status}`);
   }
   const reader = r.body.getReader();
-  const first = await reader.read();
+  const first = await readFirstChunk(reader, signal).catch(async (e) => {
+    ledger({ feature, model: eleven.model, latency_s: (Date.now() - t) / 1000, ok: false });
+    await reader.cancel().catch(() => {});
+    throw e;
+  });
+  if (first.done || !first.value?.byteLength) {
+    ledger({ feature, model: eleven.model, latency_s: (Date.now() - t) / 1000, ok: false });
+    await reader.cancel().catch(() => {});
+    throw new Error("elevenlabs tts empty stream");
+  }
   const ttfbS = (Date.now() - t) / 1000;
   ledger({ feature, model: eleven.model, latency_s: ttfbS, ok: true, first_audio_s: ttfbS } as any);
   const body = new ReadableStream<Uint8Array>({
-    start(c) { if (!first.done && first.value) c.enqueue(first.value); },
+    start(c) { c.enqueue(first.value); },
     async pull(c) { const n = await reader.read(); if (n.done) c.close(); else c.enqueue(n.value); },
-    cancel() { void reader.cancel(); },
+    cancel() { void reader.cancel().catch(() => {}); },
   });
   return { body, ttfbS };
 }
 
 /** Single-use token (15 min, consumed on use) for the browser's Scribe realtime WebSocket. */
 export async function scribeToken(): Promise<string> {
-  const r = await fetch(`${eleven.base}/v1/single-use-token/realtime_scribe`, { method: "POST", headers: { "xi-api-key": eleven.key } });
+  const r = await fetch(`${eleven.base}/v1/single-use-token/realtime_scribe`, {
+    method: "POST",
+    headers: { "xi-api-key": eleven.key },
+    signal: elevenTimeout(),
+  });
   if (!r.ok) throw new Error(`elevenlabs token HTTP ${r.status}`);
-  return ((await r.json()) as { token: string }).token;
+  const data = (await r.json()) as { token?: unknown };
+  if (typeof data?.token !== "string" || !data.token.trim()) throw new Error("elevenlabs empty scribe token");
+  return data.token.trim();
 }
