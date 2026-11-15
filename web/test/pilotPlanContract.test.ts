@@ -14,6 +14,9 @@ const BLOCK_COMMENT_TOKEN = SLASH + ASTERISK;
 const HTML_COMMENT_TOKEN = "<" + "!--";
 const EM_DASH = String.fromCharCode(0x2014);
 const ESCAPED_EM_DASH = ["\\", "u2014"].join("");
+const CHILD_PROC_TOKEN = ["child", "process"].join("_");
+const EXEC_SYNC_TOKEN = ["exec", "Sync"].join("");
+const SPAWN_SYNC_TOKEN = ["spawn", "Sync"].join("");
 
 type VerifyFeatureStats = {
   calls: number;
@@ -232,6 +235,15 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
   const evalDoc = readRepoFile("docs/EVAL.md");
   const gemmaDoc = readRepoFile("GEMMA.md");
   const privacyDoc = readRepoFile("docs/PRIVACY.md");
+  const langQaDoc = readRepoFile("docs/LANG_QA.md");
+  const simUserDoc = readRepoFile("docs/SIM_USER_TESTS.md");
+  const userFeedbackDoc = readRepoFile("docs/USER_FEEDBACK.md");
+  const userTestKitDoc = readRepoFile("docs/USER_TEST_KIT.md");
+  const morningBriefDoc = readRepoFile("docs/MORNING_BRIEF.md");
+  const liveSrc = readRepoFile("server/src/live.ts");
+  const safetySrc = readRepoFile("server/src/safety.ts");
+  const checkerSrc = readRepoFile("web/src/lib/checker.ts");
+  const liveScreenSrc = readRepoFile("web/src/screens/Live.tsx");
   const onboardingSrc = readRepoFile("web/src/screens/Onboarding.tsx");
   const smokeRuns = readRepoFile("docs/evidence/smoke-runs.md");
   const verdaDoc = readRepoFile("docs/evidence/verda-fieldspotter.md");
@@ -242,11 +254,16 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
 
   test("docs/PILOT_PLAN.md is a crisp 5-section supervised pilot runbook with honest non-CE and abstention wording plus zero comments and em dashes", () => {
     assert.equal(pilotPlan.includes(EM_DASH), false, "docs/PILOT_PLAN.md must contain zero em dashes (U+2014)");
+    assert.equal(pilotPlan.includes(ESCAPED_EM_DASH), false, "docs/PILOT_PLAN.md must contain zero escaped em dashes");
+    assert.equal(pilotPlan.includes(HTML_COMMENT_TOKEN), false, "docs/PILOT_PLAN.md must contain zero HTML comments");
     assert.equal(selfSource.includes(EM_DASH), false, "pilotPlanContract.test.ts must contain zero em dashes (U+2014)");
     assert.equal(selfSource.includes(ESCAPED_EM_DASH), false, "pilotPlanContract.test.ts must contain zero escaped em dashes");
     assert.equal(selfSource.includes(LINE_COMMENT_TOKEN), false, "pilotPlanContract.test.ts must contain zero line comments");
     assert.equal(selfSource.includes(BLOCK_COMMENT_TOKEN), false, "pilotPlanContract.test.ts must contain zero block comments");
     assert.equal(selfSource.includes(HTML_COMMENT_TOKEN), false, "pilotPlanContract.test.ts must contain zero HTML comments");
+    assert.equal(selfSource.includes(CHILD_PROC_TOKEN), false, "pilotPlanContract.test.ts must remain zip-safe without subprocess imports");
+    assert.equal(selfSource.includes(EXEC_SYNC_TOKEN), false, "pilotPlanContract.test.ts must remain zip-safe without sync shell execution");
+    assert.equal(selfSource.includes(SPAWN_SYNC_TOKEN), false, "pilotPlanContract.test.ts must remain zip-safe without sync process spawning");
 
     const lineCount = pilotPlan.trim().split("\n").length;
     assert.ok(lineCount >= 30 && lineCount <= 90, `Expected crisp 1-page runbook (30-90 lines), got ${lineCount}`);
@@ -315,6 +332,95 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
     assert.ok(sec2.includes("EU Data Processing Agreement (DPA)"));
     assert.ok(sec2.includes("Oikea pakkaus."));
     assert.ok(sec2.includes("Jag är inte säker."));
+    assert.ok(sec2.includes("Tiedoksi."));
+    assert.ok(sec2.includes("För kännedom."));
+    assert.ok(sec2.includes("docs/LANG_QA.md"));
+    assert.ok(sec2.includes("does not replace human native Finnish and Swedish pharmacist sign-off before Phase 0"));
+  });
+
+  test("Section 2 item 4 and Section 4 enforce LANG_QA.md clinical gate, SIM_USER_TESTS.md simulated UX regression gate, and $0.003 Slide 12 parity", () => {
+    for (const langToken of [
+      "MODEL-REVIEWED",
+      "n = 30",
+      "17 / 30",
+      "14 / 14",
+      "1169/2011",
+      "Tiedoksi.",
+      "För kännedom.",
+      "2,5 mg",
+    ]) {
+      assert.ok(langQaDoc.includes(langToken), `docs/LANG_QA.md must include "${langToken}"`);
+      assert.ok(sections[1].body.includes(langToken), `Section 2 must match docs/LANG_QA.md token "${langToken}"`);
+    }
+
+    for (const liveToken of [
+      "Oikea pakkaus.",
+      "Varoitus.",
+      "En ole varma.",
+      "Tiedoksi.",
+      "Rätt förpackning.",
+      "Varning.",
+      "Jag är inte säker.",
+      "För kännedom.",
+      "2,5 mg",
+    ]) {
+      assert.ok(liveSrc.includes(liveToken), `server/src/live.ts must include "${liveToken}"`);
+      assert.ok(sections[1].body.includes(liveToken), `Section 2 must cite server/src/live.ts token "${liveToken}"`);
+    }
+
+    const allergensBlockMatch = /const ALLERGENS:\s*Record<string,\s*string\[\]>\s*=\s*\{([\s\S]*?)\n\};/.exec(safetySrc);
+    assert.ok(allergensBlockMatch, "Expected ALLERGENS map in server/src/safety.ts");
+    const allergenGroupLines = allergensBlockMatch[1]
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    assert.equal(allergenGroupLines.length, 14, "Expected 14 EU 1169/2011 allergen groups in server/src/safety.ts");
+    for (const inflectedTerm of ["maapahkinaa", "pahkinan", "jordnotter", "hasselnotter"]) {
+      assert.ok(safetySrc.includes(inflectedTerm), `server/src/safety.ts must include inflected allergen "${inflectedTerm}"`);
+    }
+
+    for (const simToken of ["n = 40", "100% SIMULATED", "80 / 80", "40 / 40", "UX-01", "UX-02", "UX-03", "UX-04", "UX-05"]) {
+      assert.ok(simUserDoc.includes(simToken), `docs/SIM_USER_TESTS.md must include "${simToken}"`);
+    }
+    assert.ok(simUserDoc.includes("zero (`n = 0`) real blind or low-vision human user sessions"));
+    assert.ok(userFeedbackDoc.includes("PENDING REAL SESSION") && userFeedbackDoc.includes("never invent a quote"));
+    assert.ok(userTestKitDoc.includes("docs/USER_FEEDBACK.md"));
+    assert.ok(checkerSrc.includes("AUTO_STOP_WARN_MS = 35_000") && checkerSrc.includes("pendingDm"));
+    assert.ok(liveScreenSrc.includes('"Escape"') && liveScreenSrc.includes("dismissVerdict()"));
+
+    const sec4 = sections[3].body;
+    for (const sec4SimToken of [
+      "docs/SIM_USER_TESTS.md",
+      "n = 40",
+      "100% SIMULATED",
+      "80 / 80",
+      "`0` real human sessions claimed",
+      "docs/USER_FEEDBACK.md",
+      "docs/USER_TEST_KIT.md",
+      "UX-01",
+      "UX-05",
+      "web/test/simUserUxFixes.test.ts",
+      "35 s",
+      "Escape",
+      "DataMatrix",
+    ]) {
+      assert.ok(sec4.includes(sec4SimToken), `Section 4 must include simulated UX regression token "${sec4SimToken}"`);
+    }
+
+    assert.ok(morningBriefDoc.includes("$0.003 per label read"), "docs/MORNING_BRIEF.md must state $0.003 per label read");
+    const slide12Text = stripTags(findSlideByHeadingId(slides, "s12-h"));
+    assert.ok(
+      slide12Text.includes("About $0.003 per label read on Gemini Flash (metered; Live audio extra)."),
+      "Slide 12 (#s12-h) must state the metered ~$0.003 per label read figure",
+    );
+    for (const costToken of [
+      "~$0.003",
+      "$0.003 per label read",
+      "About $0.003 per label read on Gemini Flash (metered; Live audio extra).",
+      "docs/MORNING_BRIEF.md",
+    ]) {
+      assert.ok(sec4.includes(costToken), `Section 4 must include unit-economics parity token "${costToken}"`);
+    }
   });
 
   test("Sections 3, 4, and 5 maintain exact metric parity with docs/RESEARCH.md, docs/EVAL.md, api-stats-snapshot.json, and fieldspotter.json", () => {
@@ -618,6 +724,7 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
       "Be My Eyes",
       "21 markets",
       "PWA",
+      "About $0.003 per label read on Gemini Flash (metered; Live audio extra).",
       "Free for users",
       "wellbeing services counties",
       "docs/RESEARCH.md",
@@ -686,7 +793,18 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
 
   test("every repository path referenced in docs/PILOT_PLAN.md exists on disk", () => {
     const referencedPaths = extractReferencedRepoPaths(pilotPlan);
-    assert.ok(referencedPaths.length >= 18, `Expected >= 18 repo path references, got ${referencedPaths.length}`);
+    assert.ok(referencedPaths.length >= 25, `Expected >= 25 repo path references, got ${referencedPaths.length}`);
+    for (const requiredRef of [
+      "docs/LANG_QA.md",
+      "docs/MORNING_BRIEF.md",
+      "docs/SIM_USER_TESTS.md",
+      "docs/USER_FEEDBACK.md",
+      "docs/USER_TEST_KIT.md",
+      "web/public/phrases/manifest.json",
+      "web/test/simUserUxFixes.test.ts",
+    ]) {
+      assert.ok(referencedPaths.includes(requiredRef), `Expected docs/PILOT_PLAN.md to reference "${requiredRef}"`);
+    }
     for (const relPath of referencedPaths) {
       const fullPath = path.join(REPO_DIR, relPath);
       assert.equal(fs.existsSync(fullPath), true, `Referenced repo path "${relPath}" must exist on disk`);
