@@ -321,7 +321,7 @@ export class LiveProxy implements LiveLike {
           }
           if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
           if (this.stopped) return;
-          const v = checkLabel(read, this.hub.profile, new Date(), this.hub.freshCode());
+          const v = checkLabel(read, this.hub.profile, new Date(), this.hub.freshCode(), question);
           if (!model) { v.level = "unsure"; v.reasons.push("reader unavailable"); }
           this.send({ type: "verdict", verdict: v });
           this.respond(fc, {
