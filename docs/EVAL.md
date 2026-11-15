@@ -107,6 +107,20 @@ The same 150 images go to all three models: a fixed, stratified subset of the v1
 
 **No regression on the held-out v2 set:** re-scoring the 4,730 v2 verdicts with the merged rules still gives 3/4,730 = 0.06%.
 
+## EVAL v3: held-out Finnish pharmacy scale-up (`eval/results/v3_results.json`, `eval/results/v3_heldout_safety.json`)
+**Evaluation split: held-out (not used for tuning).** Built after `safety.ts` was frozen at `52b5567` (WS1 + WS7 merged), with **0% spec overlap** against v1 or WS1's 2,048 red-team specs and **zero edits to `safety.ts`**.
+- **Specs & independent ground-truth check:** `gemini-4-hydrogen` and `gemini-4-argon` generated **1,459 fresh Nordic specs** across seven pharmacy forms (`blister`, `bottle`, `pouch` / *annosjakelu*, `eyedrops`, `inhaler`, `tube`, `box`) and Finnish/Swedish grocery packs. `gemini-3.1-flash-image` rendered **172 kept photos** (148 fronts, 24 back-of-box; 2 garbled renders dropped) audited by **`gemini-4-argon`** (an independent model family from the reader, addressing the v1 same-model check caveat). `eval/degrade.py` (`--types 2`) produced **1,060 held-out test images**.
+- **Shipped reader under test:** `gemini-3.8-flash` (thinking LOW, `shared/verify_prompt.md` + `shared/label_schema.json`, hash `814770315c42`), **0 API errors**, latency p50 **3.10 s** (3.07-3.13) / p95 **5.33 s** (5.08-5.65).
+
+| Held-out metric (`held-out (not used for tuning)`) | Result (95% Wilson / bootstrap CI) |
+|---|---|
+| **Confident-wrong strength reads** (conf >= 0.8, n = 536 confident) | **1 / 536 = 0.19%** (Wilson 95% **0.03-1.05%**): **0/82** blister, **0/69** bottle, **0/80** box, **0/64** inhaler, **0/82** dose pouch, **0/74** tube, **1/85** eye drops (`v3med0045__motion_blur_1`: `5 mg/ml` read as `1 mg/ml` at 0.85) |
+| Strength when visible (n = 652) / hidden (n = 128) | **79.1%** correct (75.86-82.08%), 20.7% abstained; hidden abstains **87.5%** (112/128) |
+| Per-field visible accuracy & confident-wrong (conf >= 0.8) | Product **78.4%** (626/798), CW 26/666 (**3.9%**, 2.68-5.66%); Expiry **78.4%** (569/726), CW 19/605 (**3.1%**, 2.02-4.85%); Ingredient **55.8%** (249/446; INN vs salt/Finnish stem), CW 153/410; Allergens **62.2%** (51/82), CW 26/79; Dosing **65.9%** (60/91), CW 26/90; Barcode **95.5%** (21/22), CW **0/21** |
+| Calibration ECE | All answered fields (n = 2,559): **0.050** (0.038-0.061); Strength (n = 562): **0.069** (0.063-0.075) |
+| **Silent unsafe reassurance, standard scenarios** (n = 3,033 verdicts) | Pre-WS1 `safety.ts` (`1d395b3`): **6 / 3,033 = 0.20%** (0.09-0.43%) -> Merged `main` (`52b5567`): **4 / 3,033 = 0.13%** (**0.05-0.34%**); **0 / 1,868** on "not on list" + "wrong strength" |
+| **Silent unsafe reassurance, extended held-out clinical challenges** (n = 4,041 verdicts, incl. unseen LASA/insulin/salt/vitamin/form twins) | Pre-WS1 `safety.ts` (`1d395b3`): **46 / 4,041 = 1.14%** (0.85-1.51%) -> Merged `main` (`52b5567`): **14 / 4,041 = 0.35%** (**0.21-0.58%**, **-69.6% out-of-sample reduction**; LASA/form-twin unsafe matches drop from **37/875 = 4.23%** to **9/875 = 1.03%**) |
+
 ## Gemini as the workforce
 These calls built the eval set:
 - 26 spec calls (`gemini-3.8-flash`);
