@@ -135,7 +135,8 @@
    },
    "reasons": [
     "matches med_amlodipine",
-    "taken today: 0/1"
+    "taken today: 0/1",
+    "asked in the morning, scheduled later"
    ],
    "expected_strength": "5 mg"
   },
