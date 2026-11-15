@@ -1,20 +1,62 @@
 import type { CoachCue, Verdict } from "../../../shared/types.ts";
-
-type Manifest = { model?: string; generated?: string; phrases: Record<string, Record<string, { file: string; text: string }>> };
-type AudioLike = { play(): Promise<void>; pause(): void; currentTime?: number };
-type AudioCtor = new (src?: string) => AudioLike;
+// Offline/safety phrases pre-rendered with ElevenLabs (server/scripts/prerender-phrases.ts) and precached by
+// the service worker. playPhrase() plays the clip for the user's language. It returns false when no clip
+// exists (not rendered, or not cached yet), so callers fall back to speechSynthesis with the same text.
+type Manifest = { phrases: Record<string, Record<string, { file: string; text: string }>> };
 let manifest: Manifest | null | undefined;
-let current: AudioLike | undefined;
+let current: HTMLAudioElement | undefined;
+let seq = 0;
 
 async function load(): Promise<Manifest | null> {
   if (manifest !== undefined) return manifest;
-  try {
-    const r = await fetch("/phrases/manifest.json");
-    manifest = r.ok ? ((await r.json()) as Manifest) : null;
-  } catch {
-    manifest = null;
-  }
+  try { const r = await fetch("/phrases/manifest.json"); manifest = r.ok ? ((await r.json()) as Manifest) : null; }
+  catch { manifest = null; }
   return manifest;
+}
+
+export function stopPhrase(): void {
+  seq++;
+  const audio = current;
+  current = undefined;
+  if (!audio) return;
+  try {
+    audio.pause();
+  } catch {}
+  try {
+    audio.currentTime = 0;
+  } catch {}
+}
+
+export async function playPhrase(id: string, lang = "en"): Promise<boolean> {
+  const mySeq = ++seq;
+  const m = await load();
+  const p = m?.phrases[lang]?.[id] ?? m?.phrases.en?.[id];
+  if (!p) return false;
+  if (mySeq !== seq) return true;
+  let next: HTMLAudioElement | undefined;
+  try {
+    current?.pause();
+    next = new Audio(p.file);
+    current = next;
+    await next.play();
+    if (mySeq !== seq) {
+      try {
+        next.pause();
+      } catch {}
+      return true;
+    }
+    return true;
+  } catch {
+    if (next && current === next) current = undefined;
+    if (mySeq !== seq) return true;
+    return false;
+  }
+}
+
+/** Use at call sites that speak a fixed phrase today, e.g. the offline announcement in checker.ts:
+ *  `void sayPhrase("offline", profile.lang, text => speak(text), "You're offline. …")` */
+export async function sayPhrase(id: string, lang: string | undefined, speak: (t: string) => void, fallbackText: string) {
+  if (!(await playPhrase(id, lang || "en"))) speak(fallbackText);
 }
 
 export function cuePhraseId(cue: CoachCue, text?: string): string | null {
@@ -44,35 +86,4 @@ export function verdictPhraseId(v: Verdict, via?: string | null): string | null 
   if (via === "offline" && (v.headline === "Not one of your saved barcodes" || v.headline === "Pack code not on your list")) return "unknown_offline";
   if (v.level === "unsure") return "not_sure";
   return null;
-}
-
-export function stopPhrase(): void {
-  if (!current) return;
-  try {
-    current.pause();
-  } catch {}
-  try {
-    current.currentTime = 0;
-  } catch {}
-  current = undefined;
-}
-
-export async function playPhrase(id: string, lang = "en"): Promise<boolean> {
-  const m = await load();
-  const p = m?.phrases[lang]?.[id] ?? m?.phrases.en?.[id];
-  const Ctor = (globalThis as { Audio?: AudioCtor }).Audio;
-  if (!p || !Ctor) return false;
-  try {
-    stopPhrase();
-    current = new Ctor(p.file);
-    await current.play();
-    return true;
-  } catch {
-    current = undefined;
-    return false;
-  }
-}
-
-export async function sayPhrase(id: string, lang: string | undefined, speak: (t: string) => void, fallbackText: string) {
-  if (!(await playPhrase(id, lang || "en"))) speak(fallbackText);
 }

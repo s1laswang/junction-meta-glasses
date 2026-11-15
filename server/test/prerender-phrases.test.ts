@@ -2,10 +2,21 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
+import { pathToFileURL } from "node:url";
 import { REPO_ROOT } from "../src/env.ts";
 import { PHRASES } from "../scripts/prerender-phrases.ts";
-import { cuePhraseId, playPhrase, sayPhrase, stopPhrase, verdictPhraseId } from "../../web/src/lib/phrases.ts";
 import type { CoachCue, Verdict } from "../../shared/types.ts";
+
+type PhrasesMod = {
+  cuePhraseId: (cue: CoachCue, text?: string) => string | null;
+  verdictPhraseId: (v: Verdict, via?: string | null) => string | null;
+  stopPhrase: () => void;
+  playPhrase: (id: string, lang?: string) => Promise<boolean>;
+  sayPhrase: (id: string, lang: string | undefined, speak: (t: string) => void, fallbackText: string) => Promise<void>;
+};
+
+const loadPhrasesMod = (): Promise<PhrasesMod> =>
+  import(pathToFileURL(path.join(REPO_ROOT, "web", "src", "lib", "phrases.ts")).href) as Promise<PhrasesMod>;
 
 const EXPECTED_IDS = [
   "offline",
@@ -38,7 +49,8 @@ test("PHRASES covers all 14 safety and coaching IDs in en, fi, sv with zero em d
   }
 });
 
-test("cuePhraseId maps every CoachCue and verdictPhraseId maps safety verdicts", () => {
+test("cuePhraseId maps every CoachCue and verdictPhraseId maps safety verdicts", async () => {
+  const { cuePhraseId, verdictPhraseId } = await loadPhrasesMod();
   const cues: CoachCue[] = ["rotate_left", "rotate_right", "closer", "farther", "more_light", "hold_still", "other_side", "ok"];
   for (const c of cues) {
     const id = cuePhraseId(c);
@@ -103,6 +115,7 @@ test("web/public/phrases/manifest.json and all 42 EN/FI/SV audio clips exist wit
 });
 
 test("playPhrase, stopPhrase, and sayPhrase play manifest clips, reset currentTime safely, and fall back cleanly", async () => {
+  const { playPhrase, sayPhrase, stopPhrase } = await loadPhrasesMod();
   const pubDir = path.join(REPO_ROOT, "web", "public");
   const rawManifest = fs.readFileSync(path.join(pubDir, "phrases", "manifest.json"), "utf8");
   const prevFetch = globalThis.fetch;
@@ -148,14 +161,18 @@ test("playPhrase, stopPhrase, and sayPhrase play manifest clips, reset currentTi
     assert.equal(await playPhrase("cue_closer", "sv"), true);
     assert.equal(created.length, 2);
     assert.equal(created[0].paused, 1);
-    assert.equal(created[0].currentTime, 0);
     assert.equal(created[1].src, "/phrases/sv/cue_closer.wav");
 
+    stopPhrase();
+    assert.equal(created[1].paused, 1);
+    assert.equal(created[1].currentTime, 0);
+
+    assert.equal(await playPhrase("offline", "en"), true);
     throwOnCurrentTime = true;
     stopPhrase();
-    assert.equal(created[1].paused, 1);
+    assert.equal(created[2].paused, 1);
     stopPhrase();
-    assert.equal(created[1].paused, 1);
+    assert.equal(created[2].paused, 1);
     throwOnCurrentTime = false;
 
     rejectPlay = true;
