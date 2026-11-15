@@ -1,0 +1,94 @@
+{
+  "id": "rt_f04_012__pharmacy_sticker",
+  "spec_id": "rt_f04_012",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains mycophenolate sodium 360 mg, which is not bioequivalent milligram-for-milligram to the user's saved mycophenolate mofetil 360 mg.",
+  "perturbation": "pharmacy_sticker",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Mycophenolate Sodium Teva 360 mg",
+    "ingredient": "mycophenolate sodium",
+    "strength": "360 mg",
+    "expiry": "2027-10",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Mycophenolate Mofetil 360 mg",
+        "ingredient": "mycophenolate mofetil",
+        "strength": "360 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Mycophenolate Sodium Teva",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "mycophenolic acid",
+      "confidence": 0.9
+    },
+    "strength": {
+      "value": "360 mg",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.3
+    },
+    "expiry": {
+      "value": "2027-10",
+      "confidence": 0.98
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.7,
+    "guidance": "The pharmacy label covers part of the instructions."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410100334455(17)271000(10)RT01(21)SN012"
+}

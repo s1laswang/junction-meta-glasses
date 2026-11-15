@@ -153,7 +153,7 @@ export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: {
       </section>
 
       <p className="muted" style={{ fontSize: "1rem" }}>
-        HoldUp is not a medical device. When it isn't sure, it says so. Ask a pharmacist about anything uncertain.
+        HoldUp is a research prototype, not a CE-marked medical device. When it isn't sure, it says so. Ask a pharmacist about anything uncertain.
       </p>
     </div>
   );

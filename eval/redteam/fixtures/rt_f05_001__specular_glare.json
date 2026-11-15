@@ -1,0 +1,97 @@
+{
+  "id": "rt_f05_001__specular_glare",
+  "spec_id": "rt_f05_001",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held box is Vitamin B6 1 mg, whereas the user's saved medication is Vitamin B12 1 mg.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "B6-vitamiini Ratiopharm 1 mg",
+    "ingredient": "Vitamin B6",
+    "strength": "1 mg",
+    "expiry": "2027-09",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "B12-vitamiini Ratiopharm 1 mg",
+        "ingredient": "Vitamin B12",
+        "strength": "1 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "B6-vitamiini Ratiopharm",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "pyridoxine",
+      "confidence": 0.9
+    },
+    "strength": {
+      "value": "1 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "allergens": {
+      "value": [
+        "lactose"
+      ],
+      "confidence": 0.85
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75,
+    "guidance": "Turn the box around to see the expiry date."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410400001028(17)270900(10)RT01(21)SN001"
+}

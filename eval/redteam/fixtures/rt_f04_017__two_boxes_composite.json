@@ -1,0 +1,93 @@
+{
+  "id": "rt_f04_017__two_boxes_composite",
+  "spec_id": "rt_f04_017",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains sodium chloride 500 mg, whereas the user's saved medication is potassium chloride 500 mg.",
+  "perturbation": "two_boxes_composite",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Natriumklorid Apoteket 500 mg",
+    "ingredient": "sodium chloride",
+    "strength": "500 mg",
+    "expiry": "2027-09",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Kaliumklorid 500 mg",
+        "ingredient": "potassium chloride",
+        "strength": "500 mg",
+        "schedule": [
+          "08:00"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Natriumklorid Apoteket",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "sodium chloride",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "500 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": "Sväljtablett",
+      "confidence": 0.85
+    },
+    "expiry": {
+      "value": "2027-09",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)07312340040102(17)270900(10)RT01(21)SN017"
+}

@@ -1,0 +1,95 @@
+{
+  "id": "rt_f04_011__pharmacy_sticker",
+  "spec_id": "rt_f04_011",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains epoetin alfa 4000 IU instead of the user's saved epoetin beta 4000 IU.",
+  "perturbation": "pharmacy_sticker",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Epoetin Alfa Ratiopharm 4000 IU",
+    "ingredient": "epoetin alfa",
+    "strength": "4000 IU/0.4 ml",
+    "expiry": "2028-04",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Epoetin Beta 4000 IU",
+        "ingredient": "epoetin beta",
+        "strength": "4000 IU/0.4 ml",
+        "schedule": [
+          "08:00"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Epoetin Alfa Ratiopharm",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "epoetin alfa",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "4000 IU",
+      "confidence": 0.9
+    },
+    "dosing": {
+      "value": "1 kapseli aamulla",
+      "confidence": 0.9
+    },
+    "expiry": {
+      "value": "2028-04",
+      "confidence": 0.5
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.7,
+    "guidance": "Turn the box to show the side panels."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410100223344(17)280400(10)RT01(21)SN011"
+}

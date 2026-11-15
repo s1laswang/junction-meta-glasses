@@ -1,0 +1,93 @@
+{
+  "id": "rt_f05_014__thumb_over_digit",
+  "spec_id": "rt_f05_014",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held box is Vitamin B1 100 mg, whereas the user's saved medication is Vitamin C 100 mg.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Teva Vitamin B1 100 mg",
+    "ingredient": "Vitamin B1",
+    "strength": "100 mg",
+    "expiry": "2027-04",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Teva Vitamin C 100 mg",
+        "ingredient": "Vitamin C",
+        "strength": "100 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Teva Vitamin B1",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "thiamine",
+      "confidence": 0.9
+    },
+    "strength": {
+      "value": "100 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "expiry": {
+      "value": "2027-04",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05010400001158(17)270400(10)RT01(21)SN014"
+}

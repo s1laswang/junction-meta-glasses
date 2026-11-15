@@ -1,0 +1,88 @@
+{
+  "id": "rt_f26_007__clean",
+  "spec_id": "rt_f26_007",
+  "family": "F26_obscure_allergen_synonyms_and_enumbers",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Marzipan is made from almonds (tree nuts) without explicitly listing almonds, making it unsafe for a tree nut allergy.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Mignon Marzipan Bar",
+    "ingredient": "",
+    "strength": "",
+    "expiry": "2027-12",
+    "allergens": [
+      "tree_nuts"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "tree nuts"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "food",
+    "product": {
+      "value": "Mignon Marzipan Bar",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "marzipan bar",
+      "confidence": 0.9
+    },
+    "strength": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-12",
+      "confidence": 0.98
+    },
+    "allergens": {
+      "value": [
+        "soy"
+      ],
+      "confidence": 0.95
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.9
+  },
+  "baseline_verdict": {
+    "level": "info",
+    "reasons": [
+      "no listed allergen matches your profile"
+    ],
+    "matchedMedId": null
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "contains marzipan (allergy: tree nuts)"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true
+}

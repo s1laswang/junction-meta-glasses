@@ -370,8 +370,9 @@ export function buildRuleCases(): RuleCase[] {
         read: base({ ingredient: f(ing, 0.95), strength: f(good, sc), expiry: f("2028-06", 0.9) }),
         code: parseGs1(`(01)${UNKNOWN_GTIN}(17)280600`)!,
         prof: demoProfile(),
-        safeConfidentMatch: ok,
-        expectedLevel: ok ? "match" : "unsure",
+        // the pack code is not the GTIN saved for this med: never a plain yes (judge-panel probe 8, Sun 15 Nov)
+        safeConfidentMatch: false,
+        expectedLevel: "unsure",
         expectCrossCheckAgrees: ok ? true : "non_conflict",
         confTag: sc,
       });

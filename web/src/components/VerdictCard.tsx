@@ -136,9 +136,9 @@ export function VerdictCard({
               <div key={label} style={{ display: "contents" }}>
                 <dt>{label}</dt>
                 <dd>{show(f)}</dd>
-                <span className={`conf ${f.confidence < 0.7 ? "low" : ""}`} aria-label={`confidence ${Math.round(f.confidence * 100)} percent`}>
+                <dd className={`conf ${f.confidence < 0.7 ? "low" : ""}`} aria-label={`confidence ${Math.round(f.confidence * 100)} percent`}>
                   {Math.round(f.confidence * 100)}%
-                </span>
+                </dd>
               </div>
             ))}
           </dl>

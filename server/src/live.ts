@@ -9,7 +9,7 @@ import {
 import type { CoachCue, LabelRead, Med, ServerMsg, VerdictLevel } from "../../shared/types.ts";
 import { env, SERVER_DIR } from "./env.ts";
 import { ai, backoffMs } from "./gemini.ts";
-import type { Hub, LiveLike } from "./hub.ts";
+import type { Hub, LiveLike, LiveStats, VerifySource } from "./hub.ts";
 import { ledger } from "./ledger.ts";
 import { errSummary, log, shortId } from "./log.ts";
 import { readLabel, toProfile } from "./verify.ts";
@@ -74,19 +74,20 @@ export function toolsFor(features: Set<string>): FunctionDeclaration[] {
   return [...TOOLS, ...(features.has("scene") ? [FIND_ITEM] : []), ...(features.has("addmed") ? [ADD_MEDICATION] : [])];
 }
 
-// Fixed, human-written verdict openers. The safety-critical word (right one / warning / not sure) is never
+// Fixed, human-written verdict openers. The safety-critical word (right one / warning / not sure / for info) is never
 // produced by model translation. In FI/SV, only the details after the opener are translated by Live.
 export const VERDICT_LEAD: Record<string, Record<VerdictLevel, string>> = {
-  fi: { match: "Oikea pakkaus.", warning: "Varoitus.", unsure: "En ole varma.", info: "Tieto." },
-  sv: { match: "Rätt förpackning.", warning: "Varning.", unsure: "Jag är inte säker.", info: "Information." },
+  fi: { match: "Oikea pakkaus.", warning: "Varoitus.", unsure: "En ole varma.", info: "Tiedoksi." },
+  sv: { match: "Rätt förpackning.", warning: "Varning.", unsure: "Jag är inte säker.", info: "För kännedom." },
 };
+const normLangCode = (lang: string) => (lang || "en").trim().toLowerCase().slice(0, 2);
 export function leadFor(lang: string, level: VerdictLevel): { lead?: string } {
-  const l = VERDICT_LEAD[(lang || "en").slice(0, 2)];
+  const l = VERDICT_LEAD[normLangCode(lang)];
   return l ? { lead: l[level] } : {};
 }
 export function speakInstruction(lang: string, tail: string): string {
-  return VERDICT_LEAD[(lang || "en").slice(0, 2)]
-    ? `First say \`lead\` exactly as written, then say \`speech\` translated faithfully into the user's language (keep names, numbers and dates exactly), then stop. ${tail}`
+  return VERDICT_LEAD[normLangCode(lang)]
+    ? `First say \`lead\` exactly as written, then say the rest of \`speech\` translated faithfully into the user's language (do not repeat the opener; keep medicine names, numbers and dates exact, using a decimal comma like 2,5 mg when speaking numbers), then stop. ${tail}`
     : `Say \`speech\` word for word, then stop. ${tail}`;
 }
 
@@ -130,6 +131,7 @@ export class LiveProxy implements LiveLike {
   private toolLat: number[] = [];
   private toolCalls = 0;
   private modelsUsed = new Set<string>();
+  private lastVerify: NonNullable<LiveStats["verify"]> | null = null;
 
   constructor(private hub: Hub, private opts: Opts) {
     const r = hub.resume;
@@ -257,6 +259,7 @@ export class LiveProxy implements LiveLike {
         if (this.awaitingFirstAudio && this.lastUserSignal) {
           this.firstAudio.push((Date.now() - this.lastUserSignal) / 1000);
           this.awaitingFirstAudio = false;
+          this.hub.pushMetrics();
         }
         if (this.opts.voice) this.send({ type: "audio", data: d.data });
       }
@@ -321,7 +324,7 @@ export class LiveProxy implements LiveLike {
           }
           if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
           if (this.stopped) return;
-          const v = checkLabel(read, this.hub.profile, new Date(), this.hub.freshCode());
+          const v = checkLabel(read, this.hub.profile, new Date(), this.hub.freshCode(), question);
           if (!model) { v.level = "unsure"; v.reasons.push("reader unavailable"); }
           this.send({ type: "verdict", verdict: v });
           this.respond(fc, {
@@ -331,6 +334,8 @@ export class LiveProxy implements LiveLike {
             instruction: speakInstruction(this.opts.lang, "No disclaimer, add nothing."),
           });
           log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t, dm: !!v.crossCheck });
+          this.lastVerify = { ms: Date.now() - t, source: source as VerifySource, level: v.level, at: Date.now() };
+          this.hub.pushMetrics();
           this.lastItemRead = { read, at: Date.now(), gtin: this.hub.freshCode()?.gtin };
         } finally {
           this.send({ type: "checking", phase: "end" });
@@ -356,6 +361,8 @@ export class LiveProxy implements LiveLike {
             instruction: speakInstruction(this.opts.lang, "If they pick one up, call verify_label."),
           });
           log("live.find_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_items: v.items?.length ?? 0 });
+          this.lastVerify = { ms: Date.now() - t, source: "scene", level: v.level, at: Date.now() };
+          this.hub.pushMetrics();
         } finally {
           this.send({ type: "checking", phase: "end" });
         }
@@ -482,6 +489,17 @@ export class LiveProxy implements LiveLike {
     try { (this.session as any)?.conn?.close?.(); } catch { /* */ }
   }
   get currentModel() { return this.model; }
+  /** For the /stage projector: numbers only. */
+  stats(): LiveStats {
+    const sorted = [...this.firstAudio].sort((a, b) => a - b);
+    return {
+      model: this.model || null,
+      firstAudioS: this.firstAudio.at(-1) ?? null,
+      firstAudioP50S: sorted[Math.floor(sorted.length / 2)] ?? null,
+      turns: this.firstAudio.length,
+      verify: this.lastVerify,
+    };
+  }
 
   stop(reason: string) {
     if (this.stopped) return;

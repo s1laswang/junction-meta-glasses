@@ -1,0 +1,95 @@
+{
+  "id": "rt_f03_015__edge_crop",
+  "spec_id": "rt_f03_015",
+  "family": "F03_insulin_analog_crossmatch",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Held pen is ultra-rapid insulin aspart 100 KY/ml, whereas the user's saved medication is basal insulin detemir 100 IU/ml.",
+  "perturbation": "edge_crop",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Fiasp FlexTouch 100 KY/ml",
+    "ingredient": "insulin aspart",
+    "strength": "100 KY/ml",
+    "expiry": "2029-01",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Levemir FlexPen",
+        "ingredient": "insulin detemir",
+        "strength": "100 IU/ml",
+        "schedule": [
+          "bedtime"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Fiasp FlexTouch",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "insulin aspart",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "100 KY/ml",
+      "confidence": 0.9
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75,
+    "guidance": "Rotate the pen to read the rest of the label."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06412345001165(17)290100(10)RT01(21)SN015"
+}

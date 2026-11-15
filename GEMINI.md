@@ -1,16 +1,16 @@
 # HoldUp × Gemini: Best Use of Gemini API
 
 **Code pointers:**
-- Live API with mid-stream function calling: `server/src/live.ts:150-155` (`ai.live.connect`, `functionDeclarations`); non-blocking `show_cue` at `live.ts:34`; tool responses at `live.ts:267`.
-- Schema-constrained verify: `server/src/verify.ts:130` (`responseJsonSchema`), prompt `shared/verify_prompt.md`, schema `shared/label_schema.json`.
+- Live API with mid-stream function calling: `server/src/live.ts:166-171` (`ai.live.connect`, `functionDeclarations: toolsFor(...)`); non-blocking `show_cue` at `live.ts:34`; tool responses at `live.ts:267`.
+- Schema-constrained verify: `server/src/verify.ts:136` (`responseJsonSchema`), prompt `shared/verify_prompt.md`, schema `shared/label_schema.json`.
 - `box_2d` grounding: `server/src/find.ts:21` (scene mode, "Which one?").
-- Speculative verify cache: `server/src/speculate.ts:21` (`Speculator`); cache hits are logged at `speculate.ts:85`.
+- Speculative verify cache: `server/src/speculate.ts:22` (`class Speculator`); cache hits are logged at `speculate.ts:93`. (Line numbers as of main on Sun 15 Nov, about 03:00; search for the quoted symbol if they drift.)
 - Deterministic safety layer: `server/src/safety.ts`. Eval: `docs/EVAL.md`, `eval/results/v1_results.json`.
 
 ## 1. The problem and why it matters
 About 55,000 people in Finland are visually impaired, most of them over 65, and many manage several look-alike medicine boxes a day. "Is this my evening pill?" and "does this contain nuts?" are questions they can't answer alone. A wrong answer is a medication error or an allergic reaction. Existing options leave a safety gap: **Seeing AI** needs a free hand to aim a phone blind and reads raw text aloud, **Be My Eyes** exposes private prescriptions to a volunteer or gives general AI descriptions, and **built-in "Hey Meta"** describes a scene without abstaining on partial text or knowing *your* regimen. HoldUp closes that gap with hands-free voice coaching into calibrated per-field confidence (abstaining when dose confidence `< 0.8` or allergen confidence `< 0.95`), a deterministic `safety.ts` check against your on-device medication, allergy, and dose profile, and an EU FMD DataMatrix cross-check.
 
-**HoldUp** runs on Meta AI glasses:
+**HoldUp** is built for Meta AI glasses (today the full loop runs on the phone camera; on-glasses evidence in `docs/HARDWARE_LOG.md`):
 - you hold the item up;
 - it coaches you by voice until the label is readable;
 - it reads the label with a confidence for each field;
@@ -30,7 +30,7 @@ Gemini's output never decides safety alone. A deterministic `safety.ts` turns th
 
 ## 3. What's innovative and technically impressive
 - **Speculative verify:** while the user is still asking, the server already reads the sharpest new frame. The Live tool call is answered from that cache in under 5 ms, so time from question to first audio fell from **5.8 s (one run, before the change) to p50 2.1 s / p95 3.4 s** (n = 26 live sessions, `docs/evidence/`).
-- **Calibrated abstention, measured:** across **1,740 images**, **0 of 754 confident strength reads were wrong** (95% upper bound 0.4%), and calibration ECE is 0.022 (0.018–0.028). End-to-end silent unsafe reassurance fell from 1.0% (49/4,730) to **0.06% (3/4,730, CI 0.02–0.19%)** after the allergen gate. The cost: safe foods get "not sure" more often (`docs/EVAL.md`).
+- **Calibrated abstention, measured:** across **1,740 images**, **0 of 754 confident strength reads were wrong** (95% upper bound 0.4%), and calibration ECE is 0.022 (0.018–0.028). End-to-end silent unsafe reassurance fell from 1.0% (49/4,730) to **0.06% (3/4,730, CI 0.02–0.19%)** after the allergen gate. The cost: safe foods get "not sure" more often (`docs/EVAL.md`). Not counted as silent: 47/4,730 (0.99%, 0.75–1.32%) are matches that say aloud "I couldn't read the expiry date". The allergen gate also halves correct "allergen-free" answers on truly safe foods: 44/130 = 33.8% (26.3–42.3%), down from 67.7%.
 - **The AI read must agree with the pack's own machine code** (GS1 DataMatrix: GTIN and expiry) before HoldUp says "double-checked".
 - **Gemini on both sides:** Gemini builds the test set, Gemini is tested on it, and fixed rules plus confidence gates keep it honest.
 
@@ -40,9 +40,9 @@ Gemini's output never decides safety alone. A deterministic `safety.ts` turns th
 - `box_2d` grounding powers the scene mode.
 - Image generation let us build a 1,740-image eval overnight.
 - **Measured comparison** (150 paired images, the same prompt and `safety.ts`; `docs/EVAL.md` v2 §2, chart `docs/img/eval_model_compare.png`):
-  - All three models made **0 confident-wrong strength reads**, and they tie on strength accuracy (46/59).
-  - `gemma-4-31b-it` was confidently wrong on other fields **twice as often** (7.2% vs 3.6%, mostly allergens; the only significant paired difference).
-  - Gemma was the only model with a silent unsafe reassurance (2/377), and ran **~9× slower** (p50 27.8 s vs 3.2 s; Gemma speed depends on our endpoint quota).
+  - All three models made **0 confident-wrong strength reads** (n = 82 each, ≤ 3.7% by the rule of three). Strength accuracy when readable (n = 59): `gemini-3.8-flash` and Gemma tie at 46/59 = 78.0% (65.9–86.7%); `gemini-3.5-flash` 42/59 = 71.2% (58.6–81.2%), a non-significant difference (p = 0.22).
+  - `gemma-4-31b-it` was confidently wrong on other fields **twice as often** (7.2% vs 3.6%): 38/528 = 7.2% (5.3–9.7%) vs 19/528 = 3.6% (2.3–5.6%), mostly allergens. That's the only significant paired difference.
+  - Gemma was the only model with a silent unsafe reassurance: 2/377 = 0.53% (0.15–1.91%), vs 0/377 for both Gemini models; not significant on its own (p = 0.5). It ran **~9× slower** (p50 27.8 s vs 3.2 s; Gemma speed depends on our endpoint quota).
   - `gemini-3.5-flash` matched 3.8-flash within the CI and was 1.2 s faster.
 
 ## Usage ledger (metadata only, no content)
