@@ -9,9 +9,32 @@ import { demoProfile, emptyMed, LANGS, loadSettings, newMedId, saveProfile, take
 
 const SLOTS = ["morning", "midday", "evening", "night"];
 
+function isConnectedEl(el: HTMLElement | null | undefined): el is HTMLElement {
+  if (!el || typeof el.focus !== "function") return false;
+  if (typeof el.isConnected === "boolean") return el.isConnected;
+  let cur: Node | null = el;
+  while (cur) {
+    if (cur === document) return true;
+    cur = cur.parentNode;
+  }
+  return false;
+}
+
 export function Profile({ profile, onChange, onSetupByVoice }: { profile: P; onChange: (p: P) => void; onSetupByVoice?: () => void }) {
   const addmed = loadSettings().features.addmed;
   const [editing, setEditing] = useState<Med | null>(null);
+  const addMedRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const openEditor = (med: Med, fallback: HTMLElement) => {
+    const active = document.activeElement as HTMLElement | null;
+    openerRef.current = active && active !== document.body ? active : fallback;
+    setEditing(med);
+  };
+  const restoreEditorFocus = () => {
+    const opener = openerRef.current;
+    if (isConnectedEl(opener)) opener.focus();
+    else if (isConnectedEl(addMedRef.current)) addMedRef.current.focus();
+  };
   const update = (p: P) => {
     saveProfile(p);
     onChange(p);
@@ -22,7 +45,7 @@ export function Profile({ profile, onChange, onSetupByVoice }: { profile: P; onC
       <section className="stack" aria-labelledby="meds-h">
         <div className="row" style={{ justifyContent: "space-between" }}>
           <h2 id="meds-h">My medicines</h2>
-          <button className="btn small primary" onClick={() => setEditing(emptyMed())}>
+          <button ref={addMedRef} className="btn small primary" onClick={(e) => openEditor(emptyMed(), e.currentTarget)}>
             Add medicine
           </button>
         </div>
@@ -41,7 +64,7 @@ export function Profile({ profile, onChange, onSetupByVoice }: { profile: P; onC
                     {[m.schedule.join(", "), m.ingredient, m.barcode ? "barcode saved" : null, m.gtin ? "pack code saved" : null, takenToday(profile, m.id) ? "taken today" : null].filter(Boolean).join(" · ")}
                   </p>
                 </div>
-                <button className="btn small" onClick={() => setEditing(m)} aria-label={`Edit ${m.name} ${m.strength}`}>
+                <button className="btn small" onClick={(e) => openEditor(m, e.currentTarget)} aria-label={`Edit ${m.name} ${m.strength}`}>
                   Edit
                 </button>
               </li>
@@ -139,6 +162,7 @@ export function Profile({ profile, onChange, onSetupByVoice }: { profile: P; onC
       {editing ? (
         <MedEditor
           med={editing}
+          onAfterClose={restoreEditorFocus}
           onCancel={() => setEditing(null)}
           onDelete={
             editing.id
@@ -213,16 +237,33 @@ function TagList({ id, title, help, items, onChange }: { id: string; title: stri
   );
 }
 
-function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: Med) => void; onCancel: () => void; onDelete?: () => void }) {
+function MedEditor({ med, onSave, onCancel, onDelete, onAfterClose }: { med: Med; onSave: (m: Med) => void; onCancel: () => void; onDelete?: () => void; onAfterClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const scanOpenerRef = useRef<HTMLElement | null>(null);
+  const afterCloseRef = useRef(onAfterClose);
+  afterCloseRef.current = onAfterClose;
   const [m, setM] = useState<Med>(med);
   const [scan, setScan] = useState<false | "barcode" | "pack">(false);
   const dmOn = loadSettings().features.datamatrix;
   useEffect(() => {
     const d = ref.current;
     if (d && !d.open) d.showModal();
-    return () => d?.close();
+    nameRef.current?.focus();
+    return () => {
+      d?.close();
+      afterCloseRef.current();
+    };
   }, []);
+  const openScan = (mode: "barcode" | "pack", fallback: HTMLElement) => {
+    const active = document.activeElement as HTMLElement | null;
+    scanOpenerRef.current = active && active !== document.body ? active : fallback;
+    setScan(mode);
+  };
+  const restoreScanFocus = () => {
+    const opener = scanOpenerRef.current;
+    if (isConnectedEl(opener)) opener.focus();
+  };
   const set = (p: Partial<Med>) => setM((x) => ({ ...x, ...p }));
   const valid = m.name.trim() && m.strength.trim();
 
@@ -238,7 +279,7 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
         <h2 id="med-h">{med.id ? `Edit ${med.name}` : "Add medicine"}</h2>
         <div className="field">
           <label htmlFor="m-name">Name on the box</label>
-          <input id="m-name" type="text" required value={m.name} onChange={(e) => set({ name: e.target.value })} autoComplete="off" />
+          <input ref={nameRef} id="m-name" type="text" required value={m.name} onChange={(e) => set({ name: e.target.value })} autoComplete="off" />
         </div>
         <div className="field">
           <label htmlFor="m-ing">Active ingredient</label>
@@ -263,7 +304,7 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
           <label htmlFor="m-bc">Barcode (optional)</label>
           <div className="textask">
             <input id="m-bc" type="text" inputMode="numeric" value={m.barcode ?? ""} onChange={(e) => set({ barcode: e.target.value })} aria-describedby="m-bc-help" autoComplete="off" />
-            <button type="button" className="btn" onClick={() => setScan("barcode")} disabled={!barcodeSupported}>
+            <button type="button" className="btn" onClick={(e) => openScan("barcode", e.currentTarget)} disabled={!barcodeSupported}>
               <Icon.scan size={22} /> Scan
             </button>
           </div>
@@ -276,7 +317,7 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
             <label htmlFor="m-gtin">Pack code GTIN (optional)</label>
             <div className="textask">
               <input id="m-gtin" type="text" inputMode="numeric" value={m.gtin ?? ""} onChange={(e) => set({ gtin: e.target.value })} aria-describedby="m-gtin-help" autoComplete="off" />
-              <button type="button" className="btn" onClick={() => setScan("pack")} disabled={!barcodeSupported}>
+              <button type="button" className="btn" onClick={(e) => openScan("pack", e.currentTarget)} disabled={!barcodeSupported}>
                 <Icon.scan size={22} /> Scan pack code
               </button>
             </div>
@@ -287,7 +328,9 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
         ) : null}
         {scan ? (
           <BarcodeScanner
+            key={scan}
             mode={scan}
+            onAfterClose={restoreScanFocus}
             onResult={(code) => {
               if (scan === "pack") {
                 const g = parseGs1(code);
@@ -325,19 +368,26 @@ function MedEditor({ med, onSave, onCancel, onDelete }: { med: Med; onSave: (m: 
   );
 }
 
-function BarcodeScanner({ onResult, onClose, mode = "barcode" }: { onResult: (code: string) => void; onClose: () => void; mode?: "barcode" | "pack" }) {
+function BarcodeScanner({ onResult, onClose, mode = "barcode", onAfterClose }: { onResult: (code: string) => void; onClose: () => void; mode?: "barcode" | "pack"; onAfterClose?: () => void }) {
   const v = useRef<HTMLVideoElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const [msg, setMsg] = useState("Starting camera…");
   const cb = useRef(onResult);
   cb.current = onResult;
+  const afterCloseRef = useRef(onAfterClose);
+  afterCloseRef.current = onAfterClose;
   useEffect(() => {
+    cancelRef.current?.focus();
     let stream: MediaStream | null = null;
     let timer: ReturnType<typeof setInterval> | null = null;
     let done = false;
     void (async () => {
       try {
         stream = await getCamera();
-        if (!v.current) return;
+        if (done || !v.current) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
         v.current.srcObject = stream;
         await v.current.play().catch(() => {});
         const what = mode === "pack" ? "the small square pack code" : "the barcode";
@@ -359,15 +409,17 @@ function BarcodeScanner({ onResult, onClose, mode = "barcode" }: { onResult: (co
       }
     })();
     return () => {
+      done = true;
       if (timer) clearInterval(timer);
       stream?.getTracks().forEach((t) => t.stop());
+      afterCloseRef.current?.();
     };
   }, []);
   return (
     <div className="scanbox stack" role="group" aria-label="Barcode scanner">
       <video ref={v} playsInline muted aria-hidden="true" />
       <p role="status">{msg}</p>
-      <button type="button" className="btn" onClick={onClose}>
+      <button ref={cancelRef} type="button" className="btn" onClick={onClose}>
         Cancel scan
       </button>
     </div>

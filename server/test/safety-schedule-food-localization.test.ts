@@ -129,11 +129,11 @@ test("all EU allergen groups match English, Finnish, and Swedish label terms inc
     },
     {
       allergy: "sulphite",
-      terms: ["sulphite", "sulphites", "sulfite", "sulfites", "sulphur dioxide", "sulfur dioxide", "rikkidioksidi"],
+      terms: ["sulphite", "sulphites", "sulfite", "sulfites", "sulphur dioxide", "sulfur dioxide", "rikkidioksidi", "rikkidioksidia", "sulfiitti", "svaveldioxid", "sulfiter"],
     },
     {
       allergy: "molluscs",
-      terms: ["molluscs"],
+      terms: ["molluscs", "nilviaiset", "nilviaisia", "simpukka", "blotdjur", "musslor"],
     },
   ];
 
@@ -174,10 +174,16 @@ test("all EU allergen groups match English, Finnish, and Swedish label terms inc
 test("Nordic multi-word ingredient phrases and food allergen confidence thresholds (0.29, 0.30, 0.59, 0.60, 0.94, 0.95)", () => {
   const phraseCases: Array<{ phrase: string; allergy: string }> = [
     { phrase: "sisaltaa maapahkina ja hera", allergy: "peanut" },
+    { phrase: "voi sisaltaa maapahkinaa ja maitoa", allergy: "milk" },
+    { phrase: "saattaa sisaltaa hasselpahkinaa tai mantelia", allergy: "tree nut" },
     { phrase: "innehaller jordnot och mjolk", allergy: "milk" },
+    { phrase: "kan innehalla jordnotter, hasselnotter och mandlar", allergy: "tree nut" },
+    { phrase: "innehaller kornmalt, ragmjol och vetestarkelse", allergy: "gluten" },
     { phrase: "vehna (gluteeni), ruis", allergy: "gluten" },
     { phrase: "ayriaiset (katkarapu)", allergy: "crustacean" },
+    { phrase: "innehaller kraftdjur (rakor) och blotdjur (musslor)", allergy: "molluscs" },
     { phrase: "kananmuna, sinappi ja selleri", allergy: "mustard" },
+    { phrase: "kananmunaa, sinappia, selleria ja seesaminsiemenia", allergy: "sesame" },
   ];
   for (const c of phraseCases) {
     const v = checkLabel(
@@ -285,8 +291,11 @@ test("mayContain detection across en/fi/sv/traces and mixed contains + mayContai
     { raw: "may contain: maapahkina", allergy: "peanut", expectedFound: "maapahkina" },
     { raw: "May contain seesami", allergy: "sesame", expectedFound: "May contain seesami" },
     { raw: "voi sisaltaa manteli", allergy: "tree nut", expectedFound: "voi sisaltaa manteli" },
+    { raw: "Saattaa sisältää maapähkinää", allergy: "peanut", expectedFound: "Saattaa sisältää maapähkinää" },
+    { raw: "Voi sisältää pähkinän jäämiä", allergy: "tree nut", expectedFound: "Voi sisältää pähkinän jäämiä" },
     { raw: "Voi sisältää vehnää ja ruis", allergy: "gluten", expectedFound: "Voi sisältää vehnää ja ruis" },
     { raw: "kan innehalla hasselnot", allergy: "tree nut", expectedFound: "kan innehalla hasselnot" },
+    { raw: "Kan innehålla spår av jordnötter", allergy: "peanut", expectedFound: "Kan innehålla spår av jordnötter" },
     { raw: "Kan innehålla mjölk", allergy: "milk", expectedFound: "Kan innehålla mjölk" },
     { raw: "traces of lupiini", allergy: "lupin", expectedFound: "traces of lupiini" },
     { raw: "trace of agg", allergy: "egg", expectedFound: "trace of agg" },

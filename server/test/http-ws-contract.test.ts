@@ -169,9 +169,18 @@ test("WS /live glasses source ingest and zero-retention frame drop on close", as
     jpeg[0] = 0xff; jpeg[1] = 0xd8; jpeg[126] = 0xff; jpeg[127] = 0xd9;
     const res = await fetch(`${httpBase}/ingest/frame?session=ws-test-1`, { method: "POST", headers: { "content-type": "image/jpeg" }, body: jpeg });
     assert.equal(res.status, 204);
-    assert.equal(getHub("ws-test-1")!.ring.length, 1);
+    const hub = getHub("ws-test-1")!;
+    assert.equal(hub.ring.length, 1);
 
+    // The ring is cleared by the SERVER socket's close handler, which can run after the
+    // client sees its own close. Wait on the server-side socket: our listener is attached
+    // after the server's, so it fires once dropFrames() has run.
+    assert.equal(hub.clients.size, 1);
+    const [serverWs] = [...hub.clients];
+    const serverClosed = new Promise<void>((resolve) => serverWs.once("close", () => resolve()));
     await live.close();
+    await serverClosed;
+    assert.equal(hub.clients.size, 0);
     assert.equal(getHub("ws-test-1")!.ring.length, 0);
   } finally {
     await live.close();
