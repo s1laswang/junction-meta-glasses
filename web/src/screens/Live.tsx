@@ -35,10 +35,16 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
   const lastVerdict = useRef(s.verdict);
   const dismissFocus = useRef(false);
   useEffect(() => {
+    const isNewVerdict = !!s.verdict && s.verdict !== lastVerdict.current && s.verdict.headline !== lastVerdict.current?.headline;
     if (s.verdict && s.verdict !== lastVerdict.current && s.verdict.headline !== lastVerdict.current?.headline) verdictRef.current?.focus();
     else if (!s.verdict && dismissFocus.current) {
       dismissFocus.current = false;
       bigBtnRef.current?.focus();
+    }
+    if (isNewVerdict) {
+      // the action buttons sit at the bottom of the card: bring them clear of the sticky Start/Stop bar
+      const actions = verdictRef.current?.closest(".verdict")?.querySelector(".actions") as HTMLElement | null | undefined;
+      if (actions && typeof actions.scrollIntoView === "function") actions.scrollIntoView({ block: "nearest" });
     }
     lastVerdict.current = s.verdict;
   }, [s.verdict]);
