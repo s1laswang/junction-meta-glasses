@@ -458,7 +458,16 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
     assert.ok(smokeRuns.includes("2.09 s") && smokeRuns.includes("3.45 s"));
 
     const sec5 = sections[4].body;
-    for (const evalToken of ["1,740", "0 / 754", "3 / 4,730 = 0.06%", "0.022"]) {
+    for (const evalToken of [
+      "1,740",
+      "0 / 754",
+      "1 / 536 = 0.19%",
+      "1,060",
+      "3 / 4,730 = 0.06%",
+      "4 / 3,033 = 0.13%",
+      "14 / 4,041 = 0.35%",
+      "0.022",
+    ]) {
       assert.ok(evalDoc.includes(evalToken), `docs/EVAL.md must include "${evalToken}"`);
       assert.ok(sec5.includes(evalToken), `Section 5 must match docs/EVAL.md token "${evalToken}"`);
     }
