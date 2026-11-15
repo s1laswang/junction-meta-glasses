@@ -4,6 +4,7 @@ import fs from "node:fs";
 import http from "node:http";
 import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
+import os from "node:os";
 import path from "node:path";
 import { after, afterEach, before, test } from "node:test";
 import express from "express";
@@ -35,7 +36,7 @@ const origQuiet = process.env.HOLDUP_QUIET;
 const origApiKey = env.apiKey;
 const origLedgerPath = env.ledgerPath;
 
-const ledgerTmpDir = fs.mkdtempSync("/dev/shm/holdup-pair-qr-");
+const ledgerTmpDir = fs.mkdtempSync(path.join(fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir(), "holdup-pair-qr-"));
 env.ledgerPath = path.join(ledgerTmpDir, "ledger.jsonl");
 
 let liveServer: http.Server;

@@ -1,6 +1,9 @@
-import { afterEach, beforeEach, test } from "node:test";
+import { after, afterEach, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import type http from "node:http";
+import os from "node:os";
+import path from "node:path";
 import WebSocket from "ws";
 import type { LabelRead, Med, ServerMsg } from "../../shared/types.ts";
 import { ALL_FEATURES, env } from "../src/env.ts";
@@ -62,10 +65,17 @@ const saved = {
   live: [...env.liveModels],
   verify: [...env.verifyModels],
   features: [...env.features],
+  ledgerPath: env.ledgerPath,
   debounce: SPEC.debounceMs,
   minGap: SPEC.minGapMs,
   holdupKey: process.env.HOLDUP_KEY,
 };
+
+const ledgerTmpDir = fs.mkdtempSync(path.join(fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir(), "holdup-live-features-"));
+env.ledgerPath = path.join(ledgerTmpDir, "ledger.jsonl");
+process.on("exit", () => {
+  fs.rmSync(ledgerTmpDir, { recursive: true, force: true });
+});
 
 function makeSession(arg: ConnectArg) {
   const toolResponses: any[] = [];
@@ -144,6 +154,7 @@ beforeEach(() => {
   sessions = [];
   genArgs = [];
   delete process.env.HOLDUP_KEY;
+  env.ledgerPath = path.join(ledgerTmpDir, "ledger.jsonl");
   env.liveModels = ["gemini-3.8-live", "gemini-3.1-flash-live-preview", "gemini-2.5-flash-native-audio-latest"];
   env.verifyModels = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3-flash-preview"];
   env.features = [...ALL_FEATURES];
@@ -170,6 +181,11 @@ afterEach(() => {
   SPEC.minGapMs = saved.minGap;
   if (saved.holdupKey === undefined) delete process.env.HOLDUP_KEY;
   else process.env.HOLDUP_KEY = saved.holdupKey;
+});
+
+after(() => {
+  env.ledgerPath = saved.ledgerPath;
+  fs.rmSync(ledgerTmpDir, { recursive: true, force: true });
 });
 
 test("toolsFor(features) gates M1 tools when empty, find_item only with scene, and add_medication only with addmed", async () => {
