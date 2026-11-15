@@ -4,4 +4,17 @@
     <string name="notification_channel_name">Lasien kameravirta</string>
     <string name="notification_title">HoldUp käyttää lasiesi kameraa</string>
     <string name="notification_body">Kuvat lähetetään vain HoldUp-istuntoosi. Lopeta avaamalla sovellus.</string>
+    <string name="a11y_bridge_heading">HoldUp Bridge, lasien kamerasilta</string>
+    <string name="a11y_glasses_none">Laseja ei löytynyt</string>
+    <string name="a11y_state_post_idle">Ei vielä lähetetty</string>
+    <string name="a11y_network_ok">Palvelin tavoitettavissa</string>
+    <string name="a11y_network_retrying">Yhteys epäonnistui, yritetään uudelleen</string>
+    <string name="a11y_network_idle">Valmiustilassa, odottaa ensimmäistä lähetystä</string>
+    <string name="a11y_dismiss_error">Sulje virheilmoitus</string>
+    <string name="a11y_state_glasses_connected">Lasit yhdistetty</string>
+    <string name="a11y_state_glasses_connecting">Yhdistetään laseihin</string>
+    <string name="a11y_state_glasses_disconnected">Lasit ei yhdistetty</string>
+    <string name="a11y_state_stream_active">Kameravirta käynnissä</string>
+    <string name="a11y_state_stream_starting">Kameravirtaa käynnistetään</string>
+    <string name="a11y_state_stream_stopped">Kameravirta pysäytetty</string>
 </resources>
