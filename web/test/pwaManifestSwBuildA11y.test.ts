@@ -893,6 +893,12 @@ describe("web/public/sw.js offline shell caching and privacy/API bypass contract
       { url: "/ingest", method: "GET" },
       { url: "/ingest/frame?session=abc123", method: "POST" },
       { url: "/ingest/state", method: "POST" },
+      { url: "/arena", method: "GET", mode: "navigate" },
+      { url: "/arena/", method: "GET", mode: "navigate" },
+      { url: "/arena/index.html", method: "GET", mode: "navigate" },
+      { url: "/arena?lang=fi", method: "GET", mode: "navigate" },
+      { url: "/arena/game.js", method: "GET" },
+      { url: "/arena/phrases/manifest.json", method: "GET" },
       { url: "/", method: "POST" },
       { url: "/manifest.webmanifest", method: "HEAD" },
       { url: `${CROSS_ORIGIN}/assets/bundle.js`, method: "GET" },
@@ -906,6 +912,9 @@ describe("web/public/sw.js offline shell caching and privacy/API bypass contract
     }
 
     assert.equal(sw.fetchCalls.length, callCountAfterInstall, "Bypassed requests must not trigger SW fetch");
+    const rootCached = sw.cacheStore.get(SW_CACHE_NAME)?.get(`${ORIGIN}/`);
+    assert.ok(rootCached, "Cached root shell must remain present after /arena navigation");
+    assert.equal(await rootCached.clone().text(), "network:/");
   });
 
   test("navigate requests use network-first, refresh cached / and /hud/ shells on 200, and fall back to cached shell offline", async () => {
