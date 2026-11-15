@@ -763,6 +763,56 @@ test("judge-panel guards: productIngredientClash, isPerVolume liquid vs tablet, 
   assert.equal(lastDoseWithin(onceDailyLate, "aml", new Date(2026, 10, 15, 0, 15, 0), 12 * 3600_000), lateDoseTs);
 });
 
+test("judge-panel probes 14 and 17: low-confidence past expiry is unsure and off-hour checks note current time of day", () => {
+  const profile = makeProfile();
+
+  for (const conf of [0.3, 0.5, 0.69]) {
+    const lowConfPast = checkLabel(makeRead({ expiry: F("2025-06", conf) }), profile, NOW);
+    assert.equal(lowConfPast.level, "unsure", `conf=${conf}`);
+    assert.equal(lowConfPast.matchedMedId, "aml");
+    assert.equal(lowConfPast.headline, "Amlodipine 5 mg: check the expiry date");
+    assert.match(lowConfPast.speech, /expiry date may have passed and I can't read it clearly/);
+    assert.ok(lowConfPast.reasons.includes("expiry may have passed (2025-06, low confidence)"));
+  }
+
+  const highConfPast = checkLabel(makeRead({ expiry: F("2025-06", 0.7) }), profile, NOW);
+  assert.equal(highConfPast.level, "warning");
+  assert.equal(highConfPast.headline, "Amlodipine 5 mg: expired June 2025");
+
+  const noiseFloorPast = checkLabel(makeRead({ expiry: F("2025-06", 0.29) }), profile, NOW);
+  assert.equal(noiseFloorPast.level, "match");
+  assert.ok(noiseFloorPast.reasons.includes("expiry not readable"));
+
+  const lowConfFuture = checkLabel(makeRead({ expiry: F("2028-06", 0.5) }), profile, NOW);
+  assert.equal(lowConfFuture.level, "match");
+  assert.match(lowConfFuture.speech, /couldn't read the expiry date/);
+
+  const eveningAtMorning = checkLabel(makeRead(), profile, new Date(2026, 10, 15, 8, 30, 0));
+  assert.equal(eveningAtMorning.level, "match");
+  assert.equal(
+    eveningAtMorning.speech,
+    "Yes, Amlodipine 5 mg, your evening pill, but it's only morning now. You haven't taken it today.",
+  );
+  assert.ok(eveningAtMorning.reasons.includes("asked in the morning, scheduled later"));
+
+  const nightProfile = makeProfile({ meds: [{ ...BASE_MED, schedule: ["22:00"] }] });
+  const nightAtMidday = checkLabel(makeRead(), nightProfile, new Date(2026, 10, 15, 12, 15, 0));
+  assert.equal(nightAtMidday.level, "match");
+  assert.equal(
+    nightAtMidday.speech,
+    "Yes, Amlodipine 5 mg, your night pill, but it's only midday now. You haven't taken it today.",
+  );
+  assert.ok(nightAtMidday.reasons.includes("asked in the midday, scheduled later"));
+
+  const smallHours = checkLabel(makeRead(), nightProfile, new Date(2026, 10, 15, 4, 30, 0));
+  assert.equal(smallHours.level, "match");
+  assert.doesNotMatch(smallHours.speech, /only .* now/);
+
+  const adjacentSlot = checkLabel(makeRead(), profile, new Date(2026, 10, 15, 14, 0, 0));
+  assert.equal(adjacentSlot.level, "match");
+  assert.doesNotMatch(adjacentSlot.speech, /only .* now/);
+});
+
 test("LiveProxy: spoken-answer fidelity check emits correction on mutated dose and stays silent on faithful speech", async () => {
   process.env.HOLDUP_QUIET = "1";
   const shm = fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir();
