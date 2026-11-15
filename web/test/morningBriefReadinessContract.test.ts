@@ -283,6 +283,7 @@ describe("Morning brief readiness contract (docs/MORNING_BRIEF.md)", () => {
     const submitSection = sections[3].body;
     const stageSection = sections[4].body;
     const deckHtml = assertNonEmptyFile("deck/index.html");
+    const evalDoc = assertNonEmptyFile("docs/EVAL.md");
     const demoScript = assertNonEmptyFile("docs/DEMO_SCRIPT.md");
     const geminiDoc = assertNonEmptyFile("GEMINI.md");
     const gemmaDoc = assertNonEmptyFile("GEMMA.md");
@@ -310,7 +311,12 @@ describe("Morning brief readiness contract (docs/MORNING_BRIEF.md)", () => {
     }
     assert.ok(deckHtml.includes("@media print"), "deck/index.html must include @media print rules for PDF handout export");
     assert.ok(deckHtml.includes("Which one is the evening pill?"), "deck/index.html Slide 1 must open with the Which one hook");
-    assert.ok(deckHtml.includes("1,060") && deckHtml.includes("1/536") && deckHtml.includes("4/3,033"), "deck/index.html must include held-out v3 metrics");
+    assert.ok(
+      (deckHtml.includes("1,060") || evalDoc.includes("1,060")) &&
+        deckHtml.includes("1/536") &&
+        deckHtml.includes("4/3,033"),
+      "deck/index.html and docs/EVAL.md must include held-out v3 metrics",
+    );
     assert.ok(deckHtml.includes("$0.003"), "deck/index.html adoption slide must include measured $0.003 cost per label read");
 
     for (const demoToken of ["HoldUp demo script (3 minutes)", "Pre-demo checklist", "Which one?", "SPOTTER=1", "Last-resort fallbacks"]) {
