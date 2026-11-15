@@ -731,17 +731,17 @@ describe("Deck Slides 6, 8, 9 and docs/PRIVACY.md code-parity contract", () => {
     assert.deepEqual(leadFor("en-US", "match"), {});
   });
 
-  test("Slide 9 (#s9-h) 9-row degradation ladder matches shipped server and web resilience mechanisms", () => {
-    const slide9 = findSlideByHeadingId(slides, "s9-h");
+  test("Slide 9 (#s10-h) 9-row degradation ladder matches shipped server and web resilience mechanisms", () => {
+    const slide9 = findSlideByHeadingId(slides, "s10-h");
     const tbodyMatch = new RegExp("<tbody>([\\s\\S]*?)<\\x2ftbody>").exec(slide9);
-    assert.ok(tbodyMatch, "Slide 9 (#s9-h) must contain a <tbody> degradation table");
+    assert.ok(tbodyMatch, "Slide 9 (#s10-h) must contain a <tbody> degradation table");
 
     const trPattern = new RegExp("<tr>([\\s\\S]*?)<\\x2ftr>", "g");
     const tdPattern = new RegExp("<td>([\\s\\S]*?)<\\x2ftd>", "g");
     const rows = [...tbodyMatch[1].matchAll(trPattern)].map((tr) =>
       [...tr[1].matchAll(tdPattern)].map((td) => stripTags(td[1])),
     );
-    assert.equal(rows.length, 9, "Slide 9 (#s9-h) must have exactly 9 resilience rows");
+    assert.equal(rows.length, 9, "Slide 9 (#s10-h) must have exactly 9 resilience rows");
 
     assert.equal(rows[0][0], "Gemini Live error or quota");
     assert.ok(rows[0][1].includes("3-model Live chain") && rows[0][1].includes("snapshot mode"));

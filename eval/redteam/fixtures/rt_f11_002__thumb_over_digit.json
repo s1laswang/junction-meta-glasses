@@ -1,0 +1,93 @@
+{
+  "id": "rt_f11_002__thumb_over_digit",
+  "spec_id": "rt_f11_002",
+  "family": "F11_topical_mg_per_g_vs_oral",
+  "trap_category": "wrong_strength_or_unit",
+  "trap_explanation": "This is a topical 50 mg/g gel for cutaneous use, not the user's saved 50 mg oral diclofenac tablet.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Diclofenac Ratiopharm 50 mg/g gel",
+    "ingredient": "diclofenac",
+    "strength": "50 mg/g",
+    "expiry": "2028-11",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Voltaren",
+        "ingredient": "diclofenac",
+        "strength": "50 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Diclofenac Ratiopharm",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "diclofenac",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "50 mg/g",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "expiry": {
+      "value": "2028-11",
+      "confidence": 0.9
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "strength 50 mg/g differs from your 50 mg"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05012345678911(17)281100(10)RT01(21)SN002"
+}

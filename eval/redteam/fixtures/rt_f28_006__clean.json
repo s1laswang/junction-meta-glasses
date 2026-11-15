@@ -1,0 +1,100 @@
+{
+  "id": "rt_f28_006__clean",
+  "spec_id": "rt_f28_006",
+  "family": "F28_medication_allergenic_excipients",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Matches the user's saved betamethasone 1 mg/g cream, but contains sodium metabisulfite E223 which triggers the user's sulphites allergy.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Betamethasone Accord 0.1%",
+    "ingredient": "betamethasone",
+    "strength": "1 mg/g",
+    "expiry": "2027-06",
+    "allergens": [
+      "sulphites"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Betamethasone",
+        "ingredient": "betamethasone",
+        "strength": "1 mg/g",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "sulphites"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Betamethasone Accord",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "betamethasone",
+      "confidence": 0.98
+    },
+    "strength": {
+      "value": "1 mg/g",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.3
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": false,
+  "pack_gs1_raw": "(01)05012345113344(17)270600(10)RT01(21)SN006"
+}

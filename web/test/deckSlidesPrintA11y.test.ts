@@ -197,7 +197,7 @@ function extractSlideHeading(slideInnerHtml: string): { tag: string; id: string;
 }
 
 describe("deck/index.html structural & WCAG 2.2 AA invariants", () => {
-  test("declares lang=en, zoom-safe viewport, unique document IDs, and 12 slides with valid aria-labelledby h1/h2 headings", () => {
+  test("declares lang=en, zoom-safe viewport, unique document IDs, and 13 slides with valid aria-labelledby h1/h2 headings", () => {
     assert.match(CLEAN_HTML, /^\s*<!doctype html>/i);
     const htmlMatch = /<html\b[^>]*>/i.exec(CLEAN_HTML);
     assert.ok(htmlMatch, "Expected <html> root tag");
@@ -228,7 +228,7 @@ describe("deck/index.html structural & WCAG 2.2 AA invariants", () => {
     assert.equal(mainTags[0].attrs["aria-roledescription"], "slide deck");
     assert.ok((mainTags[0].attrs["aria-label"] ?? "").trim().length > 0);
 
-    assert.equal(SLIDE_SECTIONS.length, 12, "Deck must contain exact 12 <section class=\"slide\"> elements");
+    assert.equal(SLIDE_SECTIONS.length, 13, "Deck must contain exact 13 <section class=\"slide\"> elements");
 
     SLIDE_SECTIONS.forEach((slide, idx) => {
       const expectedId = `s${idx + 1}-h`;
@@ -280,7 +280,7 @@ describe("deck/index.html structural & WCAG 2.2 AA invariants", () => {
     const countMatch = /<span\b[^>]*\bid="count"[^>]*>([\s\S]*?)<\x2fspan>/i.exec(navElements[0].innerHtml);
     assert.ok(countMatch, "Expected #count status inside #nav");
     assert.equal(parseAttributes(countMatch[0])["aria-hidden"], "true");
-    assert.equal(countMatch[1].trim(), "1 / 12");
+    assert.equal(countMatch[1].trim(), "1 / 13");
 
     const srOnlyCss = extractCssBlock(CLEAN_CSS, /\.sr-only\s*\{/);
     assert.match(srOnlyCss, /position\s*:\s*absolute\s*!important/i);
@@ -408,11 +408,11 @@ describe("deck/index.html structural & WCAG 2.2 AA invariants", () => {
     assert.ok(chartLabel && hasClass(chartLabel.attrs, "sr-only"), "Slide 7 chart must include #s7-chart-t.sr-only");
     assert.ok(stripTagsAndDecode(chartLabel.innerHtml).trim().length > 20);
 
-    const slide9 = SLIDE_SECTIONS[8];
+    const slide9 = SLIDE_SECTIONS[9];
     const tables = findBalancedElements(slide9.innerHtml, "table");
-    assert.equal(tables.length, 1, "Slide 9 must include 1 resilience table");
+    assert.equal(tables.length, 1, "Slide 10 must include 1 resilience table");
     const captions = findBalancedElements(tables[0].innerHtml, "caption");
-    assert.equal(captions.length, 1, "Slide 9 table must include accessible <caption>");
+    assert.equal(captions.length, 1, "Slide 10 table must include accessible <caption>");
     assert.ok(hasClass(captions[0].attrs, "sr-only"));
     assert.ok(stripTagsAndDecode(captions[0].innerHtml).trim().length > 5);
     const ths = findBalancedElements(tables[0].innerHtml, "th");
@@ -542,7 +542,7 @@ function createDeckHarness(opts: { initialHash?: string; innerWidth?: number; in
 
   const deck = { style: { transform: "" } };
   const bar = { style: { width: "" } };
-  const count = { textContent: "1 / 12" };
+  const count = { textContent: "1 / 13" };
 
   let liveText = "";
   const liveWrites: string[] = [];
@@ -682,17 +682,17 @@ function createDeckHarness(opts: { initialHash?: string; innerWidth?: number; in
 }
 
 describe("deck/index.html inline controller execution in node:vm", () => {
-  test("initial hash #5 selects Slide 5 without unsolicited live announcement, labels all 12 slides, and scales #deck", () => {
+  test("initial hash #5 selects Slide 5 without unsolicited live announcement, labels all 13 slides, and scales #deck", () => {
     const h = createDeckHarness({ initialHash: "#5", innerWidth: 1920, innerHeight: 1080 });
 
     assert.deepEqual(h.visibleSlideIndices(), [4]);
     assert.equal(h.slides[4].hidden, false);
     h.slides.forEach((s, idx) => {
       assert.equal(s.hidden, idx !== 4, `Slide ${idx + 1} hidden state at #5`);
-      assert.equal(s.getAttribute("aria-label"), `Slide ${idx + 1} of 12`);
+      assert.equal(s.getAttribute("aria-label"), `Slide ${idx + 1} of 13`);
     });
-    assert.equal(h.count.textContent, "5 / 12");
-    assert.equal(h.bar.style.width, `${(5 / 12) * 100}%`);
+    assert.equal(h.count.textContent, "5 / 13");
+    assert.equal(h.bar.style.width, `${(5 / 13) * 100}%`);
     assert.equal(h.location.hash, "#5");
     assert.equal(h.replaceStateCalls.length, 0);
     assert.equal(h.live.textContent, "");
@@ -706,46 +706,46 @@ describe("deck/index.html inline controller execution in node:vm", () => {
 
     const defaultDeck = createDeckHarness({ initialHash: "" });
     assert.deepEqual(defaultDeck.visibleSlideIndices(), [0]);
-    assert.equal(defaultDeck.count.textContent, "1 / 12");
+    assert.equal(defaultDeck.count.textContent, "1 / 13");
     assert.equal(defaultDeck.location.hash, "#1");
 
     const invalidHashDeck = createDeckHarness({ initialHash: "#not-a-number" });
     assert.deepEqual(invalidHashDeck.visibleSlideIndices(), [0]);
-    assert.equal(invalidHashDeck.count.textContent, "1 / 12");
+    assert.equal(invalidHashDeck.count.textContent, "1 / 13");
 
     const clampedHighDeck = createDeckHarness({ initialHash: "#99" });
-    assert.deepEqual(clampedHighDeck.visibleSlideIndices(), [11]);
-    assert.equal(clampedHighDeck.count.textContent, "12 / 12");
-    assert.equal(clampedHighDeck.location.hash, "#12");
+    assert.deepEqual(clampedHighDeck.visibleSlideIndices(), [12]);
+    assert.equal(clampedHighDeck.count.textContent, "13 / 13");
+    assert.equal(clampedHighDeck.location.hash, "#13");
   });
 
-  test("keyboard navigation (ArrowRight, ArrowLeft, PageDown, PageUp, Home, End) clamps 0..11, updates #progress and history.replaceState, and announces via #live", () => {
+  test("keyboard navigation (ArrowRight, ArrowLeft, PageDown, PageUp, Home, End) clamps 0..12, updates #progress and history.replaceState, and announces via #live", () => {
     const h = createDeckHarness({ initialHash: "#5" });
 
     assert.equal(h.pressKey("ArrowRight").defaultPrevented, true);
     assert.deepEqual(h.visibleSlideIndices(), [5]);
-    assert.equal(h.count.textContent, "6 / 12");
-    assert.equal(h.bar.style.width, `${(6 / 12) * 100}%`);
+    assert.equal(h.count.textContent, "6 / 13");
+    assert.equal(h.bar.style.width, `${(6 / 13) * 100}%`);
     assert.equal(h.location.hash, "#6");
     assert.equal(h.replaceStateCalls.at(-1)?.url, "#6");
-    assert.equal(h.live.textContent, `Slide 6 of 12: ${h.slideHeadings[5]}`);
+    assert.equal(h.live.textContent, `Slide 6 of 13: ${h.slideHeadings[5]}`);
 
     assert.equal(h.pressKey("ArrowLeft").defaultPrevented, true);
     assert.deepEqual(h.visibleSlideIndices(), [4]);
-    assert.equal(h.count.textContent, "5 / 12");
-    assert.equal(h.bar.style.width, `${(5 / 12) * 100}%`);
+    assert.equal(h.count.textContent, "5 / 13");
+    assert.equal(h.bar.style.width, `${(5 / 13) * 100}%`);
     assert.equal(h.location.hash, "#5");
-    assert.equal(h.live.textContent, `Slide 5 of 12: ${h.slideHeadings[4]}`);
+    assert.equal(h.live.textContent, `Slide 5 of 13: ${h.slideHeadings[4]}`);
 
     assert.equal(h.pressKey("PageDown").defaultPrevented, true);
     assert.deepEqual(h.visibleSlideIndices(), [5]);
-    assert.equal(h.count.textContent, "6 / 12");
-    assert.equal(h.live.textContent, `Slide 6 of 12: ${h.slideHeadings[5]}`);
+    assert.equal(h.count.textContent, "6 / 13");
+    assert.equal(h.live.textContent, `Slide 6 of 13: ${h.slideHeadings[5]}`);
 
     assert.equal(h.pressKey("PageUp").defaultPrevented, true);
     assert.deepEqual(h.visibleSlideIndices(), [4]);
-    assert.equal(h.count.textContent, "5 / 12");
-    assert.equal(h.live.textContent, `Slide 5 of 12: ${h.slideHeadings[4]}`);
+    assert.equal(h.count.textContent, "5 / 13");
+    assert.equal(h.live.textContent, `Slide 5 of 13: ${h.slideHeadings[4]}`);
 
     for (const fwdKey of [" ", "Enter", "n"]) {
       const prevIdx = h.visibleSlideIndices()[0];
@@ -760,66 +760,66 @@ describe("deck/index.html inline controller execution in node:vm", () => {
 
     assert.equal(h.pressKey("Home").defaultPrevented, true);
     assert.deepEqual(h.visibleSlideIndices(), [0]);
-    assert.equal(h.count.textContent, "1 / 12");
-    assert.equal(h.bar.style.width, `${(1 / 12) * 100}%`);
+    assert.equal(h.count.textContent, "1 / 13");
+    assert.equal(h.bar.style.width, `${(1 / 13) * 100}%`);
     assert.equal(h.location.hash, "#1");
-    assert.equal(h.live.textContent, `Slide 1 of 12: ${h.slideHeadings[0]}`);
+    assert.equal(h.live.textContent, `Slide 1 of 13: ${h.slideHeadings[0]}`);
 
     const replaceCountAtStart = h.replaceStateCalls.length;
     assert.equal(h.pressKey("ArrowLeft").defaultPrevented, true);
     assert.deepEqual(h.visibleSlideIndices(), [0]);
-    assert.equal(h.count.textContent, "1 / 12");
+    assert.equal(h.count.textContent, "1 / 13");
     assert.equal(h.pressKey("PageUp").defaultPrevented, true);
     assert.deepEqual(h.visibleSlideIndices(), [0]);
     assert.equal(h.replaceStateCalls.length, replaceCountAtStart);
 
     assert.equal(h.pressKey("End").defaultPrevented, true);
-    assert.deepEqual(h.visibleSlideIndices(), [11]);
-    assert.equal(h.count.textContent, "12 / 12");
+    assert.deepEqual(h.visibleSlideIndices(), [12]);
+    assert.equal(h.count.textContent, "13 / 13");
     assert.equal(h.bar.style.width, "100%");
-    assert.equal(h.location.hash, "#12");
-    assert.equal(h.live.textContent, `Slide 12 of 12: ${h.slideHeadings[11]}`);
+    assert.equal(h.location.hash, "#13");
+    assert.equal(h.live.textContent, `Slide 13 of 13: ${h.slideHeadings[12]}`);
 
     const replaceCountAtEnd = h.replaceStateCalls.length;
     assert.equal(h.pressKey("ArrowRight").defaultPrevented, true);
-    assert.deepEqual(h.visibleSlideIndices(), [11]);
-    assert.equal(h.count.textContent, "12 / 12");
+    assert.deepEqual(h.visibleSlideIndices(), [12]);
+    assert.equal(h.count.textContent, "13 / 13");
     assert.equal(h.bar.style.width, "100%");
     assert.equal(h.pressKey("PageDown").defaultPrevented, true);
-    assert.deepEqual(h.visibleSlideIndices(), [11]);
+    assert.deepEqual(h.visibleSlideIndices(), [12]);
     assert.equal(h.replaceStateCalls.length, replaceCountAtEnd);
 
     h.clickPrev();
-    assert.deepEqual(h.visibleSlideIndices(), [10]);
-    assert.equal(h.count.textContent, "11 / 12");
-    assert.equal(h.live.textContent, `Slide 11 of 12: ${h.slideHeadings[10]}`);
+    assert.deepEqual(h.visibleSlideIndices(), [11]);
+    assert.equal(h.count.textContent, "12 / 13");
+    assert.equal(h.live.textContent, `Slide 12 of 13: ${h.slideHeadings[11]}`);
 
     h.clickNext();
-    assert.deepEqual(h.visibleSlideIndices(), [11]);
-    assert.equal(h.count.textContent, "12 / 12");
+    assert.deepEqual(h.visibleSlideIndices(), [12]);
+    assert.equal(h.count.textContent, "13 / 13");
 
     assert.equal(h.pressKey({ key: "Enter", targetTag: "button" }).defaultPrevented, false);
     assert.equal(h.pressKey({ key: " ", targetTag: "button" }).defaultPrevented, false);
     assert.equal(h.pressKey({ key: "ArrowLeft", altKey: true }).defaultPrevented, false);
     assert.equal(h.pressKey({ key: "p", ctrlKey: true }).defaultPrevented, false);
     assert.equal(h.pressKey({ key: "ArrowLeft", metaKey: true }).defaultPrevented, false);
-    assert.deepEqual(h.visibleSlideIndices(), [11]);
+    assert.deepEqual(h.visibleSlideIndices(), [12]);
   });
 
-  test("beforeprint unhides all 12 slides for PDF export and afterprint restores single-slide visibility without spurious live announcements", () => {
+  test("beforeprint unhides all 13 slides for PDF export and afterprint restores single-slide visibility without spurious live announcements", () => {
     const h = createDeckHarness({ initialHash: "#3" });
     h.pressKey("ArrowRight");
     assert.deepEqual(h.visibleSlideIndices(), [3]);
-    assert.equal(h.count.textContent, "4 / 12");
+    assert.equal(h.count.textContent, "4 / 13");
     assert.equal(h.liveWrites.length, 1);
     const announcementBeforePrint = h.live.textContent;
-    assert.equal(announcementBeforePrint, `Slide 4 of 12: ${h.slideHeadings[3]}`);
+    assert.equal(announcementBeforePrint, `Slide 4 of 13: ${h.slideHeadings[3]}`);
 
     h.dispatchWindow("beforeprint");
     assert.deepEqual(
       h.visibleSlideIndices(),
-      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-      "beforeprint must unhide all 12 slides",
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      "beforeprint must unhide all 13 slides",
     );
     assert.equal(h.liveWrites.length, 1, "beforeprint must not write to #live");
     assert.equal(h.live.textContent, announcementBeforePrint);
@@ -829,7 +829,7 @@ describe("deck/index.html inline controller execution in node:vm", () => {
     h.slides.forEach((s, idx) => {
       assert.equal(s.hidden, idx !== 3, `Slide ${idx + 1} hidden state after print`);
     });
-    assert.equal(h.count.textContent, "4 / 12");
+    assert.equal(h.count.textContent, "4 / 13");
     assert.equal(h.location.hash, "#4");
     assert.equal(h.liveWrites.length, 1, "afterprint must not emit a spurious #live announcement");
     assert.equal(h.live.textContent, announcementBeforePrint);
