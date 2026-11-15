@@ -1,6 +1,6 @@
 {
   "model": "eleven_flash_v2_5",
-  "generated": "2026-11-14T20:09:43.984Z",
+  "generated": "2026-11-14T23:14:00.000Z",
   "phrases": {
     "en": {
       "offline": {
@@ -30,6 +30,34 @@
       "camera_off": {
         "file": "/phrases/en/camera_off.mp3",
         "text": "Camera off."
+      },
+      "cue_closer": {
+        "file": "/phrases/en/cue_closer.wav",
+        "text": "A bit closer."
+      },
+      "cue_further": {
+        "file": "/phrases/en/cue_further.wav",
+        "text": "Move it slightly further back."
+      },
+      "cue_rotate": {
+        "file": "/phrases/en/cue_rotate.wav",
+        "text": "Turn the box slowly."
+      },
+      "cue_tilt": {
+        "file": "/phrases/en/cue_tilt.wav",
+        "text": "Turn the box to the other side."
+      },
+      "cue_more_light": {
+        "file": "/phrases/en/cue_more_light.wav",
+        "text": "Move into brighter light."
+      },
+      "cue_steady": {
+        "file": "/phrases/en/cue_steady.wav",
+        "text": "Hold still."
+      },
+      "cue_reading": {
+        "file": "/phrases/en/cue_reading.wav",
+        "text": "Got it, reading the label."
       }
     },
     "fi": {
@@ -60,6 +88,34 @@
       "camera_off": {
         "file": "/phrases/fi/camera_off.mp3",
         "text": "Kamera pois päältä."
+      },
+      "cue_closer": {
+        "file": "/phrases/fi/cue_closer.wav",
+        "text": "Hieman lähemmäs."
+      },
+      "cue_further": {
+        "file": "/phrases/fi/cue_further.wav",
+        "text": "Siirrä hieman kauemmas."
+      },
+      "cue_rotate": {
+        "file": "/phrases/fi/cue_rotate.wav",
+        "text": "Käännä pakkausta hitaasti."
+      },
+      "cue_tilt": {
+        "file": "/phrases/fi/cue_tilt.wav",
+        "text": "Käännä pakkaus toisin päin."
+      },
+      "cue_more_light": {
+        "file": "/phrases/fi/cue_more_light.wav",
+        "text": "Siirry parempaan valoon."
+      },
+      "cue_steady": {
+        "file": "/phrases/fi/cue_steady.wav",
+        "text": "Pidä paikallaan."
+      },
+      "cue_reading": {
+        "file": "/phrases/fi/cue_reading.wav",
+        "text": "Selvä, luen etikettiä."
       }
     },
     "sv": {
@@ -90,6 +146,34 @@
       "camera_off": {
         "file": "/phrases/sv/camera_off.mp3",
         "text": "Kameran är av."
+      },
+      "cue_closer": {
+        "file": "/phrases/sv/cue_closer.wav",
+        "text": "Lite närmare."
+      },
+      "cue_further": {
+        "file": "/phrases/sv/cue_further.wav",
+        "text": "Flytta den lite längre bort."
+      },
+      "cue_rotate": {
+        "file": "/phrases/sv/cue_rotate.wav",
+        "text": "Vrid förpackningen långsamt."
+      },
+      "cue_tilt": {
+        "file": "/phrases/sv/cue_tilt.wav",
+        "text": "Vänd förpackningen till andra sidan."
+      },
+      "cue_more_light": {
+        "file": "/phrases/sv/cue_more_light.wav",
+        "text": "Håll den i bättre ljus."
+      },
+      "cue_steady": {
+        "file": "/phrases/sv/cue_steady.wav",
+        "text": "Håll stilla."
+      },
+      "cue_reading": {
+        "file": "/phrases/sv/cue_reading.wav",
+        "text": "Jag ser den, läser etiketten."
       }
     }
   }
