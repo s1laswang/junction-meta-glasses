@@ -721,6 +721,9 @@ dialog.addsheet {
 .conf.low {
   color: var(--warning);
 }
+.fields dd.conf {
+  font-weight: 400;
+}
 .verdict .actions {
   display: flex;
   gap: var(--s1);
