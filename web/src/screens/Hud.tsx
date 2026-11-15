@@ -34,6 +34,22 @@ type Conn = "connecting" | "open" | "retry";
 const SLOT: Record<ScenePosition, number> = { far_left: 0, left: 1, center: 2, right: 3, far_right: 4 };
 const POS_WORD: Record<ScenePosition, string> = { far_left: "far left", left: "left", center: "middle", right: "right", far_right: "far right" };
 
+function hudSpeechLang() {
+  try {
+    const raw = localStorage.getItem("holdup.profile");
+    const lang = raw ? (JSON.parse(raw) as { lang?: unknown } | null)?.lang : undefined;
+    if (lang === "fi") return "fi-FI";
+    if (lang === "sv") return "sv-SE";
+  } catch {}
+  return "en-US";
+}
+
+function stopHudSpeech() {
+  try {
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+  } catch {}
+}
+
 /** "Which one?" on the display: glyphs on a left-to-right strip, the target big, its headline below. */
 function HudScene({ verdict, stale }: { verdict: Verdict; stale: boolean }) {
   const items = [...(verdict.items ?? [])].sort((a, b) => SLOT[a.position] - SLOT[b.position]);
@@ -92,13 +108,15 @@ export function Hud() {
   const pushed = useRef(false);
   const speakRef = useRef(speakOn);
   speakRef.current = speakOn;
+  const activeRef = useRef(false);
+  activeRef.current = !!(verdict || cue);
 
   const say = useCallback((text: string) => {
     if (!speakRef.current || !window.speechSynthesis) return;
     try {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-US";
+      u.lang = hudSpeechLang();
       window.speechSynthesis.speak(u);
     } catch {
       /* ignore */
@@ -115,7 +133,10 @@ export function Hud() {
       } else if (m.type === "coach") {
         setCue({ cue: m.cue, text: m.text, ts: Date.now() });
       } else if (m.type === "status") setLive(m.live);
-      else if (m.type === "device") setDevice(m.device);
+      else if (m.type === "device") {
+        setDevice(m.device);
+        if (m.device.worn === false) stopHudSpeech();
+      }
     },
     [say],
   );
@@ -139,12 +160,14 @@ export function Hud() {
   useEffect(() => {
     const onPop = () => {
       pushed.current = false;
+      stopHudSpeech();
       setVerdict(null);
       setCue(null);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+  useEffect(() => () => stopHudSpeech(), []);
 
   // the Display's own battery, where exposed
   useEffect(() => {
@@ -244,6 +267,7 @@ export function Hud() {
   }, [onMsg]);
 
   const clear = () => {
+    stopHudSpeech();
     setVerdict(null);
     setCue(null);
     if (pushed.current) history.back(); // pops our one entry; popstate resets the flag
@@ -261,6 +285,7 @@ export function Hud() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (activeRef.current) stopHudSpeech();
         setVerdict(null);
         setCue(null);
         if (pushed.current) history.back();
@@ -344,7 +369,9 @@ export function Hud() {
           aria-pressed={speakOn}
           onClick={() => {
             const v = !speakOn;
+            speakRef.current = v;
             setSpeakOn(v);
+            if (!v) stopHudSpeech();
             try {
               localStorage.setItem(SPEAK_KEY, v ? "1" : "0");
             } catch {

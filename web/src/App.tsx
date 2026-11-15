@@ -27,6 +27,7 @@ export function App() {
   const checker = getChecker();
   const s = useSyncExternalStore(checker.subscribe, checker.get);
   const h1 = useRef<HTMLHeadingElement>(null);
+  const pendingAnnounce = useRef<string | null>(null);
 
   useEffect(() => {
     checker.onProfileChange = setProfile;
@@ -38,6 +39,10 @@ export function App() {
       h1.current?.focus();
       document.title = `${TITLES[screen]} · HoldUp`;
     } else document.title = "HoldUp";
+    if (pendingAnnounce.current) {
+      announce(pendingAnnounce.current, "assertive");
+      pendingAnnounce.current = null;
+    }
   }, [screen]);
 
   if (s.authNeeded)
@@ -145,20 +150,20 @@ export function App() {
             consent={consent}
             onReviewConsent={() => setScreen("consent")}
             onWithdraw={() => {
-              void checker.stop();
+              if (s.running) void checker.stop("Consent withdrawn. The camera will stay off.");
+              else announce("Consent withdrawn. The camera will stay off.", "assertive");
               try {
                 localStorage.removeItem("holdup.consent");
-              } catch {
-                /* ignore */
-              }
+              } catch {}
               setConsent(null);
+              return true;
             }}
             onDeleteAll={async () => {
               await checker.stop("Check stopped.");
               await deleteAllData();
               setConsent(null);
               setProfile(loadProfile());
-              announce("All your HoldUp data has been deleted from this phone.", "assertive");
+              pendingAnnounce.current = "All your HoldUp data has been deleted from this phone.";
               setScreen("consent");
             }}
           />
