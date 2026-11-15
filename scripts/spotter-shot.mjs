@@ -6,7 +6,13 @@ const base = process.argv[2] ?? "http://localhost:8799";
 const image = process.argv[3] ?? "server/fixtures/amlodipine.jpg";
 const out = "/tmp/holdup-shots"; fs.mkdirSync(out, { recursive: true });
 const mjpeg = path.join(os.tmpdir(), "holdup-fake-camera.mjpeg");
-fs.copyFileSync(image, mjpeg); // a one-frame MJPEG loops as the camera feed
+// One image: a one-frame MJPEG loops as the camera feed. Two images (argv[4]): about 6 s of the first, then
+// about 10 s of the second (Chrome plays the file at ~30 fps), e.g. dose visible, then dose covered by a thumb.
+const second = process.argv[4];
+if (second) {
+  const a = fs.readFileSync(image), b = fs.readFileSync(second);
+  fs.writeFileSync(mjpeg, Buffer.concat([...Array(180).fill(a), ...Array(300).fill(b)]));
+} else fs.copyFileSync(image, mjpeg);
 const cache = path.join(os.homedir(), "Library/Caches/ms-playwright");
 const exe = fs.readdirSync(cache).filter((d) => d.startsWith("chromium-")).sort().reverse()
   .map((d) => path.join(cache, d, "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing")).find((p) => fs.existsSync(p));
@@ -26,7 +32,7 @@ const allow = page.getByRole("button", { name: /allow camera and microphone/i })
 if (await allow.count()) await allow.click().catch(() => {});
 await page.locator(".bigbtn").waitFor({ timeout: 15000 });
 await page.locator(".bigbtn").click();
-await page.waitForTimeout(9000);
+await page.waitForTimeout(second ? 20000 : 9000);
 await page.screenshot({ path: `${out}/spotter-live.png` });
 const boxes = await page.locator(".field-box").evaluateAll((els) => els.map((e) => e.className + " " + e.textContent));
 console.log(JSON.stringify({ fieldsMessages: seen.fields, boxesOnScreen: boxes, coach: seen.coach, spokenCues: seen.say }));
