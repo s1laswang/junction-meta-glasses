@@ -97,6 +97,9 @@ export type ServerMsg =
   | { type: "hud_event"; name: "log_dose" | "repeat" | "dismiss" }
   // added Sat 18:30 (CEO): a dose logged by voice (Gemini log_dose tool); phone mirrors it into its on-device log
   | { type: "dose_logged"; medId: string; ts: number }
+  // added Sun 05:10 (CEO): the spoken answer did not match the rule's sentence (wrong/missing strength, dropped
+  // caution, missing name, or silence). The phone stops playback and speaks `speech` itself.
+  | { type: "correction"; speech: string; reasons: string[] }
   // added Sat 19:00 (CEO): label readiness 0..1 for the sonar tone (server readability from speculative reads,
   // blended with frame sharpness); at most ~4/s
   | { type: "readiness"; value: number }

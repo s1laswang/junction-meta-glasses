@@ -476,6 +476,14 @@ export class Checker {
       case "interrupted":
         this.player.flush();
         break;
+      case "correction":
+        // the spoken answer did not match the rule's sentence: stop it and say the rule's sentence ourselves
+        this.player.flush();
+        earcon.alert();
+        speak(m.speech);
+        announce(`Corrected answer: ${m.speech}`, "assertive");
+        this.set({ banner: { tone: "warn", title: "Corrected answer", detail: "The spoken answer didn't match the check, so HoldUp repeated the checked sentence." } });
+        break;
       case "checking":
         if (m.phase === "start") {
           this.set({ checking: true, cue: null });
