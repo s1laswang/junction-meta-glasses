@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import type http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
 import { after, afterEach, before, beforeEach, test } from "node:test";
@@ -28,7 +29,7 @@ const origLiveConnect = ai.live.connect;
 const origSpecDebounce = SPEC.debounceMs;
 const origSpecMinGap = SPEC.minGapMs;
 
-const ledgerTmpDir = fs.mkdtempSync("/dev/shm/holdup-glasses-hw-e2e-");
+const ledgerTmpDir = fs.mkdtempSync(path.join(fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir(), "holdup-glasses-hw-e2e-"));
 env.ledgerPath = path.join(ledgerTmpDir, "ledger.jsonl");
 process.env.HOLDUP_QUIET = "1";
 
