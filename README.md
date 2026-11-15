@@ -51,7 +51,7 @@ npm install && npm run dev
 ```
 Open http://localhost:5173 (add `?mock=1` to run without a server or Gemini). For a phone or the glasses you need HTTPS: run `npm start` (production build on :8787), then `npm run tunnel`, and open the printed `https://…trycloudflare.com` URL on the phone. The Ray-Ban Display page is at `https://<host>/hud/`.
 
-Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w server run smoke` (real Gemini Live end to end; SKIP if `GEMINI_API_KEY` is unset). `npm -w web test` (contract and a11y). Status on `main`, Sun 15 Nov 2026 early morning (keyless, re-measured after the PR merges and `/stage`): typecheck clean, **server 288/288** (3 of 3 runs), **web 323/323**. Last real-Gemini run (Sat 14 Nov late evening): smoke **13/13** (incl. scene mode and readiness), `make accept` `RESULT: PASS`.
+Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w server run smoke` (real Gemini Live end to end; SKIP if `GEMINI_API_KEY` is unset). `npm -w web test` (contract and a11y). Status on `main`, Sun 15 Nov 2026 early morning (keyless, re-measured after the PR merges and `/stage`): typecheck clean, **server 303/303** (3 of 3 runs), **web 341/341**. Last real-Gemini run (Sat 14 Nov late evening): smoke **13/13** (incl. scene mode and readiness), `make accept` `RESULT: PASS`.
 
 ## The plan (authoritative: read this before building anything)
 **THE CHOSEN PLAN IS HOLDUP, as described here and in [docs/PLAN.md](docs/PLAN.md). It is not a pill reminder or a "Did I take my pills?" app.** The core flow, the server, the phone app, the HUD and the glasses bridge are **already built and merged**. Don't rebuild them. Improve them through small PRs.
@@ -62,7 +62,7 @@ Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w se
 | Phone PWA: consent, permissions, live check, snapshot and offline modes, device panel, a11y (axe-core WCAG 2.2 A+AA: 0 violations on 6 screens, docs/evidence/a11y-axe.json; Profile and Privacy tabs not yet covered by the script) | `web/` | ✅ done |
 | Ray-Ban Display HUD Web App (600×600 additive display, Neural Band input) | `web/src/screens/Hud.tsx`, `/hud/` | ✅ done |
 | Device Access Toolkit Android bridge (glasses camera → `/ingest/frame`) | `android-dat/` | ✅ compiles (freighter Slurm build, 4/4 unit tests, APK sha256 in HARDWARE_NOTES). ⏳ on-glasses proof: docs/HARDWARE_LOG.md |
-| Eval: synthetic labels (Gemini image) → accuracy, confident-wrong rate, calibration | `eval/`, results in `eval/results/v1_results.json` | ✅ v1: 1,740 images, 0/754 confident-wrong strengths, 1.0% unsafe before the allergen gate ([docs/EVAL.md](docs/EVAL.md)). ⏳ real photos |
+| Eval: synthetic labels (Gemini image) → accuracy, confident-wrong rate, calibration | `eval/`, results in `eval/results/v1_results.json` | ✅ v1: 1,740 images, 0/754 confident-wrong strengths, 1.0% unsafe before the allergen gate ([docs/EVAL.md](docs/EVAL.md)). Held-out v3 (1,060 new images): 1/536 confident-wrong strength, 4/3,033 silent unsafe. ⏳ real photos |
 | Deck, demo script, privacy one-pager, research, QA | `deck/`, `docs/` | ✅ drafts done, ⏳ eval numbers and the backup video still to add |
 
 **Contract:** [shared/types.ts](shared/types.ts) and [docs/TEAM.md](docs/TEAM.md) (WebSocket and HTTP messages). Only the CEO changes it.
@@ -134,6 +134,7 @@ cd holdup && cp .env.example .env && make accept   # keyless checks; add GEMINI_
 Don't mix this up with our other entries (`s1laswang/agent-arena`, `s1laswang/junction-aimo-agents`).
 
 ## Docs
+- [docs/MORNING_BRIEF.md](docs/MORNING_BRIEF.md): the Sunday 08:00 checklist (hardware run, real photos, submission)
 - [GEMINI.md](GEMINI.md): how HoldUp uses the Gemini API (Google DeepMind "Best Use of Gemini API")
 - [docs/PLAN.md](docs/PLAN.md): idea, architecture, demo script, hardware plan, timeline, questions for Silas
 - [docs/TEAM.md](docs/TEAM.md): roles, interfaces, milestones

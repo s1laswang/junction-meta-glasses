@@ -12,7 +12,7 @@ export type SpotLabel = (typeof SPOT_LABELS)[number];
 /** box = [ymin, xmin, ymax, xmax], normalised 0..1000 (same convention as Gemini box_2d and SceneItem.box) */
 export type FieldBox = { label: SpotLabel; box: [number, number, number, number]; score: number };
 
-export const SPOT = { size: 640, conf: 0.4, iou: 0.5, minGapMs: 400, slowMs: 900, backoffMs: 10_000 };
+export const SPOT = { size: 640, conf: 0.4, iou: 0.5, minGapMs: 400, slowMs: 2500, backoffMs: 5_000 };
 const MODEL_PATH = path.join(REPO_ROOT, "web", "public", "models", "fieldspotter.onnx");
 export const spotterAvailable = () => process.env.SPOTTER === "1" && fs.existsSync(MODEL_PATH);
 
