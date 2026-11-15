@@ -10,9 +10,14 @@ MODEL = os.environ.get("PG_MODEL", "google/paligemma2-3b-pt-448")
 EPOCHS = float(os.environ.get("EPOCHS", "3")); BS = int(os.environ.get("BS", "8")); LR = float(os.environ.get("LR", "2e-4"))
 CLASSES = ["product", "strength", "expiry", "allergens"]
 dev = "cuda"
+# shared GPU: hard cap this process (FR8 limit <= 50 GB on an 80 GB card)
+torch.cuda.set_per_process_memory_fraction(float(os.environ.get("MEM_FRAC", "0.58")))
 proc = AutoProcessor.from_pretrained(MODEL, token=os.environ.get("HF_TOKEN"))
 model = PaliGemmaForConditionalGeneration.from_pretrained(MODEL, torch_dtype=torch.bfloat16, token=os.environ.get("HF_TOKEN")).to(dev)
-for p in model.vision_tower.parameters(): p.requires_grad = False
+for n_, p in model.named_parameters():
+    if "vision_tower" in n_ or "multi_modal_projector" in n_: p.requires_grad = False
+model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+model.enable_input_require_grads()
 model = get_peft_model(model, LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05,
                        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"], task_type="CAUSAL_LM"))
 model.print_trainable_parameters()
