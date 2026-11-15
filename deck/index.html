@@ -141,15 +141,15 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
 .slide[aria-labelledby="s7-h"] .bars { gap: 8px; }
 .slide[aria-labelledby="s7-h"] .bar .lab { font-size: 13px; line-height: 1.15; }
 .slide[aria-labelledby="s7-h"] .bar .lab b { font-size: 16.5px; }
-.slide[aria-labelledby="s10-h"] { padding-top: 30px; padding-bottom: 48px; gap: 11px; }
-.slide[aria-labelledby="s10-h"] h2 { font-size: 32px; }
-.slide[aria-labelledby="s10-h"] h3 { font-size: 18px; }
-.slide[aria-labelledby="s10-h"] .step { padding: 10px 12px; gap: 4px; }
-.slide[aria-labelledby="s10-h"] .step h3 { font-size: 18px; }
-.slide[aria-labelledby="s10-h"] .step p { font-size: 14px; line-height: 1.25; }
-.slide[aria-labelledby="s10-h"] .card { padding: 10px 14px; gap: 5px; }
-.slide[aria-labelledby="s10-h"] .stat .num { font-size: 38px; }
-.slide[aria-labelledby="s10-h"] .stat p, .slide[aria-labelledby="s10-h"] .card p { font-size: 14px; line-height: 1.25; }
+.slide[aria-labelledby="s10-h"]:has(.loop), .slide[aria-labelledby="s11-h"]:has(.loop) { padding-top: 30px; padding-bottom: 48px; gap: 11px; }
+.slide[aria-labelledby="s10-h"]:has(.loop) h2, .slide[aria-labelledby="s11-h"]:has(.loop) h2 { font-size: 32px; }
+.slide[aria-labelledby="s10-h"]:has(.loop) h3, .slide[aria-labelledby="s11-h"]:has(.loop) h3 { font-size: 18px; }
+.slide[aria-labelledby="s10-h"]:has(.loop) .step, .slide[aria-labelledby="s11-h"]:has(.loop) .step { padding: 10px 12px; gap: 4px; }
+.slide[aria-labelledby="s10-h"]:has(.loop) .step h3, .slide[aria-labelledby="s11-h"]:has(.loop) .step h3 { font-size: 18px; }
+.slide[aria-labelledby="s10-h"]:has(.loop) .step p, .slide[aria-labelledby="s11-h"]:has(.loop) .step p { font-size: 14px; line-height: 1.25; }
+.slide[aria-labelledby="s10-h"]:has(.loop) .card, .slide[aria-labelledby="s11-h"]:has(.loop) .card { padding: 10px 14px; gap: 5px; }
+.slide[aria-labelledby="s10-h"]:has(.loop) .stat .num, .slide[aria-labelledby="s11-h"]:has(.loop) .stat .num { font-size: 38px; }
+.slide[aria-labelledby="s10-h"]:has(.loop) .stat p, .slide[aria-labelledby="s10-h"]:has(.loop) .card p, .slide[aria-labelledby="s11-h"]:has(.loop) .stat p, .slide[aria-labelledby="s11-h"]:has(.loop) .card p { font-size: 14px; line-height: 1.25; }
 
 /* nav (screen only) */
 #nav { position: fixed; right: 16px; bottom: 12px; display: flex; gap: 8px; align-items: center; z-index: 10; }

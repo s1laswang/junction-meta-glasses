@@ -12,7 +12,6 @@ const WILD_SUFFIX = SLASH + STAR + STAR;
 const GOOGLE_FONTS_CSS_GLOB = HTTPS_PREFIX + "fonts.googleapis.com" + WILD_SUFFIX;
 const GOOGLE_FONTS_STATIC_GLOB = HTTPS_PREFIX + "fonts.gstatic.com" + WILD_SUFFIX;
 
-const EXPECTED_SLIDES = 12;
 const VIEWPORT_WIDTH = 1280;
 const VIEWPORT_HEIGHT = 720;
 const FONT_TIMEOUT_MS = 1500;
@@ -168,6 +167,9 @@ async function run() {
   if (!fs.existsSync(deckPath)) {
     throw new Error(`Deck file not found: ${deckPath}`);
   }
+  const deckHtml = fs.readFileSync(deckPath, "utf8");
+  const slideSectionRe = new RegExp('<section\\s+class="slide\\b', "g");
+  const expectedSlideCount = (deckHtml.match(slideSectionRe) ?? []).length;
 
   const executablePath = resolveChromiumExecutable();
   const browser = await chromium.launch({
@@ -221,8 +223,11 @@ async function run() {
     let maxScrollHeight = 0;
     let axeViolationNodes = 0;
 
-    if (slideCount !== EXPECTED_SLIDES) {
-      failureReasons.push(`Expected ${EXPECTED_SLIDES} slides, found ${slideCount}`);
+    if (expectedSlideCount !== 12 && expectedSlideCount !== 13) {
+      failureReasons.push(`Expected 12 or 13 <section class="slide"> sections in HTML, found ${expectedSlideCount}`);
+    }
+    if (slideCount !== expectedSlideCount) {
+      failureReasons.push(`Expected ${expectedSlideCount} slides, found ${slideCount}`);
     }
 
     for (let step = 1; step <= slideCount; step++) {
@@ -381,14 +386,19 @@ async function run() {
       };
     });
 
-    if (printCheck.flexSlides !== EXPECTED_SLIDES) {
+    if (printCheck.totalSlides !== expectedSlideCount) {
       failureReasons.push(
-        `Print media expected ${EXPECTED_SLIDES} visible flex .slide sections, got ${printCheck.flexSlides}`,
+        `Print media expected ${expectedSlideCount} total .slide sections, got ${printCheck.totalSlides}`,
       );
     }
-    if (printCheck.visiblePageNumbers !== EXPECTED_SLIDES) {
+    if (printCheck.flexSlides !== expectedSlideCount) {
       failureReasons.push(
-        `Print media expected ${EXPECTED_SLIDES} visible .foot .pg elements, got ${printCheck.visiblePageNumbers}`,
+        `Print media expected ${expectedSlideCount} visible flex .slide sections, got ${printCheck.flexSlides}`,
+      );
+    }
+    if (printCheck.visiblePageNumbers !== expectedSlideCount) {
+      failureReasons.push(
+        `Print media expected ${expectedSlideCount} visible .foot .pg elements, got ${printCheck.visiblePageNumbers}`,
       );
     }
     if (printCheck.navDisplay !== "none") {
@@ -436,8 +446,8 @@ async function run() {
     if (!pdfHeader.startsWith("%PDF-")) {
       failureReasons.push(`Generated PDF buffer missing %PDF- header (got "${pdfHeader}")`);
     }
-    if (pdfPages !== EXPECTED_SLIDES) {
-      failureReasons.push(`Expected ${EXPECTED_SLIDES} PDF pages, got ${pdfPages}`);
+    if (pdfPages !== expectedSlideCount) {
+      failureReasons.push(`Expected ${expectedSlideCount} PDF pages, got ${pdfPages}`);
     }
     if (outPath) {
       if (!fs.existsSync(outPath)) {

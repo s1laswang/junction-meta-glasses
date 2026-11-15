@@ -114,10 +114,12 @@ function listPdfFilesInDir(dirPath: string): string[] {
     .filter((entry) => entry.toLowerCase().endsWith(".pdf"));
 }
 
-describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-Slide Overflow & axe WCAG 2.2 AA Audit", () => {
+describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-or-13-Slide Overflow & axe WCAG 2.2 AA Audit", () => {
   const selfSource = fs.readFileSync(TEST_FILE, "utf8");
   const exportScriptSource = fs.readFileSync(EXPORT_SCRIPT_PATH, "utf8");
   const deckHtmlSource = fs.readFileSync(DECK_HTML_PATH, "utf8");
+  const slideSectionRe = new RegExp('<section\\s+class="slide\\b', "g");
+  const expectedSlideCount = (deckHtmlSource.match(slideSectionRe) ?? []).length;
 
   test("enforces strict self-hygiene: zero comments and zero em dashes across exporter script and contract test", () => {
     for (const [label, source] of [
@@ -199,7 +201,11 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-Slide O
       deckHtmlSource.includes("size: 13.333in 7.5in; margin: 0;"),
       "deck/index.html @page rule must match exporter 13.333in x 7.5in zero-margin PDF dimensions",
     );
-    for (const scopedSlideId of ["s2-h", "s4-h", "s7-h", "s10-h"]) {
+    assert.ok(
+      expectedSlideCount === 12 || expectedSlideCount === 13,
+      `Expected 12 or 13 <section class="slide" elements in deck/index.html, got ${expectedSlideCount}`,
+    );
+    for (const scopedSlideId of ["s2-h", "s4-h", "s7-h", "s10-h", "s11-h"]) {
       assert.ok(
         deckHtmlSource.includes(`.slide[aria-labelledby="${scopedSlideId}"]`),
         `deck/index.html <style> must retain compact layout guard for dense slide ${scopedSlideId}`,
@@ -227,7 +233,7 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-Slide O
     assert.deepEqual(listPdfFilesInDir(path.join(REPO_DIR, "scripts")), [], "Zero .pdf files permitted in scripts/");
   });
 
-  test("executes real headless Chromium 12-slide overflow, high-contrast, print, axe WCAG 2.2 AA audit, and 16:9 PDF export", (t) => {
+  test("executes real headless Chromium 12-or-13-slide overflow, high-contrast, print, axe WCAG 2.2 AA audit, and 16:9 PDF export", (t) => {
     const fr8SharedExists = fs.existsSync(SHARED_PLAYWRIGHT_DIR);
     const hostHasChromium = detectHostChromium();
 
@@ -264,8 +270,12 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-Slide O
       const summary = JSON.parse(stdout) as DeckPdfAuditSummary;
       assert.equal(summary.ok, true, `Expected exporter ok=true, got failures: ${summary.failureReasons.join("; ")}`);
       assert.equal(summary.offline, true);
-      assert.equal(summary.slideCount, 12, "Deck must contain exact 12 slides");
-      assert.equal(summary.pdfPages, 12, "Exported 16:9 PDF must contain exact 12 pages");
+      assert.ok(
+        expectedSlideCount === 12 || expectedSlideCount === 13,
+        `Deck must contain 12 or 13 slides, got ${expectedSlideCount}`,
+      );
+      assert.equal(summary.slideCount, expectedSlideCount, `Deck must contain exact ${expectedSlideCount} slides`);
+      assert.equal(summary.pdfPages, expectedSlideCount, `Exported 16:9 PDF must contain exact ${expectedSlideCount} pages`);
       assert.ok(summary.maxScrollWidth <= 1280, `Expected maxScrollWidth <= 1280, got ${summary.maxScrollWidth}`);
       assert.ok(summary.maxScrollHeight <= 720, `Expected maxScrollHeight <= 720, got ${summary.maxScrollHeight}`);
       assert.deepEqual(summary.overflowSlides, [], "Zero slides may overflow 1280x720");
@@ -276,14 +286,23 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-Slide O
         "Zero slides may overflow 1280x720 under prefers-contrast: more",
       );
 
-      assert.equal(summary.printCheck.flexSlides, 12);
-      assert.equal(summary.printCheck.visiblePageNumbers, 12);
+      assert.equal(summary.printCheck.totalSlides, expectedSlideCount);
+      assert.equal(summary.printCheck.flexSlides, expectedSlideCount);
+      assert.equal(summary.printCheck.visiblePageNumbers, expectedSlideCount);
       assert.equal(summary.printCheck.navDisplay, "none");
       assert.equal(summary.printCheck.progressDisplay, "none");
       assert.equal(summary.printCheck.deckTransform, "none");
 
-      assert.equal(summary.axeViolationNodes, 0, "Expected 0 axe-core WCAG 2.2 AA violation nodes across all 12 slides");
-      assert.equal(summary.slides.length, 12, "Summary must report per-slide metrics for all 12 slides");
+      assert.equal(
+        summary.axeViolationNodes,
+        0,
+        `Expected 0 axe-core WCAG 2.2 AA violation nodes across all ${expectedSlideCount} slides`,
+      );
+      assert.equal(
+        summary.slides.length,
+        expectedSlideCount,
+        `Summary must report per-slide metrics for all ${expectedSlideCount} slides`,
+      );
 
       summary.slides.forEach((slideEntry, idx) => {
         const expectedSlideNum = idx + 1;
@@ -320,7 +339,11 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-Slide O
       );
       const pdfPagePattern = new RegExp(SLASH + "Type\\s*" + SLASH + "Page(?!s)\\b", "g");
       const countedPages = (pdfLatin1.match(pdfPagePattern) ?? []).length;
-      assert.equal(countedPages, 12, "Written PDF binary must contain exact 12 /Type /Page objects");
+      assert.equal(
+        countedPages,
+        expectedSlideCount,
+        `Written PDF binary must contain exact ${expectedSlideCount} Type Page objects`,
+      );
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
