@@ -115,6 +115,31 @@ function extractSlides(deckHtml: string): Map<string, string> {
   return byId;
 }
 
+function findSlideByHeading(
+  slides: Map<string, string>,
+  expectedEyebrow: string,
+  expectedHeadingSnippet: string,
+): { id: string; html: string } {
+  const eyebrowRe = new RegExp("<p class=\"eyebrow\">([\\s\\S]*?)<\\x2fp>");
+  const headingRe = new RegExp("<h[12]\\s+id=\"(s\\d+-h)\">([\\s\\S]*?)<\\x2fh[12]>");
+  const matches: Array<{ id: string; html: string }> = [];
+  for (const [id, section] of slides.entries()) {
+    const eyebrowMatch = eyebrowRe.exec(section);
+    const headingMatch = headingRe.exec(section);
+    const eyebrowText = eyebrowMatch ? stripTags(eyebrowMatch[1]) : "";
+    const headingText = headingMatch ? stripTags(headingMatch[2]) : "";
+    if (eyebrowText.includes(expectedEyebrow) && headingText.includes(expectedHeadingSnippet)) {
+      matches.push({ id, html: section });
+    }
+  }
+  assert.equal(
+    matches.length,
+    1,
+    `Expected unique slide with eyebrow "${expectedEyebrow}" and heading "${expectedHeadingSnippet}", found ${matches.length}`,
+  );
+  return matches[0];
+}
+
 function parsePngHeader(buf: Buffer): { width: number; height: number; bitDepth: number; colorType: number } {
   assert.ok(buf.length >= 33, `Expected PNG buffer >= 33 bytes, got ${buf.length}`);
   assert.equal(buf.subarray(0, 8).equals(PNG_SIGNATURE), true, "PNG must begin with canonical 8-byte signature");
@@ -339,7 +364,7 @@ function makeServerFrame(ts: number, sharpness: number, source: "phone" | "glass
   };
 }
 
-describe("Deck Slides 3, 4, 12 + docs/HUD_SPEC.md & docs/HARDWARE_NOTES.md code-parity contract", () => {
+describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARDWARE_NOTES.md code-parity contract", () => {
   const deckHtml = readRepoFile("deck/index.html");
   const readmeMd = readRepoFile("README.md");
   const briefMd = readRepoFile("BRIEF.md");
@@ -856,18 +881,30 @@ describe("Deck Slides 3, 4, 12 + docs/HUD_SPEC.md & docs/HARDWARE_NOTES.md code-
     }
   });
 
-  test("Slides 1, 11, 12 and docs/PILOT_PLAN.md maintain team, repo, Junction tracks, and 20-tester Finnish NKL pilot parity plus strict test hygiene", () => {
+  test("Slide 1, Adoption, Team+Ask and docs/PILOT_PLAN.md maintain team, repo, Junction tracks, and 20-tester Finnish NKL pilot parity across 12- or 13-slide deck plus strict test hygiene", () => {
+    assert.ok(
+      slides.size === 12 || slides.size === 13,
+      `Expected 12 or 13 slides in deck/index.html, got ${slides.size}`,
+    );
+    for (let n = 1; n <= slides.size; n++) {
+      assert.ok(slides.has(`s${n}-h`), `Expected slide heading #s${n}-h in ${slides.size}-slide deck/index.html`);
+    }
+    const navCountMatch = new RegExp("<span\\s+id=\"count\"[^>]*>([\\s\\S]*?)<\\x2fspan>").exec(deckHtml);
+    assert.ok(navCountMatch, "Expected #count span in deck/index.html");
+    assert.equal(navCountMatch[1].trim(), `1 ${SLASH} ${slides.size}`);
+
     const slide1 = slides.get("s1-h");
-    const slide11 = slides.get("s11-h");
-    const slide12 = slides.get("s12-h");
-    assert.ok(slide1 && slide11 && slide12, "Expected Slides 1, 11, and 12 in deck/index.html");
+    const adoptionSlide = findSlideByHeading(slides, "Path to adoption", "Pilot with the people who already help");
+    const teamAskSlide = findSlideByHeading(slides, "Team and the ask", "Help us put HoldUp on 20 faces in Finland.");
+    assert.ok(slide1, "Expected Slide 1 (#s1-h) in deck/index.html");
+    assert.notEqual(adoptionSlide.id, teamAskSlide.id, "Adoption and Team+Ask must be distinct slides");
     assert.equal(slide1.includes(EM_DASH), false, "Slide 1 must contain zero em dashes");
-    assert.equal(slide11.includes(EM_DASH), false, "Slide 11 must contain zero em dashes");
-    assert.equal(slide12.includes(EM_DASH), false, "Slide 12 must contain zero em dashes");
+    assert.equal(adoptionSlide.html.includes(EM_DASH), false, `Adoption slide (#${adoptionSlide.id}) must contain zero em dashes`);
+    assert.equal(teamAskSlide.html.includes(EM_DASH), false, `Team+Ask slide (#${teamAskSlide.id}) must contain zero em dashes`);
 
     const slide1Text = stripTags(slide1);
-    const slide11Text = stripTags(slide11);
-    const slide12Text = stripTags(slide12);
+    const adoptionText = stripTags(adoptionSlide.html);
+    const teamAskText = stripTags(teamAskSlide.html);
 
     const expectedTeamMembers = [
       "Silas Wang",
@@ -877,29 +914,29 @@ describe("Deck Slides 3, 4, 12 + docs/HUD_SPEC.md & docs/HARDWARE_NOTES.md code-
     ];
     for (const member of expectedTeamMembers) {
       assert.ok(slide1Text.includes(member), `Slide 1 (#s1-h) footer must name "${member}"`);
-      assert.ok(slide12Text.includes(member), `Slide 12 (#s12-h) Team card must name "${member}"`);
+      assert.ok(teamAskText.includes(member), `Team+Ask slide (#${teamAskSlide.id}) Team card must name "${member}"`);
     }
 
-    const teamCardMatch = new RegExp("<h3>Team<\\x2fh3>\\s*<ul class=\"bul\">([\\s\\S]*?)<\\x2ful>").exec(slide12);
-    assert.ok(teamCardMatch, "Slide 12 must contain <h3>Team</h3> bullet list");
+    const teamCardMatch = new RegExp("<h3>Team<\\x2fh3>\\s*<ul class=\"bul\">([\\s\\S]*?)<\\x2ful>").exec(teamAskSlide.html);
+    assert.ok(teamCardMatch, `Team+Ask slide (#${teamAskSlide.id}) must contain <h3>Team</h3> bullet list`);
     const teamBullets = [...teamCardMatch[1].matchAll(new RegExp("<li>([\\s\\S]*?)<\\x2fli>", "g"))].map((m) => stripTags(m[1]));
-    assert.ok(teamBullets.length >= 4, "Slide 12 Team card must include bullets for all 4 human teammates");
+    assert.ok(teamBullets.length >= 4, `Team+Ask slide (#${teamAskSlide.id}) Team card must include bullets for all 4 human teammates`);
     for (const member of expectedTeamMembers) {
-      assert.ok(teamBullets.some((b) => b.startsWith(`${member}:`)), `Slide 12 Team card must describe role for "${member}"`);
+      assert.ok(teamBullets.some((b) => b.startsWith(`${member}:`)), `Team+Ask slide (#${teamAskSlide.id}) Team card must describe role for "${member}"`);
     }
 
     const repoSlug = ["github.com", "s1laswang", "junction-meta-glasses"].join(SLASH);
-    assert.ok(slide12Text.includes(repoSlug), `Slide 12 must display ${repoSlug}`);
+    assert.ok(teamAskText.includes(repoSlug), `Team+Ask slide (#${teamAskSlide.id}) must display ${repoSlug}`);
     assert.ok(readmeMd.includes(repoSlug), `README.md must display ${repoSlug}`);
     assert.ok(hardwareNotesMd.includes(repoSlug), `docs/HARDWARE_NOTES.md must display ${repoSlug}`);
 
     assert.ok(slide1Text.includes("Junction 2026") && slide1Text.includes("Meta AI glasses") && slide1Text.includes("Gemini"));
     assert.ok(
-      slide12Text.includes("Junction 2026") &&
-        slide12Text.includes("Meta") &&
-        slide12Text.includes("AI Glasses for Everyone, Everyday") &&
-        slide12Text.includes("Google DeepMind") &&
-        slide12Text.includes("Best Use of Gemini API"),
+      teamAskText.includes("Junction 2026") &&
+        teamAskText.includes("Meta") &&
+        teamAskText.includes("AI Glasses for Everyone, Everyday") &&
+        teamAskText.includes("Google DeepMind") &&
+        teamAskText.includes("Best Use of Gemini API"),
     );
     assert.ok(
       readmeMd.includes('Meta "AI Glasses for Everyone, Everyday"') &&
@@ -907,20 +944,20 @@ describe("Deck Slides 3, 4, 12 + docs/HUD_SPEC.md & docs/HARDWARE_NOTES.md code-
     );
     assert.ok(briefMd.includes("Meta: AI Glasses for Everyone, Everyday (Junction 2026)"));
 
-    const askCardMatch = new RegExp("<h3>The ask<\\x2fh3>\\s*<ul class=\"bul\">([\\s\\S]*?)<\\x2ful>").exec(slide12);
-    assert.ok(askCardMatch, "Slide 12 must contain <h3>The ask</h3> bullet list");
+    const askCardMatch = new RegExp("<h3>The ask<\\x2fh3>\\s*<ul class=\"bul\">([\\s\\S]*?)<\\x2ful>").exec(teamAskSlide.html);
+    assert.ok(askCardMatch, `Team+Ask slide (#${teamAskSlide.id}) must contain <h3>The ask</h3> bullet list`);
     const askText = stripTags(askCardMatch[1]);
-    assert.ok(slide12Text.includes("Help us put HoldUp on 20 faces in Finland."));
+    assert.ok(teamAskText.includes("Help us put HoldUp on 20 faces in Finland."));
     assert.ok(askText.includes("Meta:") && askText.includes("Device Access Toolkit") && askText.includes("Display Web Apps") && askText.includes("20 testers"));
     assert.ok(askText.includes("Google DeepMind:") && askText.includes("Gemini API credits") && askText.includes("Live API capacity in the EU"));
     assert.ok(askText.includes("Everyone:") && askText.includes("Näkövammaisten liitto") && askText.includes("pharmacy chain") && askText.includes("wellbeing services county"));
 
     assert.ok(
-      slide11Text.includes("Näkövammaisten liitto") &&
-        slide11Text.includes("Finnish Federation of the Visually Impaired") &&
-        slide11Text.includes("4-week home pilot with 20 members") &&
-        slide11Text.includes("Pharmacies") &&
-        slide11Text.includes("Home-care nurses"),
+      adoptionText.includes("Näkövammaisten liitto") &&
+        adoptionText.includes("Finnish Federation of the Visually Impaired") &&
+        adoptionText.includes("4-week home pilot with 20 members") &&
+        adoptionText.includes("Pharmacies") &&
+        adoptionText.includes("Home-care nurses"),
     );
     assert.ok(
       pilotPlanMd.includes("Näkövammaisten liitto") &&
