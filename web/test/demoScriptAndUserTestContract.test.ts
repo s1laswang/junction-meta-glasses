@@ -171,11 +171,40 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
     assert.ok(lastResortSection.includes("?mock=1"), "Last-resort fallbacks must document ?mock=1");
     assert.ok(lastResortSection.includes("backup video"), "Last-resort fallbacks must document backup video");
     assert.ok(lastResortSection.includes("/hud/"), "Last-resort fallbacks must document /hud/ laptop view");
+
+    assert.ok(
+      demoScript.includes("**Live is down**") &&
+        demoScript.includes("Snapshot") &&
+        demoScript.includes("**Check label**"),
+      "DEMO_SCRIPT.md must document Snapshot fallback when Gemini Live is down",
+    );
+    const snapshotUsesGlassesRingOrPhone =
+      (demoScript.includes("POST /api/verify") && demoScript.includes("hub.ring")) ||
+      demoScript.includes("only use the phone's own frames");
+    assert.equal(
+      snapshotUsesGlassesRingOrPhone,
+      true,
+      "DEMO_SCRIPT.md Snapshot fallback must document frame source behavior",
+    );
+    assert.ok(
+      demoScript.includes('"Back online"') &&
+        demoScript.includes("**Snapshot**") &&
+        demoScript.includes('"Live assistant connected"'),
+      "DEMO_SCRIPT.md must document offline-to-online recovery progression",
+    );
+    const reconnectDocumentsCueOrNote =
+      demoScript.includes("back_online") || demoScript.includes("only spoken to screen-reader users");
+    assert.equal(
+      reconnectDocumentsCueOrNote,
+      true,
+      "DEMO_SCRIPT.md must document spoken or screen-reader behavior when returning online",
+    );
   });
 
   test("aligns spoken verdicts in DEMO_SCRIPT.md with server/src/safety.ts and web/src/lib/verdicts.ts", () => {
     const profile = demoProfile();
-    const fixedNow = new Date("2026-11-15T09:15:00+02:00");
+    const eveningNow = new Date("2026-11-15T19:15:00+02:00");
+    const morningNow = new Date("2026-11-15T09:15:00+02:00");
 
     const amlodipineRead: LabelRead = {
       ...emptyRead("medication"),
@@ -185,11 +214,17 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
       expiry: { value: "2027-08", confidence: 0.9 },
       readability: 0.92,
     };
-    const serverMatch = checkLabelText(amlodipineRead, profile, fixedNow);
-    const clientMatch = matchVerdict(profile, profile.meds[0], { now: fixedNow });
+    const serverMatch = checkLabelText(amlodipineRead, profile, eveningNow);
+    const serverMorningMatch = checkLabelText(amlodipineRead, profile, morningNow);
+    const clientMatch = matchVerdict(profile, profile.meds[0], { now: eveningNow });
     assert.equal(serverMatch.level, "match");
+    assert.equal(serverMorningMatch.level, "match");
     assert.equal(clientMatch.level, "match");
     assert.equal(serverMatch.speech, "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.");
+    assert.equal(
+      serverMorningMatch.speech,
+      "Yes, Amlodipine 5 mg, your evening pill, but it's only morning now. You haven't taken it today.",
+    );
     assert.equal(clientMatch.speech, "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.");
     for (const phrase of ["Amlodipine", "5 mg", "your evening pill", "You haven't taken it today."]) {
       assert.ok(demoScript.includes(phrase), `DEMO_SCRIPT.md match beat must include "${phrase}"`);
@@ -203,7 +238,7 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
       expiry: { value: "2027-08", confidence: 0.88 },
       readability: 0.9,
     };
-    const serverIbuprofen = checkLabelText(ibuprofenRead, profile, fixedNow);
+    const serverIbuprofen = checkLabelText(ibuprofenRead, profile, eveningNow);
     const mockIbuprofen = mockWarningIbuprofen();
     assert.equal(serverIbuprofen.level, "warning");
     assert.equal(mockIbuprofen.level, "warning");
@@ -224,7 +259,7 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
       strength: { value: null, confidence: 0.31 },
       readability: 0.72,
     };
-    const serverUnsure = checkLabelText(metforminTapedRead, profile, fixedNow);
+    const serverUnsure = checkLabelText(metforminTapedRead, profile, eveningNow);
     const mockUnsure = mockUnsureStrength();
     assert.equal(serverUnsure.level, "unsure");
     assert.equal(mockUnsure.level, "unsure");
@@ -248,7 +283,7 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
       ...profile,
       doseLog: [{ medId: "amlodipine", ts: new Date("2026-11-15T08:30:00+02:00").getTime() }],
     };
-    const offlineDoubleDose = matchVerdict(loggedProfile, profile.meds[0], { via: "barcode", now: fixedNow });
+    const offlineDoubleDose = matchVerdict(loggedProfile, profile.meds[0], { via: "barcode", now: eveningNow });
     assert.equal(offlineDoubleDose.level, "warning");
     assert.equal(offlineDoubleDose.takenToday, true);
     assert.ok(
@@ -348,9 +383,14 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
     assert.ok(checklistSection.includes("avoid: NSAIDs"));
     assert.ok(checklistSection.includes("no amlodipine entry today"));
 
-    for (let s = 1; s <= 12; s += 1) {
+    for (let s = 1; s <= 13; s += 1) {
       assert.ok(deckHtml.includes(`id="s${s}-h"`), `deck/index.html must define #s${s}-h`);
     }
+    assert.match(
+      extractSlideSection(deckHtml, 9),
+      /Decision support, not diagnosis/i,
+      "Slide 9 in deck/index.html must cover Decision support, not diagnosis",
+    );
 
     const referencedSlides = new Set<number>();
     for (const m of demoScript.matchAll(/\bslides?\s+(\d+(?:\s*,\s*\d+)*)/gi)) {
@@ -359,18 +399,18 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
     const sortedReferenced = [...referencedSlides].sort((a, b) => a - b);
     assert.deepEqual(
       sortedReferenced,
-      [1, 7, 8, 9, 10, 11, 12],
-      "DEMO_SCRIPT.md must reference exact deck slides 1, 7, 8, 9, 10, 11, and 12",
+      [1, 7, 8, 10, 11, 12, 13],
+      "DEMO_SCRIPT.md must reference exact deck slides 1, 7, 8, 10, 11, 12, and 13",
     );
 
     const expectedSlideKeywords: Record<number, RegExp> = {
       1: /Which one is the evening pill\?|Three white boxes/i,
       7: /Speculative verify|2\.1 s p50/i,
       8: /Consent first|45 s|Profile lives on the phone/i,
-      9: /Resilience|Offline mode|snapshot mode/i,
-      10: /1,740|0<small>\/754<\/small>|4,730/i,
-      11: /Näkövammaisten liitto|Pharmacies/i,
-      12: /Help us put HoldUp on 20 faces in Finland|Hold it up\. Know it's the right one\./i,
+      10: /Resilience|Offline mode|snapshot mode/i,
+      11: /1,740|0<small>\/754<\/small>|4,730/i,
+      12: /Näkövammaisten liitto|Pharmacies/i,
+      13: /Help us put HoldUp on 20 faces in Finland|Hold it up\. Know it's the right one\./i,
     };
     for (const slideNum of sortedReferenced) {
       const slideSection = extractSlideSection(deckHtml, slideNum);
