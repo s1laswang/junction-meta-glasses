@@ -227,6 +227,12 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
   hub.clients.add(ws);
   log("ws.live.connect", { session: shortId(id) });
   const err = (code: string, message: string) => safeSend(ws, JSON.stringify({ type: "error", code, message, recoverable: true }));
+  const syncSource = (source: unknown) => {
+    if (source !== "phone" && source !== "glasses") return false;
+    hub.source = source;
+    hub.emit({ type: "device", device: { ...(hub.device ?? { connected: source === "glasses", worn: source === "glasses" ? true : null, battery: null, streaming: false }), source } }, { clients: false });
+    return true;
+  };
 
   ws.on("message", (raw, isBinary) => {
     if (isBinary) return err("bad_input", "send JSON text frames");
@@ -237,24 +243,14 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
       case "start": {
         hub.profile = toProfile(msg.profile);
         if (msg.lang) hub.profile.lang = String(msg.lang).slice(0, 16);
-        if (live?.active) {
-          if (msg.source === "phone" || msg.source === "glasses") {
-            hub.source = msg.source;
-            hub.emit({ type: "device", device: { ...(hub.device ?? { connected: msg.source === "glasses", worn: msg.source === "glasses" ? true : null, battery: null, streaming: false }), source: msg.source } }, { clients: false });
-          }
-          log("ws.live.profile_update", { session: shortId(id) });
-          return;
-        }
+        if (live?.active) { syncSource(msg.source); log("ws.live.profile_update", { session: shortId(id) }); return; }
         // feature flags: server FEATURES intersected with what the phone asked for (all, if it didn't say)
         const want = Array.isArray(msg.features) ? new Set<string>(msg.features) : null;
         hub.features = new Set(env.features.filter((f) => !want || want.has(f)));
         const proxy = new LiveProxy(hub, { lang: hub.profile.lang || "en", voice: msg.voice !== false });
         hub.live = proxy;
         markLatest(hub);
-        if (msg.source === "phone" || msg.source === "glasses") {
-          hub.source = msg.source;
-          hub.emit({ type: "device", device: { ...(hub.device ?? { connected: msg.source === "glasses", worn: msg.source === "glasses", battery: null, streaming: false }), source: msg.source } }, { clients: false });
-        }
+        syncSource(msg.source);
         void proxy.start();
         return;
       }
@@ -293,11 +289,7 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
         if (typeof msg.proposalId === "string") live?.resolveProposal(msg.proposalId, msg.accepted === true, msg.med);
         return;
       case "source":
-        if (msg.source === "phone" || msg.source === "glasses") {
-          hub.source = msg.source;
-          hub.emit({ type: "device", device: { ...(hub.device ?? { connected: msg.source === "glasses", worn: msg.source === "glasses" ? true : null, battery: null, streaming: false }), source: msg.source } }, { clients: false });
-          log("ws.live.source", { session: shortId(id), source: msg.source });
-        }
+        if (syncSource(msg.source)) log("ws.live.source", { session: shortId(id), source: msg.source });
         return;
       default:
         err("bad_input", "unknown message type");
