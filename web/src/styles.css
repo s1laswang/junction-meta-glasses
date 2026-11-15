@@ -145,6 +145,8 @@ a {
   max-width: 640px;
   margin: 0 auto;
   min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
@@ -202,6 +204,28 @@ html:has(.tabs) {
 }
 html:has(.tabs):has(.bigbtn-wrap) {
   scroll-padding-bottom: calc(66px + 140px + 16px + env(safe-area-inset-bottom));
+}
+/* App shell (Sun 15 Nov): the page itself no longer scrolls. `main` is the scroll container and the tab bar is a
+   normal flex child below it, so no control can sit underneath the tab bar (axe target-size, WCAG 2.5.8). */
+.app > main {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-bottom: 16px;
+}
+.app > main:has(.bigbtn-wrap) {
+  scroll-padding-bottom: calc(140px + 16px);
+}
+.app > .tabs {
+  position: static;
+  flex: none;
+}
+.app > main .bigbtn-wrap {
+  bottom: 0;
+}
+/* verdict actions (Repeat / I took it / Dismiss) must scroll clear of the sticky Start/Stop bar */
+.verdict .actions {
+  scroll-margin-bottom: calc(140px + 16px);
 }
 
 /* ---------- tabs (bottom nav) ---------- */
