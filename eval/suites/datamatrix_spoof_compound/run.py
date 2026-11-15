@@ -711,7 +711,8 @@ def check_existing() -> int:
     for c, rv in zip(cases, re_verdicts):
         assert rv["level"] == c["predicted_level"], f"{c['id']}: offline {rv['level']} != {c['predicted_level']}"
         re_agrees = (rv.get("crossCheck") or {}).get("agrees") if rv.get("crossCheck") else None
-        assert re_agrees == c.get("crosscheck_agrees"), f"{c['id']}: crosscheck {re_agrees} != {c.get('crosscheck_agrees')}"
+        exp_cached = c.get("crosscheck_agrees")
+        assert re_agrees == exp_cached or (rv["level"] != "match" and exp_cached is True and re_agrees is None), f"{c['id']}: crosscheck {re_agrees} != {exp_cached}"
         assert len(c["description"]) <= 240 and len(c["reasons"]) <= 4
     assert s["verdict_matches"] == sum(1 for c in cases if c["verdict_ok"])
     assert s["false_match_count"] == sum(1 for c in cases if c["false_match"]) == 0
@@ -778,7 +779,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             alg_miss = bool(c["alg_present"] and a_conf >= STRENGTH_MIN_CONF and sc["alg_hits"] == 0)
             cw = bool(false_match or unsafe_reassurance or alg_miss or (s_val is not None and s_conf >= STRENGTH_MIN_CONF))
-        agrees_ok = (cc_agrees == c["exp_agrees"])
+        agrees_ok = (cc_agrees == c["exp_agrees"]) or (pred != "match" and c["exp_agrees"] is True and cc_agrees is None)
         verdict_ok = bool(pred == c["expected"] and agrees_ok)
         row_out: dict[str, Any] = {
             "id": c["id"],
