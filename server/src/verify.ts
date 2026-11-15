@@ -160,7 +160,7 @@ export async function callJson<T>(feature: string, systemInstruction: string, sc
 export type VerifyResult = { verdict: Verdict; model: string | null; latencyMs: number; frames: number };
 export async function verify(frames: string[], profile: Profile, question?: string, feature = "verify", code?: Gs1Code): Promise<VerifyResult> {
   const r = await readLabel(frames.slice(0, 3), question, feature);
-  const verdict = checkLabel(r.read, profile, new Date(), code);
+  const verdict = checkLabel(r.read, profile, new Date(), code, question);
   if (!r.model) { verdict.level = "unsure"; verdict.reasons.push("reader unavailable"); }
   return { verdict, model: r.model, latencyMs: r.latencyMs, frames: Math.min(3, frames.length) };
 }
