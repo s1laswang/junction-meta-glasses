@@ -133,6 +133,7 @@ export class LiveProxy implements LiveLike {
   private modelsUsed = new Set<string>();
 
   constructor(private hub: Hub, private opts: Opts) {
+    if (opts.lang) this.hub.profile.lang = opts.lang;
     const r = hub.resume;
     // a phone that reconnects with the same session id within 10 min resumes the same Gemini context
     if (r && Date.now() - r.at < 10 * 60_000) {
@@ -141,6 +142,7 @@ export class LiveProxy implements LiveLike {
   }
 
   get active() { return !this.stopped; }
+  private get currentLang(): string { return this.hub.profile.lang || this.opts.lang || "en"; }
   private send(msg: ServerMsg) { this.hub.emit(msg); }
 
   async start() {
@@ -168,7 +170,7 @@ export class LiveProxy implements LiveLike {
             model,
             config: {
               responseModalities: [Modality.AUDIO],
-              systemInstruction: systemInstruction(this.hub, this.opts.lang),
+              systemInstruction: systemInstruction(this.hub, this.currentLang),
               tools: [{ functionDeclarations: toolsFor(this.hub.features) }],
               inputAudioTranscription: {},
               outputAudioTranscription: {},
@@ -241,7 +243,16 @@ export class LiveProxy implements LiveLike {
       return;
     }
     if (m.toolCall?.functionCalls) for (const fc of m.toolCall.functionCalls) void this.onTool(fc);
-    if (m.toolCallCancellation?.ids) for (const id of m.toolCallCancellation.ids) this.cancelled.add(id);
+    if (m.toolCallCancellation?.ids) {
+      for (const id of m.toolCallCancellation.ids) {
+        this.cancelled.delete(id);
+        if (this.cancelled.size >= 64) {
+          const oldest = this.cancelled.values().next().value;
+          if (oldest !== undefined) this.cancelled.delete(oldest);
+        }
+        this.cancelled.add(id);
+      }
+    }
 
     const sc = m.serverContent;
     if (!sc) return;
@@ -329,8 +340,8 @@ export class LiveProxy implements LiveLike {
           this.respond(fc, {
             level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
             guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
-            ...leadFor(this.opts.lang, v.level),
-            instruction: speakInstruction(this.opts.lang, "No disclaimer, add nothing."),
+            ...leadFor(this.currentLang, v.level),
+            instruction: speakInstruction(this.currentLang, "No disclaimer, add nothing."),
           });
           log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t, dm: !!v.crossCheck });
           const codeConflict = v.crossCheck?.agrees === false;
@@ -355,8 +366,8 @@ export class LiveProxy implements LiveLike {
           this.respond(fc, {
             mode: "scene", level: v.level, speech: v.speech,
             items: (v.items ?? []).map((i) => ({ position: i.position, level: i.level, headline: i.headline })),
-            ...leadFor(this.opts.lang, v.level),
-            instruction: speakInstruction(this.opts.lang, "If they pick one up, call verify_label."),
+            ...leadFor(this.currentLang, v.level),
+            instruction: speakInstruction(this.currentLang, "If they pick one up, call verify_label."),
           });
           log("live.find_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_items: v.items?.length ?? 0 });
         } finally {
@@ -402,7 +413,21 @@ export class LiveProxy implements LiveLike {
     if (exp) {
       return { ok: false, reason: "expired", speech: "This pack is expired. Please check an in-date pack before adding it to your list." };
     }
-    const schedule = (Array.isArray(args.schedule) ? args.schedule : []).filter((s): s is string => typeof s === "string" && !!s.trim()).map((s) => s.trim().slice(0, 40)).slice(0, 8);
+    const schedKey = (s: string) => {
+      const m = /^(\d{1,2})[:.](\d{2})$/.exec(s);
+      return m && +m[1] <= 23 && +m[2] <= 59 ? `${String(+m[1]).padStart(2, "0")}:${m[2]}` : s.toLowerCase().replace(/\s+/g, " ");
+    };
+    const seenSlots = new Set<string>();
+    const schedule = (Array.isArray(args.schedule) ? args.schedule : [])
+      .filter((s): s is string => typeof s === "string" && !!s.trim())
+      .map((s) => s.trim().slice(0, 40))
+      .filter((s) => {
+        const k = schedKey(s);
+        if (seenSlots.has(k)) return false;
+        seenSlots.add(k);
+        return true;
+      })
+      .slice(0, 8);
     if (!schedule.length) return { ok: false, reason: "need_schedule", instruction: "Ask the user when they take it, then call add_medication again." };
     const ingredient = read.ingredient.value && read.ingredient.confidence >= MATCH_NAME_MIN_CONF
       ? read.ingredient.value.toLowerCase().split(/\s*[,/+;&]\s*/).map((s) => spokenIngredient(s)).filter(Boolean).join(" / ")
