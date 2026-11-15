@@ -1,0 +1,234 @@
+{
+  "tool": "axe-core via @axe-core/playwright",
+  "tags": "WCAG 2.0/2.1/2.2 A+AA",
+  "base": "http://localhost:34185",
+  "when": "2026-11-15T01:00:24.984Z",
+  "totalViolationNodes": 0,
+  "screenCount": 32,
+  "results": [
+    {
+      "label": "phone: welcome",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 18,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: consent card 1",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 21,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: consent card 2",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 21,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: consent card 3",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 21,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: permission step",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 20,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: permission recovery",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 22,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: check idle",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 27,
+      "incomplete": 2
+    },
+    {
+      "label": "phone: check running / coaching",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 27,
+      "incomplete": 2
+    },
+    {
+      "label": "phone: verdict match",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 32,
+      "incomplete": 2
+    },
+    {
+      "label": "phone: verdict warning",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 32,
+      "incomplete": 2
+    },
+    {
+      "label": "phone: verdict unsure",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 32,
+      "incomplete": 2
+    },
+    {
+      "label": "phone: scene 3-box",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 32,
+      "incomplete": 2
+    },
+    {
+      "label": "phone: add-sheet modal",
+      "url": "http://localhost:34185/?mock=1",
+      "violations": [],
+      "passes": 16,
+      "incomplete": 1
+    },
+    {
+      "label": "phone: device panel",
+      "url": "http://localhost:34185/?mock=1&debug=1",
+      "violations": [],
+      "passes": 29,
+      "incomplete": 2
+    },
+    {
+      "label": "phone: profile",
+      "url": "http://localhost:34185/?mock=1&debug=1",
+      "violations": [],
+      "passes": 28,
+      "incomplete": 1
+    },
+    {
+      "label": "phone: med-editor modal",
+      "url": "http://localhost:34185/?mock=1&debug=1",
+      "violations": [],
+      "passes": 17,
+      "incomplete": 0
+    },
+    {
+      "label": "phone: privacy",
+      "url": "http://localhost:34185/?mock=1&debug=1",
+      "violations": [],
+      "passes": 26,
+      "incomplete": 1
+    },
+    {
+      "label": "phone: access-key",
+      "url": "http://localhost:34185/",
+      "violations": [],
+      "passes": 23,
+      "incomplete": 0
+    },
+    {
+      "label": "hud: idle",
+      "url": "http://localhost:34185/hud/?mock=1",
+      "violations": [],
+      "passes": 15,
+      "incomplete": 0
+    },
+    {
+      "label": "hud: verdict",
+      "url": "http://localhost:34185/hud/?mock=1",
+      "violations": [],
+      "passes": 16,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slides",
+      "url": "http://localhost:39547/deck/#1",
+      "violations": [],
+      "passes": 21,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 2",
+      "url": "http://localhost:39547/deck/#2",
+      "violations": [],
+      "passes": 19,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 3",
+      "url": "http://localhost:39547/deck/#3",
+      "violations": [],
+      "passes": 17,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 4",
+      "url": "http://localhost:39547/deck/#4",
+      "violations": [],
+      "passes": 24,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 5",
+      "url": "http://localhost:39547/deck/#5",
+      "violations": [],
+      "passes": 19,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 6",
+      "url": "http://localhost:39547/deck/#6",
+      "violations": [],
+      "passes": 21,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 7",
+      "url": "http://localhost:39547/deck/#7",
+      "violations": [],
+      "passes": 23,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 8",
+      "url": "http://localhost:39547/deck/#8",
+      "violations": [],
+      "passes": 19,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 9",
+      "url": "http://localhost:39547/deck/#9",
+      "violations": [],
+      "passes": 19,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 10",
+      "url": "http://localhost:39547/deck/#10",
+      "violations": [],
+      "passes": 19,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 11",
+      "url": "http://localhost:39547/deck/#11",
+      "violations": [],
+      "passes": 19,
+      "incomplete": 1
+    },
+    {
+      "label": "deck: slide 12",
+      "url": "http://localhost:39547/deck/#12",
+      "violations": [],
+      "passes": 19,
+      "incomplete": 1
+    }
+  ]
+}
