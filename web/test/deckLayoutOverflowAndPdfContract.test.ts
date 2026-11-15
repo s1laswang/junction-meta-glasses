@@ -205,10 +205,14 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-or-13-S
       expectedSlideCount === 12 || expectedSlideCount === 13,
       `Expected 12 or 13 <section class="slide" elements in deck/index.html, got ${expectedSlideCount}`,
     );
-    for (const scopedSlideId of ["s2-h", "s4-h", "s7-h", "s10-h", "s11-h"]) {
+    assert.ok(
+      exportScriptSource.includes("addStyleTag"),
+      "Exporter must inject export density stylesheet via page.addStyleTag without modifying deck/index.html",
+    );
+    for (const scopedSlideId of ["s2-h", "s4-h", "s5-h", "s7-h", "s10-h", "s11-h"]) {
       assert.ok(
-        deckHtmlSource.includes(`.slide[aria-labelledby="${scopedSlideId}"]`),
-        `deck/index.html <style> must retain compact layout guard for dense slide ${scopedSlideId}`,
+        exportScriptSource.includes(`.slide[aria-labelledby="${scopedSlideId}"]`),
+        `scripts/export-deck-pdf.mjs must retain compact export layout guard for dense slide ${scopedSlideId}`,
       );
     }
   });

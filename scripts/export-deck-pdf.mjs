@@ -17,6 +17,49 @@ const VIEWPORT_HEIGHT = 720;
 const FONT_TIMEOUT_MS = 1500;
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
+const EXPORT_DENSITY_CSS = [
+  '.slide[aria-labelledby="s2-h"] { padding-top: 32px; gap: 12px; }',
+  '.slide[aria-labelledby="s2-h"] .card { padding: 12px 16px; gap: 5px; }',
+  '.slide[aria-labelledby="s2-h"] .bul li { font-size: 15.5px; line-height: 1.28; }',
+  '.slide[aria-labelledby="s4-h"] { padding-top: 28px; padding-bottom: 48px; gap: 10px; }',
+  '.slide[aria-labelledby="s4-h"] h2 { font-size: 32px; }',
+  '.slide[aria-labelledby="s4-h"] .loop { gap: 10px; }',
+  '.slide[aria-labelledby="s4-h"] .step { padding: 10px 11px; gap: 4px; }',
+  '.slide[aria-labelledby="s4-h"] .step .n { font-size: 13px; }',
+  '.slide[aria-labelledby="s4-h"] .step h3 { font-size: 18px; }',
+  '.slide[aria-labelledby="s4-h"] .step p { font-size: 13px; line-height: 1.24; }',
+  '.slide[aria-labelledby="s4-h"] .verdicts { gap: 7px; }',
+  '.slide[aria-labelledby="s4-h"] .vrow { padding: 7px 14px; }',
+  '.slide[aria-labelledby="s4-h"] .vrow q { font-size: 15.5px; line-height: 1.26; }',
+  '.slide[aria-labelledby="s5-h"] ol.card { gap: 11px !important; }',
+  '.slide[aria-labelledby="s5-h"] ol.card li.body { font-size: 18.5px; line-height: 1.32; }',
+  '.slide[aria-labelledby="s7-h"] { padding-top: 26px; padding-bottom: 46px; gap: 9px; }',
+  '.slide[aria-labelledby="s7-h"] h2 { font-size: 30px; }',
+  '.slide[aria-labelledby="s7-h"] h3 { font-size: 17.5px; }',
+  '.slide[aria-labelledby="s7-h"] .grid3 { gap: 14px; }',
+  '.slide[aria-labelledby="s7-h"] .card { padding: 9px 14px; gap: 4px; }',
+  '.slide[aria-labelledby="s7-h"] .card .small { font-size: 13.5px; line-height: 1.24; }',
+  '.slide[aria-labelledby="s7-h"] .bul li { font-size: 13.5px; line-height: 1.22; }',
+  '.slide[aria-labelledby="s7-h"] .bul li + li { margin-top: 3px; }',
+  '.slide[aria-labelledby="s7-h"] .card > p { font-size: 13.5px !important; line-height: 1.24; }',
+  '.slide[aria-labelledby="s7-h"] .bars { gap: 6px; }',
+  '.slide[aria-labelledby="s7-h"] .bar .lab { font-size: 12.5px; line-height: 1.12; }',
+  '.slide[aria-labelledby="s7-h"] .bar .lab b { font-size: 15px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop), .slide[aria-labelledby="s11-h"]:has(.loop) { padding-top: 26px; padding-bottom: 46px; gap: 8px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) h2, .slide[aria-labelledby="s11-h"]:has(.loop) h2 { font-size: 30px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) h3, .slide[aria-labelledby="s11-h"]:has(.loop) h3 { font-size: 16.5px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .step, .slide[aria-labelledby="s11-h"]:has(.loop) .step { padding: 8px 10px; gap: 3px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .step .n, .slide[aria-labelledby="s11-h"]:has(.loop) .step .n { font-size: 12.5px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .step h3, .slide[aria-labelledby="s11-h"]:has(.loop) .step h3 { font-size: 16.5px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .step p, .slide[aria-labelledby="s11-h"]:has(.loop) .step p { font-size: 12.8px; line-height: 1.2; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .grid4, .slide[aria-labelledby="s11-h"]:has(.loop) .grid4 { gap: 12px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .grid2, .slide[aria-labelledby="s11-h"]:has(.loop) .grid2 { gap: 14px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .card, .slide[aria-labelledby="s11-h"]:has(.loop) .card { padding: 8px 12px; gap: 4px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .stat .num, .slide[aria-labelledby="s11-h"]:has(.loop) .stat .num { font-size: 32px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .stat .num small, .slide[aria-labelledby="s11-h"]:has(.loop) .stat .num small { font-size: 20px; }',
+  '.slide[aria-labelledby="s10-h"]:has(.loop) .stat p, .slide[aria-labelledby="s10-h"]:has(.loop) .card p, .slide[aria-labelledby="s11-h"]:has(.loop) .stat p, .slide[aria-labelledby="s11-h"]:has(.loop) .card p { font-size: 13px; line-height: 1.2; }',
+].join("\n");
+
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const REPO_ROOT = path.resolve(path.dirname(SCRIPT_PATH), "..");
 
@@ -204,6 +247,7 @@ async function run() {
       waitUntil: "domcontentloaded",
       timeout: 10000,
     });
+    await page.addStyleTag({ content: EXPORT_DENSITY_CSS });
 
     if (!offline) {
       await Promise.race([
