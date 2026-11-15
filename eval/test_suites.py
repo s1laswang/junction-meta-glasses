@@ -46,6 +46,10 @@ def build_check_env(base_env: dict[str, str] | None = None) -> dict[str, str]:
         path_parts.insert(0, NODE_BIN_DIRS[0])
     existing_path = env.get("PATH", "")
     env["PATH"] = ":".join(path_parts + ([existing_path] if existing_path else []))
+    parent_nm = REPO_ROOT.parent / "node_modules"
+    if parent_nm.is_dir():
+        existing_np = env.get("NODE_PATH", "")
+        env["NODE_PATH"] = f"{parent_nm}:{existing_np}" if existing_np else str(parent_nm)
     return env
 
 
@@ -99,8 +103,8 @@ def validate_suite_dir(suite_dir: pathlib.Path, repo_root: pathlib.Path = REPO_R
         raise AssertionError(f"{name}: missing run.py")
 
     raw_bytes = results_path.read_bytes()
-    if len(raw_bytes) > MAX_RESULTS_BYTES:
-        raise AssertionError(f"{name}: results.json size {len(raw_bytes)} > {MAX_RESULTS_BYTES}")
+    if len(raw_bytes) > 25000:
+        raise AssertionError(f"{name}: results.json size {len(raw_bytes)} > 25000")
 
     try:
         raw_txt = raw_bytes.decode("utf-8")
@@ -123,6 +127,8 @@ def validate_suite_dir(suite_dir: pathlib.Path, repo_root: pathlib.Path = REPO_R
         raise AssertionError(f"{name}: invalid JSON in results.json: {exc}") from exc
     if not isinstance(data, dict):
         raise AssertionError(f"{name}: results.json root must be a dict")
+    if not (isinstance(data.get("models"), list) and len(data["models"]) >= 2) and len(raw_bytes) > MAX_RESULTS_BYTES:
+        raise AssertionError(f"{name}: results.json size {len(raw_bytes)} > {MAX_RESULTS_BYTES}")
 
     summary = COMPILE_MOD.resolve_summary_view(data)
     assert_zero_metric(

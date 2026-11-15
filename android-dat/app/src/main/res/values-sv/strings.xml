@@ -4,4 +4,17 @@
     <string name="notification_channel_name">Kameraström från glasögon</string>
     <string name="notification_title">HoldUp använder kameran i dina glasögon</string>
     <string name="notification_body">Bildrutor skickas endast till din HoldUp-session. Öppna appen för att stoppa.</string>
+    <string name="a11y_bridge_heading">HoldUp Bridge, kamerabrygga för glasögon</string>
+    <string name="a11y_glasses_none">Inga glasögon hittades</string>
+    <string name="a11y_state_post_idle">Inte skickad ännu</string>
+    <string name="a11y_network_ok">Servern kan nås</string>
+    <string name="a11y_network_retrying">Anslutningen misslyckades, försöker igen</string>
+    <string name="a11y_network_idle">Vänteläge, inväntar första överföringen</string>
+    <string name="a11y_dismiss_error">Stäng felmeddelande</string>
+    <string name="a11y_state_glasses_connected">Glasögon anslutna</string>
+    <string name="a11y_state_glasses_connecting">Ansluter till glasögon</string>
+    <string name="a11y_state_glasses_disconnected">Glasögon frånkopplade</string>
+    <string name="a11y_state_stream_active">Kameraström aktiv</string>
+    <string name="a11y_state_stream_starting">Kameraström startar</string>
+    <string name="a11y_state_stream_stopped">Kameraström stoppad</string>
 </resources>
