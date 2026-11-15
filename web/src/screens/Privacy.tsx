@@ -4,7 +4,13 @@ import { announce } from "../lib/feedback.ts";
 import { FEATURES, loadSettings, saveSettings, type Consent, type Settings } from "../lib/storage.ts";
 import type { FeatureFlag } from "../../../shared/types.ts";
 
-export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: { consent: Consent | null; onWithdraw: () => void; onReviewConsent: () => void; onDeleteAll: () => void }) {
+const FEEDBACK_LABELS: Record<"voice" | "earcons" | "haptics", string> = {
+  voice: "Spoken answers",
+  earcons: "Sounds (earcons)",
+  haptics: "Vibration",
+};
+
+export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: { consent: Consent | null; onWithdraw: () => boolean | void; onReviewConsent: () => void; onDeleteAll: () => void }) {
   const [st, setSt] = useState<Settings>(loadSettings());
   const save = (next: Settings) => {
     setSt(next);
@@ -14,10 +20,15 @@ export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: {
     save({ ...st, features: { ...st.features, [f]: !st.features[f] } });
     announce(`${FEATURES.find((x) => x.flag === f)?.label} ${st.features[f] ? "off" : "on"}. Applies from the next check.`);
   };
+  const toggleQuiet = () => {
+    const quiet = !st.quiet;
+    save({ ...st, quiet });
+    announce(`Quiet mode ${quiet ? "on" : "off"}.`);
+  };
   const toggle = (k: "voice" | "haptics" | "earcons") => {
-    const next = { ...st, [k]: !st[k] };
-    setSt(next);
-    saveSettings(next);
+    const enabled = !st[k];
+    save({ ...st, [k]: enabled });
+    announce(`${FEEDBACK_LABELS[k]} ${enabled ? "on" : "off"}.`);
   };
   return (
     <div className="stack" style={{ gap: 32 }}>
@@ -54,8 +65,7 @@ export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: {
             <button
               className="btn small"
               onClick={() => {
-                onWithdraw();
-                announce("Consent withdrawn. The camera will stay off.", "assertive");
+                if (!onWithdraw()) announce("Consent withdrawn. The camera will stay off.", "assertive");
               }}
             >
               Withdraw consent
@@ -99,7 +109,7 @@ export function Privacy({ consent, onWithdraw, onReviewConsent, onDeleteAll }: {
           ) : null}
           <label className="switch">
             Quiet mode (no readiness tone, softer sounds)
-            <input type="checkbox" role="switch" checked={st.quiet} onChange={() => save({ ...st, quiet: !st.quiet })} />
+            <input type="checkbox" role="switch" checked={st.quiet} onChange={toggleQuiet} />
           </label>
         </div>
       </section>

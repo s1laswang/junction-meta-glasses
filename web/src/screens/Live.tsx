@@ -184,7 +184,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
                   style={{ top: `${it.box[0] / 10}%`, left: `${it.box[1] / 10}%`, height: `${(it.box[2] - it.box[0]) / 10}%`, width: `${(it.box[3] - it.box[1]) / 10}%` }}
                 >
                   <span>
-                    {it.level === "match" ? "✓" : it.level === "warning" ? "⚠" : "?"} {POSITION_WORD[it.position]}
+                    {it.level === "match" ? "✓" : it.level === "warning" ? "⚠" : it.level === "info" ? "i" : "?"} {POSITION_WORD[it.position]}
                   </span>
                 </div>
               ) : null,
