@@ -8,6 +8,8 @@ import { frameFromFile } from "../lib/frames.ts";
 import { IS_MOCK } from "../lib/mock.ts";
 import { loadSettings, saveSettings } from "../lib/storage.ts";
 
+const FIELD_WORD: Record<string, string> = { strength: "Dose", product: "Name", expiry: "Expiry", allergens: "Allergens" };
+
 const DEBUG = new URLSearchParams(location.search).get("debug") === "1";
 
 function isTypingTarget(t: EventTarget | null) {
@@ -20,6 +22,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
   const s = useSyncExternalStore(checker.subscribe, checker.get);
   const videoRef = useRef<HTMLVideoElement>(null);
   const verdictRef = useRef<HTMLHeadingElement>(null);
+  const bigBtnRef = useRef<HTMLButtonElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const capsRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("");
@@ -32,8 +35,19 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
 
   // move focus to a new verdict so its actions are one swipe away
   const lastVerdict = useRef(s.verdict);
+  const dismissFocus = useRef(false);
   useEffect(() => {
+    const isNewVerdict = !!s.verdict && s.verdict !== lastVerdict.current && s.verdict.headline !== lastVerdict.current?.headline;
     if (s.verdict && s.verdict !== lastVerdict.current && s.verdict.headline !== lastVerdict.current?.headline) verdictRef.current?.focus();
+    else if (!s.verdict && dismissFocus.current) {
+      dismissFocus.current = false;
+      bigBtnRef.current?.focus();
+    }
+    if (isNewVerdict) {
+      // the action buttons sit at the bottom of the card: bring them clear of the sticky Start/Stop bar
+      const actions = verdictRef.current?.closest(".verdict")?.querySelector(".actions") as HTMLElement | null | undefined;
+      if (actions && typeof actions.scrollIntoView === "function") actions.scrollIntoView({ block: "nearest" });
+    }
     lastVerdict.current = s.verdict;
   }, [s.verdict]);
 
@@ -46,6 +60,11 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!consented) return;
+      if (e.key === "Escape" && s.verdict && !s.addProposal && !isTypingTarget(e.target) && !e.repeat) {
+        e.preventDefault();
+        checker.dismissVerdict();
+        return;
+      }
       const media = ["MediaPlayPause", "MediaPlay", "MediaPause", "AudioVolumeUp", "AudioVolumeDown", "MediaStop"].includes(e.key);
       if (media || ((e.key === " " || e.key === "Enter") && !isTypingTarget(e.target) && !e.repeat)) {
         e.preventDefault();
@@ -55,7 +74,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [checker, consented]);
+  }, [checker, consented, s.verdict, s.addProposal]);
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -130,7 +149,23 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
       ) : null}
 
       {s.verdict ? (
-        <VerdictCard verdict={s.verdict} via={s.verdictVia} headingRef={verdictRef} onRepeat={() => checker.repeat()} onLog={() => checker.logDose()} onDismiss={() => checker.dismissVerdict()} />
+        <VerdictCard
+          verdict={s.verdict}
+          via={s.verdictVia}
+          headingRef={verdictRef}
+          onRepeat={() => checker.repeat()}
+          onLog={() => checker.logDose()}
+          onDismiss={() => {
+            dismissFocus.current = true;
+            checker.dismissVerdict();
+            queueMicrotask(() => {
+              if (!checker.get().verdict) {
+                dismissFocus.current = false;
+                bigBtnRef.current?.focus();
+              }
+            });
+          }}
+        />
       ) : s.checking ? (
         <div className="cue checking" aria-busy="true">
           <span className="arrow">
@@ -172,6 +207,19 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
         ) : !cameraOn ? (
           <div className="placeholder">
             {s.camera === "paused" ? "Camera paused while HoldUp is in the background" : s.camera === "error" ? s.cameraMsg || "Camera unavailable" : s.camera === "starting" ? "Starting camera…" : "Camera off. Press Start check."}
+          </div>
+        ) : null}
+        {cameraOn && s.fields?.length && s.verdict?.mode !== "scene" ? (
+          <div aria-hidden="true">
+            {s.fields.map((f, i) => (
+              <div
+                key={i}
+                className={`field-box ${f.label}`}
+                style={{ top: `${f.box[0] / 10}%`, left: `${f.box[1] / 10}%`, height: `${(f.box[2] - f.box[0]) / 10}%`, width: `${(f.box[3] - f.box[1]) / 10}%` }}
+              >
+                <span>{FIELD_WORD[f.label]}</span>
+              </div>
+            ))}
           </div>
         ) : null}
         {cameraOn && s.verdict?.mode === "scene" && s.verdict.items?.some((i) => i.box) ? (
@@ -281,7 +329,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
       ) : null}
 
       <div className="bigbtn-wrap">
-        <button className={`bigbtn ${big.cls}`} onClick={() => checker.primary()} aria-describedby="big-hint" disabled={s.snapshotBusy}>
+        <button ref={bigBtnRef} className={`bigbtn ${big.cls}`} onClick={() => checker.primary()} aria-describedby="big-hint" disabled={s.snapshotBusy}>
           {s.running && s.mode !== "snapshot" ? <span className="dot" style={{ background: "var(--rec)", width: 20, height: 20 }} aria-hidden="true" /> : null}
           {big.label}
         </button>

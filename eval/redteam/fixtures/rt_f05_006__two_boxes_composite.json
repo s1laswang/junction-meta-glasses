@@ -1,0 +1,93 @@
+{
+  "id": "rt_f05_006__two_boxes_composite",
+  "spec_id": "rt_f05_006",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held bottle is Vitamin C 500 mg, whereas the user's saved medication is Vitamin B1 500 mg.",
+  "perturbation": "two_boxes_composite",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Krka Vitamin C 500 mg",
+    "ingredient": "Vitamin C",
+    "strength": "500 mg",
+    "expiry": "2029-05",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Krka Vitamin B1 500 mg",
+        "ingredient": "Vitamin B1",
+        "strength": "500 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "KRKA Vitamin C",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "ascorbic acid",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "500 mg",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2029-05",
+      "confidence": 0.98
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.95
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05010400001073(17)290500(10)RT01(21)SN006"
+}

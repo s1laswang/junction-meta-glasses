@@ -1,0 +1,94 @@
+{
+  "id": "rt_f05_012__thumb_over_digit",
+  "spec_id": "rt_f05_012",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held box is Vitamin K2 75 mcg, whereas the user's saved medication is Vitamin K1 75 mcg.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Apoteket Vitamin K2 75 mikrog",
+    "ingredient": "Vitamin K2",
+    "strength": "75 mcg",
+    "expiry": "2028-06",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Apoteket Vitamin K1 75 mikrog",
+        "ingredient": "Vitamin K1",
+        "strength": "75 mcg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Apoteket Vitamin K2",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "vitamin K2",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "75 mcg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2028-06",
+      "confidence": 0.9
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75,
+    "guidance": "Turn the box to show the back for full instructions."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)07310400001134(17)280600(10)RT01(21)SN012"
+}

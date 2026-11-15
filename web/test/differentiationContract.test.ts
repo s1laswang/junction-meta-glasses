@@ -70,9 +70,9 @@ describe("Differentiation contract: Seeing AI, Be My Eyes, and Hey Meta", () => 
     );
   });
 
-  test("deck/index.html preserves all 12 slides, updates Slide 2 within 4 crisp bullets, and preserves Slide 5 and Slide 11", () => {
-    assert.equal(slides.length, 12, "Expected all 12 .slide sections in deck/index.html");
-    for (let n = 1; n <= 12; n++) {
+  test("deck/index.html preserves all 13 slides, updates Slide 2 within 4 crisp bullets, and preserves Slide 5 and Slide 11", () => {
+    assert.equal(slides.length, 13, "Expected all 13 .slide sections in deck/index.html");
+    for (let n = 1; n <= 13; n++) {
       findSlideByHeadingId(slides, `s${n}-h`);
     }
 
@@ -101,7 +101,7 @@ describe("Differentiation contract: Seeing AI, Be My Eyes, and Hey Meta", () => 
       "Slide 5 must include TODO: backup video URL placeholder or live https:// backup video link",
     );
 
-    const slide11 = findSlideByHeadingId(slides, "s11-h");
+    const slide11 = findSlideByHeadingId(slides, "s12-h");
     assert.ok(
       slide11.includes("Be My Eyes") && slide11.includes("21 markets"),
       "Slide 11 must preserve respectful Be My Eyes adoption reference",

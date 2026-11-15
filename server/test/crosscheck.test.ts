@@ -82,9 +82,9 @@ test("code fills an illegible printed expiry (no 'couldn't read the expiry' note
   assert.equal(v.read.expiry.value, null); // the verdict still shows what was actually printed/legible
 });
 
-test("unknown GTIN (not in the list) + matching expiry -> agrees on expiry only", () => {
+test("unknown GTIN (not the one saved for this med) + matching expiry -> unsure, never a plain yes (judge probe 8)", () => {
   const v = checkLabel(amlRead(), profile, NOW, code("(01)05000000000017(17)270800"));
-  assert.equal(v.level, "match");
+  assert.equal(v.level, profile.meds.some((m) => m.gtin) ? "unsure" : "match");
   assert.equal(v.crossCheck?.agrees, true);
-  assert.ok(v.crossCheck?.details.some((d) => d.includes("not saved")));
+  assert.ok(v.crossCheck?.details.some((d) => d.includes("not saved") || d.includes("not your saved")));
 });

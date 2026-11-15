@@ -468,7 +468,7 @@ test("Privacy SSR markup discloses check-only camera and mic, memory-only Gemini
   );
   assert.match(html, /<button class="btn danger"><svg[^>]*aria-hidden="true"[^>]*focusable="false"[^>]*>.*<\/svg> Delete all my data<\/button>/);
 
-  assert.ok(text.includes("HoldUp is not a medical device. When it isn't sure, it says so. Ask a pharmacist about anything uncertain."));
+  assert.ok(text.includes("HoldUp is a research prototype, not a CE-marked medical device. When it isn't sure, it says so. Ask a pharmacist about anything uncertain."));
 });
 
 test("Privacy SSR markup reflects active consent timestamp with Withdraw consent and mirrors stored feature and feedback switch settings", () => {

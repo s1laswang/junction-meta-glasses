@@ -1,0 +1,93 @@
+{
+  "id": "rt_f03_009__thumb_over_digit",
+  "spec_id": "rt_f03_009",
+  "family": "F03_insulin_analog_crossmatch",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Held pack is intermediate-acting insulin isophane 100 IU/ml, whereas the user's saved medication is basal insulin detemir 100 IU/ml.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Humulin NPH KwikPen 100 IU/ml",
+    "ingredient": "insulin isophane",
+    "strength": "100 IU/ml",
+    "expiry": "2029-03",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Levemir FlexPen",
+        "ingredient": "insulin detemir",
+        "strength": "100 IU/ml",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Humulin NPH KwikPen",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "insulin isophane",
+      "confidence": 0.9
+    },
+    "strength": {
+      "value": "100 IU/ml",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2029-03",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.9
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05012345001103(17)290300(10)RT01(21)SN009"
+}
