@@ -1,0 +1,93 @@
+{
+  "id": "rt_f04_013__clean",
+  "spec_id": "rt_f04_013",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains mycophenolate mofetil 500 mg instead of the user's saved mycophenolate sodium 500 mg.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Mycophenolate Mofetil Accord 500 mg",
+    "ingredient": "mycophenolate mofetil",
+    "strength": "500 mg",
+    "expiry": "2028-11",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Mycophenolate Sodium 500 mg",
+        "ingredient": "mycophenolate sodium",
+        "strength": "500 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Mycophenolate Mofetil Accord",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "mycophenolate mofetil",
+      "confidence": 0.98
+    },
+    "strength": {
+      "value": "500 mg",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2028-11",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.9
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)07310100445566(17)281100(10)RT01(21)SN013"
+}

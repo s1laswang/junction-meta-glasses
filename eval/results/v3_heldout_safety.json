@@ -1,0 +1,1248 @@
+{
+ "version": "v3_heldout_safety",
+ "evaluation_split": "held-out (not used for tuning)",
+ "what": "Out-of-sample test of merged main safety.ts (WS1+WS7 guards) vs pre-WS1 safety.ts (1d395b3) on fresh held-out v3 images read by gemini-3.8-flash; zero safety.ts edits made after seeing v3",
+ "main_safety_ts_commit": "52b5567",
+ "baseline_safety_ts_commit": "1d395b3",
+ "images_scored": 1060,
+ "standard_eval_scenarios": {
+  "merged_main_safety_ts": {
+   "n": 3033,
+   "unsafe_k": 4,
+   "unsafe_rate_pct": 0.13,
+   "unsafe_wilson95_pct": [
+    0.05,
+    0.34
+   ],
+   "unsafe_rule_of_three_upper_pct": 0.34,
+   "unsafe_by_category": {
+    "missed_allergen": 3,
+    "expired_date_misread_or_unseen": 1
+   },
+   "expired_match_with_caveat": {
+    "k": 6,
+    "n": 3033,
+    "wilson95_pct": [
+     0.09,
+     0.43
+    ]
+   },
+   "verdict_correct": {
+    "k": 1702,
+    "n": 3033,
+    "wilson95_pct": [
+     54.34,
+     57.87
+    ]
+   },
+   "unsure": {
+    "k": 1214,
+    "n": 3033,
+    "wilson95_pct": [
+     38.3,
+     41.78
+    ]
+   },
+   "false_match": 7,
+   "food_reassurance_coverage": {
+    "n_truly_safe": 105,
+    "said_none_of_your_allergens": 28,
+    "ci": [
+     19.14,
+     35.84
+    ]
+   },
+   "by_scenario": {
+    "allergic_to_absent": {
+     "n": 126,
+     "correct": 34.9,
+     "unsure": 64.3,
+     "unsafe": 0
+    },
+    "allergic_to_contained": {
+     "n": 105,
+     "correct": 59.0,
+     "unsure": 38.1,
+     "unsafe": 3
+    },
+    "not_on_list": {
+     "n": 934,
+     "correct": 69.1,
+     "unsure": 30.9,
+     "unsafe": 0
+    },
+    "on_list_other_strength": {
+     "n": 934,
+     "correct": 56.5,
+     "unsure": 43.0,
+     "unsafe": 0
+    },
+    "on_list_same_strength": {
+     "n": 934,
+     "correct": 45.3,
+     "unsure": 43.0,
+     "unsafe": 1
+    }
+   },
+   "unsafe_examples": [
+    {
+     "img_id": "v3food0001__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains gluten (allergy: gluten)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3med0102__motion_blur_1",
+     "deg": "motion_blur",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "on_list_same_strength",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m1",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "expired 2025-11"
+     ],
+     "category": "expired_date_misread_or_unseen"
+    },
+    {
+     "img_id": "v3food0013__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains celery (allergy: celery)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0013__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains celery (allergy: celery)"
+     ],
+     "category": "missed_allergen"
+    }
+   ]
+  },
+  "pre_ws1_safety_ts_1d395b3": {
+   "n": 3033,
+   "unsafe_k": 6,
+   "unsafe_rate_pct": 0.2,
+   "unsafe_wilson95_pct": [
+    0.09,
+    0.43
+   ],
+   "unsafe_rule_of_three_upper_pct": 0.43,
+   "unsafe_by_category": {
+    "missed_allergen": 5,
+    "expired_date_misread_or_unseen": 1
+   },
+   "expired_match_with_caveat": {
+    "k": 6,
+    "n": 3033,
+    "wilson95_pct": [
+     0.09,
+     0.43
+    ]
+   },
+   "verdict_correct": {
+    "k": 1702,
+    "n": 3033,
+    "wilson95_pct": [
+     54.34,
+     57.87
+    ]
+   },
+   "unsure": {
+    "k": 1212,
+    "n": 3033,
+    "wilson95_pct": [
+     38.23,
+     41.72
+    ]
+   },
+   "false_match": 7,
+   "food_reassurance_coverage": {
+    "n_truly_safe": 105,
+    "said_none_of_your_allergens": 28,
+    "ci": [
+     19.14,
+     35.84
+    ]
+   },
+   "by_scenario": {
+    "allergic_to_absent": {
+     "n": 126,
+     "correct": 34.9,
+     "unsure": 64.3,
+     "unsafe": 0
+    },
+    "allergic_to_contained": {
+     "n": 105,
+     "correct": 55.2,
+     "unsure": 40.0,
+     "unsafe": 5
+    },
+    "not_on_list": {
+     "n": 934,
+     "correct": 69.1,
+     "unsure": 30.9,
+     "unsafe": 0
+    },
+    "on_list_other_strength": {
+     "n": 934,
+     "correct": 56.7,
+     "unsure": 42.8,
+     "unsafe": 0
+    },
+    "on_list_same_strength": {
+     "n": 934,
+     "correct": 45.5,
+     "unsure": 42.8,
+     "unsafe": 1
+    }
+   },
+   "unsafe_examples": [
+    {
+     "img_id": "v3food0001__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains gluten (allergy: gluten)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3med0102__motion_blur_1",
+     "deg": "motion_blur",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "on_list_same_strength",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m1",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "expired 2025-11"
+     ],
+     "category": "expired_date_misread_or_unseen"
+    },
+    {
+     "img_id": "v3food0008__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains sulphites (allergy: sulphites)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0008__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains sulphites (allergy: sulphites)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0013__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains celery (allergy: celery)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0013__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains celery (allergy: celery)"
+     ],
+     "category": "missed_allergen"
+    }
+   ]
+  }
+ },
+ "extended_with_heldout_clinical_challenges": {
+  "merged_main_safety_ts": {
+   "n": 4041,
+   "unsafe_k": 14,
+   "unsafe_rate_pct": 0.35,
+   "unsafe_wilson95_pct": [
+    0.21,
+    0.58
+   ],
+   "unsafe_rule_of_three_upper_pct": 0.58,
+   "unsafe_by_category": {
+    "missed_allergen": 4,
+    "expired_date_misread_or_unseen": 1,
+    "not_on_list_matched": 5,
+    "wrong_strength_matched": 4
+   },
+   "expired_match_with_caveat": {
+    "k": 6,
+    "n": 4041,
+    "wilson95_pct": [
+     0.07,
+     0.32
+    ]
+   },
+   "verdict_correct": {
+    "k": 2339,
+    "n": 4041,
+    "wilson95_pct": [
+     56.35,
+     59.4
+    ]
+   },
+   "unsure": {
+    "k": 1573,
+    "n": 4041,
+    "wilson95_pct": [
+     37.43,
+     40.44
+    ]
+   },
+   "false_match": 16,
+   "food_reassurance_coverage": {
+    "n_truly_safe": 105,
+    "said_none_of_your_allergens": 28,
+    "ci": [
+     19.14,
+     35.84
+    ]
+   },
+   "by_scenario": {
+    "allergic_to_absent": {
+     "n": 126,
+     "correct": 34.9,
+     "unsure": 64.3,
+     "unsafe": 0
+    },
+    "allergic_to_contained": {
+     "n": 105,
+     "correct": 59.0,
+     "unsure": 38.1,
+     "unsafe": 3
+    },
+    "heldout_excipient_or_avoid": {
+     "n": 7,
+     "correct": 71.4,
+     "unsure": 28.6,
+     "unsafe": 0
+    },
+    "heldout_lasa_or_form_twin": {
+     "n": 875,
+     "correct": 64.5,
+     "unsure": 34.4,
+     "unsafe": 9
+    },
+    "heldout_nordic_allergen_or_synonym": {
+     "n": 126,
+     "correct": 54.0,
+     "unsure": 44.4,
+     "unsafe": 1
+    },
+    "not_on_list": {
+     "n": 934,
+     "correct": 69.1,
+     "unsure": 30.9,
+     "unsafe": 0
+    },
+    "on_list_other_strength": {
+     "n": 934,
+     "correct": 56.5,
+     "unsure": 43.0,
+     "unsafe": 0
+    },
+    "on_list_same_strength": {
+     "n": 934,
+     "correct": 45.3,
+     "unsure": 43.0,
+     "unsafe": 1
+    }
+   },
+   "unsafe_examples": [
+    {
+     "img_id": "v3food0001__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains gluten (allergy: gluten)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0001__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "heldout_nordic_allergen_or_synonym",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains gluten (allergy: gluten)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3med0102__motion_blur_1",
+     "deg": "motion_blur",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "on_list_same_strength",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m1",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "expired 2025-11"
+     ],
+     "category": "expired_date_misread_or_unseen"
+    },
+    {
+     "img_id": "v3med0114__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__crop_1",
+     "deg": "crop",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "unsure",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__crop_2",
+     "deg": "crop",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "unsure",
+     "pred": "match",
+     "pred_reasons": [
+      "expiry not readable",
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__low_light_2",
+     "deg": "low_light",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3food0013__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains celery (allergy: celery)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0013__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains celery (allergy: celery)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3med0093__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "strength 100 KY/ml (100 IU/ml){\" differs from your 100 KY/ml"
+     ],
+     "category": "wrong_strength_matched"
+    },
+    {
+     "img_id": "v3med0093__crop_1",
+     "deg": "crop",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "unsure",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "strength 100 KY/ml (100 IU/ml){\" differs from your 100 KY/ml"
+     ],
+     "category": "wrong_strength_matched"
+    },
+    {
+     "img_id": "v3med0093__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "strength 100 KY/ml (100 IU/ml){\" differs from your 100 KY/ml"
+     ],
+     "category": "wrong_strength_matched"
+    },
+    {
+     "img_id": "v3med0093__low_light_2",
+     "deg": "low_light",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "strength 100 KY/ml (100 IU/ml){\" differs from your 100 KY/ml"
+     ],
+     "category": "wrong_strength_matched"
+    }
+   ]
+  },
+  "pre_ws1_safety_ts_1d395b3": {
+   "n": 4041,
+   "unsafe_k": 46,
+   "unsafe_rate_pct": 1.14,
+   "unsafe_wilson95_pct": [
+    0.85,
+    1.51
+   ],
+   "unsafe_rule_of_three_upper_pct": 1.51,
+   "unsafe_by_category": {
+    "missed_allergen": 8,
+    "not_on_list_matched": 33,
+    "expired_date_misread_or_unseen": 1,
+    "wrong_strength_matched": 4
+   },
+   "expired_match_with_caveat": {
+    "k": 8,
+    "n": 4041,
+    "wilson95_pct": [
+     0.1,
+     0.39
+    ]
+   },
+   "verdict_correct": {
+    "k": 2290,
+    "n": 4041,
+    "wilson95_pct": [
+     55.14,
+     58.19
+    ]
+   },
+   "unsure": {
+    "k": 1588,
+    "n": 4041,
+    "wilson95_pct": [
+     37.8,
+     40.81
+    ]
+   },
+   "false_match": 46,
+   "food_reassurance_coverage": {
+    "n_truly_safe": 105,
+    "said_none_of_your_allergens": 28,
+    "ci": [
+     19.14,
+     35.84
+    ]
+   },
+   "by_scenario": {
+    "allergic_to_absent": {
+     "n": 126,
+     "correct": 34.9,
+     "unsure": 64.3,
+     "unsafe": 0
+    },
+    "allergic_to_contained": {
+     "n": 105,
+     "correct": 55.2,
+     "unsure": 40.0,
+     "unsafe": 5
+    },
+    "heldout_excipient_or_avoid": {
+     "n": 7,
+     "correct": 71.4,
+     "unsure": 28.6,
+     "unsafe": 0
+    },
+    "heldout_lasa_or_form_twin": {
+     "n": 875,
+     "correct": 59.4,
+     "unsure": 36.0,
+     "unsafe": 37
+    },
+    "heldout_nordic_allergen_or_synonym": {
+     "n": 126,
+     "correct": 50.0,
+     "unsure": 46.8,
+     "unsafe": 3
+    },
+    "not_on_list": {
+     "n": 934,
+     "correct": 69.1,
+     "unsure": 30.9,
+     "unsafe": 0
+    },
+    "on_list_other_strength": {
+     "n": 934,
+     "correct": 56.7,
+     "unsure": 42.8,
+     "unsafe": 0
+    },
+    "on_list_same_strength": {
+     "n": 934,
+     "correct": 45.5,
+     "unsure": 42.8,
+     "unsafe": 1
+    }
+   },
+   "unsafe_examples": [
+    {
+     "img_id": "v3food0001__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains gluten (allergy: gluten)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0001__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "heldout_nordic_allergen_or_synonym",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains gluten (allergy: gluten)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3med0014__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0014__crop_2",
+     "deg": "crop",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "expiry not readable",
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0016__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0016__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0016__low_light_2",
+     "deg": "low_light",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0016__glare_1",
+     "deg": "glare",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0102__motion_blur_1",
+     "deg": "motion_blur",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "on_list_same_strength",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m1",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "expired 2025-11"
+     ],
+     "category": "expired_date_misread_or_unseen"
+    },
+    {
+     "img_id": "v3med0017__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0017__defocus_1",
+     "deg": "defocus",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3food0008__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains sulphites (allergy: sulphites)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0008__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "food",
+     "scenario": "heldout_nordic_allergen_or_synonym",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains sulphites (allergy: sulphites)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0008__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "food",
+     "scenario": "allergic_to_contained",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains sulphites (allergy: sulphites)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3food0008__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "food",
+     "scenario": "heldout_nordic_allergen_or_synonym",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "info",
+     "pred_reasons": [
+      "no listed allergen matches your profile"
+     ],
+     "world_reasons": [
+      "contains sulphites (allergy: sulphites)"
+     ],
+     "category": "missed_allergen"
+    },
+    {
+     "img_id": "v3med0019__crop_2",
+     "deg": "crop",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "expiry not readable",
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0088__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "expiry not readable",
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0088__rotation_1",
+     "deg": "rotation",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "expiry not readable",
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0088__rotation_2",
+     "deg": "rotation",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "expiry not readable",
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0088__rotation_3",
+     "deg": "rotation",
+     "sev": 3,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "expiry not readable",
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__clean_0",
+     "deg": "clean",
+     "sev": 0,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__crop_1",
+     "deg": "crop",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "unsure",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__crop_2",
+     "deg": "crop",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "unsure",
+     "pred": "match",
+     "pred_reasons": [
+      "expiry not readable",
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__low_light_1",
+     "deg": "low_light",
+     "sev": 1,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    },
+    {
+     "img_id": "v3med0114__low_light_2",
+     "deg": "low_light",
+     "sev": 2,
+     "kind": "medication",
+     "scenario": "heldout_lasa_or_form_twin",
+     "world": "warning",
+     "visible": "warning",
+     "pred": "match",
+     "pred_reasons": [
+      "matches m_chal",
+      "taken today: 0/1"
+     ],
+     "world_reasons": [
+      "not on your medication list"
+     ],
+     "category": "not_on_list_matched"
+    }
+   ]
+  }
+ }
+}

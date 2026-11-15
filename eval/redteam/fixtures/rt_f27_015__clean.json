@@ -1,0 +1,92 @@
+{
+  "id": "rt_f27_015__clean",
+  "spec_id": "rt_f27_015",
+  "family": "F27_mollusc_and_crustacean_traps",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Contains oyster extract (molluscs), unsafe for a user with a mollusc allergy.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Ostronsås / Osterikastike",
+    "ingredient": "",
+    "strength": "",
+    "expiry": "2027-12",
+    "allergens": [
+      "gluten",
+      "molluscs",
+      "soy"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "molluscs"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "food",
+    "product": {
+      "value": "ELDORADO Ostronsås / Osterikastike",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "oyster sauce",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-12",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": [
+        "mollusc",
+        "soy",
+        "wheat"
+      ],
+      "confidence": 0.95
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.95
+  },
+  "baseline_verdict": {
+    "level": "info",
+    "reasons": [
+      "no listed allergen matches your profile"
+    ],
+    "matchedMedId": null
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "contains mollusc (allergy: molluscs)"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true
+}

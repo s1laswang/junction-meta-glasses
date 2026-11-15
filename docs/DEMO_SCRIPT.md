@@ -60,7 +60,7 @@ The words in quotes are spoken. **[Brackets]** are actions. Every step has a fal
 ### 0:20–0:40 · Consent and profile (slide 8 visible behind, phone mirrored)
 **Momin010** [switches the projector to the mirrored phone, Profile tab].
 
-**Silas**: "My medicine list and allergies live only on this phone. Before the camera ever turns on, HoldUp tells me in three plain cards what it captures, where it goes and what it keeps. The camera is only on during a check, and it switches itself off after 45 seconds."
+**Silas**: "My medicine list and allergies are stored only on this phone, and travel with a check only while it runs. Before the camera ever turns on, HoldUp tells me in three plain cards what it captures, where it goes and what it keeps. The camera is only on during a check, and it switches itself off after 45 seconds."
 
 **Momin010** [taps the **Check** tab].
 
@@ -103,7 +103,7 @@ Fallbacks, in order:
 - *Fallback:* if the taped box is read as a match (the strength is visible elsewhere on the box), say "It found the strength on the side panel, which is exactly what it should do", and move on.
 - *Optional (only if ahead of time):* the hazelnut snack: "Does this have nuts?" → warning, contains hazelnut.
 
-### 2:10–2:35 · Resilience (slide 9 next)
+### 2:10–2:35 · Resilience (slide 10 next)
 **Silas**: "Now the network dies."
 
 **Momin010** [switches the camera source to **Phone camera** (offline barcode reads the phone camera only), then turns on **airplane mode** on the phone; Bluetooth stays on, per the checklist].
@@ -130,11 +130,20 @@ Fallbacks:
 ### 2:35–3:00 · Proof and path (slides 7, 10, 11, 12)
 **Momin010** [switches the projector to the deck, slide 7].
 
-**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about two to three-and-a-half seconds, median 2.1 seconds over 26 live runs, down from nearly six." [slide 10] "We measure the failure that matters: a confident wrong dose. Gemini built us 1,740 test images with known answers. Out of 754 confident strength reads, zero were wrong. After a stricter allergen rule, 3 in 4,730 answers were silently over-reassuring, down from 49. We narrowed that gap; we haven't closed it." (Source: docs/EVAL.md, eval/results/v1_results.json.) [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
+**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about two to three-and-a-half seconds, median 2.1 seconds over 26 live runs, down from nearly six." [slide 11] "We measure the failure that matters: a confident wrong dose. Gemini built us 1,740 test images with known answers. Out of 754 confident strength reads, zero were wrong; on a fresh held-out set it was 1 in 536. After a stricter allergen rule, 3 in 4,730 answers were silently over-reassuring, down from 49. We narrowed that gap; we haven't closed it." (Source: docs/EVAL.md, eval/results/v1_results.json.) [slide 12] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 13] "HoldUp. Hold it up, know it's the right one."
 
-- *Fallback:* if time has run out, jump straight to slide 12 and say the last line.
+- *Fallback:* if time has run out, jump straight to slide 13 and say the last line.
 
 ---
+
+## Optional beats (use one only if it worked in the 08:00 rehearsal)
+These are built and tested, but not yet rehearsed on real glasses. Each replaces or extends a beat above; skip any that misbehaved.
+
+- **"Which one?" (opens the live part, 15 s).** Put the three boxes on the table, look at them, and ask: "Which one is my evening pill?" Expected: "Your evening pill is the box on the right. The middle one is Ibuprofen, not on your list." Then pick that box up and continue with the coaching beat. *If it says it isn't sure:* "It won't guess from a distance, so I pick one up." and continue.
+- **Dose finder (inside the coaching beat, needs `SPOTTER=1`).** Hold the amlodipine box with your thumb over "5 mg". Expected, spoken by the phone within about 2 s: "Something is covering the dose. Move your thumb." Line: "That cue comes from a small model we trained ourselves this weekend, on labels Gemini generated."
+- **Double-checked with the pack code (inside the match beat, needs a real EU prescription pack whose code you saved in Profile → Scan pack code).** Expected after the match: "...double-checked with the pack's code" and the badge on the card. Line: "It doesn't ask me to trust the AI. The AI has to agree with the pack's own code."
+- **Set up by voice (only if there is spare time).** "Add this to my list." → it reads the box, asks when you take it, and shows a confirmation sheet. Nothing is saved until you press Add.
+- **Corrected answer.** If the phone plays an alert tone and repeats a sentence in a different voice, that is the spoken-answer check: what Gemini said didn't match the checked sentence. Line: "It caught its own voice getting it wrong and repeated the checked answer."
 
 ## Last-resort fallbacks
 

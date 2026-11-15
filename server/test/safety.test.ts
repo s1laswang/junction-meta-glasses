@@ -41,8 +41,15 @@ test("match: amlodipine 5 mg by brand-agnostic ingredient, not taken today", () 
   assert.ok(words(v.headline) <= 8 && sentences(v.speech) <= 2);
 });
 
-test("match with unreadable expiry (null or conf < 0.7): still match, says it couldn't read the date", () => {
-  for (const expiry of [f<string>(null, 0.1), f("2024-11", 0.5)]) {
+test("a low-confidence expiry that looks past is never a green yes (judge-panel probe 17)", () => {
+  const v = checkLabel(read({ ingredient: f("amlodipine"), strength: f("5 mg"), expiry: f("2024-11", 0.5) }), profile, NOW);
+  assert.equal(v.level, "unsure");
+  assert.match(v.speech, /expiry date may have passed/);
+  assert.ok(sentences(v.speech) <= 2);
+});
+
+test("match with unreadable expiry (null, or a low-confidence date still in the future): still match, says it couldn't read the date", () => {
+  for (const expiry of [f<string>(null, 0.1), f("2028-11", 0.5)]) {
     const v = checkLabel(read({ ingredient: f("amlodipine"), strength: f("5 mg"), expiry }), profile, NOW);
     assert.equal(v.level, "match");
     assert.equal(v.speech, "Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today, and I couldn't read the expiry date.");
@@ -137,6 +144,12 @@ test("allergens: arachis oil = peanut, hazelnut = tree nuts, may-contain", () =>
   const c = checkLabel(read({ kind: "food", product: f("Oat drink"), allergens: f(["oats"]), expiry: f("2026-12-03") }), profile, NOW);
   assert.equal(c.level, "info");
   assert.match(c.speech, /Best before 3 December 2026/);
+});
+
+test("Finnish 'voi sisältää' (may contain) is not read as 'voi' (butter = milk)", () => {
+  const milkAllergic: Profile = { ...profile, allergies: ["milk"] };
+  const v = checkLabel(read({ kind: "food", product: f("Kaurakeksi"), allergens: f(["voi sisältää: seesami"], 0.97), readability: 0.9 }), milkAllergic, NOW);
+  assert.notEqual(v.level, "warning", v.speech);
 });
 
 test("'none of your allergens' needs a near-certain, complete panel read (eval v1 allergen fix)", () => {
