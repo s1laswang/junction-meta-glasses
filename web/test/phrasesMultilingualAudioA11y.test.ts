@@ -607,12 +607,30 @@ test("web/public/phrases/manifest.json schema, EN/FI/SV parity across all 7 phra
   const langs = Object.keys(REAL_MANIFEST.phrases).sort();
   assert.deepEqual(langs, [...EXPECTED_LANGS]);
 
+  const expectedIdSet = new Set<string>(EXPECTED_PHRASE_IDS);
+  const enIds = Object.keys(REAL_MANIFEST.phrases.en ?? {}).sort();
   const seenPaths = new Set<string>();
   for (const lang of EXPECTED_LANGS) {
     const bucket = REAL_MANIFEST.phrases[lang];
     assert.ok(bucket && typeof bucket === "object", `Missing language bucket for ${lang}`);
     const ids = Object.keys(bucket).sort();
-    assert.deepEqual(ids, [...EXPECTED_PHRASE_IDS], `Phrase ID mismatch in ${lang}`);
+    assert.deepEqual(ids, enIds, `Phrase ID parity mismatch between en and ${lang}`);
+    for (const reqId of EXPECTED_PHRASE_IDS) {
+      assert.equal(ids.includes(reqId), true, `Missing required safety phrase ID ${lang}.${reqId}`);
+    }
+    for (const extraId of ids) {
+      if (!expectedIdSet.has(extraId)) {
+        assert.match(extraId, /^cue_[a-z_]+$/, `Unexpected extra phrase ID ${lang}.${extraId}`);
+        const cueEntry = bucket[extraId];
+        assert.ok(cueEntry, `Missing cue entry ${lang}.${extraId}`);
+        assert.match(cueEntry.file, new RegExp(`^${SLASH}phrases${SLASH}${lang}${SLASH}${extraId}\\.(wav|mp3)$`));
+        assert.equal(typeof cueEntry.text, "string");
+        assert.ok(cueEntry.text.trim().length >= 4);
+        const cueDiskPath = path.join(PUBLIC_DIR, cueEntry.file.slice(1));
+        assert.equal(fs.existsSync(cueDiskPath), true, `Missing cue audio file on disk: ${cueEntry.file}`);
+        assert.ok(fs.statSync(cueDiskPath).size > 1000, `Expected ${cueEntry.file} size > 1000 bytes`);
+      }
+    }
 
     for (const id of EXPECTED_PHRASE_IDS) {
       const entry = bucket[id];
@@ -671,7 +689,7 @@ test("web/public/sw.js precaches /phrases/manifest.json and all 21 EN/FI/SV MP3 
         headers: { "content-type": "application/json" },
       });
     }
-    if (pathname.startsWith(`${SLASH}phrases${SLASH}`) && pathname.endsWith(".mp3")) {
+    if (pathname.startsWith(`${SLASH}phrases${SLASH}`) && (pathname.endsWith(".mp3") || pathname.endsWith(".wav"))) {
       const diskPath = path.join(PUBLIC_DIR, pathname.slice(1));
       if (!fs.existsSync(diskPath)) {
         return new Response("Not Found", { status: 404 });
@@ -679,7 +697,7 @@ test("web/public/sw.js precaches /phrases/manifest.json and all 21 EN/FI/SV MP3 
       const bytes = fs.readFileSync(diskPath);
       return new Response(bytes, {
         status: 200,
-        headers: { "content-type": "audio/mpeg" },
+        headers: { "content-type": pathname.endsWith(".wav") ? "audio/wav" : "audio/mpeg" },
       });
     }
     if (pathname === SLASH || pathname === `${SLASH}index.html` || pathname === `${SLASH}hud${SLASH}`) {
