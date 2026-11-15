@@ -275,7 +275,13 @@ export class MockSocket {
     this.clear();
     this.readyState = 3;
     mockCtl.sockets.delete(this);
-    setTimeout(() => this.onclose?.(new CloseEvent("close", { code, reason })), 0);
+    setTimeout(() => {
+      const closeEv =
+        typeof CloseEvent !== "undefined"
+          ? new CloseEvent("close", { code, reason })
+          : (Object.assign(new Event("close"), { code, reason, wasClean: code === 1000 }) as CloseEvent);
+      this.onclose?.(closeEv);
+    }, 0);
   }
 }
 

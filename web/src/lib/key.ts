@@ -40,6 +40,13 @@ export function setAccessKey(k: string) {
   }
 }
 
+export function clearAccessKey() {
+  cached = null;
+  try {
+    localStorage.removeItem(STORE);
+  } catch {}
+}
+
 export function keyHeaders(): Record<string, string> {
   const k = accessKey();
   return k ? { "x-holdup-key": k } : {};
