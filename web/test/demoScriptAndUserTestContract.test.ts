@@ -13,7 +13,7 @@ import {
   mockUnsureStrength,
   mockWarningIbuprofen,
 } from "../src/lib/verdicts.ts";
-import { MockSocket, mockCtl } from "../src/lib/mock.ts";
+import { MockSocket, mockCtl, pickScenario } from "../src/lib/mock.ts";
 
 const TEST_FILE = fileURLToPath(import.meta.url);
 const TEST_DIR = path.dirname(TEST_FILE);
@@ -65,7 +65,6 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
   const userTestKit = readRepoFile("docs/USER_TEST_KIT.md");
   const readme = readRepoFile("README.md");
   const deckHtml = readRepoFile("deck/index.html");
-  const mockSource = readRepoFile("web/src/lib/mock.ts");
   const selfSource = fs.readFileSync(TEST_FILE, "utf8");
 
   test("enforces strict test hygiene: zero code comments and zero em dashes", () => {
@@ -115,11 +114,13 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
 
   test("covers 6 contiguous stage beats summing to 180 seconds (3:00) with fallbacks on every beat and last-resort table", () => {
     const scriptStart = demoScript.indexOf("## The script");
+    const optionalStart = demoScript.indexOf("## Optional beats");
     const lastResortStart = demoScript.indexOf("## Last-resort fallbacks");
     const afterDemoStart = demoScript.indexOf("## After the demo");
     assert.ok(scriptStart >= 0 && lastResortStart > scriptStart && afterDemoStart > lastResortStart);
 
-    const scriptBody = demoScript.slice(scriptStart, lastResortStart);
+    const scriptEnd = optionalStart > scriptStart && optionalStart < lastResortStart ? optionalStart : lastResortStart;
+    const scriptBody = demoScript.slice(scriptStart, scriptEnd);
     const beatHeadingRe = /^###\s+(\d+:\d{2})[\u2013-](\d+:\d{2})\s+·\s+(.+)$/gm;
     const matches = [...scriptBody.matchAll(beatHeadingRe)];
     assert.equal(matches.length, 6, "Expected exactly 6 timed stage beats under ## The script");
@@ -199,6 +200,15 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
       true,
       "DEMO_SCRIPT.md must document spoken or screen-reader behavior when returning online",
     );
+    assert.ok(
+      demoScript.includes("stored only on this phone, and travel with a check"),
+      "DEMO_SCRIPT.md consent beat must state profile data travels with a check only while it runs",
+    );
+    assert.ok(optionalStart > scriptStart && optionalStart < lastResortStart, "DEMO_SCRIPT.md must include ## Optional beats");
+    const optionalSection = demoScript.slice(optionalStart, lastResortStart);
+    for (const token of ['"Which one?"', "SPOTTER=1", "Double-checked with the pack code", "Set up by voice", "Corrected answer"]) {
+      assert.ok(optionalSection.includes(token), `DEMO_SCRIPT.md Optional beats must document ${token}`);
+    }
   });
 
   test("aligns spoken verdicts in DEMO_SCRIPT.md with server/src/safety.ts and web/src/lib/verdicts.ts", () => {
@@ -310,12 +320,11 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
       demoScript.includes('"is this my evening pill"') && demoScript.includes('"ibuprofen"'),
       "DEMO_SCRIPT.md Last-resort fallbacks must document 'is this my evening pill' and 'ibuprofen' triggers",
     );
-    assert.ok(
-      mockSource.includes("/nut|allerg|food|bar/") &&
-        mockSource.includes("/ibu|nsaid|pain/") &&
-        mockSource.includes("/evening|amlo|pill/"),
-      "web/src/lib/mock.ts must retain regex routing for evening pill, ibuprofen, and nuts",
-    );
+    assert.equal(pickScenario("is this my evening pill"), 0);
+    assert.equal(pickScenario("ibuprofen"), 1);
+    assert.equal(pickScenario("metformin"), 2);
+    assert.equal(pickScenario("nuts"), 3);
+    assert.equal(pickScenario("Which one is my evening pill?"), 4);
 
     t.mock.timers.enable({ apis: ["setTimeout"] });
     mockCtl.failConnects = 0;
@@ -356,6 +365,12 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
     assert.equal(nutsVerdict.level, "warning");
     assert.equal(nutsVerdict.headline, mockFoodNuts().headline);
     assert.ok(nutsVerdict.speech.includes("hazelnuts") && nutsVerdict.speech.includes("tree nuts"));
+
+    const sceneVerdict = runTypedMockTrigger("Which one is my evening pill?");
+    assert.equal(sceneVerdict.mode, "scene");
+    assert.equal(sceneVerdict.level, "match");
+    assert.match(sceneVerdict.speech, /evening pill/i);
+    assert.match(sceneVerdict.speech, /ibuprofen/i);
   });
 
   test("matches demoProfile() in web/src/lib/storage.ts with DEMO_SCRIPT.md Pre-demo checklist and deck slide topics", () => {
