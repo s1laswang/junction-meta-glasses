@@ -22,7 +22,7 @@ const SESSION = params.get("session");
 const BACKOFF = [1000, 2000, 5000];
 const SPEAK_KEY = "holdup.hud.speak";
 
-const LEVEL: Record<VerdictLevel, { glyph: string; word: string; color: string }> = {
+export const LEVEL: Record<VerdictLevel, { glyph: string; word: string; color: string }> = {
   match: { glyph: "✓", word: "RIGHT ONE", color: "#66BB6A" },
   warning: { glyph: "⚠", word: "CHECK", color: "#FFCA28" },
   unsure: { glyph: "?", word: "NOT SURE", color: "#4FC3F7" },
@@ -83,6 +83,53 @@ function HudScene({ verdict, stale }: { verdict: Verdict; stale: boolean }) {
         </p>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * The card the Display shows (key prompt, coach cue, scene strip, verdict or idle). Pure, so the /stage
+ * projector renders the exact same markup as a live replica.
+ */
+export function HudCard({ keyNeeded, cue, verdict, stale }: { keyNeeded: boolean; cue: { cue: CoachCue; text: string } | null; verdict: Verdict | null; stale: boolean }) {
+  const L = verdict ? LEVEL[verdict.level] : null;
+  const headline = verdict?.headline.toLowerCase() ?? "";
+  const keyFields = [verdict?.read.product.value, verdict?.read.strength.value].filter((x): x is string => !!x && !headline.includes(x.toLowerCase()));
+  return (
+    keyNeeded ? (
+      <section className="hud-card" style={{ borderColor: "#FFCA28" }}>
+        <p className="hud-headline">Access key needed</p>
+        <p className="hud-small">Open the HUD link with its ?key=… (set it in the Meta AI app).</p>
+      </section>
+    ) : cue && !verdict ? (
+      <section className="hud-card cue-card">
+        <span className="hud-cue-glyph">
+          <CueArrow cue={cue.cue} size={104} />
+        </span>
+        <p className="hud-headline">{cue.text}</p>
+      </section>
+    ) : verdict && L && verdict.mode === "scene" && verdict.items?.length ? (
+      <HudScene verdict={verdict} stale={stale} />
+    ) : verdict && L ? (
+      <section className={`hud-card verdict-card ${stale ? "stale" : ""}`} style={{ "--lvl": L.color } as React.CSSProperties}>
+        <p className="hud-level">
+          <span className="hud-glyph" aria-hidden="true">
+            {L.glyph}
+          </span>{" "}
+          {L.word}
+          {stale ? <span className="hud-old"> (old)</span> : null}
+        </p>
+        <p className="hud-headline">{verdict.headline}</p>
+        {keyFields.length ? <p className="hud-fields">{keyFields.join(" · ")}</p> : null}
+        {verdict.crossCheck ? <p className="hud-small">{verdict.crossCheck.agrees === true ? "✓ Double-checked with pack code" : verdict.crossCheck.agrees === false ? "⚠ Pack code mismatch" : "Pack code read"}</p> : null}
+        {verdict.matchedMedId && verdict.takenToday != null ? <p className="hud-small">{verdict.takenToday ? "Already taken today" : "Not taken today"}</p> : null}
+        {verdict.reasons[0] ? <p className="hud-small">{verdict.reasons[0]}</p> : null}
+      </section>
+    ) : (
+      <section className="hud-card idle-card">
+        <p className="hud-headline hud-accent">Hold it up.</p>
+        <p className="hud-small">Ask: "Is this my evening pill?"</p>
+      </section>
+    )
   );
 }
 
@@ -296,9 +343,6 @@ export function Hud() {
   }, []);
 
   const stale = conn !== "open" && !!verdict;
-  const L = verdict ? LEVEL[verdict.level] : null;
-  const headline = verdict?.headline.toLowerCase() ?? "";
-  const keyFields = [verdict?.read.product.value, verdict?.read.strength.value].filter((x): x is string => !!x && !headline.includes(x.toLowerCase()));
   // worn/battery may be null (unknown): only a definite false means "not usable"
   const camText = device ? (device.source === "glasses" && device.connected !== false && device.worn !== false ? "glasses camera" : "phone camera") : "";
   const batt = device?.battery != null ? `glasses ${device.battery}%` : ownBattery != null ? `display ${ownBattery}%` : "";
@@ -308,41 +352,7 @@ export function Hud() {
       <main className="hud-main">
         <h1 className="sr-only">HoldUp display</h1>
         <div className="hud-live" aria-live="assertive" aria-atomic="true">
-        {keyNeeded ? (
-          <section className="hud-card" style={{ borderColor: "#FFCA28" }}>
-            <p className="hud-headline">Access key needed</p>
-            <p className="hud-small">Open the HUD link with its ?key=… (set it in the Meta AI app).</p>
-          </section>
-        ) : cue && !verdict ? (
-          <section className="hud-card cue-card">
-            <span className="hud-cue-glyph">
-              <CueArrow cue={cue.cue} size={104} />
-            </span>
-            <p className="hud-headline">{cue.text}</p>
-          </section>
-        ) : verdict && L && verdict.mode === "scene" && verdict.items?.length ? (
-          <HudScene verdict={verdict} stale={stale} />
-        ) : verdict && L ? (
-          <section className={`hud-card verdict-card ${stale ? "stale" : ""}`} style={{ "--lvl": L.color } as React.CSSProperties}>
-            <p className="hud-level">
-              <span className="hud-glyph" aria-hidden="true">
-                {L.glyph}
-              </span>{" "}
-              {L.word}
-              {stale ? <span className="hud-old"> (old)</span> : null}
-            </p>
-            <p className="hud-headline">{verdict.headline}</p>
-            {keyFields.length ? <p className="hud-fields">{keyFields.join(" · ")}</p> : null}
-            {verdict.crossCheck ? <p className="hud-small">{verdict.crossCheck.agrees === true ? "✓ Double-checked with pack code" : verdict.crossCheck.agrees === false ? "⚠ Pack code mismatch" : "Pack code read"}</p> : null}
-            {verdict.matchedMedId && verdict.takenToday != null ? <p className="hud-small">{verdict.takenToday ? "Already taken today" : "Not taken today"}</p> : null}
-            {verdict.reasons[0] ? <p className="hud-small">{verdict.reasons[0]}</p> : null}
-          </section>
-        ) : (
-          <section className="hud-card idle-card">
-            <p className="hud-headline hud-accent">Hold it up.</p>
-            <p className="hud-small">Ask: "Is this my evening pill?"</p>
-          </section>
-        )}
+        <HudCard keyNeeded={keyNeeded} cue={cue} verdict={verdict} stale={stale} />
         </div>
       </main>
 

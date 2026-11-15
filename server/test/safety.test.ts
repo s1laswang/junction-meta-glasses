@@ -139,6 +139,12 @@ test("allergens: arachis oil = peanut, hazelnut = tree nuts, may-contain", () =>
   assert.match(c.speech, /Best before 3 December 2026/);
 });
 
+test("Finnish 'voi sisältää' (may contain) is not read as 'voi' (butter = milk)", () => {
+  const milkAllergic: Profile = { ...profile, allergies: ["milk"] };
+  const v = checkLabel(read({ kind: "food", product: f("Kaurakeksi"), allergens: f(["voi sisältää: seesami"], 0.97), readability: 0.9 }), milkAllergic, NOW);
+  assert.notEqual(v.level, "warning", v.speech);
+});
+
 test("'none of your allergens' needs a near-certain, complete panel read (eval v1 allergen fix)", () => {
   // partial panel: legible but only 0.9 confident -> unsure, not a reassurance
   const a = checkLabel(read({ kind: "food", product: f("Granola"), allergens: f(["oats"], 0.9) }), profile, NOW);

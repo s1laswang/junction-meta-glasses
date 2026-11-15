@@ -1,16 +1,16 @@
 # HoldUp × Gemini: Best Use of Gemini API
 
 **Code pointers:**
-- Live API with mid-stream function calling: `server/src/live.ts:166-171` (`ai.live.connect`, `functionDeclarations: toolsFor(...)`); non-blocking `show_cue` at `live.ts:34`; tool responses at `live.ts:267`.
-- Schema-constrained verify: `server/src/verify.ts:136` (`responseJsonSchema`), prompt `shared/verify_prompt.md`, schema `shared/label_schema.json`.
+- Live API with mid-stream function calling: `server/src/live.ts`, `ai.live.connect({...})` with `tools: [{ functionDeclarations: toolsFor(this.hub.features) }]` (lines 168–173); non-blocking `show_cue` (`Behavior.NON_BLOCKING`, line 34); tool results go back with `session.sendToolResponse` (line 286).
+- Schema-constrained verify: `server/src/verify.ts`, `responseJsonSchema: schema` (line 144), prompt `shared/verify_prompt.md`, schema `shared/label_schema.json`.
 - `box_2d` grounding: `server/src/find.ts:21` (scene mode, "Which one?").
-- Speculative verify cache: `server/src/speculate.ts:22` (`class Speculator`); cache hits are logged at `speculate.ts:93`. (Line numbers as of main on Sun 15 Nov, about 03:00; search for the quoted symbol if they drift.)
+- Speculative verify cache: `server/src/speculate.ts`, `class Speculator` (line 22); cache hits are logged in `get()` (line 96). Line numbers are for commit-pinned main on Sun 15 Nov about 05:15; search for the quoted symbol if they have moved.
 - Deterministic safety layer: `server/src/safety.ts`. Eval: `docs/EVAL.md`, `eval/results/v1_results.json`.
 
 ## 1. The problem and why it matters
 About 55,000 people in Finland are visually impaired, most of them over 65, and many manage several look-alike medicine boxes a day. "Is this my evening pill?" and "does this contain nuts?" are questions they can't answer alone. A wrong answer is a medication error or an allergic reaction. Existing options leave a safety gap: **Seeing AI** needs a free hand to aim a phone blind and reads raw text aloud, **Be My Eyes** exposes private prescriptions to a volunteer or gives general AI descriptions, and **built-in "Hey Meta"** describes a scene without abstaining on partial text or knowing *your* regimen. HoldUp closes that gap with hands-free voice coaching into calibrated per-field confidence (abstaining when dose confidence `< 0.8` or allergen confidence `< 0.95`), a deterministic `safety.ts` check against your on-device medication, allergy, and dose profile, and an EU FMD DataMatrix cross-check.
 
-**HoldUp** runs on Meta AI glasses:
+**HoldUp** is built for Meta AI glasses (today the full loop runs on the phone camera; on-glasses evidence in `docs/HARDWARE_LOG.md`):
 - you hold the item up;
 - it coaches you by voice until the label is readable;
 - it reads the label with a confidence for each field;
@@ -31,6 +31,7 @@ Gemini's output never decides safety alone. A deterministic `safety.ts` turns th
 ## 3. What's innovative and technically impressive
 - **Speculative verify:** while the user is still asking, the server already reads the sharpest new frame. The Live tool call is answered from that cache in under 5 ms, so time from question to first audio fell from **5.8 s (one run, before the change) to p50 2.1 s / p95 3.4 s** (n = 26 live sessions, `docs/evidence/`).
 - **Calibrated abstention, measured:** across **1,740 images**, **0 of 754 confident strength reads were wrong** (95% upper bound 0.4%), and calibration ECE is 0.022 (0.018–0.028). End-to-end silent unsafe reassurance fell from 1.0% (49/4,730) to **0.06% (3/4,730, CI 0.02–0.19%)** after the allergen gate. The cost: safe foods get "not sure" more often (`docs/EVAL.md`). Not counted as silent: 47/4,730 (0.99%, 0.75–1.32%) are matches that say aloud "I couldn't read the expiry date". The allergen gate also halves correct "allergen-free" answers on truly safe foods: 44/130 = 33.8% (26.3–42.3%), down from 67.7%.
+- **Red-teamed with Gemini, at scale:** a separate Gemini session designed 32 attack families (`gemini-4-carbon`), wrote 2,048 specs (`gemini-4-hydrogen`) and rendered 2,264 adversarial label images. The shipped reader plus `safety.ts` gave a silent unsafe reassurance on 199/2,264 = 8.79% (7.69–10.03%) before the new guards and 13/2,264 = 0.57% (0.34–0.98%) after. That "after" is in-sample: the guards were written from those failures, and all 199 are pinned as regression tests (`eval/results/redteam_v1.json`, `docs/EVAL.md`).
 - **The AI read must agree with the pack's own machine code** (GS1 DataMatrix: GTIN and expiry) before HoldUp says "double-checked".
 - **Gemini on both sides:** Gemini builds the test set, Gemini is tested on it, and fixed rules plus confidence gates keep it honest.
 
