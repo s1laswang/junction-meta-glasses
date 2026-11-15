@@ -3,5 +3,5 @@
     <string name="app_name">HoldUp Bridge</string>
     <string name="notification_channel_name">Lasien kameravirta</string>
     <string name="notification_title">HoldUp käyttää lasiesi kameraa</string>
-    <string name="notification_body">Kuvat lähetetään vain HoldUp-istuntoosi. Lopeta avaamalla sovellus.</string>
+    <string name="notification_body">Kuvat lähetetään vain omaan HoldUp-istuntoosi. Avaa sovellus ja pysäytä lähetys.</string>
 </resources>

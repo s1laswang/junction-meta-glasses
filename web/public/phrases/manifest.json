@@ -1,6 +1,6 @@
 {
   "model": "eleven_flash_v2_5",
-  "generated": "2026-11-14T20:09:43.984Z",
+  "generated": "2026-11-15T01:31:15.491Z",
   "phrases": {
     "en": {
       "offline": {
@@ -35,27 +35,27 @@
     "fi": {
       "offline": {
         "file": "/phrases/fi/offline.mp3",
-        "text": "Olet offline-tilassa. Tunnistan yhä tallennetut lääkkeesi viivakoodista, mutta en pysty lukemaan uusia etikettejä."
+        "text": "Ei verkkoyhteyttä. Tunnistan yhä tallennetut lääkkeesi viivakoodista, mutta en voi lukea uusia pakkauksia."
       },
       "back_online": {
         "file": "/phrases/fi/back_online.mp3",
-        "text": "Yhteys palasi. Avustaja yhdistää uudelleen."
+        "text": "Verkkoyhteys palasi. Puheavustaja yhdistää uudelleen."
       },
       "not_sure": {
         "file": "/phrases/fi/not_sure.mp3",
-        "text": "En ole varma, enkä arvaa annosta. Käännä pakkausta hitaasti tai kysy apteekista."
+        "text": "En ole varma. En koskaan arvaa vahvuutta tai annosta. Käännä pakkausta hitaasti tai kysy apteekista."
       },
       "unknown_offline": {
         "file": "/phrases/fi/unknown_offline.mp3",
-        "text": "En tunnista tätä pakkausta offline-tilassa. Se ei ole tallennettu lääkkeesi."
+        "text": "En tunnista tätä pakkausta ilman verkkoyhteyttä. Se ei ole tallennettujen lääkkeidesi listalla."
       },
       "already_taken": {
         "file": "/phrases/fi/already_taken.mp3",
-        "text": "Olet jo ottanut tämän tänään. Älä ota toista, ellei hoito-ohjeesi niin sano."
+        "text": "Olet jo ottanut tämän lääkkeen tänään. Älä ota uutta annosta, ellei annostusohjeessasi lue niin."
       },
       "glasses_off": {
         "file": "/phrases/fi/glasses_off.mp3",
-        "text": "Lasit otettu pois. Vaihdettu puhelimen kameraan."
+        "text": "Lasit otettiin päästä. Käytetään puhelimen kameraa."
       },
       "camera_off": {
         "file": "/phrases/fi/camera_off.mp3",
@@ -65,31 +65,31 @@
     "sv": {
       "offline": {
         "file": "/phrases/sv/offline.mp3",
-        "text": "Du är offline. Jag känner fortfarande igen dina sparade läkemedel via streckkoden, men jag kan inte läsa nya etiketter."
+        "text": "Ingen nätverksanslutning. Jag känner fortfarande igen dina sparade läkemedel via streckkoden, men jag kan inte läsa nya förpackningar."
       },
       "back_online": {
         "file": "/phrases/sv/back_online.mp3",
-        "text": "Uppkopplad igen. Assistenten ansluter på nytt."
+        "text": "Uppkopplad igen. Röstassistenten ansluter på nytt."
       },
       "not_sure": {
         "file": "/phrases/sv/not_sure.mp3",
-        "text": "Jag är inte säker, och jag gissar inte en dos. Vrid förpackningen långsamt, eller fråga på apoteket."
+        "text": "Jag är inte säker. Jag gissar aldrig styrka eller dos. Vrid långsamt på förpackningen, eller fråga på apoteket."
       },
       "unknown_offline": {
         "file": "/phrases/sv/unknown_offline.mp3",
-        "text": "Jag känner inte igen den här förpackningen offline. Den är inte ett av dina sparade läkemedel."
+        "text": "Jag känner inte igen den här förpackningen utan nätverksanslutning. Den finns inte i din sparade läkemedelslista."
       },
       "already_taken": {
         "file": "/phrases/sv/already_taken.mp3",
-        "text": "Du har redan tagit den här i dag. Ta inte en till om inte din plan säger det."
+        "text": "Du har redan tagit det här läkemedlet i dag. Ta inte en ny dos om det inte står så i din doseringsanvisning."
       },
       "glasses_off": {
         "file": "/phrases/sv/glasses_off.mp3",
-        "text": "Glasögonen är av. Bytte till telefonens kamera."
+        "text": "Glasögonen togs av. Bytte till telefonens kamera."
       },
       "camera_off": {
         "file": "/phrases/sv/camera_off.mp3",
-        "text": "Kameran är av."
+        "text": "Kameran är avstängd."
       }
     }
   }

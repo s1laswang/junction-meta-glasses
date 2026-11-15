@@ -982,3 +982,26 @@ test("DevicePanel.tsx SSR renders details/summary disclosure, paired dl/dt/dd st
   assert.match(openHtml, /<button class="btn small">Back to live<\/button>/);
   assert.ok(!openHtml.includes("disabled="));
 });
+
+test("phrases.ts PHRASE_TEXT and phraseText match manifest.json and return localized FI/SV text on fallback", async () => {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const { PHRASE_TEXT, phraseText } = await import("../src/lib/phrases.ts");
+  const manifestPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public/phrases/manifest.json");
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as {
+    phrases: Record<string, Record<string, { file: string; text: string }>>;
+  };
+  const ids = ["offline", "back_online", "not_sure", "unknown_offline", "already_taken", "glasses_off", "camera_off"];
+  for (const id of ids) {
+    for (const lang of ["en", "fi", "sv"] as const) {
+      assert.equal(PHRASE_TEXT[lang][id], manifest.phrases[lang][id].text, `Mismatch for ${lang}/${id}`);
+      if (lang !== "en") {
+        assert.equal(phraseText(id, lang, "English fallback"), manifest.phrases[lang][id].text);
+        assert.equal(phraseText(id, `${lang}-${lang.toUpperCase()}`, "English fallback"), manifest.phrases[lang][id].text);
+      } else {
+        assert.equal(phraseText(id, "en", "Custom English fallback"), "Custom English fallback");
+      }
+    }
+  }
+});

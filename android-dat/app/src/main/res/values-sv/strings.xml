@@ -3,5 +3,5 @@
     <string name="app_name">HoldUp Bridge</string>
     <string name="notification_channel_name">Kameraström från glasögon</string>
     <string name="notification_title">HoldUp använder kameran i dina glasögon</string>
-    <string name="notification_body">Bildrutor skickas endast till din HoldUp-session. Öppna appen för att stoppa.</string>
+    <string name="notification_body">Bilder skickas endast till din HoldUp-session. Öppna appen för att stoppa sändningen.</string>
 </resources>
