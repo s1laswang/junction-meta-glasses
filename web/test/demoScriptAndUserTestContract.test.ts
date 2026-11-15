@@ -213,8 +213,8 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
 
   test("aligns spoken verdicts in DEMO_SCRIPT.md with server/src/safety.ts and web/src/lib/verdicts.ts", () => {
     const profile = demoProfile();
-    const eveningNow = new Date("2026-11-15T19:15:00+02:00");
-    const morningNow = new Date("2026-11-15T09:15:00+02:00");
+    const eveningNow = new Date(2026, 10, 15, 19, 15, 0);
+    const morningNow = new Date(2026, 10, 15, 9, 15, 0);
 
     const amlodipineRead: LabelRead = {
       ...emptyRead("medication"),
@@ -291,7 +291,7 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
 
     const loggedProfile = {
       ...profile,
-      doseLog: [{ medId: "amlodipine", ts: new Date("2026-11-15T08:30:00+02:00").getTime() }],
+      doseLog: [{ medId: "amlodipine", ts: new Date(2026, 10, 15, 8, 30, 0).getTime() }],
     };
     const offlineDoubleDose = matchVerdict(loggedProfile, profile.meds[0], { via: "barcode", now: eveningNow });
     assert.equal(offlineDoubleDose.level, "warning");
