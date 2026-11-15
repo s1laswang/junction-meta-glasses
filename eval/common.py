@@ -82,7 +82,8 @@ def is_retryable(e: Exception) -> bool:
     return any(t in s for t in ("429", "RESOURCE_EXHAUSTED", "UNAVAILABLE", "503", "500",
                                  "INTERNAL", "DEADLINE", "timed out", "Timeout",
                                  "Connection", "overloaded", "empty response", "SSL", "EOF",
-                                 "disconnected", "reset by peer", "Temporary failure", "nodename"))
+                                 "disconnected", "reset by peer", "Temporary failure", "nodename",
+                                 "Expecting", "Unterminated", "Extra data"))  # truncated JSON
 
 
 def with_retries(fn: Callable[[], Any], tries: int = 6, base: float = 2.0, label: str = "") -> Any:
