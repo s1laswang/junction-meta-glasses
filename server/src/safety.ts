@@ -433,15 +433,25 @@ export function allergenHits(read: LabelRead, allergies: string[]): AllergenHit[
 export function isExpired(expiry: string | null | undefined, now = new Date()): boolean | undefined {
   const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(expiry ?? "");
   if (!m) return undefined;
-  const y = +m[1], mo = +m[2], d = m[3] ? +m[3] : undefined;
-  const end = d ? new Date(y, mo - 1, d, 23, 59, 59) : new Date(y, mo, 0, 23, 59, 59);
+  const y = +m[1], mo = +m[2], d = m[3] !== undefined ? +m[3] : undefined;
+  if (mo < 1 || mo > 12) return undefined;
+  if (d !== undefined && (d < 1 || d > 31)) return undefined;
+  const safeDay = d !== undefined ? Math.min(d, new Date(y, mo, 0).getDate()) : undefined;
+  const end = safeDay !== undefined ? new Date(y, mo - 1, safeDay, 23, 59, 59) : new Date(y, mo, 0, 23, 59, 59);
   return end.getTime() < now.getTime();
 }
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 export function sayDate(iso: string): string {
   const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(iso);
   if (!m) return iso;
-  return `${m[3] ? +m[3] + " " : ""}${MONTHS[+m[2] - 1]} ${m[1]}`;
+  const y = +m[1], mo = +m[2];
+  if (mo < 1 || mo > 12) return iso;
+  if (m[3] !== undefined) {
+    const d = +m[3];
+    if (d < 1 || d > 31) return iso;
+    return `${Math.min(d, new Date(y, mo, 0).getDate())} ${MONTHS[mo - 1]} ${m[1]}`;
+  }
+  return `${MONTHS[mo - 1]} ${m[1]}`;
 }
 
 /** "amlodipine besilate" -> "amlodipine": salt forms are on the box in small print, people say the base name. */
@@ -453,7 +463,9 @@ export function spokenIngredient(s: string | null | undefined): string {
 /** "2024-11" / "2024-11-30" -> "November 2024" */
 export function monthYear(iso: string): string {
   const m = /^(\d{4})-(\d{2})/.exec(iso);
-  return m ? `${MONTHS[+m[2] - 1]} ${m[1]}` : iso;
+  if (!m) return iso;
+  const mo = +m[2];
+  return mo >= 1 && mo <= 12 ? `${MONTHS[mo - 1]} ${m[1]}` : iso;
 }
 
 export function dosesToday(profile: Profile, medId: string, now = new Date()): number {
@@ -549,7 +561,7 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
         `This is ${label}, your medicine. This box expired in ${monthYear(read.expiry.value!)}, so ask a pharmacist for a new one.`, { matchedMedId: med.id });
     }
     // expiry unknown (not legible / low confidence): still a match, but say so
-    const expiryUnknown = !read.expiry.value || read.expiry.confidence < 0.7;
+    const expiryUnknown = expired === undefined;
     if (expiryUnknown) reasons.push("expiry not readable");
     const taken = dosesToday(profile, med.id, now);
     const perDay = Math.max(1, med.schedule.length);
@@ -565,7 +577,7 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
 
   // food / other
   const what = productName || (read.kind === "food" ? "this food" : "this item");
-  const exp = read.expiry.value && read.expiry.confidence >= 0.7 ? read.expiry.value : undefined;
+  const exp = expired !== undefined ? read.expiry.value! : undefined;
   if (allergyHits.length) {
     const sure = allergyHits.filter((h) => !h.mayContain);
     const h = sure[0] ?? allergyHits[0];
