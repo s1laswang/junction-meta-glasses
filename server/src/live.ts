@@ -74,19 +74,20 @@ export function toolsFor(features: Set<string>): FunctionDeclaration[] {
   return [...TOOLS, ...(features.has("scene") ? [FIND_ITEM] : []), ...(features.has("addmed") ? [ADD_MEDICATION] : [])];
 }
 
-// Fixed, human-written verdict openers. The safety-critical word (right one / warning / not sure) is never
+// Fixed, human-written verdict openers. The safety-critical word (right one / warning / not sure / for info) is never
 // produced by model translation. In FI/SV, only the details after the opener are translated by Live.
 export const VERDICT_LEAD: Record<string, Record<VerdictLevel, string>> = {
-  fi: { match: "Oikea pakkaus.", warning: "Varoitus.", unsure: "En ole varma.", info: "Tieto." },
-  sv: { match: "Rätt förpackning.", warning: "Varning.", unsure: "Jag är inte säker.", info: "Information." },
+  fi: { match: "Oikea pakkaus.", warning: "Varoitus.", unsure: "En ole varma.", info: "Tiedoksi." },
+  sv: { match: "Rätt förpackning.", warning: "Varning.", unsure: "Jag är inte säker.", info: "För kännedom." },
 };
+const normLangCode = (lang: string) => (lang || "en").trim().toLowerCase().slice(0, 2);
 export function leadFor(lang: string, level: VerdictLevel): { lead?: string } {
-  const l = VERDICT_LEAD[(lang || "en").slice(0, 2)];
+  const l = VERDICT_LEAD[normLangCode(lang)];
   return l ? { lead: l[level] } : {};
 }
 export function speakInstruction(lang: string, tail: string): string {
-  return VERDICT_LEAD[(lang || "en").slice(0, 2)]
-    ? `First say \`lead\` exactly as written, then say \`speech\` translated faithfully into the user's language (keep names, numbers and dates exactly), then stop. ${tail}`
+  return VERDICT_LEAD[normLangCode(lang)]
+    ? `First say \`lead\` exactly as written, then say the rest of \`speech\` translated faithfully into the user's language (do not repeat the opener; keep medicine names, numbers and dates exact, using a decimal comma like 2,5 mg when speaking numbers), then stop. ${tail}`
     : `Say \`speech\` word for word, then stop. ${tail}`;
 }
 
