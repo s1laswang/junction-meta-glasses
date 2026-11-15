@@ -1,0 +1,57 @@
+{
+ "model": "google/paligemma2-3b-pt-448 + LoRA r16 (HoldUp FieldSpotter-Gemma)",
+ "epochs": 2.0,
+ "train_seconds": 1766,
+ "n_val_images": 348,
+ "per_class_iou50": {
+  "product": {
+   "tp": 143,
+   "fp": 136,
+   "fn": 166,
+   "precision": 51.3,
+   "recall": 46.3
+  },
+  "strength": {
+   "tp": 99,
+   "fp": 90,
+   "fn": 87,
+   "precision": 52.4,
+   "recall": 53.2
+  },
+  "expiry": {
+   "tp": 172,
+   "fp": 119,
+   "fn": 131,
+   "precision": 59.1,
+   "recall": 56.8
+  },
+  "allergens": {
+   "tp": 33,
+   "fp": 47,
+   "fn": 65,
+   "precision": 41.2,
+   "recall": 33.7
+  }
+ },
+ "strength_visible": {
+  "tp": 170,
+  "fp": 19,
+  "fn": 16,
+  "tn": 143,
+  "precision": 89.9,
+  "precision_ci": [
+   84.8,
+   93.5
+  ],
+  "recall": 91.4,
+  "recall_ci": [
+   86.5,
+   94.6
+  ]
+ },
+ "latency_ms_gpu": {
+  "n": 348,
+  "p50": 1426.7,
+  "p95": 1484.1
+ }
+}
