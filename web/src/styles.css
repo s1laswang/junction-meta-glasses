@@ -145,6 +145,8 @@ a {
   max-width: 640px;
   margin: 0 auto;
   min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
@@ -193,6 +195,37 @@ main {
 .lede {
   font-size: var(--t-md);
   color: var(--muted);
+}
+
+/* Focus Not Obscured (WCAG 2.2 SC 2.4.11): keyboard focus and scrollIntoView keep controls above the
+   sticky bottom tab bar (66 px) and, on the Check screen, the sticky Start/Stop button (~140 px). */
+html:has(.tabs) {
+  scroll-padding-bottom: calc(66px + 16px + env(safe-area-inset-bottom));
+}
+html:has(.tabs):has(.bigbtn-wrap) {
+  scroll-padding-bottom: calc(66px + 140px + 16px + env(safe-area-inset-bottom));
+}
+/* App shell (Sun 15 Nov): the page itself no longer scrolls. `main` is the scroll container and the tab bar is a
+   normal flex child below it, so no control can sit underneath the tab bar (axe target-size, WCAG 2.5.8). */
+.app > main {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-bottom: 16px;
+}
+.app > main:has(.bigbtn-wrap) {
+  scroll-padding-bottom: calc(140px + 16px);
+}
+.app > .tabs {
+  position: static;
+  flex: none;
+}
+.app > main .bigbtn-wrap {
+  bottom: 0;
+}
+/* verdict actions (Repeat / I took it / Dismiss) must scroll clear of the sticky Start/Stop bar */
+.verdict .actions {
+  scroll-margin-bottom: calc(140px + 16px);
 }
 
 /* ---------- tabs (bottom nav) ---------- */
@@ -711,6 +744,9 @@ dialog.addsheet {
 }
 .conf.low {
   color: var(--warning);
+}
+.fields dd.conf {
+  font-weight: 400;
 }
 .verdict .actions {
   display: flex;
@@ -1343,6 +1379,406 @@ body.hud-body #root {
 .hud-dot.retry {
   border-color: #ffca28;
   border-style: dashed;
+}
+
+/* ---------- /stage projector view (16:9, read-only, readable from ~10 m) ----------
+   Everything is sized in container units of the letterboxed 16:9 frame (1cqw = 19.2 px at 1920x1080),
+   so it scales to any projector. Smallest text is about 1.3cqw (25 px at 1080p). */
+html:has(body.stage-body),
+body.stage-body {
+  background: #05080d;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+body.stage-body #root {
+  height: 100%;
+}
+.stage-fit {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+.stage {
+  container-type: inline-size;
+  width: min(100vw, 177.78vh);
+  aspect-ratio: 16 / 9;
+  background: var(--bg);
+  color: var(--text);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+.stage-head {
+  display: flex;
+  align-items: center;
+  gap: 1.6cqw;
+  padding: 1.1cqw 2cqw 0.6cqw;
+}
+.stage-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8cqw;
+  font-size: 2.2cqw;
+  font-weight: 800;
+}
+.stage-brand svg {
+  width: 2.6cqw;
+  height: 2.6cqw;
+}
+.stage-sub {
+  font-size: 1.4cqw;
+  color: var(--muted);
+  font-weight: 700;
+}
+.stage-mock {
+  font-size: 1.4cqw;
+  font-weight: 800;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 0.6cqw;
+  padding: 0.2cqw 0.8cqw;
+  letter-spacing: 0.04em;
+}
+.stage-conn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7cqw;
+  font-size: 1.5cqw;
+  font-weight: 800;
+}
+.stage-dot {
+  width: 1.2cqw;
+  height: 1.2cqw;
+  border-radius: 50%;
+  border: 0.25cqw solid var(--text);
+}
+.stage-conn.open .stage-dot {
+  background: var(--match);
+  border-color: var(--match);
+}
+.stage-conn.retry .stage-dot {
+  border-color: var(--accent);
+  border-style: dashed;
+}
+.stage-cols {
+  display: grid;
+  grid-template-columns: 32fr 37fr 31fr;
+  gap: 1.8cqw;
+  padding: 0.4cqw 2cqw 0;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+}
+.stage-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1cqw;
+  min-width: 0;
+  min-height: 0;
+}
+.stage-h {
+  margin: 0;
+  font-size: 1.4cqw;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.stage-note,
+.stage-foot {
+  margin: 0;
+  font-size: 1.3cqw;
+  color: var(--muted);
+  font-weight: 700;
+}
+.stage-foot {
+  padding: 0.6cqw 2cqw 0.9cqw;
+}
+
+/* left: the Display replica, the real 600x600 HUD scaled (sizes = the HUD's max clamp values / 6 px) */
+.stage-lens {
+  container-type: size;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 40cqw;
+  max-width: 40cqw;
+  background: #000;
+  border: 0.15cqw solid var(--border);
+  border-radius: 1.4cqw;
+  overflow: hidden;
+}
+.stage-lens .hud {
+  height: 100%;
+  grid-template-rows: 1fr;
+  padding: 5.3cqw;
+  gap: 2.7cqw;
+}
+.stage-lens .hud-card {
+  border-width: 0.67cqw;
+  border-radius: 3.3cqw;
+  padding: 4cqw;
+  gap: 1.67cqw;
+}
+.stage-lens .hud-level {
+  font-size: 4.67cqw;
+  margin: 0;
+}
+.stage-lens .hud-glyph {
+  border-radius: 1.33cqw;
+  margin-right: 1cqw;
+}
+.stage-lens .hud-headline {
+  font-size: 7.47cqw;
+  margin: 0;
+}
+.stage-lens .hud-fields {
+  font-size: 3.73cqw;
+  margin: 0;
+}
+.stage-lens .hud-small {
+  font-size: 3.07cqw;
+  margin: 0;
+}
+.stage-lens .hud-strip {
+  gap: 1.33cqw;
+  margin: 0.67cqw 0;
+}
+.stage-lens .hud-slot .hud-glyph {
+  margin: 0;
+  font-size: 4cqw;
+}
+.stage-lens .hud-slot.target .hud-glyph {
+  font-size: 6.93cqw;
+  outline-width: 0.67cqw;
+  outline-offset: 0.67cqw;
+}
+.stage-lens .hud-cue-glyph svg {
+  width: 17.3cqw;
+  height: 17.3cqw;
+}
+
+/* centre: captions, cue, readiness */
+.stage-captions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+  flex: 1;
+  min-height: 0;
+}
+.stage-cap {
+  margin: 0;
+  display: grid;
+  gap: 0.2cqw;
+  opacity: 0.62;
+}
+.stage-cap.now {
+  opacity: 1;
+}
+.stage-who {
+  font-size: 1.3cqw;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stage-said {
+  /* show the newest words: overflow is clipped at the top */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  font-weight: 700;
+  line-height: 1.18;
+}
+.stage-cap.user .stage-said {
+  font-size: 2.1cqw;
+  max-height: calc(2 * 1.18 * 2.1cqw);
+  color: var(--unsure);
+}
+.stage-cap.assistant .stage-said {
+  font-size: 2.7cqw;
+  max-height: calc(6 * 1.18 * 2.7cqw);
+}
+.stage-cue {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1.2cqw;
+  border: 0.18cqw solid var(--border);
+  border-radius: 1cqw;
+  padding: 0.9cqw 1.2cqw;
+}
+.stage-cue.on,
+.stage-cue.checking {
+  border-color: var(--accent);
+}
+.stage-cue-glyph {
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  width: 4.6cqw;
+  height: 4.6cqw;
+}
+.stage-cue-glyph svg {
+  width: 4.6cqw;
+  height: 4.6cqw;
+}
+.stage-cue:not(.on):not(.checking) .stage-cue-glyph {
+  color: var(--border);
+}
+.stage-spin {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  border-radius: 50%;
+  border: 0.5cqw solid var(--border);
+  border-top-color: var(--accent);
+  animation: stage-spin 0.9s linear infinite;
+}
+@keyframes stage-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.stage-cue-text,
+.stage-ready {
+  display: grid;
+  gap: 0.2cqw;
+}
+.stage-k {
+  font-size: 1.3cqw;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stage-v {
+  font-size: 2.9cqw;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.stage-cue.on .stage-v,
+.stage-cue.checking .stage-v {
+  color: var(--accent);
+}
+.stage-ready {
+  padding-bottom: 0.4cqw;
+}
+.stage-meter {
+  position: relative;
+  height: 2.4cqw;
+  border: 0.18cqw solid var(--muted);
+  border-radius: 1.2cqw;
+  overflow: hidden;
+  margin-top: 0.3cqw;
+}
+.stage-meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  transition: width 0.25s linear;
+}
+.stage-meter-mark {
+  position: absolute;
+  left: 80%;
+  top: 0;
+  bottom: 0;
+  border-left: 0.25cqw dashed var(--text);
+}
+.stage-ready-val {
+  font-size: 2.2cqw;
+  font-weight: 800;
+}
+
+/* right: under the hood */
+.stage-tiles {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7cqw;
+  align-content: start;
+}
+.stage-tile {
+  background: var(--surface);
+  border: 0.12cqw solid var(--border);
+  border-radius: 0.8cqw;
+  padding: 0.45cqw 0.9cqw 0.55cqw;
+  min-width: 0;
+}
+.stage-tile.wide {
+  grid-column: 1 / -1;
+}
+.stage-tile dt {
+  font-size: 1.25cqw;
+  font-weight: 800;
+  color: var(--muted);
+}
+.stage-tile dd {
+  margin: 0;
+  font-size: 1.7cqw;
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.stage-tile dd.mono {
+  font-family: var(--mono);
+  font-weight: 500;
+}
+.stage-tile dd.stage-tile-sub {
+  font-size: 1.25cqw;
+  font-weight: 700;
+  color: var(--muted);
+}
+.stage-badge.ok {
+  border-color: var(--match);
+}
+.stage-badge.bad {
+  border-color: var(--warning);
+}
+.stage-badge.neutral {
+  border-color: var(--unsure);
+}
+.stage-badge-glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  margin-right: 0.5em;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text);
+  font-size: 0.85em;
+}
+.stage-badge.ok .stage-badge-glyph {
+  background: var(--match);
+  color: var(--on-accent);
+}
+.stage-badge.bad .stage-badge-glyph {
+  background: var(--warning);
+  color: var(--on-accent);
+  border-radius: 0.2em;
+}
+.stage-badge.neutral .stage-badge-glyph {
+  background: var(--unsure);
+  color: var(--on-accent);
+  border-radius: 0.2em;
+}
+.stage-flags {
+  list-style: none;
+  margin: 0.2cqw 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.1cqw 0.8cqw;
+  font-size: 1.35cqw;
+}
+.stage-flags li.off {
+  color: var(--muted);
+}
+.stage-flags li.on > span:first-child {
+  color: var(--match);
 }
 
 @media (prefers-reduced-motion: reduce) {

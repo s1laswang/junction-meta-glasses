@@ -96,13 +96,13 @@ test("orphanDevice adoption, floatingHuds, explicit addHud, markLatest, hudChang
     if (explicitHud.readyState === 1) explicitHud.disconnect();
   });
 
-  assert.deepEqual(hubStats(), { sessions: 0, latest: null, floatingHuds: 0 });
+  assert.deepEqual(hubStats(), { sessions: 0, latest: null, floatingHuds: 0, floatingStages: 0 });
   assert.equal(latestHub(), undefined);
   assert.equal(resolveHub(undefined), undefined);
   assert.equal(hudTarget(undefined), undefined);
 
   addHud(float1.asWs());
-  assert.deepEqual(hubStats(), { sessions: 0, latest: null, floatingHuds: 1 });
+  assert.deepEqual(hubStats(), { sessions: 0, latest: null, floatingHuds: 1, floatingStages: 0 });
   assert.equal(float1.sent.length, 0);
 
   const orphanDev: DeviceState = {
@@ -117,7 +117,7 @@ test("orphanDevice adoption, floatingHuds, explicit addHud, markLatest, hudChang
   assert.deepEqual(float1.sent[0], { type: "device", device: orphanDev });
 
   addHud(float2.asWs());
-  assert.deepEqual(hubStats(), { sessions: 0, latest: null, floatingHuds: 2 });
+  assert.deepEqual(hubStats(), { sessions: 0, latest: null, floatingHuds: 2, floatingStages: 0 });
   assert.equal(float2.sent.length, 1);
   assert.deepEqual(float2.sent[0], { type: "device", device: orphanDev });
 
@@ -128,7 +128,7 @@ test("orphanDevice adoption, floatingHuds, explicit addHud, markLatest, hudChang
   h1.lastStatus = { type: "status", live: "open" };
   h1.lastCoach = { type: "coach", cue: "closer", text: "Hold a little closer" };
   assert.equal(h1.device, undefined);
-  assert.deepEqual(hubStats(), { sessions: 1, latest: null, floatingHuds: 2 });
+  assert.deepEqual(hubStats(), { sessions: 1, latest: null, floatingHuds: 2, floatingStages: 0 });
 
   float1.sent = [];
   float2.sent = [];
@@ -137,7 +137,7 @@ test("orphanDevice adoption, floatingHuds, explicit addHud, markLatest, hudChang
   assert.equal(latestHub(), h1);
   assert.equal(resolveHub(undefined), h1);
   assert.equal(hudTarget(undefined), h1);
-  assert.deepEqual(hubStats(), { sessions: 1, latest: "alpha-se", floatingHuds: 2 });
+  assert.deepEqual(hubStats(), { sessions: 1, latest: "alpha-se", floatingHuds: 2, floatingStages: 0 });
   assert.deepEqual(phone1.sent, [{ type: "hud", connected: true }]);
   for (const fl of [float1, float2]) {
     assert.deepEqual(fl.sent, [
@@ -165,7 +165,7 @@ test("orphanDevice adoption, floatingHuds, explicit addHud, markLatest, hudChang
   float2.sent = [];
   markLatest(h2);
   assert.deepEqual(h2.device, customDev);
-  assert.deepEqual(hubStats(), { sessions: 2, latest: "bravo-se", floatingHuds: 2 });
+  assert.deepEqual(hubStats(), { sessions: 2, latest: "bravo-se", floatingHuds: 2, floatingStages: 0 });
   assert.deepEqual(phone2.sent, [{ type: "hud", connected: true }]);
   for (const fl of [float1, float2]) {
     assert.deepEqual(fl.sent, [
@@ -177,7 +177,7 @@ test("orphanDevice adoption, floatingHuds, explicit addHud, markLatest, hudChang
   phone1.sent = [];
   addHud(explicitHud.asWs(), "alpha-session-01");
   assert.equal(hudTarget("alpha-session-01"), h1);
-  assert.deepEqual(hubStats(), { sessions: 2, latest: "bravo-se", floatingHuds: 2 });
+  assert.deepEqual(hubStats(), { sessions: 2, latest: "bravo-se", floatingHuds: 2, floatingStages: 0 });
   assert.deepEqual(phone1.sent, [{ type: "hud", connected: true }]);
   assert.deepEqual(explicitHud.sent, [
     { type: "status", live: "open" },
@@ -207,12 +207,12 @@ test("orphanDevice adoption, floatingHuds, explicit addHud, markLatest, hudChang
 
   phone2.sent = [];
   float1.disconnect();
-  assert.deepEqual(hubStats(), { sessions: 2, latest: "bravo-se", floatingHuds: 1 });
+  assert.deepEqual(hubStats(), { sessions: 2, latest: "bravo-se", floatingHuds: 1, floatingStages: 0 });
   assert.deepEqual(phone2.sent, [{ type: "hud", connected: true }]);
 
   phone2.sent = [];
   float2.disconnect();
-  assert.deepEqual(hubStats(), { sessions: 2, latest: "bravo-se", floatingHuds: 0 });
+  assert.deepEqual(hubStats(), { sessions: 2, latest: "bravo-se", floatingHuds: 0, floatingStages: 0 });
   assert.deepEqual(phone2.sent, [{ type: "hud", connected: false }]);
 });
 

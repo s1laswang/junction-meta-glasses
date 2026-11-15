@@ -1,0 +1,93 @@
+{
+  "id": "rt_f03_017__clean",
+  "spec_id": "rt_f03_017",
+  "family": "F03_insulin_analog_crossmatch",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The user's saved medication is basal insulin glargine 100 IU/ml, whereas this pen contains rapid-acting insulin lispro 100 IU/ml.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Humalog KwikPen 100 E/ml",
+    "ingredient": "insulin lispro",
+    "strength": "100 IU/ml",
+    "expiry": "2027-09",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Lantus SoloStar",
+        "ingredient": "insulin glargine",
+        "strength": "100 IU/ml",
+        "schedule": [
+          "bedtime"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Humalog KwikPen",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "insulin lispro",
+      "confidence": 0.98
+    },
+    "strength": {
+      "value": "100 IU/ml",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-09",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)07312345678901(17)270900(10)RT01(21)SN017"
+}

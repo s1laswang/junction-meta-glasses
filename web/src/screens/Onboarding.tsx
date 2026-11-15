@@ -25,7 +25,7 @@ const CARDS = [
     icon: <Icon.cloud size={56} />,
     title: "Where it goes",
     points: [
-      "Pictures and voice travel over an encrypted connection to Google's Gemini AI, which reads the label and talks to you.",
+      "Pictures, voice and, during a check, your medicine list and allergies travel over an encrypted connection to the HoldUp server and Google's Gemini AI, which reads the label and talks to you.",
       "HoldUp handles them in memory and does not store your pictures, audio or what you said.",
       "People in view are ignored. HoldUp never describes faces.",
     ],
@@ -34,9 +34,9 @@ const CARDS = [
     icon: <Icon.phone size={56} />,
     title: "What stays on this phone",
     points: [
-      "Your medicine list, allergies and dose log are saved only on this phone.",
+      "Your medicine list, allergies and dose log are stored only on this phone. The server holds a copy in memory only while a check runs (up to 10 minutes for reconnecting), never on disk.",
       "You can delete everything with one button in Privacy.",
-      "HoldUp is not a medical device. It never guesses a dose, and when it isn't sure it tells you to ask a pharmacist.",
+      "HoldUp is a research prototype, not a CE-marked medical device. It only states a dose it can read clearly, and when it isn't sure it tells you to ask a pharmacist.",
     ],
   },
 ];
