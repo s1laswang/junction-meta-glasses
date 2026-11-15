@@ -1,0 +1,93 @@
+{
+  "id": "rt_f03_012__specular_glare",
+  "spec_id": "rt_f03_012",
+  "family": "F03_insulin_analog_crossmatch",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Held pen is rapid-acting insulin aspart 100 IU/ml, whereas the user's saved medication is basal insulin glargine 100 IU/ml.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "NovoRapid FlexPen 100 IU/ml",
+    "ingredient": "insulin aspart",
+    "strength": "100 IU/ml",
+    "expiry": "2029-10",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Lantus SoloStar",
+        "ingredient": "insulin glargine",
+        "strength": "100 IU/ml",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "NovoRapid FlexPen",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "insulin aspart",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "100 IU/ml",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2029-10",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05012345001134(17)291000(10)RT01(21)SN012"
+}

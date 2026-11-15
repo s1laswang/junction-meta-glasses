@@ -1,0 +1,88 @@
+{
+  "id": "rt_f25_012__specular_glare",
+  "spec_id": "rt_f25_012",
+  "family": "F25_swedish_inflected_allergens",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Contains oat/gluten in Swedish compound form (HAVREGRYN), which is unsafe for a user with gluten allergy.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Oatly Havredryck Choklad",
+    "ingredient": "",
+    "strength": "",
+    "expiry": "2027-04-25",
+    "allergens": [
+      "gluten"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "gluten"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "food",
+    "product": {
+      "value": "Oatly Havredryck Choklad",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "chocolate oat drink",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-04-25",
+      "confidence": 0.98
+    },
+    "allergens": {
+      "value": [
+        "oat"
+      ],
+      "confidence": 0.95
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.95
+  },
+  "baseline_verdict": {
+    "level": "info",
+    "reasons": [
+      "no listed allergen matches your profile"
+    ],
+    "matchedMedId": null
+  },
+  "patched_verdict": {
+    "level": "info",
+    "reasons": [
+      "no listed allergen matches your profile"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": false
+}

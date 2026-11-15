@@ -12,9 +12,17 @@ function zx() {
     const mod = await import("zxing-wasm/reader");
     const require = createRequire(import.meta.url);
     const wasm = fs.readFileSync(require.resolve("zxing-wasm/reader/zxing_reader.wasm"));
-    mod.prepareZXingModule({ overrides: { wasmBinary: wasm.buffer.slice(wasm.byteOffset, wasm.byteOffset + wasm.byteLength) as ArrayBuffer }, fireImmediately: true });
+    try {
+      await mod.prepareZXingModule({ overrides: { wasmBinary: wasm.buffer.slice(wasm.byteOffset, wasm.byteOffset + wasm.byteLength) as ArrayBuffer }, fireImmediately: true });
+    } catch (e) {
+      mod.purgeZXingModule();
+      throw e;
+    }
     return mod;
-  })();
+  })().catch((e) => {
+    ready = undefined;
+    throw e;
+  });
   return ready;
 }
 
@@ -22,13 +30,23 @@ export const DM = { minGapMs: 1500, slowMs: 150, backoffMs: 10_000 };
 
 /** Decode GS1 DataMatrix codes from a JPEG. Returns parsed codes (never logs their content). */
 export async function decodeDataMatrix(jpeg: Buffer): Promise<{ codes: Gs1Code[]; ms: number }> {
+  if (!Buffer.isBuffer(jpeg) || jpeg.length < 4) return { codes: [], ms: 0 };
   const t = Date.now();
   try {
     const { readBarcodes } = await zx();
     const res = await readBarcodes(new Uint8Array(jpeg.buffer, jpeg.byteOffset, jpeg.byteLength), {
       formats: ["DataMatrix"], tryHarder: false, tryRotate: true, tryInvert: false, maxNumberOfSymbols: 2,
     });
-    const codes = res.filter((r) => r.isValid).map((r) => parseGs1(r.text)).filter((c): c is Gs1Code => !!c);
+    const seen = new Set<string>();
+    const codes: Gs1Code[] = [];
+    for (const r of res) {
+      if (!r.isValid) continue;
+      const c = parseGs1(r.text);
+      if (c && !seen.has(c.raw)) {
+        seen.add(c.raw);
+        codes.push(c);
+      }
+    }
     return { codes, ms: Date.now() - t };
   } catch (e) {
     log("dm.error", { err: errSummary(e) });

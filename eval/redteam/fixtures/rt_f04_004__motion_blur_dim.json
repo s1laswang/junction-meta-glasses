@@ -1,0 +1,97 @@
+{
+  "id": "rt_f04_004__motion_blur_dim",
+  "spec_id": "rt_f04_004",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains isosorbide dinitrate 20 mg instead of the user's saved isosorbide mononitrate 20 mg.",
+  "perturbation": "motion_blur_dim",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Isosorbide Dinitrate Ratiopharm 20 mg",
+    "ingredient": "isosorbide dinitrate",
+    "strength": "20 mg",
+    "expiry": "2027-09",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Ismo 20 mg",
+        "ingredient": "isosorbide mononitrate",
+        "strength": "20 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Isosorbide Dinitrate Ratiopharm",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "isosorbide dinitrate",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "20 mg",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.3
+    },
+    "allergens": {
+      "value": [
+        "lactose"
+      ],
+      "confidence": 0.85
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.65,
+    "guidance": "Move the box closer and tilt to show side panels."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410100567890(17)270900(10)RT01(21)SN004"
+}

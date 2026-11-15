@@ -5,6 +5,7 @@ import { synthPcmChunks } from "./audio.ts";
 import { matchVerdict, mockFoodNuts, mockScene, mockUnsureStrength, mockWarningIbuprofen, withCrossCheck } from "./verdicts.ts";
 import { parseGs1, sameGtin } from "./gs1.ts";
 import { demoProfile } from "./storage.ts";
+import { STAGE_MSG_TYPES, type StageMetrics } from "./stage.ts";
 
 const params = typeof location !== "undefined" ? new URLSearchParams(location.search) : new URLSearchParams();
 export const IS_MOCK = params.get("mock") === "1";
@@ -32,6 +33,9 @@ let scenarioIndex = 0;
 /** Mirror to a HUD tab in the same browser (/hud?mock=1), like the server's HUD fan-out. */
 export const MOCK_HUD_CHANNEL = "holdup-hud-mock";
 let hudChannel: BroadcastChannel | null = null;
+/** Mirror to a /stage?mock=1 tab, like /hud-ws?role=stage: captions, checking, readiness and metrics too. */
+export const MOCK_STAGE_CHANNEL = "holdup-stage-mock";
+let stageChannel: BroadcastChannel | null = null;
 let lastHudStatus: ServerMsg | null = null;
 let lastHudDevice: ServerMsg | null = null;
 let lastHudCoach: ServerMsg | null = null;
@@ -59,6 +63,18 @@ function ensureHudChannel() {
   return hudChannel;
 }
 
+/** Lazily opened like the HUD channel; unref'd so Node tests never hang on it. */
+function ensureStageChannel() {
+  if (stageChannel || typeof BroadcastChannel === "undefined") return stageChannel;
+  try {
+    stageChannel = new BroadcastChannel(MOCK_STAGE_CHANNEL);
+    (stageChannel as unknown as { unref?: () => void }).unref?.();
+  } catch {
+    stageChannel = null;
+  }
+  return stageChannel;
+}
+
 export function mockHudChannel() {
   try {
     hudChannel?.close();
@@ -67,9 +83,18 @@ export function mockHudChannel() {
   } catch {
     hudChannel = null;
   }
+  try {
+    stageChannel?.close();
+    stageChannel = new BroadcastChannel(MOCK_STAGE_CHANNEL);
+    (stageChannel as unknown as { unref?: () => void }).unref?.(); // Node (tests): never keep the process alive
+  } catch {
+    stageChannel = null;
+  }
   return hudChannel;
 }
 function toHud(m: ServerMsg) {
+  // the projector mirror gets more than the HUD (captions, checking, readiness); post before the HUD filter
+  if (STAGE_MSG_TYPES.has(m.type)) ensureStageChannel()?.postMessage(m);
   if (m.type === "status") lastHudStatus = m;
   else if (m.type === "device") lastHudDevice = m;
   else if (m.type === "coach") lastHudCoach = m;
@@ -78,6 +103,30 @@ function toHud(m: ServerMsg) {
     lastHudCoach = null;
   } else return;
   ensureHudChannel()?.postMessage(m);
+}
+/** Mock "under the hood" numbers for the stage (the real server measures these). */
+const stageStats = { hits: 0, misses: 0, firstAudio: [] as number[] };
+function toStageMetrics(m: Partial<StageMetrics>, features: FeatureFlag[]) {
+  const ch = ensureStageChannel();
+  if (!ch) return;
+  const sorted = [...stageStats.firstAudio].sort((a, b) => a - b);
+  const msg: StageMetrics = {
+    type: "metrics",
+    model: "mock-gemini-live",
+    firstAudioS: stageStats.firstAudio.at(-1) ?? null,
+    firstAudioP50S: sorted[Math.floor(sorted.length / 2)] ?? null,
+    turns: stageStats.firstAudio.length,
+    verify: null,
+    cache: { hits: stageStats.hits, misses: stageStats.misses },
+    features,
+    phone: true,
+    hud: true,
+    source: mockCtl.device.source,
+    fps: mockCtl.slow ? 0.5 : 1,
+    frameKb: mockCtl.slow ? 22.1 : 41.7,
+    ...m,
+  };
+  ch.postMessage(msg);
 }
 
 export class MockSocket {
@@ -95,6 +144,7 @@ export class MockSocket {
   private features: FeatureFlag[] = ["scene", "datamatrix", "addmed", "sonar"];
   private pendingCode: Gs1Code | null = null;
   private autoTimer: ReturnType<typeof setTimeout> | null = null;
+  private scenarioTimers: ReturnType<typeof setTimeout>[] = [];
 
   constructor() {
     ensureHudChannel();
@@ -120,6 +170,18 @@ export class MockSocket {
 
   private later(ms: number, fn: () => void) {
     this.timers.push(setTimeout(fn, ms));
+  }
+  private scenarioLater(ms: number, fn: () => void) {
+    const h = setTimeout(fn, ms);
+    this.timers.push(h);
+    this.scenarioTimers.push(h);
+  }
+  private clearScenario() {
+    if (this.autoTimer) clearTimeout(this.autoTimer);
+    this.autoTimer = null;
+    this.scenarioTimers.forEach(clearTimeout);
+    this.scenarioTimers = [];
+    this.running = false;
   }
   private emit(m: ServerMsg) {
     if (this.readyState !== 1) return;
@@ -149,6 +211,7 @@ export class MockSocket {
           return;
         }
         this.emit({ type: "status", live: "open", detail: "Mock server: scripted demo" });
+        toStageMetrics({}, this.features);
         if (mockCtl.device.connected) this.emit({ type: "device", device: mockCtl.device });
         this.later(900, () => this.emit({ type: "transcript", role: "assistant", text: "Hi, I'm watching. Hold the box up in front of you.", final: true }));
         // the scripted demo starts by itself unless the user types/asks something first
@@ -163,22 +226,37 @@ export class MockSocket {
         break;
       case "datamatrix": {
         const code = parseGs1(m.raw);
-        if (code) this.pendingCode = code;
+        if (code) {
+          this.pendingCode = code;
+          if (this.lastVerdict && !this.running && this.lastVerdict.mode !== "scene" && this.features.includes("datamatrix")) {
+            const amlo = this.profile.meds.find((med) => /amlodipin/i.test(med.name + " " + med.ingredient)) ?? demoProfile().meds[0];
+            const same = !!this.lastVerdict.matchedMedId && (sameGtin(code.gtin, amlo.gtin) || sameGtin(code.gtin, amlo.barcode));
+            this.lastVerdict = withCrossCheck(
+              this.lastVerdict,
+              same,
+              same
+                ? [`GTIN ${code.gtin} = your ${amlo.name}`, `expiry: code ${code.expiry ?? "?"} = print ${code.expiry ?? "?"}`]
+                : [`pack code GTIN ${code.gtin} is not ${this.lastVerdict.read.product.value ?? "this product"}`],
+              code,
+            );
+            this.emit({ type: "verdict", verdict: this.lastVerdict });
+          }
+        }
         break;
       }
       case "frame":
         this.frames++;
         break;
       case "text": {
-        if (this.autoTimer) clearTimeout(this.autoTimer);
+        this.clearScenario();
         this.emit({ type: "transcript", role: "user", text: m.text, final: true });
         const t = m.text.toLowerCase();
-        if (/\badd\b|my medicines/.test(t) && this.features.includes("addmed")) {
-          this.later(400, () => this.runAddMed());
+        if (/\b(add|lisää|lisaa|lägg till|lagg till)\b|my medicines/.test(t) && this.features.includes("addmed")) {
+          this.scenarioLater(400, () => this.runAddMed());
           break;
         }
-        const pick = /which|table|three/.test(t) && this.features.includes("scene") ? 4 : /nut|allerg|food|bar/.test(t) ? 3 : /ibu|nsaid|pain/.test(t) ? 1 : /strength|metformin/.test(t) ? 2 : /evening|amlo|pill/.test(t) ? 0 : undefined;
-        this.later(400, () => this.runScenario(pick));
+        const pick = pickScenario(t, this.features.includes("scene"));
+        this.scenarioLater(400, () => this.runScenario(pick));
         break;
       }
       case "event":
@@ -204,7 +282,7 @@ export class MockSocket {
     if (!this.features.includes("sonar")) return;
     for (let t = fromMs, i = 0; t <= toMs; t += 250, i++) {
       const v = Math.min(0.97, 0.08 + ((t - fromMs) / (toMs - fromMs)) * 0.9 + (i % 3 === 0 ? -0.04 : 0));
-      this.later(t, () => this.emit({ type: "readiness", value: Math.max(0, v) }));
+      this.scenarioLater(t, () => this.emit({ type: "readiness", value: Math.max(0, v) }));
     }
   }
 
@@ -212,8 +290,8 @@ export class MockSocket {
   private runAddMed() {
     this.say("Sure. Hold up the first box and tell me when you take it.");
     this.rampReadiness(800, 5200);
-    this.later(2500, () => this.emit({ type: "transcript", role: "user", text: "I take this one in the morning.", final: true }));
-    this.later(5600, () => {
+    this.scenarioLater(2500, () => this.emit({ type: "transcript", role: "user", text: "I take this one in the morning.", final: true }));
+    this.scenarioLater(5600, () => {
       const med = { id: "lisinopril", name: "Lisinopril", ingredient: "lisinopril", strength: "10 mg", schedule: ["morning"], gtin: "06416542005218" };
       this.emit({ type: "profile_add", proposalId: "p" + Date.now().toString(36), med, speech: "I read Lisinopril 10 milligrams, taken in the morning." });
     });
@@ -226,7 +304,7 @@ export class MockSocket {
     const n = this.features.includes("scene") ? 5 : 4;
     const idx = which ?? scenarioIndex++ % n;
     const p = this.profile;
-    const amlo = p.meds.find((m) => /amlodipine/i.test(m.name)) ?? demoProfile().meds[0];
+    const amlo = p.meds.find((m) => /amlodipin/i.test(m.name + " " + m.ingredient)) ?? demoProfile().meds[0];
     const steps: [number, () => void][] = [
       [0, () => this.emit({ type: "transcript", role: "user", text: idx === 3 ? "Does this have nuts in it?" : idx === 4 ? "Which one is my evening pill?" : "Is this my evening pill?", final: true })],
       [1200, () => (this.emit({ type: "coach", cue: "other_side", text: "The label is facing away. Turn it around." }), this.say("I can see a box, but the label is on the other side. Turn it around."))],
@@ -248,12 +326,17 @@ export class MockSocket {
           }
           this.lastVerdict = v;
           this.emit({ type: "verdict", verdict: v });
+          // mock numbers: the scene read is a fresh call, held items mostly hit the speculative cache
+          const hit = v.mode !== "scene" && idx !== 2;
+          if (v.mode !== "scene") stageStats[hit ? "hits" : "misses"]++;
+          stageStats.firstAudio.push(Math.round((0.8 + Math.random() * 0.7) * 10) / 10);
+          toStageMetrics({ verify: { ms: hit ? Math.round(Math.random() * 80) : 2400 + Math.round(Math.random() * 900), source: v.mode === "scene" ? "scene" : hit ? "cache" : "fresh", level: v.level } }, this.features);
           this.say(v.speech);
           this.running = false;
         },
       ],
     ];
-    for (const [ms, fn] of steps) this.later(ms, fn);
+    for (const [ms, fn] of steps) this.scenarioLater(ms, fn);
     this.rampReadiness(1300, 8900);
   }
 
@@ -267,6 +350,8 @@ export class MockSocket {
   private clear() {
     this.timers.forEach(clearTimeout);
     this.timers = [];
+    this.scenarioTimers = [];
+    this.autoTimer = null;
     this.running = false;
   }
 
@@ -309,16 +394,28 @@ export function mockSetGeminiDown(down: boolean) {
   if (!sent) toHud(m);
 }
 
+export function pickScenario(text: string, allowScene = true): number | undefined {
+  const t = text.toLowerCase();
+  if ((/which|table|three|mikä näistä|mika naista|kumpi|kolme|pöydä|poyda|vilken av|på bordet|pa bordet|\btre\b/.test(t)) && allowScene) return 4;
+  if (/nut|allerg|food|bar|pähkin|pahkin|mante|nöt|notter|mandel/.test(t)) return 3;
+  if (/ibu|burana|ibumax|nsaid|pain|särky|kipu|smärt|värk/.test(t)) return 1;
+  if (/strength|metformin|vahvuus|styrka/.test(t)) return 2;
+  if (/evening|amlo|pill|ilta|kväll|kvall/.test(t)) return 0;
+  return undefined;
+}
+
 // ---- mock HTTP -------------------------------------------------------------------
 export async function mockFetch(path: string, body?: unknown): Promise<unknown> {
   await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
   if (mockCtl.offline) throw new TypeError("Failed to fetch (mock offline)");
   if (path === "/api/health") return { ok: true, gemini: mockCtl.geminiDown ? "down" : "ok", models: { live: "mock-gemini-live", verify: "mock-flash" }, version: "mock" };
   if (path === "/api/verify") {
-    const p = (body as { profile?: Profile })?.profile ?? demoProfile();
-    const amlo = p.meds.find((m) => /amlodipine/i.test(m.name)) ?? demoProfile().meds[0];
-    const i = scenarioIndex++ % 3;
-    const v = i === 0 ? matchVerdict(p, amlo) : i === 1 ? mockWarningIbuprofen() : mockUnsureStrength();
+    const b = (body ?? {}) as { profile?: Profile; question?: string };
+    const p = b.profile ?? demoProfile();
+    const amlo = p.meds.find((m) => /amlodipin/i.test(m.name + " " + m.ingredient)) ?? demoProfile().meds[0];
+    const picked = b.question ? pickScenario(b.question, false) : undefined;
+    const i = picked ?? scenarioIndex++ % 3;
+    const v = i === 0 ? matchVerdict(p, amlo) : i === 1 ? mockWarningIbuprofen() : i === 3 ? mockFoodNuts() : mockUnsureStrength();
     toHud({ type: "verdict", verdict: v });
     return v;
   }
