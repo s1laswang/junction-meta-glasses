@@ -8,6 +8,8 @@ import { frameFromFile } from "../lib/frames.ts";
 import { IS_MOCK } from "../lib/mock.ts";
 import { loadSettings, saveSettings } from "../lib/storage.ts";
 
+const FIELD_WORD: Record<string, string> = { strength: "Dose", product: "Name", expiry: "Expiry", allergens: "Allergens" };
+
 const DEBUG = new URLSearchParams(location.search).get("debug") === "1";
 
 function isTypingTarget(t: EventTarget | null) {
@@ -205,6 +207,19 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
         ) : !cameraOn ? (
           <div className="placeholder">
             {s.camera === "paused" ? "Camera paused while HoldUp is in the background" : s.camera === "error" ? s.cameraMsg || "Camera unavailable" : s.camera === "starting" ? "Starting camera…" : "Camera off. Press Start check."}
+          </div>
+        ) : null}
+        {cameraOn && s.fields?.length && s.verdict?.mode !== "scene" ? (
+          <div aria-hidden="true">
+            {s.fields.map((f, i) => (
+              <div
+                key={i}
+                className={`field-box ${f.label}`}
+                style={{ top: `${f.box[0] / 10}%`, left: `${f.box[1] / 10}%`, height: `${(f.box[2] - f.box[0]) / 10}%`, width: `${(f.box[3] - f.box[1]) / 10}%` }}
+              >
+                <span>{FIELD_WORD[f.label]}</span>
+              </div>
+            ))}
           </div>
         ) : null}
         {cameraOn && s.verdict?.mode === "scene" && s.verdict.items?.some((i) => i.box) ? (
