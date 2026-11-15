@@ -1,0 +1,90 @@
+{
+  "id": "rt_f27_007__clean",
+  "spec_id": "rt_f27_007",
+  "family": "F27_mollusc_and_crustacean_traps",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Contains oyster extractives (molluscs), unsafe for a user with a mollusc allergy.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Panda Brand Oyster Sauce",
+    "ingredient": "",
+    "strength": "",
+    "expiry": "2028-10",
+    "allergens": [
+      "gluten",
+      "molluscs"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "molluscs"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "food",
+    "product": {
+      "value": "Panda Brand Oyster Sauce",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "oyster sauce",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2028-10",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": [
+        "oyster",
+        "wheat"
+      ],
+      "confidence": 0.95
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.2
+    },
+    "readability": 0.9
+  },
+  "baseline_verdict": {
+    "level": "info",
+    "reasons": [
+      "no listed allergen matches your profile"
+    ],
+    "matchedMedId": null
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "contains oyster (allergy: molluscs)"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true
+}

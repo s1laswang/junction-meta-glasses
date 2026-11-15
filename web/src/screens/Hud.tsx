@@ -22,7 +22,7 @@ const SESSION = params.get("session");
 const BACKOFF = [1000, 2000, 5000];
 const SPEAK_KEY = "holdup.hud.speak";
 
-const LEVEL: Record<VerdictLevel, { glyph: string; word: string; color: string }> = {
+export const LEVEL: Record<VerdictLevel, { glyph: string; word: string; color: string }> = {
   match: { glyph: "✓", word: "RIGHT ONE", color: "#66BB6A" },
   warning: { glyph: "⚠", word: "CHECK", color: "#FFCA28" },
   unsure: { glyph: "?", word: "NOT SURE", color: "#4FC3F7" },
@@ -33,6 +33,22 @@ type Conn = "connecting" | "open" | "retry";
 
 const SLOT: Record<ScenePosition, number> = { far_left: 0, left: 1, center: 2, right: 3, far_right: 4 };
 const POS_WORD: Record<ScenePosition, string> = { far_left: "far left", left: "left", center: "middle", right: "right", far_right: "far right" };
+
+function hudSpeechLang() {
+  try {
+    const raw = localStorage.getItem("holdup.profile");
+    const lang = raw ? (JSON.parse(raw) as { lang?: unknown } | null)?.lang : undefined;
+    if (lang === "fi") return "fi-FI";
+    if (lang === "sv") return "sv-SE";
+  } catch {}
+  return "en-US";
+}
+
+function stopHudSpeech() {
+  try {
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+  } catch {}
+}
 
 /** "Which one?" on the display: glyphs on a left-to-right strip, the target big, its headline below. */
 function HudScene({ verdict, stale }: { verdict: Verdict; stale: boolean }) {
@@ -70,6 +86,53 @@ function HudScene({ verdict, stale }: { verdict: Verdict; stale: boolean }) {
   );
 }
 
+/**
+ * The card the Display shows (key prompt, coach cue, scene strip, verdict or idle). Pure, so the /stage
+ * projector renders the exact same markup as a live replica.
+ */
+export function HudCard({ keyNeeded, cue, verdict, stale }: { keyNeeded: boolean; cue: { cue: CoachCue; text: string } | null; verdict: Verdict | null; stale: boolean }) {
+  const L = verdict ? LEVEL[verdict.level] : null;
+  const headline = verdict?.headline.toLowerCase() ?? "";
+  const keyFields = [verdict?.read.product.value, verdict?.read.strength.value].filter((x): x is string => !!x && !headline.includes(x.toLowerCase()));
+  return (
+    keyNeeded ? (
+      <section className="hud-card" style={{ borderColor: "#FFCA28" }}>
+        <p className="hud-headline">Access key needed</p>
+        <p className="hud-small">Open the HUD link with its ?key=… (set it in the Meta AI app).</p>
+      </section>
+    ) : cue && !verdict ? (
+      <section className="hud-card cue-card">
+        <span className="hud-cue-glyph">
+          <CueArrow cue={cue.cue} size={104} />
+        </span>
+        <p className="hud-headline">{cue.text}</p>
+      </section>
+    ) : verdict && L && verdict.mode === "scene" && verdict.items?.length ? (
+      <HudScene verdict={verdict} stale={stale} />
+    ) : verdict && L ? (
+      <section className={`hud-card verdict-card ${stale ? "stale" : ""}`} style={{ "--lvl": L.color } as React.CSSProperties}>
+        <p className="hud-level">
+          <span className="hud-glyph" aria-hidden="true">
+            {L.glyph}
+          </span>{" "}
+          {L.word}
+          {stale ? <span className="hud-old"> (old)</span> : null}
+        </p>
+        <p className="hud-headline">{verdict.headline}</p>
+        {keyFields.length ? <p className="hud-fields">{keyFields.join(" · ")}</p> : null}
+        {verdict.crossCheck ? <p className="hud-small">{verdict.crossCheck.agrees === true ? "✓ Double-checked with pack code" : verdict.crossCheck.agrees === false ? "⚠ Pack code mismatch" : "Pack code read"}</p> : null}
+        {verdict.matchedMedId && verdict.takenToday != null ? <p className="hud-small">{verdict.takenToday ? "Already taken today" : "Not taken today"}</p> : null}
+        {verdict.reasons[0] ? <p className="hud-small">{verdict.reasons[0]}</p> : null}
+      </section>
+    ) : (
+      <section className="hud-card idle-card">
+        <p className="hud-headline hud-accent">Hold it up.</p>
+        <p className="hud-small">Ask: "Is this my evening pill?"</p>
+      </section>
+    )
+  );
+}
+
 export function Hud() {
   const [conn, setConn] = useState<Conn>("connecting");
   const [verdict, setVerdict] = useState<Verdict | null>(null);
@@ -92,13 +155,15 @@ export function Hud() {
   const pushed = useRef(false);
   const speakRef = useRef(speakOn);
   speakRef.current = speakOn;
+  const activeRef = useRef(false);
+  activeRef.current = !!(verdict || cue);
 
   const say = useCallback((text: string) => {
     if (!speakRef.current || !window.speechSynthesis) return;
     try {
       window.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-US";
+      u.lang = hudSpeechLang();
       window.speechSynthesis.speak(u);
     } catch {
       /* ignore */
@@ -115,7 +180,10 @@ export function Hud() {
       } else if (m.type === "coach") {
         setCue({ cue: m.cue, text: m.text, ts: Date.now() });
       } else if (m.type === "status") setLive(m.live);
-      else if (m.type === "device") setDevice(m.device);
+      else if (m.type === "device") {
+        setDevice(m.device);
+        if (m.device.worn === false) stopHudSpeech();
+      }
     },
     [say],
   );
@@ -139,12 +207,14 @@ export function Hud() {
   useEffect(() => {
     const onPop = () => {
       pushed.current = false;
+      stopHudSpeech();
       setVerdict(null);
       setCue(null);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+  useEffect(() => () => stopHudSpeech(), []);
 
   // the Display's own battery, where exposed
   useEffect(() => {
@@ -244,6 +314,7 @@ export function Hud() {
   }, [onMsg]);
 
   const clear = () => {
+    stopHudSpeech();
     setVerdict(null);
     setCue(null);
     if (pushed.current) history.back(); // pops our one entry; popstate resets the flag
@@ -261,6 +332,7 @@ export function Hud() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        if (activeRef.current) stopHudSpeech();
         setVerdict(null);
         setCue(null);
         if (pushed.current) history.back();
@@ -271,9 +343,6 @@ export function Hud() {
   }, []);
 
   const stale = conn !== "open" && !!verdict;
-  const L = verdict ? LEVEL[verdict.level] : null;
-  const headline = verdict?.headline.toLowerCase() ?? "";
-  const keyFields = [verdict?.read.product.value, verdict?.read.strength.value].filter((x): x is string => !!x && !headline.includes(x.toLowerCase()));
   // worn/battery may be null (unknown): only a definite false means "not usable"
   const camText = device ? (device.source === "glasses" && device.connected !== false && device.worn !== false ? "glasses camera" : "phone camera") : "";
   const batt = device?.battery != null ? `glasses ${device.battery}%` : ownBattery != null ? `display ${ownBattery}%` : "";
@@ -283,40 +352,7 @@ export function Hud() {
       <main className="hud-main">
         <h1 className="sr-only">HoldUp display</h1>
         <div className="hud-live" aria-live="assertive" aria-atomic="true">
-        {keyNeeded ? (
-          <section className="hud-card" style={{ borderColor: "#FFCA28" }}>
-            <p className="hud-headline">Access key needed</p>
-            <p className="hud-small">Open the HUD link with its ?key=… (set it in the Meta AI app).</p>
-          </section>
-        ) : cue && !verdict ? (
-          <section className="hud-card cue-card">
-            <span className="hud-cue-glyph">
-              <CueArrow cue={cue.cue} size={104} />
-            </span>
-            <p className="hud-headline">{cue.text}</p>
-          </section>
-        ) : verdict && L && verdict.mode === "scene" && verdict.items?.length ? (
-          <HudScene verdict={verdict} stale={stale} />
-        ) : verdict && L ? (
-          <section className={`hud-card verdict-card ${stale ? "stale" : ""}`} style={{ "--lvl": L.color } as React.CSSProperties}>
-            <p className="hud-level">
-              <span className="hud-glyph" aria-hidden="true">
-                {L.glyph}
-              </span>{" "}
-              {L.word}
-              {stale ? <span className="hud-old"> (old)</span> : null}
-            </p>
-            <p className="hud-headline">{verdict.headline}</p>
-            {keyFields.length ? <p className="hud-fields">{keyFields.join(" · ")}</p> : null}
-            {verdict.matchedMedId && verdict.takenToday != null ? <p className="hud-small">{verdict.takenToday ? "Already taken today" : "Not taken today"}</p> : null}
-            {verdict.reasons[0] ? <p className="hud-small">{verdict.reasons[0]}</p> : null}
-          </section>
-        ) : (
-          <section className="hud-card idle-card">
-            <p className="hud-headline hud-accent">Hold it up.</p>
-            <p className="hud-small">Ask: "Is this my evening pill?"</p>
-          </section>
-        )}
+        <HudCard keyNeeded={keyNeeded} cue={cue} verdict={verdict} stale={stale} />
         </div>
       </main>
 
@@ -343,7 +379,9 @@ export function Hud() {
           aria-pressed={speakOn}
           onClick={() => {
             const v = !speakOn;
+            speakRef.current = v;
             setSpeakOn(v);
+            if (!v) stopHudSpeech();
             try {
               localStorage.setItem(SPEAK_KEY, v ? "1" : "0");
             } catch {

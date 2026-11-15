@@ -1,0 +1,90 @@
+{
+  "id": "rt_f26_001__clean",
+  "spec_id": "rt_f26_001",
+  "family": "F26_obscure_allergen_synonyms_and_enumbers",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "The ingredients declare praline without naming tree nuts, posing a hidden hazard for a user allergic to tree nuts.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Fazerina Praline Truffles",
+    "ingredient": "",
+    "strength": "",
+    "expiry": "2028-03",
+    "allergens": [
+      "milk",
+      "tree_nuts"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "tree nuts"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "food",
+    "product": {
+      "value": "Fazerina Praline Truffles",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "praline truffles",
+      "confidence": 0.9
+    },
+    "strength": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2028-03",
+      "confidence": 0.98
+    },
+    "allergens": {
+      "value": [
+        "milk",
+        "soy"
+      ],
+      "confidence": 0.95
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.95
+  },
+  "baseline_verdict": {
+    "level": "info",
+    "reasons": [
+      "no listed allergen matches your profile"
+    ],
+    "matchedMedId": null
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "contains praline (allergy: tree nuts)"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true
+}

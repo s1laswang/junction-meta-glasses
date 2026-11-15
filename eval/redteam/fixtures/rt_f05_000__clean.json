@@ -1,0 +1,94 @@
+{
+  "id": "rt_f05_000__clean",
+  "spec_id": "rt_f05_000",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held bottle contains Vitamin A 1000 IU, whereas the user's saved medication is Vitamin D3 1000 IU.",
+  "perturbation": "clean",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Orion Vitamin A 1000 IU",
+    "ingredient": "Vitamin A",
+    "strength": "1000 IU",
+    "expiry": "2028-04",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Orion Vitamin D3 1000 IU",
+        "ingredient": "Vitamin D3",
+        "strength": "1000 IU",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Orion Vitamin A",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "vitamin A",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "1000 IU",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2028-04",
+      "confidence": 0.98
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.9,
+    "guidance": "Turn the bottle to read the side instructions."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410400001011(17)280400(10)RT01(21)SN000"
+}

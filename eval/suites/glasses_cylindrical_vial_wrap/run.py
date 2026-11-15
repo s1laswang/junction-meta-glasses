@@ -423,7 +423,7 @@ def find_node() -> str:
 
 def node_ts_cmd(extra_args: list[str]) -> list[str]:
     node = find_node()
-    if (REPO / "node_modules" / "tsx").is_dir():
+    if (REPO / "node_modules" / "tsx").is_dir() or (REPO.parent / "node_modules" / "tsx").is_dir() or shutil.which("tsx"):
         return [node, "--import", "tsx", *extra_args]
     return [node, *extra_args]
 
@@ -432,6 +432,10 @@ def sub_env() -> dict[str, str]:
     ev = dict(os.environ, HOLDUP_SAFETY_TS=SAFETY_TS_REL)
     if SHM_DIR.is_dir():
         ev["TMPDIR"] = str(SHM_DIR)
+    parent_nm = REPO.parent / "node_modules"
+    if parent_nm.is_dir():
+        existing_np = ev.get("NODE_PATH", "")
+        ev["NODE_PATH"] = f"{parent_nm}:{existing_np}" if existing_np else str(parent_nm)
     return ev
 
 

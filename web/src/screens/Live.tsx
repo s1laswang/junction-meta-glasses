@@ -20,6 +20,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
   const s = useSyncExternalStore(checker.subscribe, checker.get);
   const videoRef = useRef<HTMLVideoElement>(null);
   const verdictRef = useRef<HTMLHeadingElement>(null);
+  const bigBtnRef = useRef<HTMLButtonElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const capsRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("");
@@ -32,8 +33,19 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
 
   // move focus to a new verdict so its actions are one swipe away
   const lastVerdict = useRef(s.verdict);
+  const dismissFocus = useRef(false);
   useEffect(() => {
+    const isNewVerdict = !!s.verdict && s.verdict !== lastVerdict.current && s.verdict.headline !== lastVerdict.current?.headline;
     if (s.verdict && s.verdict !== lastVerdict.current && s.verdict.headline !== lastVerdict.current?.headline) verdictRef.current?.focus();
+    else if (!s.verdict && dismissFocus.current) {
+      dismissFocus.current = false;
+      bigBtnRef.current?.focus();
+    }
+    if (isNewVerdict) {
+      // the action buttons sit at the bottom of the card: bring them clear of the sticky Start/Stop bar
+      const actions = verdictRef.current?.closest(".verdict")?.querySelector(".actions") as HTMLElement | null | undefined;
+      if (actions && typeof actions.scrollIntoView === "function") actions.scrollIntoView({ block: "nearest" });
+    }
     lastVerdict.current = s.verdict;
   }, [s.verdict]);
 
@@ -130,7 +142,23 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
       ) : null}
 
       {s.verdict ? (
-        <VerdictCard verdict={s.verdict} via={s.verdictVia} headingRef={verdictRef} onRepeat={() => checker.repeat()} onLog={() => checker.logDose()} onDismiss={() => checker.dismissVerdict()} />
+        <VerdictCard
+          verdict={s.verdict}
+          via={s.verdictVia}
+          headingRef={verdictRef}
+          onRepeat={() => checker.repeat()}
+          onLog={() => checker.logDose()}
+          onDismiss={() => {
+            dismissFocus.current = true;
+            checker.dismissVerdict();
+            queueMicrotask(() => {
+              if (!checker.get().verdict) {
+                dismissFocus.current = false;
+                bigBtnRef.current?.focus();
+              }
+            });
+          }}
+        />
       ) : s.checking ? (
         <div className="cue checking" aria-busy="true">
           <span className="arrow">
@@ -184,7 +212,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
                   style={{ top: `${it.box[0] / 10}%`, left: `${it.box[1] / 10}%`, height: `${(it.box[2] - it.box[0]) / 10}%`, width: `${(it.box[3] - it.box[1]) / 10}%` }}
                 >
                   <span>
-                    {it.level === "match" ? "✓" : it.level === "warning" ? "⚠" : "?"} {POSITION_WORD[it.position]}
+                    {it.level === "match" ? "✓" : it.level === "warning" ? "⚠" : it.level === "info" ? "i" : "?"} {POSITION_WORD[it.position]}
                   </span>
                 </div>
               ) : null,
@@ -281,7 +309,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
       ) : null}
 
       <div className="bigbtn-wrap">
-        <button className={`bigbtn ${big.cls}`} onClick={() => checker.primary()} aria-describedby="big-hint" disabled={s.snapshotBusy}>
+        <button ref={bigBtnRef} className={`bigbtn ${big.cls}`} onClick={() => checker.primary()} aria-describedby="big-hint" disabled={s.snapshotBusy}>
           {s.running && s.mode !== "snapshot" ? <span className="dot" style={{ background: "var(--rec)", width: 20, height: 20 }} aria-hidden="true" /> : null}
           {big.label}
         </button>
