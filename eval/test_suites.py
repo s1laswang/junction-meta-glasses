@@ -40,6 +40,7 @@ COMPILE_MOD = load_compile_module()
 
 def build_check_env(base_env: dict[str, str] | None = None) -> dict[str, str]:
     env = dict(os.environ if base_env is None else base_env)
+    env["TZ"] = "Europe/Helsinki"
     env["TMPDIR"] = "/dev/shm" if os.path.isdir("/dev/shm") else tempfile.gettempdir()
     path_parts = [p for p in NODE_BIN_DIRS if os.path.isdir(p)]
     if NODE_BIN_DIRS[0] not in path_parts:
