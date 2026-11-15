@@ -1,0 +1,527 @@
+{
+  "tool": "playwright-chromium + @axe-core/playwright",
+  "tags": "WCAG 2.0/2.1/2.2 A+AA",
+  "browserArgs": [
+    "--enable-spatial-navigation"
+  ],
+  "viewport": {
+    "width": 600,
+    "height": 600,
+    "deviceScaleFactor": 1,
+    "totalPixels": 360000
+  },
+  "base": "http://localhost:43055",
+  "when": "2026-11-15T00:59:45.287Z",
+  "allChecksPassed": true,
+  "totalViolationNodes": 0,
+  "consoleErrorCount": 0,
+  "pageErrorCount": 0,
+  "stateCount": 8,
+  "manifestAndHead": {
+    "hudBareRedirect": {
+      "status": 301,
+      "location": "/hud/",
+      "redirectsToTrailingSlash": true
+    },
+    "hudIndex": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-cache"
+    },
+    "wearablesManifest": {
+      "url": "http://localhost:43055/hud/.well-known/meta-wearables-manifest.json",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "bytes": 256,
+      "maxBytes": 65536,
+      "version": 1,
+      "name": "HoldUp",
+      "description": "Hold up a medicine box or food package; HoldUp tells you if it's the right one.",
+      "themeColor": "#2E7D32",
+      "iconType": "monochrome",
+      "iconSrc": "../icon-mono.png",
+      "resolvedIconPath": "/hud/icon-mono.png"
+    },
+    "icons": {
+      "iconMono": {
+        "status": 200,
+        "contentType": "image/png",
+        "maxBytes": 2097152,
+        "bytes": 703,
+        "width": 128,
+        "height": 128,
+        "transparentCorners": true,
+        "pureWhiteMask": true,
+        "transparentPixels": 14144,
+        "maskPixels": 2240
+      },
+      "icon96": {
+        "status": 200,
+        "contentType": "image/png",
+        "exceeds52x52": true,
+        "bytes": 849,
+        "width": 96,
+        "height": 96,
+        "transparentCorners": true
+      }
+    },
+    "head": {
+      "lang": "en",
+      "charset": "utf-8",
+      "viewport": "width=device-width, initial-scale=1",
+      "zoomRestricted": false,
+      "mrbdWebAppCapable": "yes",
+      "applicationName": "HoldUp",
+      "themeColor": "#000000",
+      "title": "HoldUp",
+      "faviconHref": "/hud/icon-96.png",
+      "faviconSizes": "96x96",
+      "faviconType": "image/png",
+      "svgFaviconCount": 0
+    }
+  },
+  "hudWsFanout": {
+    "sessionId": "SIMHUD01",
+    "floatingHudAttachedWithoutSessionParam": true,
+    "phoneNotifiedHudConnected": true,
+    "ingestStateStatus": 204,
+    "glassesStatusRendered": {
+      "camera": "glasses camera",
+      "battery": "glasses 82%"
+    },
+    "realtimeCoachDelivered": true,
+    "realtimeVerdictDelivered": true,
+    "lateJoinReplay": {
+      "explicitSessionParam": "SIMHUD01",
+      "replayedVerdictHeadline": "Amlodipine 5 mg",
+      "replayedCamera": "glasses camera",
+      "replayedBattery": "glasses 82%"
+    },
+    "hudEventsForwardedToPhone": [
+      "repeat",
+      "log_dose",
+      "dismiss"
+    ],
+    "mockModeStandalone": {
+      "connected": true,
+      "consoleErrors": 0,
+      "pageErrors": 0
+    }
+  },
+  "spatialNavigation": {
+    "enabledFlag": "--enable-spatial-navigation",
+    "positiveTabIndexCount": 0,
+    "allButtonsNativeTag": true,
+    "focusRingStyle": {
+      "outlineWidthPx": 3,
+      "outlineStyle": "solid",
+      "outlineColor": "rgb(255, 210, 63)",
+      "outlineOffsetPx": 3
+    },
+    "autoFocusOnMatchWithMedId": "I took it",
+    "autoFocusOnWarningWithoutMedId": "Repeat",
+    "autoFocusOnUnsureWithoutMedId": "Repeat",
+    "enabledTraversal": {
+      "keys": [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowRight",
+        "ArrowDown",
+        "ArrowUp"
+      ],
+      "visited": [
+        "I took it",
+        "Repeat",
+        "I took it",
+        "Dismiss",
+        "Speak off",
+        "Dismiss"
+      ],
+      "reachesAllFourControls": true
+    },
+    "disabledButtonSkip": {
+      "takeItDisabledWhenUnmatched": true,
+      "fromRepeatArrowRight": "Dismiss",
+      "fromDismissArrowLeft": "Repeat"
+    },
+    "enterSingleActivation": {
+      "speakToggleEnterOnce": {
+        "before": "false",
+        "afterFirstEnter": "true",
+        "afterSecondEnter": "false"
+      },
+      "repeatToast": "Repeating",
+      "logDoseToast": "Dose logged",
+      "dismissReturnsToIdle": true
+    },
+    "historyAndBackGesture": {
+      "consecutiveVerdictsEmitted": 4,
+      "historyDelta": 1,
+      "maxAllowedHistoryEntries": 5,
+      "systemBackDismissesToIdle": true
+    }
+  },
+  "additiveBlackPixelBudget": {
+    "minPureBlackRatioRequired": 0.75,
+    "maxLitRatioAllowed": 0.25,
+    "observedMinPureBlackRatio": 0.8566,
+    "observedMaxLitRatio": 0.1434,
+    "observedMaxMeanLuminance": 0.0953,
+    "allStatesPureBlackCanvas": true,
+    "allStatesZeroOverflow": true
+  },
+  "states": [
+    {
+      "label": "hud: idle",
+      "url": "http://localhost:43055/hud/",
+      "cardClass": "hud-card idle-card",
+      "headline": "Hold it up.",
+      "viewport": {
+        "width": 600,
+        "height": 600,
+        "scrollWidth": 600,
+        "scrollHeight": 600,
+        "horizontalOverflow": false,
+        "verticalOverflow": false
+      },
+      "bounds": {
+        "cardFitsViewport": true,
+        "buttonsFitViewport": true,
+        "minActionButtonHeightPx": 60,
+        "speakButtonHeightPx": 44
+      },
+      "computedBackgrounds": {
+        "html": "rgb(0, 0, 0)",
+        "body": "rgb(0, 0, 0)",
+        "card": "rgb(0, 0, 0)",
+        "actionButtonsAllPureBlack": true
+      },
+      "pixelBudget": {
+        "width": 600,
+        "height": 600,
+        "totalPixels": 360000,
+        "pureBlackPixels": 339045,
+        "pureBlackRatio": 0.9418,
+        "nearBlackPixels": 339227,
+        "nearBlackRatio": 0.9423,
+        "litPixels": 20955,
+        "litRatio": 0.0582,
+        "meanLuminance": 0.0257
+      },
+      "axe": {
+        "violations": [],
+        "violationNodes": 0,
+        "passes": 15,
+        "incomplete": 0
+      }
+    },
+    {
+      "label": "hud: coach cue",
+      "url": "http://localhost:43055/hud/",
+      "cardClass": "hud-card cue-card",
+      "headline": "Turn it left",
+      "viewport": {
+        "width": 600,
+        "height": 600,
+        "scrollWidth": 600,
+        "scrollHeight": 600,
+        "horizontalOverflow": false,
+        "verticalOverflow": false
+      },
+      "bounds": {
+        "cardFitsViewport": true,
+        "buttonsFitViewport": true,
+        "minActionButtonHeightPx": 60,
+        "speakButtonHeightPx": 44
+      },
+      "computedBackgrounds": {
+        "html": "rgb(0, 0, 0)",
+        "body": "rgb(0, 0, 0)",
+        "card": "rgb(0, 0, 0)",
+        "actionButtonsAllPureBlack": true
+      },
+      "pixelBudget": {
+        "width": 600,
+        "height": 600,
+        "totalPixels": 360000,
+        "pureBlackPixels": 336433,
+        "pureBlackRatio": 0.9345,
+        "nearBlackPixels": 336533,
+        "nearBlackRatio": 0.9348,
+        "litPixels": 23567,
+        "litRatio": 0.0655,
+        "meanLuminance": 0.0414
+      },
+      "axe": {
+        "violations": [],
+        "violationNodes": 0,
+        "passes": 15,
+        "incomplete": 0
+      }
+    },
+    {
+      "label": "hud: verdict warning",
+      "url": "http://localhost:43055/hud/",
+      "cardClass": "hud-card verdict-card",
+      "headline": "Ibuprofen: not on your list",
+      "viewport": {
+        "width": 600,
+        "height": 600,
+        "scrollWidth": 600,
+        "scrollHeight": 600,
+        "horizontalOverflow": false,
+        "verticalOverflow": false
+      },
+      "bounds": {
+        "cardFitsViewport": true,
+        "buttonsFitViewport": true,
+        "minActionButtonHeightPx": 60,
+        "speakButtonHeightPx": 44
+      },
+      "computedBackgrounds": {
+        "html": "rgb(0, 0, 0)",
+        "body": "rgb(0, 0, 0)",
+        "card": "rgb(0, 0, 0)",
+        "actionButtonsAllPureBlack": true
+      },
+      "pixelBudget": {
+        "width": 600,
+        "height": 600,
+        "totalPixels": 360000,
+        "pureBlackPixels": 326101,
+        "pureBlackRatio": 0.9058,
+        "nearBlackPixels": 326222,
+        "nearBlackRatio": 0.9062,
+        "litPixels": 33899,
+        "litRatio": 0.0942,
+        "meanLuminance": 0.0626
+      },
+      "axe": {
+        "violations": [],
+        "violationNodes": 0,
+        "passes": 16,
+        "incomplete": 0
+      }
+    },
+    {
+      "label": "hud: verdict unsure",
+      "url": "http://localhost:43055/hud/",
+      "cardClass": "hud-card verdict-card",
+      "headline": "Can't read the strength",
+      "viewport": {
+        "width": 600,
+        "height": 600,
+        "scrollWidth": 600,
+        "scrollHeight": 600,
+        "horizontalOverflow": false,
+        "verticalOverflow": false
+      },
+      "bounds": {
+        "cardFitsViewport": true,
+        "buttonsFitViewport": true,
+        "minActionButtonHeightPx": 60,
+        "speakButtonHeightPx": 44
+      },
+      "computedBackgrounds": {
+        "html": "rgb(0, 0, 0)",
+        "body": "rgb(0, 0, 0)",
+        "card": "rgb(0, 0, 0)",
+        "actionButtonsAllPureBlack": true
+      },
+      "pixelBudget": {
+        "width": 600,
+        "height": 600,
+        "totalPixels": 360000,
+        "pureBlackPixels": 325301,
+        "pureBlackRatio": 0.9036,
+        "nearBlackPixels": 325430,
+        "nearBlackRatio": 0.904,
+        "litPixels": 34699,
+        "litRatio": 0.0964,
+        "meanLuminance": 0.0607
+      },
+      "axe": {
+        "violations": [],
+        "violationNodes": 0,
+        "passes": 16,
+        "incomplete": 0
+      }
+    },
+    {
+      "label": "hud: verdict allergen",
+      "url": "http://localhost:43055/hud/",
+      "cardClass": "hud-card verdict-card",
+      "headline": "Contains hazelnuts",
+      "viewport": {
+        "width": 600,
+        "height": 600,
+        "scrollWidth": 600,
+        "scrollHeight": 600,
+        "horizontalOverflow": false,
+        "verticalOverflow": false
+      },
+      "bounds": {
+        "cardFitsViewport": true,
+        "buttonsFitViewport": true,
+        "minActionButtonHeightPx": 60,
+        "speakButtonHeightPx": 44
+      },
+      "computedBackgrounds": {
+        "html": "rgb(0, 0, 0)",
+        "body": "rgb(0, 0, 0)",
+        "card": "rgb(0, 0, 0)",
+        "actionButtonsAllPureBlack": true
+      },
+      "pixelBudget": {
+        "width": 600,
+        "height": 600,
+        "totalPixels": 360000,
+        "pureBlackPixels": 327529,
+        "pureBlackRatio": 0.9098,
+        "nearBlackPixels": 327649,
+        "nearBlackRatio": 0.9101,
+        "litPixels": 32471,
+        "litRatio": 0.0902,
+        "meanLuminance": 0.0591
+      },
+      "axe": {
+        "violations": [],
+        "violationNodes": 0,
+        "passes": 16,
+        "incomplete": 0
+      }
+    },
+    {
+      "label": "hud: verdict scene",
+      "url": "http://localhost:43055/hud/",
+      "cardClass": "hud-card scene-card",
+      "headline": "Your evening pill: on the right",
+      "viewport": {
+        "width": 600,
+        "height": 600,
+        "scrollWidth": 600,
+        "scrollHeight": 600,
+        "horizontalOverflow": false,
+        "verticalOverflow": false
+      },
+      "bounds": {
+        "cardFitsViewport": true,
+        "buttonsFitViewport": true,
+        "minActionButtonHeightPx": 60,
+        "speakButtonHeightPx": 44
+      },
+      "computedBackgrounds": {
+        "html": "rgb(0, 0, 0)",
+        "body": "rgb(0, 0, 0)",
+        "card": "rgb(0, 0, 0)",
+        "actionButtonsAllPureBlack": true
+      },
+      "pixelBudget": {
+        "width": 600,
+        "height": 600,
+        "totalPixels": 360000,
+        "pureBlackPixels": 308384,
+        "pureBlackRatio": 0.8566,
+        "nearBlackPixels": 308488,
+        "nearBlackRatio": 0.8569,
+        "litPixels": 51616,
+        "litRatio": 0.1434,
+        "meanLuminance": 0.0953
+      },
+      "axe": {
+        "violations": [],
+        "violationNodes": 0,
+        "passes": 18,
+        "incomplete": 1
+      }
+    },
+    {
+      "label": "hud: verdict match",
+      "url": "http://localhost:43055/hud/",
+      "cardClass": "hud-card verdict-card",
+      "headline": "Amlodipine 5 mg",
+      "viewport": {
+        "width": 600,
+        "height": 600,
+        "scrollWidth": 600,
+        "scrollHeight": 600,
+        "horizontalOverflow": false,
+        "verticalOverflow": false
+      },
+      "bounds": {
+        "cardFitsViewport": true,
+        "buttonsFitViewport": true,
+        "minActionButtonHeightPx": 60,
+        "speakButtonHeightPx": 44
+      },
+      "computedBackgrounds": {
+        "html": "rgb(0, 0, 0)",
+        "body": "rgb(0, 0, 0)",
+        "card": "rgb(0, 0, 0)",
+        "actionButtonsAllPureBlack": true
+      },
+      "pixelBudget": {
+        "width": 600,
+        "height": 600,
+        "totalPixels": 360000,
+        "pureBlackPixels": 327674,
+        "pureBlackRatio": 0.9102,
+        "nearBlackPixels": 327760,
+        "nearBlackRatio": 0.9104,
+        "litPixels": 32326,
+        "litRatio": 0.0898,
+        "meanLuminance": 0.0559
+      },
+      "axe": {
+        "violations": [],
+        "violationNodes": 0,
+        "passes": 16,
+        "incomplete": 1
+      }
+    },
+    {
+      "label": "hud: stale verdict",
+      "url": "http://localhost:43055/hud/",
+      "cardClass": "hud-card verdict-card stale",
+      "headline": "Amlodipine 5 mg",
+      "viewport": {
+        "width": 600,
+        "height": 600,
+        "scrollWidth": 600,
+        "scrollHeight": 600,
+        "horizontalOverflow": false,
+        "verticalOverflow": false
+      },
+      "bounds": {
+        "cardFitsViewport": true,
+        "buttonsFitViewport": true,
+        "minActionButtonHeightPx": 60,
+        "speakButtonHeightPx": 44
+      },
+      "computedBackgrounds": {
+        "html": "rgb(0, 0, 0)",
+        "body": "rgb(0, 0, 0)",
+        "card": "rgb(0, 0, 0)",
+        "actionButtonsAllPureBlack": true
+      },
+      "pixelBudget": {
+        "width": 600,
+        "height": 600,
+        "totalPixels": 360000,
+        "pureBlackPixels": 328001,
+        "pureBlackRatio": 0.9111,
+        "nearBlackPixels": 328588,
+        "nearBlackRatio": 0.9127,
+        "litPixels": 31999,
+        "litRatio": 0.0889,
+        "meanLuminance": 0.0386
+      },
+      "axe": {
+        "violations": [],
+        "violationNodes": 0,
+        "passes": 16,
+        "incomplete": 1
+      }
+    }
+  ]
+}

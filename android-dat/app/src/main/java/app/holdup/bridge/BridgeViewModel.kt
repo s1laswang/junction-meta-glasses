@@ -31,6 +31,7 @@ import com.meta.wearable.dat.core.types.PermissionStatus
 import com.meta.wearable.dat.core.types.RegistrationState
 import com.meta.wearable.dat.core.types.ThermalLevel
 import com.meta.wearable.dat.core.types.WearablesError
+import java.net.URLEncoder
 import kotlin.math.min
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -193,8 +194,49 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
         if (netFailures <= 0) FRAME_INTERVAL_MS
         else min(MAX_BACKOFF_MS, FRAME_INTERVAL_MS shl min(netFailures, 3))
 
+    internal data class DeepLinkConfig(val server: String?, val session: String?)
+
+    internal fun parseDeepLink(
+        scheme: String?,
+        host: String?,
+        server: String?,
+        session: String?,
+        key: String?,
+    ): DeepLinkConfig? {
+      if (scheme != "holdupbridge" || host != "connect") return null
+      val trimmedServer = server?.trim()?.takeIf { it.isNotEmpty() }
+      val trimmedSession = session?.trim()?.takeIf { it.isNotEmpty() }
+      val trimmedKey = key?.trim()?.takeIf { it.isNotEmpty() }
+      val resolvedServer =
+          if (trimmedServer != null && trimmedKey != null) {
+            val q = trimmedServer.indexOf('?')
+            val hasKey =
+                q >= 0 &&
+                    trimmedServer
+                        .substring(q + 1)
+                        .substringBefore('#')
+                        .split('&')
+                        .any { it == "key" || it.startsWith("key=") }
+            if (hasKey) {
+              trimmedServer
+            } else {
+              val sep =
+                  when {
+                    q < 0 -> "?"
+                    trimmedServer.endsWith("?") || trimmedServer.endsWith("&") -> ""
+                    else -> "&"
+                  }
+              "$trimmedServer${sep}key=${URLEncoder.encode(trimmedKey, "UTF-8")}"
+            }
+          } else {
+            trimmedServer
+          }
+      return DeepLinkConfig(server = resolvedServer, session = trimmedSession)
+    }
+
     internal fun frameHttpHint(code: Int): String =
         when (code) {
+          401, 403 -> " (access key missing or wrong: add ?key=... to Server URL)"
           404 -> " (server has no /ingest/frame? check URL/branch)"
           400, 410 -> " (unknown session code?)"
           502, 503, 530 -> " (tunnel up but server down?)"
@@ -254,8 +296,16 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
   /** holdupbridge://connect?server=https://x.trycloudflare.com&session=ABC123 */
   fun handleDeepLink(uri: Uri?) {
     if (uri == null || uri.scheme != "holdupbridge" || uri.host != "connect") return
-    uri.getQueryParameter("server")?.takeIf { it.isNotBlank() }?.let { setServerUrl(it) }
-    uri.getQueryParameter("session")?.takeIf { it.isNotBlank() }?.let { setSessionCode(it) }
+    val cfg =
+        parseDeepLink(
+            scheme = uri.scheme,
+            host = uri.host,
+            server = uri.getQueryParameter("server"),
+            session = uri.getQueryParameter("session"),
+            key = uri.getQueryParameter("key"),
+        ) ?: return
+    cfg.server?.let { setServerUrl(it) }
+    cfg.session?.let { setSessionCode(it) }
     status("Server and session filled from link")
     pushState(force = true)
   }
@@ -709,13 +759,22 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
         val res = uploader.postState(server, code, st)
         lastPostedAt = SystemClock.elapsedRealtime()
         lastPostedState = if (res is PostResult.Ok) st else null
-        val label =
-            when (res) {
-              is PostResult.Ok -> "HTTP ${res.code}"
-              is PostResult.HttpError -> "HTTP ${res.code}"
-              is PostResult.NetworkError -> "network error"
+        when (res) {
+          is PostResult.Ok ->
+              _ui.update {
+                it.copy(
+                    stateHttp = "HTTP ${res.code}",
+                    error = if (it.error?.startsWith("Server") == true) null else it.error,
+                )
+              }
+          is PostResult.HttpError -> {
+            _ui.update { it.copy(stateHttp = "HTTP ${res.code}") }
+            if (res.code == 401 || res.code == 403) {
+              setError("Server rejected state: HTTP ${res.code}${frameHttpHint(res.code)}")
             }
-        _ui.update { it.copy(stateHttp = label) }
+          }
+          is PostResult.NetworkError -> _ui.update { it.copy(stateHttp = "network error") }
+        }
       }
     }
   }
