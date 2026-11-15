@@ -72,6 +72,8 @@ export type CheckState = {
   lastCode: Gs1Code | null;
   /** label readiness 0..1 from the server (sonar), null when not streaming */
   readiness: number | null;
+  /** FieldSpotter boxes for the newest frame (server SPOTTER=1), null when stale */
+  fields: { label: "product" | "strength" | "expiry" | "allergens"; box: [number, number, number, number]; score: number }[] | null;
   /** "hold up to add": a medicine the server proposes; needs explicit confirmation on the phone */
   addProposal: { proposalId: string; med: Med; speech: string; expiresAt: number } | null;
   banner: Banner;
@@ -126,6 +128,7 @@ function initial(): CheckState {
     serverFeatures: null,
     lastCode: null,
     readiness: null,
+    fields: null,
     addProposal: null,
     banner: null,
     lastError: null,
@@ -160,6 +163,7 @@ export class Checker {
   private authOk = false;
   private readableSaidAt = 0;
   private readinessTimer: ReturnType<typeof setTimeout> | null = null;
+  private fieldsTimer: ReturnType<typeof setTimeout> | null = null;
   private proposalTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingText: string | null = null;
   private pendingDm: string | null = null;
@@ -506,6 +510,11 @@ export class Checker {
         break;
       case "readiness":
         this.onReadiness(m.value);
+        break;
+      case "fields":
+        this.set({ fields: m.fields });
+        if (this.fieldsTimer) clearTimeout(this.fieldsTimer);
+        this.fieldsTimer = setTimeout(() => this.set({ fields: null }), 2500);
         break;
       case "profile_add":
         this.onProfileAdd(m.proposalId, m.med, m.speech);
