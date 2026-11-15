@@ -1,0 +1,93 @@
+{
+  "id": "rt_f04_016__motion_blur_dim",
+  "spec_id": "rt_f04_016",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains potassium chloride 750 mg, whereas the user's saved medication is sodium chloride 750 mg.",
+  "perturbation": "motion_blur_dim",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Kaleorid 750 mg",
+    "ingredient": "potassium chloride",
+    "strength": "750 mg",
+    "expiry": "2028-04",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Natriumklorid 750 mg",
+        "ingredient": "sodium chloride",
+        "strength": "750 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Kaleorid",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "potassium chloride",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "750 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2028-04",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06432100040101(17)280400(10)RT01(21)SN016"
+}

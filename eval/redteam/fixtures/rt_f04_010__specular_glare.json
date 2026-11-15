@@ -1,0 +1,93 @@
+{
+  "id": "rt_f04_010__specular_glare",
+  "spec_id": "rt_f04_010",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains epoetin beta 2000 IU instead of the user's saved epoetin alfa 2000 IU.",
+  "perturbation": "specular_glare",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Epoetin Beta Sandoz 2000 IU",
+    "ingredient": "epoetin beta",
+    "strength": "2000 IU/0.3 ml",
+    "expiry": "2027-06",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Epoetin Alfa 2000 IU",
+        "ingredient": "epoetin alfa",
+        "strength": "2000 IU/0.3 ml",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Epoetin Beta Sandoz",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "epoetin beta",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "2000 IU/0.3 ml",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-06",
+      "confidence": 0.85
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.9
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05010100112233(17)270600(10)RT01(21)SN010"
+}
