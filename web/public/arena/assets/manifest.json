@@ -1,0 +1,8 @@
+{
+  "assets": [
+    {"path":"assets/characters/green-cap-16x18.png","type":"spritesheet","sheet":[48,72],"frameSize":[16,18],"cols":3,"rows":4,"frames":12,"margin":0,"spacing":0,"purpose":"player and pharmacist sprite; 4 rows (down,left,right,up per source layout, verify visually) x 3 walk frames"},
+    {"path":"assets/tiles/roguelike-indoor.png","type":"tileset","sheet":[457,305],"frameSize":[16,16],"margin":0,"spacing":1,"purpose":"pharmacy shelves, counters, home furniture, floors, walls"},
+    {"path":"assets/ui/ui-small.png","type":"tileset","sheet":[390,118],"frameSize":[16,16],"margin":0,"spacing":1,"cols":23,"rows":7,"frames":161,"purpose":"UI buttons, panels, icons, 9-slice frames"},
+    {"path":"assets/ui/ui-large.png","type":"tileset","frameSize":[32,32],"spacing":1,"purpose":"larger UI panels and buttons"}
+  ]
+}

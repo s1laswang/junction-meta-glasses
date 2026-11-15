@@ -1,0 +1,108 @@
+{
+ "source": "docs/DEMO_SCRIPT.md line 37 (demo profile) and eval/suites/anticoagulant_nti_traps/results.json (suite profile)",
+ "demo": {
+  "meds": [
+   {
+    "name": "Amlodipine",
+    "strength": "5 mg",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "name": "Metformin",
+    "strength": "500 mg",
+    "schedule": [
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "name": "Atorvastatin",
+    "strength": "20 mg",
+    "schedule": [
+     "evening"
+    ]
+   }
+  ],
+  "allergies": [
+   "tree nuts",
+   "peanut"
+  ],
+  "avoid": [
+   "NSAIDs"
+  ]
+ },
+ "suite": {
+  "meds": [
+   {
+    "id": "warfarin",
+    "name": "Marevan",
+    "ingredient": "warfarin",
+    "strength": "3 mg",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "apixaban",
+    "name": "Eliquis",
+    "ingredient": "apixaban",
+    "strength": "2.5 mg",
+    "schedule": [
+     "morning",
+     "evening"
+    ]
+   },
+   {
+    "id": "rivaroxaban",
+    "name": "Xarelto",
+    "ingredient": "rivaroxaban",
+    "strength": "15 mg",
+    "schedule": [
+     "evening"
+    ]
+   },
+   {
+    "id": "digoxin",
+    "name": "Digoxin",
+    "ingredient": "digoxin",
+    "strength": "0.0625 mg",
+    "schedule": [
+     "morning"
+    ]
+   },
+   {
+    "id": "levothyroxine",
+    "name": "Thyroxin",
+    "ingredient": "levothyroxine",
+    "strength": "50 mcg",
+    "schedule": [
+     "morning"
+    ]
+   }
+  ],
+  "allergies": [
+   "penicillin"
+  ],
+  "avoid": [
+   "NSAIDs"
+  ],
+  "doseLog": [],
+  "lang": "en"
+ },
+ "levels": {
+  "match": {
+   "label": "MATCH",
+   "safe": true
+  },
+  "warning": {
+   "label": "WARNING",
+   "safe": false
+  },
+  "unsure": {
+   "label": "NOT SURE",
+   "safe": null
+  }
+ }
+}

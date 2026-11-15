@@ -1,0 +1,36 @@
+{
+ "source": "docs/DEMO_SCRIPT.md, server/fixtures/*.jpg, web/public/phrases/manifest.json",
+ "label": "OFFLINE DEMO, not live, not running on glasses",
+ "camera": {
+  "api": "getUserMedia",
+  "constraints": {
+   "video": {
+    "facingMode": "environment"
+   },
+   "audio": false
+  }
+ },
+ "coach_cues": [
+  "cue_rotate",
+  "cue_closer",
+  "cue_steady",
+  "cue_reading"
+ ],
+ "demos": [
+  {
+   "id": "b1",
+   "case": "p_amlodipine",
+   "level": "match"
+  },
+  {
+   "id": "b2",
+   "case": "p_three_boxes_middle",
+   "level": "warning"
+  },
+  {
+   "id": "b3",
+   "case": "p_amlodipine_covered",
+   "level": "unsure"
+  }
+ ]
+}
