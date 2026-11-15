@@ -406,10 +406,41 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   <div class="foot"><span class="src">Full data flow: docs/PRIVACY.md. Paid-tier training claim left out: billing tier is unconfirmed.</span><span class="pg">8</span></div>
 </section>
 
-<!-- 9 RESILIENCE -->
+<!-- 9 DECISION SUPPORT -->
 <section class="slide" aria-roledescription="slide" aria-labelledby="s9-h">
+  <p class="eyebrow">Liability and regulation</p>
+  <h2 id="s9-h">Decision support, not diagnosis.</h2>
+  <div class="grid2">
+    <div class="card hl">
+      <h3>What HoldUp does, and doesn't</h3>
+      <ul class="bul">
+        <li>Confirms a pack against <b>your own list</b>. It never recommends or changes a dose.</li>
+        <li>A strength counts only at confidence ≥ 0.8.</li>
+        <li>“None of your allergens” needs allergen confidence ≥ 0.95 and readability ≥ 0.8.</li>
+        <li><b>“Not sure” is the default</b> when a rule isn't met.</li>
+        <li>Any disagreement or uncertainty: <b>ask a pharmacist</b>.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Regulatory stance</h3>
+      <ul class="bul">
+        <li>Likely EU MDR software: <b>Rule 11, Class IIa</b>.</li>
+        <li>So the pilot runs as a <b>supervised study</b> with Näkövammaisten liitto and pharmacists, before any CE marking.</li>
+        <li>The profile and data stay on the device.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card stat">
+    <p class="num">0.06%</p>
+    <p>Measured residual risk: <b>3/4,730</b> silent unsafe reassurances (95% CI 0.02–0.19%), synthetic eval. Real photos are not yet scored.</p>
+  </div>
+  <div class="foot"><span class="src">Rules: server/src/safety.ts. Numbers: docs/EVAL.md (v2 re-score). Data flow: docs/PRIVACY.md.</span><span class="pg">9</span></div>
+</section>
+
+<!-- 10 RESILIENCE -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s10-h">
   <p class="eyebrow">Resilience</p>
-  <h2 id="s9-h">A degradation ladder that says what still works.</h2>
+  <h2 id="s10-h">A degradation ladder that says what still works.</h2>
   <table>
     <caption class="sr-only">What breaks and what HoldUp does</caption>
     <thead><tr><th scope="col">What breaks</th><th scope="col">What HoldUp does</th></tr></thead>
@@ -425,13 +456,13 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       <tr><td>Audio route changes</td><td>“Audio now through …”, and the microphone restarts.</td></tr>
     </tbody>
   </table>
-  <div class="foot"><span class="src">All states are visible live in the in-app device panel (mode, RTT, Live state, model, frames, glasses, HUD, auto-stop timer).</span><span class="pg">9</span></div>
+  <div class="foot"><span class="src">All states are visible live in the in-app device panel (mode, RTT, Live state, model, frames, glasses, HUD, auto-stop timer).</span><span class="pg">10</span></div>
 </section>
 
-<!-- 10 EVAL -->
-<section class="slide" aria-roledescription="slide" aria-labelledby="s10-h">
+<!-- 11 EVAL -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s11-h">
   <p class="eyebrow">Evaluation · Gemini as a workforce</p>
-  <h2 id="s10-h">We measure what matters: confident wrong answers.</h2>
+  <h2 id="s11-h">We measure what matters: confident wrong answers.</h2>
   <ol class="loop" style="grid-template-columns: repeat(5, 1fr)">
     <li class="step"><span class="n">01 · Flash</span><h3>Specs</h3><p>Gemini writes ground-truth labels: Nordic medicine packs, look-alikes, food with allergen synonyms.</p></li>
     <li class="step"><span class="n">02 · Image</span><h3>Render</h3><p>Gemini image models render a first-person photo of a hand holding each item.</p></li>
@@ -449,13 +480,13 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <div class="card"><h3>Next: real photos</h3><p>Synthetic labels are the start. Scoring the team's own photos of Finnish pharmacy boxes and food panels comes next, reported separately (not yet scored).</p></div>
     <div class="card"><h3>Honest caveat</h3><p>The legibility check uses the same model family as the reader, which may make synthetic ground truth easier. That is why the headline metric is <b>unsafe reassurance</b>, and why real photos are scored separately.</p></div>
   </div>
-  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json. gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">10</span></div>
+  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json. gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">11</span></div>
 </section>
 
-<!-- 11 ADOPTION -->
-<section class="slide" aria-roledescription="slide" aria-labelledby="s11-h">
+<!-- 12 ADOPTION -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s12-h">
   <p class="eyebrow">Path to adoption</p>
-  <h2 id="s11-h">Pilot with the people who already help, on shipping glasses.</h2>
+  <h2 id="s12-h">Pilot with the people who already help, on shipping glasses.</h2>
   <div class="grid3">
     <div class="card hl">
       <h3>1 · Näkövammaisten liitto</h3>
@@ -488,13 +519,13 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
       </ul>
     </div>
   </div>
-  <div class="foot"><span class="src">Be My Eyes on Meta glasses: meta.com/ai-glasses/accessibility (see docs/RESEARCH.md)</span><span class="pg">11</span></div>
+  <div class="foot"><span class="src">Be My Eyes on Meta glasses: meta.com/ai-glasses/accessibility (see docs/RESEARCH.md)</span><span class="pg">12</span></div>
 </section>
 
-<!-- 12 TEAM + ASK -->
-<section class="slide" aria-roledescription="slide" aria-labelledby="s12-h">
+<!-- 13 TEAM + ASK -->
+<section class="slide" aria-roledescription="slide" aria-labelledby="s13-h">
   <p class="eyebrow">Team and the ask</p>
-  <h2 id="s12-h">Help us put HoldUp on 20 faces in Finland.</h2>
+  <h2 id="s13-h">Help us put HoldUp on 20 faces in Finland.</h2>
   <div class="grid2" style="grid-template-columns: 1fr 1.2fr">
     <div class="card">
       <h3>Team</h3>
@@ -520,7 +551,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <div><p style="font-size:44px; font-weight:800; letter-spacing:-.02em"><span class="accent">HoldUp.</span> Hold it up. Know it's the right one.</p>
     <p class="small">github.com/s1laswang/junction-meta-glasses · Junction 2026 · Meta “AI Glasses for Everyone, Everyday” · Google DeepMind “Best Use of Gemini API”</p></div>
   </div>
-  <div class="foot"><span></span><span class="pg">12</span></div>
+  <div class="foot"><span></span><span class="pg">13</span></div>
 </section>
 
 </main>
@@ -528,7 +559,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
 
 <nav id="nav" aria-label="Slide navigation">
   <button id="prev" type="button" aria-label="Previous slide">←</button>
-  <span id="count" aria-hidden="true">1 / 12</span>
+  <span id="count" aria-hidden="true">1 / 13</span>
   <button id="next" type="button" aria-label="Next slide">→</button>
 </nav>
 
