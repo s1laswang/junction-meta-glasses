@@ -84,7 +84,10 @@ export function speak(text: string, opts: { interrupt?: boolean; lang?: string }
   try {
     if (opts.interrupt !== false) s.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = opts.lang ?? speechLang();
+    // Every string the app itself speaks (verdict speech from safety.ts/verdicts.ts, banners, fallbacks) is English,
+    // so read it with an English voice. Finnish/Swedish come from the pre-rendered phrase clips and the live
+    // Gemini voice. A fi-FI voice reading English text was unintelligible (judge panel OC-04).
+    u.lang = opts.lang ?? "en-GB";
     u.rate = 1;
     s.speak(u);
   } catch {
@@ -102,15 +105,6 @@ export function primeSpeech() {
     speechPrimed = true;
   } catch {
     /* ignore */
-  }
-}
-const SPEECH_LANG: Record<string, string> = { en: "en-GB", fi: "fi-FI", sv: "sv-SE" };
-function speechLang() {
-  try {
-    const p = JSON.parse(localStorage.getItem("holdup.profile") ?? "null") as { lang?: string } | null;
-    return SPEECH_LANG[p?.lang ?? "en"] ?? "en-GB";
-  } catch {
-    return "en-GB";
   }
 }
 export function stopSpeaking() {

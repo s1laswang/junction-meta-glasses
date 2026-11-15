@@ -565,7 +565,51 @@ function withPhrase(speech: string, phrase: string): string {
  *  - code GTIN = a saved med's GTIN but no legible name -> still unsure (online we want both);
  *  - agreement -> crossCheck.agrees=true and "double-checked with the pack's code" in the speech.
  */
-export function checkLabel(read: LabelRead, profile: Profile, now = new Date(), code?: Gs1Code): Verdict {
+/** Words a user may use to ask about one dose time, mapped to the schedule slot they mean (EN/FI/SV). */
+const SLOT_WORDS: Record<string, string[]> = {
+  morning: ["morning", "breakfast", "aamu", "aamulla", "aamupilleri", "morgon", "frukost"],
+  midday: ["midday", "noon", "lunch", "päivä", "keskipäivä", "lounas", "middag", "lunch"],
+  evening: ["evening", "dinner", "ilta", "illalla", "iltapilleri", "kväll", "kvällen"],
+  night: ["night", "bedtime", "yö", "nukkumaan", "natt", "läggdags"],
+};
+function askedSlot(question?: string): string | undefined {
+  const q = (question ?? "").toLowerCase();
+  for (const [slot, words] of Object.entries(SLOT_WORDS)) if (words.some((w) => q.includes(w))) return slot;
+  return undefined;
+}
+function medSlots(m: Med): Set<string> {
+  const out = new Set<string>();
+  for (const raw of m.schedule.map((x) => x.toLowerCase())) {
+    for (const [slot, words] of Object.entries(SLOT_WORDS)) if (words.some((w) => raw.includes(w))) out.add(slot);
+    const hm = /^(\d{1,2}):\d{2}$/.exec(raw);
+    if (hm) { const h = +hm[1]; out.add(h < 11 ? "morning" : h < 15 ? "midday" : h < 21 ? "evening" : "night"); }
+  }
+  return out;
+}
+/**
+ * "Is this my evening pill?" must check *evening*: a matched medicine that isn't scheduled for the asked slot
+ * becomes a warning (bake-off judge panel OC-07). No slot asked, or no schedule known -> unchanged.
+ */
+export function applyQuestion(v: Verdict, profile: Profile, question?: string): Verdict {
+  const slot = askedSlot(question);
+  if (!slot || v.level !== "match" || !v.matchedMedId) return v;
+  const med = profile.meds.find((m) => m.id === v.matchedMedId);
+  if (!med) return v;
+  const slots = medSlots(med);
+  if (!slots.size || slots.has(slot)) return v;
+  const its = [...slots].join(" and ");
+  return {
+    ...v, level: "warning",
+    headline: clampHeadline(`${med.name}: not your ${slot} pill`),
+    speech: clampSpeech(`This is ${med.name} ${med.strength}, but it's your ${its} medicine, not your ${slot} one. Check the other boxes before taking it.`),
+    reasons: [...v.reasons, `asked about ${slot}, scheduled ${its}`],
+  };
+}
+
+export function checkLabel(read: LabelRead, profile: Profile, now = new Date(), code?: Gs1Code, question?: string): Verdict {
+  return applyQuestion(checkLabelCore(read, profile, now, code), profile, question);
+}
+function checkLabelCore(read: LabelRead, profile: Profile, now = new Date(), code?: Gs1Code): Verdict {
   if (!code || (!code.gtin && !code.expiry)) return checkLabelText(read, profile, now);
   const details: string[] = [];
   let agree = 0, conflict = false;
