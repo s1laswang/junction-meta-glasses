@@ -2,10 +2,12 @@
 // and the last verdict/coach/device for late HUDs. `session` is optional on /hud-ws and /ingest/*: those then
 // follow the most recently started live session.
 import type { WebSocket } from "ws";
-import type { DeviceState, Gs1Code, Profile, ServerMsg, Verdict } from "../../shared/types.ts";
+import type { DeviceState, FeatureFlag, Gs1Code, Profile, ServerMsg, Verdict, VerdictLevel } from "../../shared/types.ts";
 import { FrameRing, emptyProfile, type Frame } from "./verify.ts";
 import { Speculator } from "./speculate.ts";
 import { DmThrottle } from "./dm.ts";
+import { SpotThrottle, spotterAvailable, type FieldBox } from "./spotter.ts";
+import { SpotCoach } from "./spotcoach.ts";
 import type { Feature } from "./env.ts";
 import { log, shortId } from "./log.ts";
 
@@ -13,13 +15,56 @@ export interface LiveLike {
   handleEvent(name: string): void;
   stop(reason: string): void;
   readonly active: boolean;
+  /** A check is running or the assistant is speaking: no detector cues now. Optional for test doubles. */
+  readonly busy?: boolean;
+  /** Numbers for the /stage projector (no content). Optional so test doubles needn't implement it. */
+  stats?(): LiveStats;
 }
 
+const SPOTTER_ON = spotterAvailable();
+
+export type VerifySource = "cache" | "inflight" | "fresh" | "scene";
+export type LiveStats = {
+  model: string | null;
+  firstAudioS: number | null;
+  firstAudioP50S: number | null;
+  turns: number;
+  verify: { ms: number; source: VerifySource; level: VerdictLevel; at: number } | null;
+};
+
+/**
+ * Stage-only message (`/hud-ws?role=stage`). Not part of shared/types.ts yet (contract proposal in the
+ * feat/stage report); web/src/screens/Stage.tsx mirrors it. Numbers and flags only: never content or images.
+ */
+export type StageMetrics = {
+  type: "metrics";
+  model: string | null;
+  /** last question → first assistant audio, seconds */
+  firstAudioS: number | null;
+  firstAudioP50S: number | null;
+  turns: number;
+  /** last verify_label / find_item: latency and where the read came from */
+  verify: { ms: number; source: VerifySource; level: VerdictLevel } | null;
+  cache: { hits: number; misses: number };
+  features: FeatureFlag[];
+  phone: boolean;
+  hud: boolean;
+  source: "phone" | "glasses";
+  /** camera frames/s reaching the server over the last 5 s, and their mean size */
+  fps: number;
+  frameKb: number | null;
+};
+
 const HUD_TYPES = new Set(["verdict", "coach", "status", "device"]);
+/** The projector view also gets captions, the checking spinner and readiness. Never audio or frames. */
+const STAGE_TYPES = new Set([...HUD_TYPES, "transcript", "checking", "readiness", "ready", "interrupted"]);
+const FPS_WINDOW_MS = 5000;
 
 export class Hub {
   clients = new Set<WebSocket>();
   huds = new Set<WebSocket>();
+  /** /hud-ws?role=stage sockets: read-only, not counted as a HUD for the phone's "HUD connected". */
+  stages = new Set<WebSocket>();
   ring = new FrameRing(8);
   spec = new Speculator(this.ring, () => !!this.live?.active);
   profile: Profile = emptyProfile();
@@ -37,7 +82,13 @@ export class Hub {
   /** Last GS1 DataMatrix seen for the current item (phone-decoded or server-decoded glasses frame). Never logged. */
   lastCode?: { code: Gs1Code; ts: number };
   dm = new DmThrottle();
+  /** FieldSpotter (SPOTTER=1): boxes for the newest frame, and the cue state machine */
+  spot = new SpotThrottle();
+  spotCoach = new SpotCoach();
+  lastFields?: { fields: FieldBox[]; ts: number };
   private readiness = { value: -1, sentAt: 0, sharp: 0 };
+  private frameLog: { ts: number; bytes: number }[] = [];
+  private lastMetrics = "";
   constructor(readonly id: string) {
     this.spec.onRead = () => this.updateReadiness();
   }
@@ -65,6 +116,14 @@ export class Hub {
       const r = lr.read.kind === "unreadable" ? 0 : lr.read.readability;
       v = Math.max(v, 0.35 * s + 0.65 * r * decay);
     }
+    // FieldSpotter: the tone tracks the dose itself. Dose box in view -> ready; product but no dose -> capped.
+    const lf = this.lastFields;
+    if (lf && Date.now() - lf.ts < 2500) {
+      const dose = Math.max(0, ...lf.fields.filter((x) => x.label === "strength").map((x) => x.score));
+      const product = lf.fields.some((x) => x.label === "product" && x.score >= 0.5);
+      if (dose >= 0.5) v = Math.max(v, 0.45 + 0.5 * dose * s);
+      else if (product) v = Math.min(v, 0.55);
+    }
     v = Math.round(Math.max(0, Math.min(1, v)) * 100) / 100;
     const now = Date.now();
     if (Math.abs(v - this.readiness.value) <= 0.05 || now - this.readiness.sentAt < 250) return;
@@ -78,6 +137,9 @@ export class Hub {
     if (msg.type === "verdict") {
       this.lastVerdict = msg.verdict;
       this.lastCoach = undefined;
+      // the user just got an answer: no detector cues for a few seconds, and start the cue logic fresh
+      this.spotCoach.reset();
+      this.spotCoach.quietUntil = Date.now() + 6000;
     }
     if (msg.type === "coach") this.lastCoach = msg;
     if (msg.type === "status") this.lastStatus = msg;
@@ -85,15 +147,66 @@ export class Hub {
     const s = JSON.stringify(msg);
     if (opts.clients !== false) for (const c of this.clients) safeSend(c, s);
     if (opts.hud !== false && HUD_TYPES.has(msg.type)) for (const h of hudsFor(this)) safeSend(h, s);
+    // the stage gets its types even when the HUD is skipped (readiness is phone + stage only)
+    if (STAGE_TYPES.has(msg.type)) for (const st of stagesFor(this)) safeSend(st, s);
+  }
+  /** Raw send to this session's stage sockets (e.g. the HUD's own button events, so the replica mirrors Dismiss). */
+  toStages(s: string) { for (const st of stagesFor(this)) safeSend(st, s); }
+  /** Projector numbers for this session (no content). */
+  metrics(now = Date.now()): StageMetrics {
+    const st = this.live?.stats?.();
+    this.frameLog = this.frameLog.filter((f) => now - f.ts < FPS_WINDOW_MS);
+    const n = this.frameLog.length;
+    return {
+      type: "metrics",
+      model: st?.model || null,
+      firstAudioS: st?.firstAudioS ?? null,
+      firstAudioP50S: st?.firstAudioP50S ?? null,
+      turns: st?.turns ?? 0,
+      verify: st?.verify ? { ms: st.verify.ms, source: st.verify.source, level: st.verify.level } : null,
+      cache: { hits: this.spec.hits, misses: this.spec.misses },
+      features: [...this.features],
+      phone: this.clients.size > 0,
+      hud: hudsFor(this).length > 0,
+      source: this.source,
+      fps: Math.round((n / (FPS_WINDOW_MS / 1000)) * 10) / 10,
+      frameKb: n ? Math.round(this.frameLog.reduce((a, f) => a + f.bytes, 0) / n / 102.4) / 10 : null,
+    };
+  }
+  /** Send metrics to stage sockets if anything changed (or always, to one late joiner). */
+  pushMetrics(to?: WebSocket) {
+    const list = to ? [to] : stagesFor(this);
+    if (!list.length) return;
+    const s = JSON.stringify(this.metrics());
+    if (!to && s === this.lastMetrics) return;
+    if (!to) this.lastMetrics = s;
+    for (const w of list) safeSend(w, s);
   }
   /** Every frame (phone or glasses) goes through here: ring buffer + speculative verify. */
   addFrame(f: Frame) {
     this.ring.push(f);
+    this.frameLog.push({ ts: f.ts, bytes: f.bytes });
+    if (this.frameLog.length > 64) this.frameLog.shift();
     this.spec.onFrame(f);
     this.updateReadiness(f.sharpness);
+    if (SPOTTER_ON && this.live?.active) this.spot.maybe(f.data, (fields) => this.onFields(f, fields));
+  }
+  /** FieldSpotter result for one frame: boxes to the phone, readiness from the dose box, and a spoken cue if warranted. */
+  private onFields(f: Frame, fields: FieldBox[]) {
+    if (!this.live?.active) return;
+    const now = Date.now();
+    this.lastFields = { fields, ts: now };
+    this.emit({ type: "fields", fields }, { hud: false });
+    this.updateReadiness();
+    if (this.live.busy) this.spotCoach.quietUntil = Math.max(this.spotCoach.quietUntil, now + 2500);
+    const cue = this.spotCoach.push(fields, f.sharpness, now);
+    if (cue) {
+      log("spotter.cue", { session: shortId(this.id), kind: cue.kind });
+      this.emit({ type: "coach", cue: cue.cue, text: cue.text, say: true });
+    }
   }
   /** Privacy: drop frames and cached reads. */
-  dropFrames() { this.ring.clear(); this.spec.clear(); this.lastCode = undefined; this.readiness = { value: -1, sentAt: 0, sharp: 0 }; }
+  dropFrames() { this.ring.clear(); this.spec.clear(); this.lastCode = undefined; this.lastFields = undefined; this.spotCoach.reset(); }
   /** Tell the phone(s) whether a HUD is attached to this session. */
   hudChanged() {
     const s = JSON.stringify({ type: "hud", connected: hudsFor(this).length > 0 });
@@ -105,6 +218,7 @@ export class Hub {
     if (this.device) safeSend(ws, JSON.stringify({ type: "device", device: this.device }));
     if (this.lastCoach) safeSend(ws, JSON.stringify(this.lastCoach));
     if (this.lastVerdict) safeSend(ws, JSON.stringify({ type: "verdict", verdict: this.lastVerdict }));
+    if (this.stages.has(ws) || floatingStages.has(ws)) this.pushMetrics(ws);
   }
 }
 
@@ -116,11 +230,16 @@ const hubs = new Map<string, Hub>();
 let latestId: string | undefined;
 /** HUDs connected without ?session=: they follow the latest live session. */
 const floatingHuds = new Set<WebSocket>();
+/** Stage sockets connected without ?session=: they follow the latest live session too. */
+const floatingStages = new Set<WebSocket>();
 /** Device state that arrived while no session existed. */
 let orphanDevice: DeviceState | undefined;
 
 function hudsFor(h: Hub): WebSocket[] {
   return h.id === latestId ? [...h.huds, ...floatingHuds] : [...h.huds];
+}
+function stagesFor(h: Hub): WebSocket[] {
+  return h.id === latestId ? [...h.stages, ...floatingStages] : [...h.stages];
 }
 
 export const getHub = (id: string) => hubs.get(id);
@@ -141,7 +260,27 @@ export function markLatest(h: Hub) {
   latestId = h.id;
   if (orphanDevice && !h.device) h.device = orphanDevice;
   for (const ws of floatingHuds) h.replay(ws);
+  for (const ws of floatingStages) h.replay(ws);
   h.hudChanged();
+}
+
+/**
+ * `/hud-ws?role=stage` (projector view): same replay and fan-out as a HUD plus transcripts, checking,
+ * readiness and metrics. Kept apart from HUDs so the phone's "HUD connected" only counts real HUDs.
+ */
+export function addStage(ws: WebSocket, id?: string | null) {
+  if (id) {
+    const h = getOrCreateHub(id);
+    h.stages.add(ws);
+    h.replay(ws);
+    ws.on("close", () => { h.stages.delete(ws); });
+    return;
+  }
+  floatingStages.add(ws);
+  const h = latestHub();
+  if (h) h.replay(ws);
+  else if (orphanDevice) safeSend(ws, JSON.stringify({ type: "device", device: orphanDevice }));
+  ws.on("close", () => { floatingStages.delete(ws); });
 }
 
 export function addHud(ws: WebSocket, id?: string | null) {
@@ -168,6 +307,7 @@ export function setDevice(device: DeviceState, id?: string | null) {
     orphanDevice = device;
     const s = JSON.stringify({ type: "device", device });
     for (const ws of floatingHuds) safeSend(ws, s);
+    for (const ws of floatingStages) safeSend(ws, s);
     return;
   }
   h.emit({ type: "device", device });
@@ -186,6 +326,11 @@ setInterval(() => {
   }
 }, 60_000).unref();
 
+// Stage metrics: fps decays and counters move without a message, so re-check once a second (sent only on change).
+setInterval(() => {
+  for (const h of hubs.values()) h.pushMetrics();
+}, 1000).unref();
+
 export function hubStats() {
-  return { sessions: hubs.size, latest: latestId ? shortId(latestId) : null, floatingHuds: floatingHuds.size };
+  return { sessions: hubs.size, latest: latestId ? shortId(latestId) : null, floatingHuds: floatingHuds.size, floatingStages: floatingStages.size };
 }

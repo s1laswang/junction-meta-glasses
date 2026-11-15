@@ -9,13 +9,13 @@ import {
 import type { CoachCue, LabelRead, Med, ServerMsg, VerdictLevel } from "../../shared/types.ts";
 import { env, SERVER_DIR } from "./env.ts";
 import { ai, backoffMs } from "./gemini.ts";
-import type { Hub, LiveLike } from "./hub.ts";
+import type { Hub, LiveLike, LiveStats, VerifySource } from "./hub.ts";
 import { ledger } from "./ledger.ts";
 import { errSummary, log, shortId } from "./log.ts";
 import { readLabel, toProfile } from "./verify.ts";
 import { findItems } from "./find.ts";
-import { gtin14 } from "./gs1.ts";
-import { MATCH_NAME_MIN_CONF, STRENGTH_MIN_CONF, allergenHits, avoidHits, checkLabel, fmtStrength, isExpired, matchMed, sameStrength, spokenIngredient } from "./safety.ts";
+import { speechFidelity, type Expected } from "./fidelity.ts";
+import { MATCH_NAME_MIN_CONF, STRENGTH_MIN_CONF, checkLabel, fmtStrength, ingredientsOf, sameStrength, spokenIngredient } from "./safety.ts";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -75,19 +75,20 @@ export function toolsFor(features: Set<string>): FunctionDeclaration[] {
   return [...TOOLS, ...(features.has("scene") ? [FIND_ITEM] : []), ...(features.has("addmed") ? [ADD_MEDICATION] : [])];
 }
 
-// Fixed, human-written verdict openers. The safety-critical word (right one / warning / not sure) is never
+// Fixed, human-written verdict openers. The safety-critical word (right one / warning / not sure / for info) is never
 // produced by model translation. In FI/SV, only the details after the opener are translated by Live.
 export const VERDICT_LEAD: Record<string, Record<VerdictLevel, string>> = {
-  fi: { match: "Oikea pakkaus.", warning: "Varoitus.", unsure: "En ole varma.", info: "Tieto." },
-  sv: { match: "Rätt förpackning.", warning: "Varning.", unsure: "Jag är inte säker.", info: "Information." },
+  fi: { match: "Oikea pakkaus.", warning: "Varoitus.", unsure: "En ole varma.", info: "Tiedoksi." },
+  sv: { match: "Rätt förpackning.", warning: "Varning.", unsure: "Jag är inte säker.", info: "För kännedom." },
 };
+const normLangCode = (lang: string) => (lang || "en").trim().toLowerCase().slice(0, 2);
 export function leadFor(lang: string, level: VerdictLevel): { lead?: string } {
-  const l = VERDICT_LEAD[(lang || "en").slice(0, 2)];
+  const l = VERDICT_LEAD[normLangCode(lang)];
   return l ? { lead: l[level] } : {};
 }
 export function speakInstruction(lang: string, tail: string): string {
-  return VERDICT_LEAD[(lang || "en").slice(0, 2)]
-    ? `First say \`lead\` exactly as written, then say \`speech\` translated faithfully into the user's language (keep names, numbers and dates exactly), then stop. ${tail}`
+  return VERDICT_LEAD[normLangCode(lang)]
+    ? `First say \`lead\` exactly as written, then say the rest of \`speech\` translated faithfully into the user's language (do not repeat the opener; keep medicine names, numbers and dates exact, using a decimal comma like 2,5 mg when speaking numbers), then stop. ${tail}`
     : `Say \`speech\` word for word, then stop. ${tail}`;
 }
 
@@ -123,6 +124,9 @@ export class LiveProxy implements LiveLike {
   private cancelled = new Set<string>();
   // transcripts (cumulative per utterance)
   private userText = ""; private botText = "";
+  /** the rule's sentence we expect to hear after a verdict, and where in botText the answer starts */
+  private expect?: { exp: Expected; from: number; timer: NodeJS.Timeout };
+  fidelity = { checked: 0, mismatched: 0 };
   // metrics
   private t0 = Date.now();
   private lastUserSignal = 0;
@@ -131,9 +135,9 @@ export class LiveProxy implements LiveLike {
   private toolLat: number[] = [];
   private toolCalls = 0;
   private modelsUsed = new Set<string>();
+  private lastVerify: NonNullable<LiveStats["verify"]> | null = null;
 
   constructor(private hub: Hub, private opts: Opts) {
-    if (opts.lang) this.hub.profile.lang = opts.lang;
     const r = hub.resume;
     // a phone that reconnects with the same session id within 10 min resumes the same Gemini context
     if (r && Date.now() - r.at < 10 * 60_000) {
@@ -142,8 +146,14 @@ export class LiveProxy implements LiveLike {
   }
 
   get active() { return !this.stopped; }
-  private get currentLang(): string { return this.hub.profile.lang || this.opts.lang || "en"; }
-  private send(msg: ServerMsg) { this.hub.emit(msg); }
+  private inCheck = false; private lastAudioAt = 0;
+  private send(msg: ServerMsg) {
+    if (msg.type === "checking") this.inCheck = msg.phase === "start";
+    else if (msg.type === "audio") this.lastAudioAt = Date.now();
+    this.hub.emit(msg);
+  }
+  /** A check is running or the assistant spoke in the last 1.5 s. */
+  get busy() { return this.inCheck || Date.now() - this.lastAudioAt < 1500; }
 
   async start() {
     this.idleTimer = setInterval(() => {
@@ -170,7 +180,7 @@ export class LiveProxy implements LiveLike {
             model,
             config: {
               responseModalities: [Modality.AUDIO],
-              systemInstruction: systemInstruction(this.hub, this.currentLang),
+              systemInstruction: systemInstruction(this.hub, this.opts.lang),
               tools: [{ functionDeclarations: toolsFor(this.hub.features) }],
               inputAudioTranscription: {},
               outputAudioTranscription: {},
@@ -243,16 +253,7 @@ export class LiveProxy implements LiveLike {
       return;
     }
     if (m.toolCall?.functionCalls) for (const fc of m.toolCall.functionCalls) void this.onTool(fc);
-    if (m.toolCallCancellation?.ids) {
-      for (const id of m.toolCallCancellation.ids) {
-        this.cancelled.delete(id);
-        if (this.cancelled.size >= 64) {
-          const oldest = this.cancelled.values().next().value;
-          if (oldest !== undefined) this.cancelled.delete(oldest);
-        }
-        this.cancelled.add(id);
-      }
-    }
+    if (m.toolCallCancellation?.ids) for (const id of m.toolCallCancellation.ids) this.cancelled.add(id);
 
     const sc = m.serverContent;
     if (!sc) return;
@@ -269,6 +270,7 @@ export class LiveProxy implements LiveLike {
         if (this.awaitingFirstAudio && this.lastUserSignal) {
           this.firstAudio.push((Date.now() - this.lastUserSignal) / 1000);
           this.awaitingFirstAudio = false;
+          this.hub.pushMetrics();
         }
         if (this.opts.voice) this.send({ type: "audio", data: d.data });
       }
@@ -281,12 +283,40 @@ export class LiveProxy implements LiveLike {
     if (sc.interrupted) {
       // barge-in: the client must flush its playback queue
       this.send({ type: "interrupted" });
+      this.clearExpect(); // the user cut the answer off: nothing to compare
     }
+    if (sc.turnComplete && this.expect && this.botText.slice(this.expect.from).trim()) this.checkSpoken(this.botText.slice(this.expect.from));
     if (sc.turnComplete || sc.interrupted) {
       if (this.botText) this.send({ type: "transcript", role: "assistant", text: this.botText.trim(), final: true });
       if (this.userText) this.send({ type: "transcript", role: "user", text: this.userText.trim(), final: true });
       this.botText = ""; this.userText = "";
     }
+  }
+
+  // ---------- spoken-answer check ----------
+  private clearExpect() { if (this.expect) clearTimeout(this.expect.timer); this.expect = undefined; }
+  /** Call right after a verdict's tool response: the next thing said must match `exp`. */
+  private expectSpoken(exp: Expected) {
+    this.clearExpect();
+    if (!this.opts.voice) return; // text-only sessions show the rule's sentence directly
+    const timer = setTimeout(() => this.checkSpoken(this.expect ? this.botText.slice(this.expect.from) : ""), 12_000);
+    timer.unref?.();
+    this.expect = { exp, from: this.botText.length, timer };
+  }
+  private checkSpoken(said: string) {
+    const e = this.expect;
+    if (!e || this.stopped) return;
+    this.clearExpect();
+    const f = speechFidelity(e.exp, said, this.opts.lang);
+    this.fidelity.checked++;
+    if (!f.ok) this.fidelity.mismatched++;
+    ledger({ feature: "live_fidelity", model: this.model ?? "none", latency_s: 0, ok: f.ok, reasons: f.reasons.join(",") || undefined, level: e.exp.level });
+    log("live.fidelity", { session: shortId(this.hub.id), ok: f.ok, reasons: f.reasons.join(",") });
+    if (!f.ok) this.send({ type: "correction", speech: e.exp.speech, reasons: f.reasons });
+  }
+  private namesFor(v: { matchedMedId?: string; read?: LabelRead }): string[] {
+    const med = v.matchedMedId ? this.hub.profile.meds.find((m) => m.id === v.matchedMedId) : undefined;
+    return [med ? spokenIngredient(med.ingredient) : "", med?.name ?? "", v.read?.ingredient.value ?? "", v.read?.product.value ?? ""].filter(Boolean) as string[];
   }
 
   private respond(fc: FunctionCall, output: Record<string, unknown>, silent = false) {
@@ -333,19 +363,20 @@ export class LiveProxy implements LiveLike {
           }
           if (fc.id && this.cancelled.has(fc.id)) { this.cancelled.delete(fc.id); return; }
           if (this.stopped) return;
-          const fresh = this.hub.freshCode();
-          const v = checkLabel(read, this.hub.profile, new Date(), fresh);
+          const v = checkLabel(read, this.hub.profile, new Date(), this.hub.freshCode(), question);
           if (!model) { v.level = "unsure"; v.reasons.push("reader unavailable"); }
           this.send({ type: "verdict", verdict: v });
           this.respond(fc, {
             level: v.level, speech: v.speech, headline: v.headline, matchedMedId: v.matchedMedId ?? null,
             guidance: v.read.guidance ?? null, takenToday: v.takenToday ?? null,
-            ...leadFor(this.currentLang, v.level),
-            instruction: speakInstruction(this.currentLang, "No disclaimer, add nothing."),
+            ...leadFor(this.opts.lang, v.level),
+            instruction: speakInstruction(this.opts.lang, "No disclaimer, add nothing."),
           });
+          this.expectSpoken({ speech: v.speech, level: v.level, lead: leadFor(this.opts.lang, v.level).lead, names: this.namesFor(v) });
           log("live.verify_done", { session: shortId(this.hub.id), level: v.level, model: model ?? "none", source, ms: Date.now() - t, dm: !!v.crossCheck });
-          const codeConflict = v.crossCheck?.agrees === false;
-          this.lastItemRead = { read, at: Date.now(), gtin: codeConflict ? undefined : fresh?.gtin, codeExpiry: fresh?.expiry, codeConflict };
+          this.lastVerify = { ms: Date.now() - t, source: source as VerifySource, level: v.level, at: Date.now() };
+          this.hub.pushMetrics();
+          this.lastItemRead = { read, at: Date.now(), gtin: this.hub.freshCode()?.gtin };
         } finally {
           this.send({ type: "checking", phase: "end" });
         }
@@ -366,10 +397,13 @@ export class LiveProxy implements LiveLike {
           this.respond(fc, {
             mode: "scene", level: v.level, speech: v.speech,
             items: (v.items ?? []).map((i) => ({ position: i.position, level: i.level, headline: i.headline })),
-            ...leadFor(this.currentLang, v.level),
-            instruction: speakInstruction(this.currentLang, "If they pick one up, call verify_label."),
+            ...leadFor(this.opts.lang, v.level),
+            instruction: speakInstruction(this.opts.lang, "If they pick one up, call verify_label."),
           });
+          this.expectSpoken({ speech: v.speech, level: v.level, lead: leadFor(this.opts.lang, v.level).lead });
           log("live.find_done", { session: shortId(this.hub.id), level: v.level, model: r.model ?? "none", ms: r.latencyMs, n_items: v.items?.length ?? 0 });
+          this.lastVerify = { ms: Date.now() - t, source: "scene", level: v.level, at: Date.now() };
+          this.hub.pushMetrics();
         } finally {
           this.send({ type: "checking", phase: "end" });
         }
@@ -387,7 +421,7 @@ export class LiveProxy implements LiveLike {
   }
 
   // ---------- hold up to add (flag addmed) ----------
-  private lastItemRead?: { read: LabelRead; at: number; gtin?: string; codeExpiry?: string; codeConflict?: boolean };
+  private lastItemRead?: { read: LabelRead; at: number; gtin?: string };
   private proposals = new Map<string, { med: Med; timer: NodeJS.Timeout }>();
 
   /** Build a Med from the last confident held-item read + the spoken schedule and ask the phone to confirm. */
@@ -398,46 +432,14 @@ export class LiveProxy implements LiveLike {
     if (!read || read.kind !== "medication" || nameConf < MATCH_NAME_MIN_CONF || !read.strength.value || read.strength.confidence < STRENGTH_MIN_CONF) {
       return { ok: false, reason: "need_clear_read", instruction: "Call verify_label first and coach until the name and strength are read clearly. Do not add anything yet." };
     }
-    if (lr?.codeConflict) {
-      return { ok: false, reason: "code_conflict", speech: "The printed label and the pack's code disagree. Please ask a pharmacist before adding it." };
-    }
-    const aHits = allergenHits(read, this.hub.profile.allergies);
-    if (aHits.length) {
-      return { ok: false, reason: "allergy_warning", speech: `Warning: this medicine matches your ${aHits[0].allergy} allergy (${aHits[0].found}). Please check with a pharmacist before adding it.` };
-    }
-    const avHits = avoidHits(read, this.hub.profile.avoid);
-    if (avHits.length) {
-      return { ok: false, reason: "avoid_warning", speech: `Warning: ${avHits[0]}. Please check with a pharmacist before adding it.` };
-    }
-    const exp = (read.expiry.value && read.expiry.confidence >= 0.7 && isExpired(read.expiry.value)) || (lr?.codeExpiry && isExpired(lr.codeExpiry));
-    if (exp) {
-      return { ok: false, reason: "expired", speech: "This pack is expired. Please check an in-date pack before adding it to your list." };
-    }
-    const schedKey = (s: string) => {
-      const m = /^(\d{1,2})[:.](\d{2})$/.exec(s);
-      return m && +m[1] <= 23 && +m[2] <= 59 ? `${String(+m[1]).padStart(2, "0")}:${m[2]}` : s.toLowerCase().replace(/\s+/g, " ");
-    };
-    const seenSlots = new Set<string>();
-    const schedule = (Array.isArray(args.schedule) ? args.schedule : [])
-      .filter((s): s is string => typeof s === "string" && !!s.trim())
-      .map((s) => s.trim().slice(0, 40))
-      .filter((s) => {
-        const k = schedKey(s);
-        if (seenSlots.has(k)) return false;
-        seenSlots.add(k);
-        return true;
-      })
-      .slice(0, 8);
+    const schedule = (Array.isArray(args.schedule) ? args.schedule : []).filter((s): s is string => typeof s === "string" && !!s.trim()).map((s) => s.trim().slice(0, 40)).slice(0, 8);
     if (!schedule.length) return { ok: false, reason: "need_schedule", instruction: "Ask the user when they take it, then call add_medication again." };
-    const ingredient = read.ingredient.value && read.ingredient.confidence >= MATCH_NAME_MIN_CONF
-      ? read.ingredient.value.toLowerCase().split(/\s*[,/+;&]\s*/).map((s) => spokenIngredient(s)).filter(Boolean).join(" / ")
-      : "";
-    const noStrength = (s: string) => s.replace(/\d+(?:[.,]\d+)?(?:\s*[+/]\s*\d+(?:[.,]\d+)?)*\s*(?:mg|g|mcg|ug|[\u00b5\u03bc]g|mikrog|mikrogram(?:maa|ma|m)?|micrograms?|milligram(?:maa|ma|s)?|gram(?:maa|ma|s)?|ml|iu|ky|ie|%)(?:\b|$).*$/i, "").trim();
+    const ingredient = read.ingredient.value && read.ingredient.confidence >= MATCH_NAME_MIN_CONF ? spokenIngredient(read.ingredient.value.toLowerCase()) : "";
+    const noStrength = (s: string) => s.replace(/\d+(?:[.,]\d+)?\s*(mg|g|mcg|µg|ml|iu)\b.*$/i, "").trim();
     const product = read.product.value && read.product.confidence >= MATCH_NAME_MIN_CONF ? noStrength(read.product.value) : "";
     const name = (typeof args.name === "string" && noStrength(args.name).slice(0, 60)) || product || cap(ingredient);
     const strength = fmtStrength(read.strength.value.replace(/(\d),(\d)/g, "$1.$2"));
-    const wantG = gtin14(lr?.gtin);
-    const dup = this.hub.profile.meds.find((m) => sameStrength(m.strength, strength) && (!!matchMed(read, [m]) || !!(wantG && (gtin14(m.gtin) ?? gtin14(m.barcode)) === wantG)));
+    const dup = this.hub.profile.meds.find((m) => (ingredient && ingredientsOf(m.ingredient, m.name).has(ingredient)) && sameStrength(m.strength, strength));
     if (dup) return { ok: false, reason: "already_on_list", speech: `${cap(spokenIngredient(dup.ingredient) || dup.name)} ${dup.strength} is already on your list.` };
     const med: Med = {
       id: `${(ingredient || name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "med"}-${Math.random().toString(36).slice(2, 6)}`,
@@ -474,7 +476,6 @@ export class LiveProxy implements LiveLike {
     const list = this.hub.profile.meds;
     const i = list.findIndex((m) => m.id === med.id);
     if (i >= 0) list[i] = med; else list.push(med);
-    this.hub.lastCode = undefined;
     log("live.profile_add_accepted", { session: shortId(this.hub.id) });
     this.text(`(Saved on the phone: ${med.name} ${med.strength}, taken ${med.schedule.join(", ")}, is now on the user's list. Confirm in a few words.)`);
   }
@@ -529,13 +530,23 @@ export class LiveProxy implements LiveLike {
     try { (this.session as any)?.conn?.close?.(); } catch { /* */ }
   }
   get currentModel() { return this.model; }
+  /** For the /stage projector: numbers only. */
+  stats(): LiveStats {
+    const sorted = [...this.firstAudio].sort((a, b) => a - b);
+    return {
+      model: this.model || null,
+      firstAudioS: this.firstAudio.at(-1) ?? null,
+      firstAudioP50S: sorted[Math.floor(sorted.length / 2)] ?? null,
+      turns: this.firstAudio.length,
+      verify: this.lastVerify,
+    };
+  }
 
   stop(reason: string) {
     if (this.stopped) return;
     this.stopped = true;
     clearInterval(this.idleTimer);
-    for (const p of this.proposals.values()) clearTimeout(p.timer);
-    this.proposals.clear();
+    this.clearExpect();
     this.gen++;
     try { this.session?.close(); } catch { /* */ }
     this.session = null;
@@ -546,8 +557,6 @@ export class LiveProxy implements LiveLike {
   private finish(reason: string) {
     this.stopped = true;
     clearInterval(this.idleTimer);
-    for (const p of this.proposals.values()) clearTimeout(p.timer);
-    this.proposals.clear();
     const sorted = [...this.firstAudio].sort((a, b) => a - b);
     ledger({
       feature: "live", model: [...this.modelsUsed].join(",") || "none", latency_s: (Date.now() - this.t0) / 1000,

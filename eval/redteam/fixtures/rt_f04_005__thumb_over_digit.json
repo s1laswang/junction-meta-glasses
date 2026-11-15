@@ -1,0 +1,95 @@
+{
+  "id": "rt_f04_005__thumb_over_digit",
+  "spec_id": "rt_f04_005",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains isosorbide mononitrate 40 mg instead of the user's saved isosorbide dinitrate 40 mg.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Isosorbidmononitrat Teva 40 mg",
+    "ingredient": "isosorbide mononitrate",
+    "strength": "40 mg",
+    "expiry": "2028-01",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Isosorbide Dinitrate 40 mg",
+        "ingredient": "isosorbide dinitrate",
+        "strength": "40 mg",
+        "schedule": [
+          "08:00"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Isosorbidmononitrat Teva",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "isosorbide mononitrate",
+      "confidence": 0.98
+    },
+    "strength": {
+      "value": "40 mg",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.7,
+    "guidance": "Turn the box around to see the expiry date."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)07310100678901(17)280100(10)RT01(21)SN005"
+}
