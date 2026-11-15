@@ -58,6 +58,11 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!consented) return;
+      if (e.key === "Escape" && s.verdict && !s.addProposal && !isTypingTarget(e.target) && !e.repeat) {
+        e.preventDefault();
+        checker.dismissVerdict();
+        return;
+      }
       const media = ["MediaPlayPause", "MediaPlay", "MediaPause", "AudioVolumeUp", "AudioVolumeDown", "MediaStop"].includes(e.key);
       if (media || ((e.key === " " || e.key === "Enter") && !isTypingTarget(e.target) && !e.repeat)) {
         e.preventDefault();
@@ -67,7 +72,7 @@ export function Live({ checker, consented, onReviewConsent, onFixPermissions }: 
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [checker, consented]);
+  }, [checker, consented, s.verdict, s.addProposal]);
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];

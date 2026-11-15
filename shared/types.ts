@@ -80,7 +80,10 @@ export type ServerMsg =
   | { type: "ready"; model: string; session: string; features?: FeatureFlag[] }
   | { type: "audio"; data: string }
   | { type: "transcript"; role: "user" | "assistant"; text: string; final: boolean }
-  | { type: "coach"; cue: CoachCue; text: string }
+  // `say` (added Sun 05:20, CEO): a cue from the on-server field detector; the phone speaks it itself, also in live mode
+  | { type: "coach"; cue: CoachCue; text: string; say?: boolean }
+  // added Sun 05:20 (CEO): FieldSpotter boxes for the newest frame (SPOTTER=1). box = [ymin, xmin, ymax, xmax], 0..1000
+  | { type: "fields"; fields: { label: "product" | "strength" | "expiry" | "allergens"; box: [number, number, number, number]; score: number }[] }
   | { type: "verdict"; verdict: Verdict }
   | { type: "status"; live: LiveState; detail?: string }
   | { type: "device"; device: DeviceState }
