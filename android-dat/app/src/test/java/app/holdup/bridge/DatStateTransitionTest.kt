@@ -260,7 +260,14 @@ class DatStateTransitionTest {
     assertEquals(" (tunnel up but server down?)", BridgeViewModel.frameHttpHint(530))
     assertEquals("", BridgeViewModel.frameHttpHint(200))
     assertEquals("", BridgeViewModel.frameHttpHint(204))
-    assertEquals("", BridgeViewModel.frameHttpHint(401))
+    assertEquals(
+        " (access key missing or wrong: add ?key=... to Server URL)",
+        BridgeViewModel.frameHttpHint(401),
+    )
+    assertEquals(
+        " (access key missing or wrong: add ?key=... to Server URL)",
+        BridgeViewModel.frameHttpHint(403),
+    )
     assertEquals("", BridgeViewModel.frameHttpHint(500))
   }
 }
