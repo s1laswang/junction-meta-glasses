@@ -144,6 +144,7 @@ export class MockSocket {
   private features: FeatureFlag[] = ["scene", "datamatrix", "addmed", "sonar"];
   private pendingCode: Gs1Code | null = null;
   private autoTimer: ReturnType<typeof setTimeout> | null = null;
+  private scenarioTimers: ReturnType<typeof setTimeout>[] = [];
 
   constructor() {
     ensureHudChannel();
@@ -169,6 +170,18 @@ export class MockSocket {
 
   private later(ms: number, fn: () => void) {
     this.timers.push(setTimeout(fn, ms));
+  }
+  private scenarioLater(ms: number, fn: () => void) {
+    const h = setTimeout(fn, ms);
+    this.timers.push(h);
+    this.scenarioTimers.push(h);
+  }
+  private clearScenario() {
+    if (this.autoTimer) clearTimeout(this.autoTimer);
+    this.autoTimer = null;
+    this.scenarioTimers.forEach(clearTimeout);
+    this.scenarioTimers = [];
+    this.running = false;
   }
   private emit(m: ServerMsg) {
     if (this.readyState !== 1) return;
@@ -213,22 +226,37 @@ export class MockSocket {
         break;
       case "datamatrix": {
         const code = parseGs1(m.raw);
-        if (code) this.pendingCode = code;
+        if (code) {
+          this.pendingCode = code;
+          if (this.lastVerdict && !this.running && this.lastVerdict.mode !== "scene" && this.features.includes("datamatrix")) {
+            const amlo = this.profile.meds.find((med) => /amlodipin/i.test(med.name + " " + med.ingredient)) ?? demoProfile().meds[0];
+            const same = !!this.lastVerdict.matchedMedId && (sameGtin(code.gtin, amlo.gtin) || sameGtin(code.gtin, amlo.barcode));
+            this.lastVerdict = withCrossCheck(
+              this.lastVerdict,
+              same,
+              same
+                ? [`GTIN ${code.gtin} = your ${amlo.name}`, `expiry: code ${code.expiry ?? "?"} = print ${code.expiry ?? "?"}`]
+                : [`pack code GTIN ${code.gtin} is not ${this.lastVerdict.read.product.value ?? "this product"}`],
+              code,
+            );
+            this.emit({ type: "verdict", verdict: this.lastVerdict });
+          }
+        }
         break;
       }
       case "frame":
         this.frames++;
         break;
       case "text": {
-        if (this.autoTimer) clearTimeout(this.autoTimer);
+        this.clearScenario();
         this.emit({ type: "transcript", role: "user", text: m.text, final: true });
         const t = m.text.toLowerCase();
-        if (/\badd\b|my medicines/.test(t) && this.features.includes("addmed")) {
-          this.later(400, () => this.runAddMed());
+        if (/\b(add|lisää|lisaa|lägg till|lagg till)\b|my medicines/.test(t) && this.features.includes("addmed")) {
+          this.scenarioLater(400, () => this.runAddMed());
           break;
         }
-        const pick = /which|table|three/.test(t) && this.features.includes("scene") ? 4 : /nut|allerg|food|bar/.test(t) ? 3 : /ibu|nsaid|pain/.test(t) ? 1 : /strength|metformin/.test(t) ? 2 : /evening|amlo|pill/.test(t) ? 0 : undefined;
-        this.later(400, () => this.runScenario(pick));
+        const pick = pickScenario(t, this.features.includes("scene"));
+        this.scenarioLater(400, () => this.runScenario(pick));
         break;
       }
       case "event":
@@ -254,7 +282,7 @@ export class MockSocket {
     if (!this.features.includes("sonar")) return;
     for (let t = fromMs, i = 0; t <= toMs; t += 250, i++) {
       const v = Math.min(0.97, 0.08 + ((t - fromMs) / (toMs - fromMs)) * 0.9 + (i % 3 === 0 ? -0.04 : 0));
-      this.later(t, () => this.emit({ type: "readiness", value: Math.max(0, v) }));
+      this.scenarioLater(t, () => this.emit({ type: "readiness", value: Math.max(0, v) }));
     }
   }
 
@@ -262,8 +290,8 @@ export class MockSocket {
   private runAddMed() {
     this.say("Sure. Hold up the first box and tell me when you take it.");
     this.rampReadiness(800, 5200);
-    this.later(2500, () => this.emit({ type: "transcript", role: "user", text: "I take this one in the morning.", final: true }));
-    this.later(5600, () => {
+    this.scenarioLater(2500, () => this.emit({ type: "transcript", role: "user", text: "I take this one in the morning.", final: true }));
+    this.scenarioLater(5600, () => {
       const med = { id: "lisinopril", name: "Lisinopril", ingredient: "lisinopril", strength: "10 mg", schedule: ["morning"], gtin: "06416542005218" };
       this.emit({ type: "profile_add", proposalId: "p" + Date.now().toString(36), med, speech: "I read Lisinopril 10 milligrams, taken in the morning." });
     });
@@ -276,7 +304,7 @@ export class MockSocket {
     const n = this.features.includes("scene") ? 5 : 4;
     const idx = which ?? scenarioIndex++ % n;
     const p = this.profile;
-    const amlo = p.meds.find((m) => /amlodipine/i.test(m.name)) ?? demoProfile().meds[0];
+    const amlo = p.meds.find((m) => /amlodipin/i.test(m.name + " " + m.ingredient)) ?? demoProfile().meds[0];
     const steps: [number, () => void][] = [
       [0, () => this.emit({ type: "transcript", role: "user", text: idx === 3 ? "Does this have nuts in it?" : idx === 4 ? "Which one is my evening pill?" : "Is this my evening pill?", final: true })],
       [1200, () => (this.emit({ type: "coach", cue: "other_side", text: "The label is facing away. Turn it around." }), this.say("I can see a box, but the label is on the other side. Turn it around."))],
@@ -308,7 +336,7 @@ export class MockSocket {
         },
       ],
     ];
-    for (const [ms, fn] of steps) this.later(ms, fn);
+    for (const [ms, fn] of steps) this.scenarioLater(ms, fn);
     this.rampReadiness(1300, 8900);
   }
 
@@ -322,6 +350,8 @@ export class MockSocket {
   private clear() {
     this.timers.forEach(clearTimeout);
     this.timers = [];
+    this.scenarioTimers = [];
+    this.autoTimer = null;
     this.running = false;
   }
 
@@ -364,16 +394,28 @@ export function mockSetGeminiDown(down: boolean) {
   if (!sent) toHud(m);
 }
 
+export function pickScenario(text: string, allowScene = true): number | undefined {
+  const t = text.toLowerCase();
+  if ((/which|table|three|mikä näistä|mika naista|kumpi|kolme|pöydä|poyda|vilken av|på bordet|pa bordet|\btre\b/.test(t)) && allowScene) return 4;
+  if (/nut|allerg|food|bar|pähkin|pahkin|mante|nöt|notter|mandel/.test(t)) return 3;
+  if (/ibu|burana|ibumax|nsaid|pain|särky|kipu|smärt|värk/.test(t)) return 1;
+  if (/strength|metformin|vahvuus|styrka/.test(t)) return 2;
+  if (/evening|amlo|pill|ilta|kväll|kvall/.test(t)) return 0;
+  return undefined;
+}
+
 // ---- mock HTTP -------------------------------------------------------------------
 export async function mockFetch(path: string, body?: unknown): Promise<unknown> {
   await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
   if (mockCtl.offline) throw new TypeError("Failed to fetch (mock offline)");
   if (path === "/api/health") return { ok: true, gemini: mockCtl.geminiDown ? "down" : "ok", models: { live: "mock-gemini-live", verify: "mock-flash" }, version: "mock" };
   if (path === "/api/verify") {
-    const p = (body as { profile?: Profile })?.profile ?? demoProfile();
-    const amlo = p.meds.find((m) => /amlodipine/i.test(m.name)) ?? demoProfile().meds[0];
-    const i = scenarioIndex++ % 3;
-    const v = i === 0 ? matchVerdict(p, amlo) : i === 1 ? mockWarningIbuprofen() : mockUnsureStrength();
+    const b = (body ?? {}) as { profile?: Profile; question?: string };
+    const p = b.profile ?? demoProfile();
+    const amlo = p.meds.find((m) => /amlodipin/i.test(m.name + " " + m.ingredient)) ?? demoProfile().meds[0];
+    const picked = b.question ? pickScenario(b.question, false) : undefined;
+    const i = picked ?? scenarioIndex++ % 3;
+    const v = i === 0 ? matchVerdict(p, amlo) : i === 1 ? mockWarningIbuprofen() : i === 3 ? mockFoodNuts() : mockUnsureStrength();
     toHud({ type: "verdict", verdict: v });
     return v;
   }
