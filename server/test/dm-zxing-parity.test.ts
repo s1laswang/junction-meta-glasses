@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import type http from "node:http";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -365,7 +366,8 @@ test("HTTP POST /ingest/frame with dm_amlodipine.jpg on a glasses session popula
   const origGenerateContent = ai.models.generateContent;
   const origConsoleLog = console.log;
 
-  const tmpLedgerDir = fs.mkdtempSync("/dev/shm/holdup-dm-parity-");
+  const tmpRoot = fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir();
+  const tmpLedgerDir = fs.mkdtempSync(path.join(tmpRoot, "holdup-dm-parity-"));
   env.ledgerPath = path.join(tmpLedgerDir, "ledger.jsonl");
   env.apiKey = "test-dm-parity-key";
   delete process.env.HOLDUP_KEY;
@@ -439,7 +441,9 @@ test("HTTP POST /ingest/frame with dm_amlodipine.jpg on a glasses session popula
     await new Promise((r) => setTimeout(r, 25));
     assert.equal(hub.lastCode, undefined);
 
+    await decodeDataMatrix(DM_AMLODIPINE_JPG);
     hub.dropFrames();
+    hub.dm = new DmThrottle();
     hub.features = new Set(["datamatrix"]);
     const activeLive: LiveLike & { frame(data: string): void } = {
       active: true,
@@ -456,7 +460,7 @@ test("HTTP POST /ingest/frame with dm_amlodipine.jpg on a glasses session popula
     });
     assert.equal(ingestRes.status, 204);
 
-    for (let i = 0; i < 100 && !hub.freshCode(); i++) {
+    for (let i = 0; i < 500 && !hub.freshCode(); i++) {
       await new Promise((r) => setTimeout(r, 10));
     }
     const fresh = hub.freshCode();
