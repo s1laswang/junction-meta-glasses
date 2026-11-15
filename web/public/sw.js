@@ -2,7 +2,7 @@
 // Never caches API calls, sockets, frames or anything user-specific.
 const CACHE = "holdup-shell-v2"; // v2: + pre-rendered ElevenLabs phrases (/phrases/)
 const SHELL = ["/", "/index.html", "/hud/", "/manifest.webmanifest", "/pcm-capture-worklet.js", "/icons/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png"];
-const NEVER = /^\/(api|live|hud-ws|ingest)(\/|$|\?)/;
+const NEVER = /^\/(api|live|hud-ws|ingest|arena)(\/|$|\?)/;
 
 async function precache() {
   const cache = await caches.open(CACHE);
