@@ -2,7 +2,7 @@
 
 This page describes what the code on `main` actually does. Every statement points to a file, so a reviewer can check it. If the code changes, update this page.
 
-HoldUp is a hackathon prototype, not a medical device. It never stores pictures, audio or what you said on the server, and your medicine list lives on your phone.
+HoldUp is a hackathon research prototype, not a CE-marked medical device (a medication-list check is likely EU MDR software, Class IIa, so any pilot runs as a supervised study). It never stores pictures, audio or what you said on the server. Your medicine list is stored on your phone and is sent with each check, held only in server memory while the check runs (up to 10 minutes for reconnects), and passed to Gemini as context.
 
 ## 1. What moves, and where it goes
 
@@ -58,12 +58,13 @@ HoldUp is a hackathon prototype, not a medical device. It never stores pictures,
 
 - **Google Gemini API** receives the frames, audio, typed questions and profile fragments listed above. Under Google's terms, the paid tier does not use prompts and responses to improve Google's products, while the unpaid tier may. We have **not confirmed** that the hackathon key is on a paid project, so we make **no** "not used for training" claim for this prototype. A pilot would run on a paid, billing-enabled project with a data-processing agreement.
 - **Cloudflare** (quick tunnel, `npm run tunnel`) terminates TLS between the phone and the laptop for the demo. A production deployment would use its own TLS endpoint.
+- **ElevenLabs** (optional, only with `ELEVENLABS_API_KEY`): at build time it renders 21 fixed safety and offline phrases (`server/scripts/prerender-phrases.ts`; no user data). The server also exposes `POST /api/tts/eleven`, and that route stays off unless `ELEVENLABS_LIVE=1` is set (off in our demo). When it is on, the text of a verdict (which can include a medicine name) is sent to ElevenLabs to be spoken.
 - The **Meta AI app and Meta glasses firmware** handle pairing, the DAT camera stream and Bluetooth audio under Meta's own terms. HoldUp sends nothing to Meta.
 
 ## 6. Known limitations (demo build; fix before any pilot)
 
-- **No authentication.** Anyone with the tunnel URL can open `/live`, read `/api/stats`, and, because the session is optional, attach a HUD to the **latest** session via `/hud-ws` and see its verdicts, or post frames to `/ingest/frame` while that session uses the glasses camera. Pilot fix: pair the phone, bridge and HUD with a per-user token.
+- **No authentication beyond a shared key.** Without `HOLDUP_KEY` set, anyone with the tunnel URL can open `/live`, read `/api/stats`, and, because the session is optional, attach a HUD to the **latest** session via `/hud-ws` and see its verdicts, or post frames to `/ingest/frame` while that session uses the glasses camera. Pilot fix: pair the phone, bridge and HUD with a per-user token.
 - The profile is kept in server memory for up to 10 minutes after the phone disconnects (so that a reconnect can resume). A pilot should drop it on disconnect, or encrypt it per session.
 - The ledger rotates at 5 MB and keeps one old file (`server/src/ledger.ts`); there is no time-based retention yet.
 - Gemini data handling depends on the API tier (see section 5).
-- **Finnish and Swedish answers:** the verdict and its opener ("Oikea pakkaus." / "Varoitus." / "En ole varma.", and the Swedish equivalents) are fixed, human-written text chosen by the deterministic rules. The details after the opener (names, dates, reasons) are translated by Gemini Live, with names, numbers and dates kept exact. Native speakers haven't yet reviewed that translation.
+- **Finnish and Swedish answers:** the verdict and its opener ("Oikea pakkaus." / "Varoitus." / "En ole varma." / "Tiedoksi.", and the Swedish equivalents "Rätt förpackning." / "Varning." / "Jag är inte säker." / "För kännedom.") are fixed, human-written text chosen by the deterministic rules and audited with back-translations in `docs/LANG_QA.md`. The details after the opener (names, dates, reasons) are translated by Gemini Live, with names, numbers (using a decimal comma in FI/SV) and dates kept exact.

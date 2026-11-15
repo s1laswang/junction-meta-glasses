@@ -1,0 +1,95 @@
+{
+  "id": "rt_f11_000__thumb_over_digit",
+  "spec_id": "rt_f11_000",
+  "family": "F11_topical_mg_per_g_vs_oral",
+  "trap_category": "wrong_strength_or_unit",
+  "trap_explanation": "This is a topical 10 mg/g cream for skin application, not the user's saved 10 mg oral hydrocortisone tablet.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Hydrocortison Orion 10 mg/g emulsiovoide",
+    "ingredient": "hydrocortisone",
+    "strength": "10 mg/g",
+    "expiry": "2028-05",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Hydrocortison",
+        "ingredient": "hydrocortisone",
+        "strength": "10 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": null,
+      "confidence": 0.3
+    },
+    "ingredient": {
+      "value": "hydrocortisone",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "10 mg/g",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.65,
+    "guidance": "Remove your thumb to uncover the product name."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "strength 10 mg/g differs from your 10 mg"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06414400123451(17)280500(10)RT01(21)SN000"
+}

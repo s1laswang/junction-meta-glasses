@@ -17,7 +17,7 @@ export function AccessKey({ onSave }: { onSave: () => void }) {
         <h1 ref={h} tabIndex={-1}>
           Access key needed
         </h1>
-        <p className="lede">
+        <p id="key-lede" className="lede">
           {had ? "The access key saved on this phone wasn't accepted." : "This HoldUp server only lets in people who have its private link."} Open the full link you were given (it ends in <span style={{ fontFamily: "var(--mono)" }}>?key=…</span>), or paste the key here.
         </p>
         <form
@@ -30,7 +30,7 @@ export function AccessKey({ onSave }: { onSave: () => void }) {
         >
           <div className="field">
             <label htmlFor="key">Access key</label>
-            <input id="key" type="text" value={v} onChange={(e) => setV(e.target.value)} autoComplete="off" autoCapitalize="off" spellCheck={false} />
+            <input id="key" type="text" value={v} onChange={(e) => setV(e.target.value)} aria-describedby="key-lede" aria-invalid={had || undefined} autoComplete="off" autoCapitalize="off" spellCheck={false} />
           </div>
           <button className="btn primary wide" type="submit" disabled={!v.trim()}>
             Save and try again

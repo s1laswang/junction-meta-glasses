@@ -1,0 +1,98 @@
+{
+  "id": "rt_f28_008__edge_crop",
+  "spec_id": "rt_f28_008",
+  "family": "F28_medication_allergenic_excipients",
+  "trap_category": "missed_allergen_or_excipient",
+  "trap_explanation": "Matches the user's saved loratadine 10 mg, but contains lactose monohydrate which conflicts with the user's lactose allergy.",
+  "perturbation": "edge_crop",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Loratadin Sandoz 10 mg",
+    "ingredient": "loratadine",
+    "strength": "10 mg",
+    "expiry": "2028-03",
+    "allergens": [
+      "milk"
+    ],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Loratadin",
+        "ingredient": "loratadine",
+        "strength": "10 mg",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [
+      "lactose"
+    ],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Loratadin Sandoz",
+      "confidence": 0.98
+    },
+    "ingredient": {
+      "value": "loratadine",
+      "confidence": 0.98
+    },
+    "strength": {
+      "value": "10 mg",
+      "confidence": 0.98
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2028-03",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.3
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": false,
+  "pack_gs1_raw": "(01)07312345114455(17)280300(10)RT01(21)SN008"
+}
