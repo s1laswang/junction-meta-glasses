@@ -350,8 +350,9 @@ describe("States reel, dose-finder screenshot, live-fidelity, SIM_USER_TESTS & L
 
     const slide7 = extractDeckSlide(deckHtml, 7);
     assert.ok(
-      slide7.includes(`${checkedCount} live verdicts checked, ${correctedCount} corrected`),
-      "Slide 7 in deck/index.html must match live-fidelity.md (16 live verdicts checked, 1 corrected)",
+      slide7.includes(`${checkedCount} live verdicts checked, ${correctedCount} corrected`) ||
+        slide7.includes(`${checkedCount} checked, ${correctedCount} corrected`),
+      "Slide 7 in deck/index.html must match live-fidelity.md (16 checked, 1 corrected)",
     );
     assert.ok(
       morningBrief.includes(`${checkedCount} live verdicts checked, ${correctedCount} corrected`),

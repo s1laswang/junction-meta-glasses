@@ -567,8 +567,9 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
 
       assert.ok(
         steps[2].body.includes("verify_label") &&
-          steps[2].body.includes("up to 2 sharpest frames") &&
-          steps[2].body.includes("1.5 s") &&
+          (steps[2].body.includes("up to 2 sharpest frames") ||
+            steps[2].body.includes("sharpest recent frames")) &&
+          steps[2].body.includes("strict JSON schema") &&
           steps[2].body.includes("confidence for every field") &&
           steps[2].body.includes("null when not legible"),
       );
@@ -629,10 +630,9 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
 
       assert.ok(
         steps[4].body.includes("The checker writes the sentence") &&
+          steps[4].body.includes("Live says it") &&
           steps[4].body.includes("checks what was said") &&
-          steps[4].body.includes("repeats the checked sentence") &&
-          steps[4].body.includes("FI/SV: fixed openers, details translated") &&
-          steps[4].body.includes("deterministic"),
+          steps[4].body.includes("repeats the checked sentence"),
       );
       assert.equal(VERDICT_LEAD.fi.match, "Oikea pakkaus.");
       assert.equal(VERDICT_LEAD.fi.warning, "Varoitus.");

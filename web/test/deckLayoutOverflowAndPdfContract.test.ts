@@ -218,6 +218,13 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-or-13-S
   });
 
   test("rejects malformed CLI invocations cleanly without writing stray PDF files to workspace", () => {
+    const deckDir = path.join(REPO_DIR, "deck");
+    const deckPdfsBefore = listPdfFilesInDir(deckDir);
+    assert.ok(
+      deckPdfsBefore.every((name) => name === "HoldUp-deck.pdf"),
+      "Only canonical HoldUp-deck.pdf may exist in deck/ before CLI run",
+    );
+
     const unknownFlagRun = spawnSync(process.execPath, [EXPORT_SCRIPT_PATH, "--not-a-valid-flag"], {
       cwd: REPO_DIR,
       encoding: "utf8",
@@ -233,11 +240,18 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-or-13-S
     assert.notEqual(missingOutRun.status, 0, "Missing --out path argument must exit non-zero");
 
     assert.deepEqual(listPdfFilesInDir(REPO_DIR), [], "Zero .pdf files permitted in repo root");
-    assert.deepEqual(listPdfFilesInDir(path.join(REPO_DIR, "deck")), [], "Zero .pdf files permitted in deck/");
+    assert.deepEqual(listPdfFilesInDir(deckDir), deckPdfsBefore, "No stray .pdf files written to deck/");
     assert.deepEqual(listPdfFilesInDir(path.join(REPO_DIR, "scripts")), [], "Zero .pdf files permitted in scripts/");
   });
 
   test("executes real headless Chromium 12-or-13-slide overflow, high-contrast, print, axe WCAG 2.2 AA audit, and 16:9 PDF export", (t) => {
+    const deckDir = path.join(REPO_DIR, "deck");
+    const deckPdfsBefore = listPdfFilesInDir(deckDir);
+    assert.ok(
+      deckPdfsBefore.every((name) => name === "HoldUp-deck.pdf"),
+      "Only canonical HoldUp-deck.pdf may exist in deck/ before export run",
+    );
+
     const fr8SharedExists = fs.existsSync(SHARED_PLAYWRIGHT_DIR);
     const hostHasChromium = detectHostChromium();
 
@@ -354,7 +368,7 @@ describe("Offline-Safe 16:9 Pitch Deck PDF Exporter and Real Chromium 12-or-13-S
 
     assert.equal(fs.existsSync(tmpDir), false, "Temp PDF directory must be removed in finally block (DISK RULE)");
     assert.deepEqual(listPdfFilesInDir(REPO_DIR), [], "Zero .pdf files permitted in repo root");
-    assert.deepEqual(listPdfFilesInDir(path.join(REPO_DIR, "deck")), [], "Zero .pdf files permitted in deck/");
+    assert.deepEqual(listPdfFilesInDir(deckDir), deckPdfsBefore, "No stray .pdf files written to deck/");
     assert.deepEqual(listPdfFilesInDir(path.join(REPO_DIR, "scripts")), [], "Zero .pdf files permitted in scripts/");
   });
 });
