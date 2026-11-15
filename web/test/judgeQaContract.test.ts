@@ -4,9 +4,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+const SELF_FILE = fileURLToPath(import.meta.url);
+const TEST_DIR = path.dirname(SELF_FILE);
 const REPO_DIR = path.resolve(TEST_DIR, "..", "..");
-const EM_DASH = String.fromCodePoint(0x2014);
+const EM_DASH = String.fromCharCode(8212);
+const LINE_COMMENT = String.fromCharCode(47, 47);
+const BLOCK_COMMENT = String.fromCharCode(47, 42);
+const HTML_COMMENT = String.fromCharCode(60, 33, 45, 45);
+const ESCAPED_EM_DASH = ["\\u", "2014"].join("");
 
 type QaSection = {
   id: string;
@@ -125,6 +130,30 @@ type FieldSpotterSplit = {
   val_src_ids: string[];
 };
 
+type GemmaFieldSpotterSummary = {
+  strength_visible: {
+    recall: number;
+  };
+};
+
+type RedTeamV1Summary = {
+  counts: {
+    families: number;
+    specs_total: number;
+    images_evaluated: number;
+  };
+  overall_current_safety_ts: {
+    n: number;
+    unsafe_k: number;
+    unsafe_rate_pct: number;
+  };
+  overall_baseline_safety_ts: {
+    n: number;
+    unsafe_k: number;
+    unsafe_rate_pct: number;
+  };
+};
+
 function readRepoFile(relPath: string): string {
   return fs.readFileSync(path.join(REPO_DIR, relPath), "utf8");
 }
@@ -183,12 +212,19 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
   const judgeQa = readRepoFile("docs/JUDGE_QA.md");
   const sections = parseJudgeQa(judgeQa);
 
-  test("contains zero em dashes (U+2014) and enforces 6 sections (a)-(f) with crisp 2-sentence answers + repo source lines", () => {
+  test("contains zero em dashes or comments in test and enforces 6 sections (a)-(f) with crisp 2-sentence answers + repo source lines", () => {
     assert.equal(
       judgeQa.includes(EM_DASH),
       false,
       "docs/JUDGE_QA.md must contain zero em dashes (U+2014)",
     );
+
+    const selfSource = fs.readFileSync(SELF_FILE, "utf8");
+    assert.equal(selfSource.includes(LINE_COMMENT), false, "Self-check: zero line comments");
+    assert.equal(selfSource.includes(BLOCK_COMMENT), false, "Self-check: zero block comments");
+    assert.equal(selfSource.includes(HTML_COMMENT), false, "Self-check: zero HTML comments");
+    assert.equal(selfSource.includes(EM_DASH), false, "Self-check: zero em dashes");
+    assert.equal(selfSource.includes(ESCAPED_EM_DASH), false, "Self-check: zero escaped em dashes");
 
     const expectedIds = ["a", "b", "c", "d", "e", "f"];
     assert.deepEqual([...sections.keys()], expectedIds);
@@ -220,7 +256,7 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
   test("resolves every cited repo file path and line range in docs/JUDGE_QA.md to real files on disk", () => {
     const codeSpanRe = /`([^`]+)`/g;
     const repoPathRe = new RegExp(
-      "^(?:GEMINI\\.md|README\\.md|(?:docs|eval|server|web|shared|deck|android-dat|scripts)\\x2f[A-Za-z0-9_./-]+)(?::(\\d+)(?:-(\\d+))?)?$",
+      "^(?:GEMINI\\.md|GEMMA\\.md|README\\.md|(?:docs|eval|server|web|shared|deck|android-dat|scripts)\\x2f[A-Za-z0-9_./-]+)(?::(\\d+)(?:-(\\d+))?)?$",
     );
 
     const allSpans = [...judgeQa.matchAll(codeSpanRe)].map((m) => m[1]);
@@ -252,13 +288,18 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       }
     }
 
-    assert.ok(verifiedCount >= 30, `Expected at least 30 verified repo references, found ${verifiedCount}`);
+    assert.ok(verifiedCount >= 40, `Expected at least 40 verified repo references, found ${verifiedCount}`);
   });
 
-  test("section (a) & (b) match competitive, EU MDR Rule 11, pilot, and epidemiology facts in RESEARCH.md, safety.ts, and deck/index.html", () => {
+  test("section (a) & (b) match competitive, EU MDR Rule 11, 13-slide deck honesty, pilot, and epidemiology facts", () => {
     const research = readRepoFile("docs/RESEARCH.md");
     const safetyTs = readRepoFile("server/src/safety.ts");
     const deckHtml = readRepoFile("deck/index.html");
+    const privacyMd = readRepoFile("docs/PRIVACY.md");
+    const onboardingTsx = readRepoFile("web/src/screens/Onboarding.tsx");
+
+    const slideCount = [...deckHtml.matchAll(/<section class="slide\b/g)].length;
+    assert.equal(slideCount, 13, "deck/index.html must have 13 slides");
 
     assert.ok(research.includes("Be My Eyes"));
     assert.ok(research.includes("21 markets"));
@@ -273,6 +314,10 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       "Be My Eyes",
       "21 markets",
       '"Hey Meta"',
+      "built for",
+      "Ray-Ban Meta",
+      "Ray-Ban Display",
+      "docs/HARDWARE_LOG.md",
       "safety.ts",
       "< 0.8",
       "< 0.95",
@@ -282,19 +327,37 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     }
 
     assert.ok(deckHtml.includes("Class IIa, Rule 11"));
+    assert.ok(deckHtml.includes("Decision support, not diagnosis."));
+    assert.ok(deckHtml.includes("Path to adoption"));
+    assert.ok(deckHtml.includes("Team and the ask"));
+    assert.ok(deckHtml.includes("It is built for"));
+    assert.ok(deckHtml.includes("docs/HARDWARE_LOG.md"));
     assert.ok(deckHtml.includes("4-week"));
     assert.ok(deckHtml.includes("20 members"));
     assert.ok(deckHtml.includes("Näkövammaisten liitto"));
+    assert.ok(privacyMd.includes("not a CE-marked medical device"));
+    assert.ok(onboardingTsx.includes("research prototype, not a CE-marked medical device"));
     assert.ok(research.includes("55,000"));
     assert.ok(research.includes("45,000"));
     assert.ok(research.includes("21.6% (2025)"));
     assert.ok(research.includes("Fimea"));
 
     const secB = sections.get("b")!;
+    assert.equal(secB.answer.includes("never guesses a dose"), false);
+    assert.equal(secB.answer.includes("not a certified medical device"), false);
     for (const token of [
+      "research prototype, not CE-marked",
+      "Slide 9",
+      "Decision support, not diagnosis",
       "EU MDR Class IIa (Rule 11)",
-      "not a certified medical device",
+      "only states a dose at confidence >= 0.8",
       "pharmacist",
+      "built for",
+      "Ray-Ban Meta",
+      "Ray-Ban Display",
+      "docs/HARDWARE_LOG.md",
+      "Slide 12 Adoption",
+      "Slide 13 Team+Ask",
       "4-week",
       "20-member",
       "Näkövammaisten liitto (NKL)",
@@ -310,14 +373,16 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     }
   });
 
-  test("section (c) cites exact Live latency, v1/v2 safety calibration, and paired Gemma 4 31B metrics from eval/results JSONs and api-stats-snapshot.json", () => {
+  test("section (c) cites exact Live latency, spoken-answer fidelity, v1/v2 safety calibration, and paired Gemma 4 31B metrics", () => {
     const stats = JSON.parse(readRepoFile("docs/evidence/api-stats-snapshot.json")) as ApiStatsSnapshot;
     const v1 = JSON.parse(readRepoFile("eval/results/v1_results.json")) as EvalV1Results;
     const v2Safety = JSON.parse(readRepoFile("eval/results/v2_safety_rescore.json")) as SafetyRescoreResults;
     const v2Compare = JSON.parse(readRepoFile("eval/results/v2_model_compare.json")) as ModelCompareResults;
     const smokeRuns = readRepoFile("docs/evidence/smoke-runs.md");
+    const liveFidelity = readRepoFile("docs/evidence/live-fidelity.md");
 
     assert.ok(smokeRuns.includes("5.8 s"));
+    assert.ok(liveFidelity.includes("| 16 | 15 | 1 |"));
     assert.equal(stats.features.live.ok, 26);
 
     const liveP50 = roundTenth(stats.features.live.first_audio_p50_s);
@@ -353,6 +418,8 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     const secC = sections.get("c")!;
     for (const token of [
       "gemini-3.8-live",
+      "server/src/fidelity.ts",
+      "15 / 16",
       "gemini-3.8-flash",
       "5.8 s",
       `p50 ${liveP50} s / p95 ${liveP95} s`,
@@ -377,10 +444,13 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     }
   });
 
-  test("section (d) & (e) match FieldSpotter Verda H100 evaluation JSON + ONNX binary and GS1 DataMatrix cross-check implementation", () => {
+  test("section (d) & (e) match FieldSpotter Verda H100/A100 + SPOTTER=1 status, GS1 DataMatrix cross-check, and WS1 32-family red-team", () => {
     const fsJson = JSON.parse(readRepoFile("eval/results/fieldspotter.json")) as FieldSpotterResults;
+    const gemmaFsJson = JSON.parse(readRepoFile("eval/results/fieldspotter_gemma.json")) as GemmaFieldSpotterSummary;
     const splitJson = JSON.parse(readRepoFile("docs/evidence/fieldspotter/split.json")) as FieldSpotterSplit;
     const verdaDoc = readRepoFile("docs/evidence/verda-fieldspotter.md");
+    const spotterTs = readRepoFile("server/src/spotter.ts");
+    const spotCoachTs = readRepoFile("server/src/spotcoach.ts");
     const onnxStat = fs.statSync(path.join(REPO_DIR, "web/public/models/fieldspotter.onnx"));
 
     const totalSplitImages = splitJson.images.train + splitJson.images.val;
@@ -392,6 +462,9 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     assert.ok(verdaDoc.includes("0.15 GPU-hours"));
     assert.ok(verdaDoc.includes("H100 80GB"));
     assert.equal(onnxStat.size, fsJson.onnx.bytes);
+    assert.equal(gemmaFsJson.strength_visible.recall, 91.4);
+    assert.ok(spotterTs.includes('process.env.SPOTTER === "1"'));
+    assert.ok(spotCoachTs.includes("export class SpotCoach"));
 
     const predPos = fsJson.strength_visible.tp + fsJson.strength_visible.fp;
     const onnxMb = (onnxStat.size / 1_000_000).toFixed(1);
@@ -414,9 +487,14 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       `${fsJson.map50_all.toFixed(3)}`,
       `p50 ${fsJson.latency_ms_onnx_cpu.p50.toFixed(1)} ms`,
       `p95 ${fsJson.latency_ms_onnx_cpu.p95.toFixed(1)} ms`,
+      `${gemmaFsJson.strength_visible.recall.toFixed(1)}%`,
+      "GEMMA.md",
       "web/public/models/fieldspotter.onnx",
       "trained, evaluated, and committed",
-      "not yet wired into live coaching",
+      "SPOTTER=1",
+      "off by default",
+      "server/src/spotter.ts",
+      "server/src/spotcoach.ts",
     ]) {
       assert.ok(secD.answer.includes(token), `Section (d) answer must cite ${token}`);
     }
@@ -425,11 +503,22 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     const webGs1 = readRepoFile("web/src/lib/gs1.ts");
     const safetyTs = readRepoFile("server/src/safety.ts");
     const verdictsTs = readRepoFile("web/src/lib/verdicts.ts");
+    const redteam = JSON.parse(readRepoFile("eval/results/redteam_v1.json")) as RedTeamV1Summary;
+    const judgeProbes = readRepoFile("server/test/judge-probes.test.ts");
 
     assert.ok(serverGs1.includes("export function parseGs1"));
     assert.ok(webGs1.includes("export function parseGs1"));
     assert.ok(safetyTs.includes("double-checked with the pack's code"));
     assert.ok(verdictsTs.includes('via === "datamatrix"'));
+    assert.equal(redteam.counts.families, 32);
+    assert.equal(redteam.counts.specs_total, 2048);
+    assert.equal(redteam.counts.images_evaluated, 2264);
+    assert.equal(redteam.overall_baseline_safety_ts.unsafe_k, 199);
+    assert.equal(redteam.overall_baseline_safety_ts.unsafe_rate_pct, 8.79);
+    assert.equal(redteam.overall_current_safety_ts.unsafe_k, 13);
+    assert.equal(redteam.overall_current_safety_ts.unsafe_rate_pct, 0.57);
+    assert.ok(judgeProbes.includes("probe 7"));
+    assert.ok(judgeProbes.includes("probe 21"));
 
     const secE = sections.get("e")!;
     for (const token of [
@@ -448,6 +537,16 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       "pharmacist",
       "offline",
       "web/src/lib/verdicts.ts",
+      `${redteam.counts.families}-family`,
+      formatInt(redteam.counts.images_evaluated),
+      formatInt(redteam.counts.specs_total),
+      `${redteam.overall_baseline_safety_ts.unsafe_k} / ${formatInt(redteam.overall_baseline_safety_ts.n)}`,
+      `${redteam.overall_baseline_safety_ts.unsafe_rate_pct.toFixed(2)}%`,
+      `${redteam.overall_current_safety_ts.unsafe_k} / ${formatInt(redteam.overall_current_safety_ts.n)}`,
+      `${redteam.overall_current_safety_ts.unsafe_rate_pct.toFixed(2)}%`,
+      "in-sample",
+      "7/7",
+      "server/test/judge-probes.test.ts",
     ]) {
       assert.ok(secE.answer.includes(token), `Section (e) answer must cite ${token}`);
     }
@@ -481,6 +580,7 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     assert.ok(privacyMd.includes("auto-stops after 45 s"));
     assert.ok(privacyMd.includes("last 8 frames"));
     assert.ok(privacyMd.includes("localStorage"));
+    assert.ok(privacyMd.includes("10 minutes"));
     assert.ok(privacyMd.includes("Delete all my data"));
     assert.ok(privacyMd.includes("data-processing agreement"));
 
@@ -492,7 +592,7 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       formatInt(v.tokens_thinking),
       `${v.calls}`,
       `~${formatInt(avgVerifyIn)}`,
-      `~${avgVerifyOutThinking}`,
+      `~${formatInt(avgVerifyOutThinking)}`,
       formatInt(vs.tokens_in),
       formatInt(vs.tokens_out),
       formatInt(vs.tokens_thinking),
@@ -504,6 +604,7 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       "8",
       "redacting logger",
       "localStorage",
+      "10",
       "1-button delete",
       "docs/PRIVACY.md",
       "DPA",
