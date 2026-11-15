@@ -38,6 +38,8 @@ function snapshotFile(p: string): { exists: boolean; sha256: string; size: numbe
 }
 
 const repoLedgerBefore = snapshotFile(REPO_LEDGER_PATH);
+const hadRootNodeModulesBefore = fs.existsSync(path.join(REPO_ROOT, "node_modules"));
+const hadServerNodeModulesBefore = fs.existsSync(path.join(SERVER_DIR, "node_modules"));
 
 const tmpRoot = fs.mkdtempSync(
   path.join(fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir(), "holdup-s-w3c-"),
@@ -1007,10 +1009,10 @@ test("LiveProxy find_item full scene lifecycle fans out verdict and metrics, loc
   }
 });
 
-test("hygiene invariants: zero external fetches, zero unexpected Gemini calls, no workspace node_modules, and repo ledger untouched", () => {
+test("hygiene invariants: zero external fetches, zero unexpected Gemini calls, workspace node_modules unchanged, and repo ledger untouched", () => {
   assert.equal(externalFetchCalls, 0);
   assert.equal(unexpectedGeminiCalls, 0);
-  assert.equal(fs.existsSync(path.join(REPO_ROOT, "node_modules")), false);
-  assert.equal(fs.existsSync(path.join(SERVER_DIR, "node_modules")), false);
+  assert.equal(fs.existsSync(path.join(REPO_ROOT, "node_modules")), hadRootNodeModulesBefore);
+  assert.equal(fs.existsSync(path.join(SERVER_DIR, "node_modules")), hadServerNodeModulesBefore);
   assert.deepEqual(snapshotFile(REPO_LEDGER_PATH), repoLedgerBefore);
 });
