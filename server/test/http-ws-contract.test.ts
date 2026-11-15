@@ -172,6 +172,7 @@ test("WS /live glasses source ingest and zero-retention frame drop on close", as
     assert.equal(getHub("ws-test-1")!.ring.length, 1);
 
     await live.close();
+    for (let i = 0; i < 20 && getHub("ws-test-1")!.ring.length > 0; i++) await new Promise((r) => setTimeout(r, 5));
     assert.equal(getHub("ws-test-1")!.ring.length, 0);
   } finally {
     await live.close();

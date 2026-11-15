@@ -1,0 +1,93 @@
+{
+  "id": "rt_f05_004__two_boxes_composite",
+  "spec_id": "rt_f05_004",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held bottle is Vitamin D3 400 IU, whereas the user's saved medication is Vitamin E 400 IU.",
+  "perturbation": "two_boxes_composite",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Sandoz Vitamin D3 400 IU",
+    "ingredient": "Vitamin D3",
+    "strength": "400 IU",
+    "expiry": "2029-02",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Sandoz Vitamin E 400 IU",
+        "ingredient": "Vitamin E",
+        "strength": "400 IU",
+        "schedule": [
+          "morning"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "en"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Sandoz Vitamin D3",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "colecalciferol",
+      "confidence": 0.9
+    },
+    "strength": {
+      "value": "400 IU",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2029-02",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.75
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)05010400001059(17)290200(10)RT01(21)SN004"
+}

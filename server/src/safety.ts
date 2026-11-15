@@ -32,11 +32,19 @@ const BRANDS: Record<string, string> = {
   norvasc: "amlodipine", amlodipin: "amlodipine", amlodipiini: "amlodipine", amlodipinbesilat: "amlodipine",
   burana: "ibuprofen", advil: "ibuprofen", nurofen: "ibuprofen", ibumax: "ibuprofen", ibuprofeeni: "ibuprofen", brufen: "ibuprofen",
   panadol: "paracetamol", pamol: "paracetamol", "para-tabs": "paracetamol", paratabs: "paracetamol", tylenol: "paracetamol",
-  acetaminophen: "paracetamol", parasetamoli: "paracetamol", tylenol500: "paracetamol",
+  acetaminophen: "paracetamol", parasetamoli: "paracetamol", tylenol500: "paracetamol", alvedon: "paracetamol",
   aleve: "naproxen", pronaxen: "naproxen", naprosyn: "naproxen", naprokseeni: "naproxen",
-  voltaren: "diclofenac", diklofenaakki: "diclofenac",
+  voltaren: "diclofenac", diklofenaakki: "diclofenac", ketorin: "ketoprofen", orudis: "ketoprofen",
+  arcoxia: "etoricoxib", celebrex: "celecoxib", mobic: "meloxicam", ketesse: "dexketoprofen",
   disperin: "aspirin", primaspan: "aspirin", aspirin: "aspirin", "acetylsalicylic acid": "aspirin", asa: "aspirin",
   asetyylisalisyylihappo: "aspirin",
+  amorion: "amoxicillin", amoxin: "amoxicillin", "v-pen": "phenoxymethylpenicillin", selexid: "pivmecillinam",
+  oxynorm: "oxycodone", oxycontin: "oxycodone", tradolan: "tramadol", tramal: "tramadol", temgesic: "buprenorphine", norspan: "buprenorphine", matrifen: "fentanyl",
+  eliquis: "apixaban", xarelto: "rivaroxaban", pradaxa: "dabigatran", lixiana: "edoxaban", plavix: "clopidogrel",
+  lantus: "glargine", abasaglar: "glargine", toujeo: "glargine", humalog: "lispro", novorapid: "aspart", fiasp: "aspart",
+  levemir: "detemir", tresiba: "degludec", protaphane: "isophane", humulin: "isophane", actrapid: "insulinhuman",
+  kaleorid: "potassiumchloride", lito: "lithiumcarbonate", ismo: "isosorbidemononitrate", imdur: "isosorbidemononitrate",
+  isordil: "isosorbidedinitrate", cellcept: "mycophenolatemofetil", myfortic: "mycophenolicacid", devisol: "colecalciferol",
   glucophage: "metformin", metformiini: "metformin",
   zopinox: "zopiclone", imovane: "zopiclone", tsopikloni: "zopiclone",
   marevan: "warfarin", varfariini: "warfarin",
@@ -45,13 +53,57 @@ const BRANDS: Record<string, string> = {
   bisoprololi: "bisoprolol", emconcor: "bisoprolol", ramipriili: "ramipril", cardace: "ramipril",
 };
 
+// Multi-word / alphanumeric substances whose qualifying word carries drug identity (must run before salt stripping).
+const SUBSTANCE_PATTERNS: Array<[RegExp, string]> = [
+  [/\b(?:insulin\s+human|human\s+insulin|ihmisinsuliini|humaninsulin)\b/g, "insulinhuman"],
+  [/\b(?:potassium|kalium)\s*(?:chloride|kloridi?)\b/g, "potassiumchloride"],
+  [/\b(?:sodium|natrium)\s*(?:chloride|kloridi?)\b/g, "sodiumchloride"],
+  [/\b(?:lithium|litium)\s*(?:carbonate|karbonaatti|karbonat)\b/g, "lithiumcarbonate"],
+  [/\b(?:calcium|kalsium|kalcium)\s*(?:carbonate|karbonaatti|karbonat)\b/g, "calciumcarbonate"],
+  [/\b(?:ferrous|ferro|rauta)\s*(?:gluconate|glukonaatti|glukonat)\b/g, "ferrousgluconate"],
+  [/\b(?:calcium|kalsium|kalcium)\s*(?:gluconate|glukonaatti|glukonat)\b/g, "calciumgluconate"],
+  [/\b(?:sodium|natrium)\s*(?:bicarbonate|bikarbonaatti|bikarbonat|hydrogen\s*carbonate)\b/g, "sodiumbicarbonate"],
+  [/\b(?:potassium|kalium)\s*(?:bicarbonate|bikarbonaatti|bikarbonat|hydrogen\s*carbonate)\b/g, "potassiumbicarbonate"],
+  [/\b(?:isosorbid[ei]?\s*mononitrat[ei]?|isorbidmononitrat|isosorbidimononitraatti)\b/g, "isosorbidemononitrate"],
+  [/\b(?:isosorbid[ei]?\s*dinitrat[ei]?|isosorbididinitraatti)\b/g, "isosorbidedinitrate"],
+  [/\bepoetin\s*alfa\b/g, "epoetinalfa"],
+  [/\bepoetin\s*beta\b/g, "epoetinbeta"],
+  [/\bepoetin\s*zeta\b/g, "epoetinzeta"],
+  [/\b(?:mycophenolate\s*mofetil|mykofenolaattimofetiili)\b/g, "mycophenolatemofetil"],
+  [/\b(?:mycophenolate\s*sodium|mycophenolic(?:\s*acid)?|mykofenolihappo)\b/g, "mycophenolicacid"],
+  [/\b(?:folinic\s*acid|leucovorin|kalsiumfolinaatti|folininsyra)\b/g, "folinicacid"],
+  [/\b(?:vitamin\s*b9|b9[- ]vitami(?:ini|n)|folic\s*acid|foolihappo|folsyra)\b/g, "folicacid"],
+  [/\b(?:vitamin\s*b12|b12[- ]vitami(?:ini|n)|kyanokobalamiini|hydroxocobalamin|mecobalamin|methylcobalamin)\b/g, "cyanocobalamin"],
+  [/\b(?:vitamin\s*b1|b1[- ]vitami(?:ini|n)|tiamiini)\b/g, "thiamine"],
+  [/\b(?:vitamin\s*b2|b2[- ]vitami(?:ini|n)|riboflaviini)\b/g, "riboflavin"],
+  [/\b(?:vitamin\s*b3|b3[- ]vitami(?:ini|n)|niasiini|niacin)\b/g, "nicotinamide"],
+  [/\b(?:vitamin\s*b5|b5[- ]vitami(?:ini|n)|pantothenic(?:\s*acid)?)\b/g, "pantothenic"],
+  [/\b(?:vitamin\s*b6|b6[- ]vitami(?:ini|n)|pyridoksiini)\b/g, "pyridoxine"],
+  [/\b(?:vitamin\s*b7|b7[- ]vitami(?:ini|n)|biotiini)\b/g, "biotin"],
+  [/\b(?:vitamin\s*a|a[- ]vitami(?:ini|n)|retinoli)\b/g, "retinol"],
+  [/\b(?:vitamin\s*c|c[- ]vitami(?:ini|n)|ascorbic(?:\s*acid)?|askorbiinihappo|askorbinsyra)\b/g, "ascorbicacid"],
+  [/\b(?:vitamin\s*d2|d2[- ]vitami(?:ini|n)|ergokalsiferoli)\b/g, "ergocalciferol"],
+  [/\b(?:vitamin\s*d3?|d3?[- ]vitami(?:ini|n)|cholecalciferol|kolekalsiferoli)\b/g, "colecalciferol"],
+  [/\b(?:vitamin\s*e|e[- ]vitami(?:ini|n)|tokoferoli)\b/g, "tocopherol"],
+  [/\b(?:vitamin\s*k2|k2[- ]vitami(?:ini|n)|menakinoni|menaquinone)\b/g, "menaquinone"],
+  [/\b(?:vitamin\s*k1?|k1?[- ]vitami(?:ini|n)|fytomenadioni|phytomenadione)\b/g, "phytomenadione"],
+];
+function canonicalizeSubstance(s: string | null | undefined): string {
+  let n = norm(s);
+  if (!n) return "";
+  for (const [re, rep] of SUBSTANCE_PATTERNS) n = n.replace(re, rep);
+  return n;
+}
+
 // Drug classes for the avoid list / drug allergies.
 const CLASSES: Record<string, string[]> = {
-  nsaid: ["ibuprofen", "naproxen", "diclofenac", "aspirin", "ketoprofen", "etoricoxib", "celecoxib", "meloxicam", "dexketoprofen"],
-  penicillin: ["penicillin", "amoxicillin", "ampicillin", "phenoxymethylpenicillin", "flucloxacillin", "dicloxacillin", "pivmecillinam"],
+  nsaid: ["ibuprofen", "naproxen", "diclofenac", "aspirin", "ketoprofen", "etoricoxib", "celecoxib", "meloxicam", "dexketoprofen", "indomethacin", "piroxicam"],
+  penicillin: ["penicillin", "amoxicillin", "ampicillin", "phenoxymethylpenicillin", "flucloxacillin", "dicloxacillin", "pivmecillinam", "benzylpenicillin", "cloxacillin"],
   benzodiazepine: ["diazepam", "oxazepam", "temazepam", "alprazolam", "lorazepam"],
   opioid: ["codeine", "tramadol", "oxycodone", "morphine", "buprenorphine", "fentanyl"],
   statin: ["simvastatin", "atorvastatin", "rosuvastatin"],
+  anticoagulant: ["warfarin", "apixaban", "rivaroxaban", "dabigatran", "edoxaban", "clopidogrel", "enoxaparin", "dalteparin"],
+  sulfonamide: ["sulfamethoxazole", "sulfasalazine", "sulfadiazine"],
 };
 const CLASS_ALIASES: Record<string, string> = {
   nsaid: "nsaid", nsaids: "nsaid", "anti-inflammatory": "nsaid", "anti-inflammatories": "nsaid", "anti inflammatories": "nsaid",
@@ -59,25 +111,40 @@ const CLASS_ALIASES: Record<string, string> = {
   penicillin: "penicillin", penicillins: "penicillin", penisilliini: "penicillin",
   benzodiazepine: "benzodiazepine", benzodiazepines: "benzodiazepine", opioid: "opioid", opioids: "opioid",
   statin: "statin", statins: "statin",
+  anticoagulant: "anticoagulant", anticoagulants: "anticoagulant", "blood thinner": "anticoagulant", "blood thinners": "anticoagulant",
+  verenohennuslaake: "anticoagulant", verenohennuslaakkeet: "anticoagulant",
+  sulfa: "sulfonamide", sulfonamide: "sulfonamide", sulfonamides: "sulfonamide",
 };
 
 // Allergen synonyms (base allergen -> label terms). Matching is substring on normalised words.
 const ALLERGENS: Record<string, string[]> = {
-  peanut: ["peanut", "peanuts", "arachis", "groundnut", "groundnuts", "maapahkina", "jordnot"],
+  peanut: ["peanut", "peanuts", "arachis", "groundnut", "groundnuts", "maapahkina", "maapahkinaa", "maapahkinoita", "maapahkinaoljy", "jordnot", "jordnotter"],
   "tree nut": ["tree nut", "tree nuts", "hazelnut", "hazelnuts", "almond", "almonds", "cashew", "cashews", "walnut", "walnuts",
-    "pecan", "pistachio", "brazil nut", "macadamia", "hasselpahkina", "manteli", "cashewpahkina", "saksanpahkina",
-    "pekaanipahkina", "hasselnot", "mandel", "valnot", "nuts", "pahkina", "pahkinoita"],
-  milk: ["milk", "lactose", "whey", "casein", "caseinate", "butter", "cream", "maito", "laktoosi", "hera", "mjolk", "dairy"],
-  gluten: ["gluten", "wheat", "barley", "rye", "spelt", "vehna", "ohra", "ruis", "gluteeni", "vete", "wheat starch"],
-  egg: ["egg", "eggs", "albumin", "kananmuna", "muna", "agg"],
-  soy: ["soy", "soya", "soja", "soybean", "soya oil", "soijaoljy", "soija"],
-  sesame: ["sesame", "tahini", "seesami", "sesam"],
-  fish: ["fish", "kala", "fisk", "anchovy", "cod", "salmon"],
-  crustacean: ["shellfish", "crustacean", "crustaceans", "shrimp", "prawn", "crab", "lobster", "ayriaiset", "katkarapu"],
-  mustard: ["mustard", "sinappi", "senap"],
-  celery: ["celery", "selleri"],
-  lupin: ["lupin", "lupiini"],
-  sulphite: ["sulphite", "sulphites", "sulfite", "sulfites", "sulphur dioxide", "sulfur dioxide", "rikkidioksidi"],
+    "pecan", "pistachio", "brazil nut", "macadamia", "praline", "praliini", "marzipan", "marsipaani", "marsipan", "nougat", "gianduja",
+    "hasselpahkina", "hasselpahkinaa", "hasselpahkinoita", "manteli", "mantelia", "manteleita", "cashewpahkina", "cashewpahkinaa",
+    "saksanpahkina", "saksanpahkinaa", "pekaanipahkina", "pistaasipahkina", "hasselnot", "hasselnotter", "mandel", "mandelmassa",
+    "valnot", "valnotter", "cashewnotter", "nuts", "notter", "pahkina", "pahkinaa", "pahkinoita"],
+  milk: ["milk", "lactose", "whey", "casein", "caseinate", "butter", "cream", "ghee", "maito", "maitoa", "maitojauhe", "laktoosi", "laktoosia",
+    "hera", "herajauhe", "kaseiini", "kerma", "juusto", "mjolk", "mjolkpulver", "skummjolkspulver", "vassle", "vasslepulver", "gradde", "smor", "dairy"],
+  gluten: ["gluten", "wheat", "barley", "rye", "spelt", "semolina", "durum", "kamut", "vehna", "vehnaa", "vehnajauho", "ohra", "ohraa",
+    "ruis", "ruista", "speltti", "gluteeni", "gluteenia", "vete", "vetemjol", "korn", "dinkel", "wheat starch"],
+  egg: ["egg", "eggs", "albumin", "albumen", "ovalbumin", "lysozyme", "kananmuna", "kananmunaa", "munajauhe", "muna", "munaa", "agg", "aggvita"],
+  soy: ["soy", "soya", "soja", "soybean", "soya oil", "soijaoljy", "soija", "soijaa", "soijalesitiini", "sojalecitin", "edamame", "tofu", "tempeh"],
+  sesame: ["sesame", "tahini", "tahina", "seesami", "seesaminsiemen", "seesaminsiemenia", "sesam", "sesamfron"],
+  fish: ["fish", "kala", "kalaa", "kalaliemi", "kalakastike", "fisk", "fiskextrakt", "anchovy", "ansjovis", "cod", "salmon", "tuna", "tonnikala", "lohi", "turska", "lax", "torsk", "surimi"],
+  crustacean: ["shellfish", "crustacean", "crustaceans", "shrimp", "prawn", "prawns", "crab", "lobster", "krill", "ayriaiset", "ayriaisia", "katkarapu", "katkarapuja", "raka", "rakor", "kraftor"],
+  mollusc: ["mollusc", "molluscs", "mollusk", "mollusks", "mussel", "mussels", "oyster", "oysters", "squid", "calamari", "octopus", "clam", "clams", "scallop", "scallops",
+    "simpukka", "simpukoita", "nilviaiset", "nilviainen", "osteri", "osterikastike", "ostron", "ostronsas", "ostronextrakt", "blotdjur", "mussla", "musslor", "blackfisk"],
+  mustard: ["mustard", "sinappi", "sinappia", "senap", "senapspulver"],
+  celery: ["celery", "celeriac", "selleri", "selleria"],
+  lupin: ["lupin", "lupine", "lupiini", "lupiinia", "lupiinijauho", "lupiinijauhoa"],
+  sulphite: ["sulphite", "sulphites", "sulfite", "sulfites", "sulphur dioxide", "sulfur dioxide", "metabisulfite", "metabisulphite",
+    "rikkidioksidi", "sulfiitti", "sulfiitteja", "kaliumdisulfiitti", "svaveldioxid", "e220", "e221", "e222", "e223", "e224", "e226", "e227", "e228"],
+};
+const FOOD_CULINARY_FALLBACK: Record<string, string[]> = {
+  "tree nut": ["marzipan", "marsipaani", "marsipan", "praline", "praliini", "nougat", "gianduja"],
+  sesame: ["tahini", "tahina"],
+  peanut: ["arachis"],
 };
 // Profile allergy wording -> base allergens.
 function allergyBases(allergy: string): string[] {
@@ -87,7 +154,9 @@ function allergyBases(allergy: string): string[] {
   if (/^tree ?nuts?$/.test(a)) return ["tree nut"];
   if (/^(lactose|dairy|milk|maito)$/.test(a)) return ["milk"];
   if (/^(wheat|gluten|celiac|coeliac)$/.test(a)) return ["gluten"];
-  if (/^(shellfish|crustaceans?)$/.test(a)) return ["crustacean"];
+  if (/^shellfish$/.test(a)) return ["crustacean", "mollusc"];
+  if (/^crustaceans?$/.test(a)) return ["crustacean"];
+  if (/^(molluscs?|mollusks?|nilviaiset|blotdjur)$/.test(a)) return ["mollusc"];
   for (const [base, syns] of Object.entries(ALLERGENS)) if (base === a || syns.includes(a)) return [base];
   return [];
 }
@@ -111,11 +180,13 @@ const UNIT: Record<string, { unit: string; f: number }> = {
 };
 const UNIT_WORDS = Object.keys(UNIT).filter((k) => /^[a-z]+$/.test(k)).sort((a, b) => b.length - a.length);
 const VOL_WORDS = UNIT_WORDS.filter((k) => UNIT[k].unit === "ml");
+const GRAM_DENOM_WORDS = UNIT_WORDS.filter((k) => UNIT[k].unit === "mg" && UNIT[k].f === 1000);
 const RATE_WORDS = ["tunnissa", "stunden", "stunde", "timmar", "tuntia", "heures", "heure", "hours", "tunti", "timme", "hour", "hrs", "tim", "std", "hr", "h"];
 const STRENGTH_RE = new RegExp(
   `(\\d+(?:\\.\\d+)?(?:\\s*[+/]\\s*\\d+(?:\\.\\d+)?)*)\\s*(${UNIT_WORDS.join("|")})\\b` +
     `|(\\d+(?:\\.\\d+)?(?:\\s*[+/]\\s*\\d+(?:\\.\\d+)?)*)\\s*(%)` +
     `|(?:\\/|\\bper\\b)\\s*(${VOL_WORDS.join("|")})\\b` +
+    `|(?:\\/|\\bper\\b)\\s*(${GRAM_DENOM_WORDS.join("|")})\\b` +
     `|(?:\\/|\\bper\\b)\\s*(\\d+(?:\\.\\d+)?)?\\s*(${RATE_WORDS.join("|")})\\b`,
   "g",
 );
@@ -128,8 +199,12 @@ export function parseStrength(s: string | null | undefined): Strength[] {
       out.push({ amount: 1, unit: "ml" });
       continue;
     }
-    if (m[7]) {
-      const rateNum = m[6] ? Number(m[6]) : 1;
+    if (m[6]) {
+      out.push({ amount: 1, unit: "g_den" });
+      continue;
+    }
+    if (m[8]) {
+      const rateNum = m[7] ? Number(m[7]) : 1;
       if (Number.isFinite(rateNum) && rateNum > 0) out.push({ amount: +rateNum.toFixed(6), unit: "h" });
       continue;
     }
@@ -160,11 +235,14 @@ const commonDenom = (xs: Strength[]): number | undefined =>
 export function sameStrength(a: string | null | undefined, b: string | null | undefined): boolean {
   const pa = parseStrength(a), pb = parseStrength(b);
   if (!pa.length || !pb.length) return false;
-  const da = pa.filter((x) => x.unit !== "ml" && x.unit !== "h");
-  const db = pb.filter((x) => x.unit !== "ml" && x.unit !== "h");
+  const da = pa.filter((x) => x.unit !== "ml" && x.unit !== "h" && x.unit !== "g_den");
+  const db = pb.filter((x) => x.unit !== "ml" && x.unit !== "h" && x.unit !== "g_den");
   const va = pa.filter((x) => x.unit === "ml"), vb = pb.filter((x) => x.unit === "ml");
+  const ga = pa.filter((x) => x.unit === "g_den"), gb = pb.filter((x) => x.unit === "g_den");
   const ha = pa.filter((x) => x.unit === "h"), hb = pb.filter((x) => x.unit === "h");
   if (Boolean(ha.length) !== Boolean(hb.length)) return false;
+  if (Boolean(ga.length) !== Boolean(gb.length)) return false;
+  if (ga.length) return !va.length && !vb.length && sameStrengthList(da, db);
   if (ha.length) {
     if (!da.length || !db.length) return false;
     if (va.length || vb.length) return sameStrengthList(va, vb) && sameStrengthList(da, db) && sameStrengthList(ha, hb);
@@ -181,19 +259,20 @@ export const fmtStrength = (s: string) =>
   s.replace(/(\d)\s*(mg|g|mcg|ug|[\u00b5\u03bc]g|mikrog|mikrogram(?:maa|ma|m)?|micrograms?|milligram(?:maa|ma|s)?|gram(?:maa|ma|s)?|ml|iu|ky|ie)\b/gi, "$1 $2");
 
 const COMBO_BRANDS: Record<string, string[]> = {
-  panacod: ["paracetamol", "codeine"], "co-codamol": ["paracetamol", "codeine"], cocodamol: ["paracetamol", "codeine"],
+  panacod: ["paracetamol", "codeine"], citodon: ["paracetamol", "codeine"], "co-codamol": ["paracetamol", "codeine"], cocodamol: ["paracetamol", "codeine"],
+  treo: ["aspirin", "caffeine"],
   exforge: ["amlodipine", "valsartan"], augmentin: ["amoxicillin", "clavulanic"], bioclavid: ["amoxicillin", "clavulanic"],
   "co-amoxiclav": ["amoxicillin", "clavulanic"], coamoxiclav: ["amoxicillin", "clavulanic"],
   janumet: ["sitagliptin", "metformin"], synjardy: ["empagliflozin", "metformin"], xigduo: ["dapagliflozin", "metformin"],
   entresto: ["sacubitril", "valsartan"], vimovo: ["naproxen", "esomeprazole"], arthrotec: ["diclofenac", "misoprostol"],
-  symbicort: ["budesonide", "formoterol"], seretide: ["salmeterol", "fluticasone"],
+  symbicort: ["budesonide", "formoterol"], bufomix: ["budesonide", "formoterol"], seretide: ["salmeterol", "fluticasone"],
   sinemet: ["levodopa", "carbidopa"], stalevo: ["levodopa", "carbidopa", "entacapone"], duodart: ["dutasteride", "tamsulosin"],
 };
 const LABEL_META = new Set(("active substance substances substans aktiv aktiva vaikuttava vaikuttavat aine aineet wirkstoff wirkstoffe principio activo principe actif").split(" "));
 export function ingredientsOf(...texts: (string | null | undefined)[]): Set<string> {
   const out = new Set<string>();
   for (const t of texts) {
-    const n = norm(t);
+    const n = canonicalizeSubstance(t);
     if (!n) continue;
     for (const [brand, inns] of Object.entries(COMBO_BRANDS)) if (hasWord(n, brand)) for (const inn of inns) out.add(inn);
     for (const [brand, inn] of Object.entries(BRANDS)) if (hasWord(n, brand)) out.add(inn);
@@ -205,11 +284,16 @@ export function ingredientsOf(...texts: (string | null | undefined)[]): Set<stri
   }
   return out;
 }
-// Pack words, forms and manufacturers that must never count as an ingredient match.
-const STOP = new Set(("tablet tablets tabletti tabletit tablettia capsule capsules kapseli kapselit film-coated filmdragerade " +
-  "kalvopaallysteinen kalvopaallysteiset oral solution liuos pill pills strong forte retard depot mite " +
-  "orion teva ratiopharm sandoz mylan krka actavis accord zentiva stada vitabalans hexal pfizer bayer " +
-  "acid with from your this that each contains sisaltaa daily once twice").split(" "));
+// Pack words, forms, delivery devices, pharmacy chains, and bare ion/head words that must never count as a standalone ingredient match.
+const STOP = new Set(("tablet tablets tabletti tabletit tablettia capsule capsules kapseli kapselit film-coated filmdragerade filmdragerad " +
+  "kalvopaallysteinen kalvopaallysteiset enterotabletti depottabletti depotkapseli purutabletti poretabletti " +
+  "oral solution liuos pill pills strong forte retard depot mite emulsiovoide voide geeli salva cream ointment drops tipat droppar spray sumute " +
+  "solostar kwikpen flexpen flextouch penfill turbuhaler easyhaler diskus respimat " +
+  "orion teva ratiopharm sandoz mylan krka actavis accord zentiva stada vitabalans hexal pfizer bayer sanofi novartis astrazeneca takeda alcon santen " +
+  "apotek apoteket apotekets apteekki yliopiston " +
+  "insulin insuliini vitamin vitamiini vitaminer chloride klorid kloridi carbonate karbonaatti karbonat bicarbonate bikarbonaatti bikarbonat " +
+  "gluconate glukonaatti glukonat isosorbide isosorbid epoetin " +
+  "acid with from your this that each contains sisaltaa innehaller daily once twice").split(" "));
 function hasWord(hay: string, needle: string): boolean {
   return new RegExp(`(^|[^a-z])${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z]|$)`).test(hay);
 }
@@ -222,7 +306,7 @@ function lev(a: string, b: string): number {
       d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
   return d[a.length][b.length];
 }
-const INN_STEM = /(dipine|zepam|zolam|prazole|statin|sartan|olol|pril|oxacin|cillin|cycline|mycin|conazole|nidazole|ciclovir|caine|fentanil|setron|triptan|gliptin|gliflozin|tidine|rubicin|platin|lukast|profen|methasone|olone|sone|barbital|citalopram|zopiclone)$/;
+const INN_STEM = /(dipine|zepam|zolam|prazole|statin|sartan|olol|pril|oxacin|cillin|cycline|mycin|conazole|nidazole|ciclovir|caine|fentanil|setron|triptan|gliptin|gliflozin|tidine|rubicin|platin|lukast|profen|methasone|olone|sone|barbital|citalopram|zopiclone|xaban|tinib|tropium|zosin|fenacin)$/;
 const CHEM_SWAP = new Set(["ol:al", "al:ol", "ate:ite", "ite:ate", "one:ine", "ine:one"]);
 export function fuzzyEq(a: string, b: string): boolean {
   if (a === b) return true;
@@ -248,7 +332,7 @@ export function matchMed(read: LabelRead, meds: Med[]): Med | undefined {
     const want = medIngredients(m);
     if (!want.size) continue;
     const mc = activeComponents(m.ingredient, m.name);
-    const primary = ingredientsOf(spokenIngredient(m.ingredient));
+    const primary = ingredientsOf(spokenIngredient(canonicalizeSubstance(m.ingredient)));
     let score = matchComponentLists(mc, rc, primary);
     const exactBrand = !!(m.name && read.product.value && hasWord(norm(read.product.value), norm(m.name)));
     if (!score && exactBrand && !norm(read.ingredient.value)) {
@@ -276,14 +360,14 @@ function stripStrengthTail(s: string): string {
 }
 function splitActiveComponents(text: string | null | undefined, isProduct: boolean): Set<string>[] {
   const raw = isProduct ? stripStrengthTail(text ?? "") : (text ?? "");
-  const n = norm(raw);
+  const n = canonicalizeSubstance(raw);
   if (!n) return [];
   for (const [brand, inns] of Object.entries(COMBO_BRANDS)) {
     if (hasWord(n, brand)) return inns.map((inn) => new Set([inn]));
   }
   const rawParts = raw
     .split(/[,/+;&]|\b(?:and|with|ja|och|med)\b/i)
-    .map((p) => ingredientsOf(spokenIngredient(p)))
+    .map((p) => ingredientsOf(spokenIngredient(canonicalizeSubstance(p))))
     .filter((s) => s.size > 0);
   const parts: Set<string>[] = [];
   for (const part of rawParts) {
@@ -295,7 +379,7 @@ function splitActiveComponents(text: string | null | undefined, isProduct: boole
     }
   }
   if (isProduct && parts.length === 1) {
-    const mod = /\b(comp|plus|combo|duo)\b|\b(co-[a-z]{4,})\b/.exec(n);
+    const mod = /\b(comp|plus|combo|duo|hctz?)\b|\b(co-[a-z]{4,})\b/.exec(norm(raw));
     if (mod) {
       const token = mod[1] ?? mod[2];
       if (parts[0].size > 1) parts[0].delete(token);
@@ -352,7 +436,11 @@ export function avoidHits(read: LabelRead, avoid: string[]): string[] {
 
 export type AllergenHit = { allergy: string; found: string; mayContain: boolean };
 export function allergenHits(read: LabelRead, allergies: string[]): AllergenHit[] {
-  const declared = (read.allergens.value ?? []).map((x) => ({ raw: x, n: norm(x), may: /may contain|voi sisaltaa|kan innehalla|traces?/.test(norm(x)) }));
+  const declared = (read.allergens.value ?? []).map((x) => ({
+    raw: x,
+    n: norm(x),
+    may: /may contain|voi sisaltaa|saattaa sisaltaa|kan innehalla|spar av|traces?/.test(norm(x)),
+  }));
   // medication excipients / drug allergies via ingredient too
   const ingr = ingredientsOf(read.ingredient.value, read.product.value);
   const hits: AllergenHit[] = [];
@@ -364,12 +452,24 @@ export function allergenHits(read: LabelRead, allergies: string[]): AllergenHit[
       if (m) hits.push({ allergy, found: m, mayContain: false });
       continue;
     }
-    const terms = bases.length ? bases.flatMap((b) => ALLERGENS[b]) : [norm(allergy)];
+    const terms = bases.length ? bases.flatMap((b) => ALLERGENS[b] ?? []) : [norm(allergy)];
+    let matched = false;
     for (const d of declared) {
       const t = terms.find((term) => hasWord(d.n, term) || d.n === term);
-      if (t) { hits.push({ allergy, found: d.raw.replace(/^may contain:\s*/i, ""), mayContain: d.may }); break; }
+      if (t) {
+        hits.push({ allergy, found: d.raw.replace(/^(?:may contain|voi sis[aä]lt[aä][aä]|saattaa sis[aä]lt[aä][aä]|kan inneh[aå]lla(?:\s+sp[aå]r\s+av)?):\s*/i, ""), mayContain: d.may });
+        matched = true;
+        break;
+      }
     }
-    if (!bases.length && !hits.some((h) => h.allergy === allergy) && [...ingr].some((g) => fuzzyEq(g, norm(allergy))))
+    if (!matched && read.kind === "food" && bases.length) {
+      const foodHead = norm([read.product.value, read.ingredient.value].filter(Boolean).join(" "));
+      for (const b of bases) {
+        const fb = (FOOD_CULINARY_FALLBACK[b] ?? []).find((term) => hasWord(foodHead, term) && !new RegExp(`\\b${term}[- ]?(?:free|fri|ton)\\b`).test(foodHead));
+        if (fb) { hits.push({ allergy, found: fb, mayContain: false }); matched = true; break; }
+      }
+    }
+    if (!matched && !bases.length && [...ingr].some((g) => fuzzyEq(g, norm(allergy))))
       hits.push({ allergy, found: allergy, mayContain: false });
   }
   return hits;
@@ -380,7 +480,9 @@ export function isExpired(expiry: string | null | undefined, now = new Date()): 
   const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(expiry ?? "");
   if (!m) return undefined;
   const y = +m[1], mo = +m[2], d = m[3] ? +m[3] : undefined;
-  const end = d ? new Date(y, mo - 1, d, 23, 59, 59) : new Date(y, mo, 0, 23, 59, 59);
+  if (mo < 1 || mo > 12) return undefined;
+  const end = d !== undefined ? new Date(y, mo - 1, d, 23, 59, 59) : new Date(y, mo, 0, 23, 59, 59);
+  if (d !== undefined && (d < 1 || end.getFullYear() !== y || end.getMonth() !== mo - 1 || end.getDate() !== d)) return undefined;
   return end.getTime() < now.getTime();
 }
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -455,6 +557,23 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
 
   if (read.kind === "medication") {
     const med = nameOk ? matchMed(read, profile.meds) : undefined;
+    if (med && med.ingredient) {
+      const enriched: LabelRead = {
+        ...read,
+        ingredient: { value: [read.ingredient.value, med.ingredient].filter(Boolean).join(", "), confidence: 1 },
+      };
+      if (!allergyHits.length && profile.allergies.length) {
+        for (const h of allergenHits(enriched, profile.allergies)) {
+          allergyHits.push(h);
+          reasons.push(`${h.mayContain ? "may contain" : "contains"} ${h.found} (allergy: ${h.allergy})`);
+        }
+      }
+      if (!avoid.length && profile.avoid.length) {
+        const extraAvoid = avoidHits(enriched, profile.avoid);
+        avoid.push(...extraAvoid);
+        reasons.push(...extraAvoid);
+      }
+    }
     const strengthOk = !!read.strength.value && read.strength.confidence >= STRENGTH_MIN_CONF;
     const readName = read.ingredient.value && read.ingredient.confidence >= NAME_MIN_CONF
       ? read.ingredient.value.split(/[,/+;&]/).map((s) => spokenIngredient(s)).filter(Boolean).join("/")
@@ -540,6 +659,10 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
     reasons.push(read.readability < 0.5 ? "low readability" : "no allergen list seen");
     if (read.readability < 0.5) return v("unsure", "Can't see it clearly", `I can't see this clearly enough to be sure what it is. ${guidance ?? "Hold it closer and still."}`);
     return v("info", cap(what), `This is ${what}. I can't see an allergen list.${expSpeech}`);
+  }
+  if (profile.allergies.length && read.allergens.value !== null && (read.allergens.confidence < ALLERGEN_SAFE_CONF || read.readability < ALLERGEN_SAFE_READABILITY)) {
+    reasons.push("allergen panel may be incomplete");
+    return v("unsure", "Not sure it's free of your allergens", `I can see part of the allergen list on ${what}, but I can't be sure it's complete. ${guidance ?? "Turn the pack so the whole ingredients panel faces you."}`);
   }
   return v("info", cap(what), `This is ${what}.${expSpeech}`);
 }

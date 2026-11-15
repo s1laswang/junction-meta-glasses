@@ -1,0 +1,93 @@
+{
+  "id": "rt_f11_009__thumb_over_digit",
+  "spec_id": "rt_f11_009",
+  "family": "F11_topical_mg_per_g_vs_oral",
+  "trap_category": "wrong_strength_or_unit",
+  "trap_explanation": "This is a topical 25 mg/g ketoprofen gel, not the user's saved 25 mg oral ketoprofen tablet.",
+  "perturbation": "thumb_over_digit",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Ketoprofen Sandoz 25 mg/g gel",
+    "ingredient": "ketoprofen",
+    "strength": "25 mg/g",
+    "expiry": "2027-07",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Orudis",
+        "ingredient": "ketoprofen",
+        "strength": "25 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Ketoprofen Sandoz",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "ketoprofen",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "25 mg/g",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "expiry": {
+      "value": "2027-07",
+      "confidence": 0.95
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.85
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "strength 25 mg/g differs from your 25 mg"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)07345678901236(17)270700(10)RT01(21)SN009"
+}
