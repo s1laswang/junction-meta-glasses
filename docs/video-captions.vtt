@@ -1,0 +1,81 @@
+WEBVTT
+
+1
+00:00.000 --> 00:04.500
+[Audio description: Three white medicine boxes sit side by side on a kitchen counter: Amlodipine 5 mg, Ibuprofen 400 mg, and Metformin 500 mg.]
+
+2
+00:04.500 --> 00:10.500
+[Narrator] Three white boxes. For ~55,000 visually impaired Finns, ~45,000 aged 65+, 97% struggle to read medicine labels.
+
+3
+00:10.500 --> 00:15.000
+[Narrator] And 1 in 5 Finns aged 75+, 21.6%, juggle 10 or more medicines. HoldUp: hold it up, know it's the right one.
+
+4
+00:15.000 --> 00:21.500
+[Audio description: Phone shows three plain-language consent cards, HoldUp Bridge streaming HTTP 204, and Using glasses camera with the temple LED lit.]
+
+5
+00:21.500 --> 00:30.000
+[Narrator] Your profile stays in on-device localStorage only. The camera runs only during a check, stops after 45 seconds, and keeps an 8-frame memory ring.
+
+6
+00:30.000 --> 00:35.000
+[Narrator] Momin holds Amlodipine 5 mg backwards with both hands free and asks: "Is this my evening pill?"
+
+7
+00:35.000 --> 00:41.000
+[Glasses] The label is on the other side. Turn it around... A bit closer.
+
+8
+00:41.000 --> 00:48.000
+[Audio description: Green MATCH card appears on the phone and a green RIGHT ONE card lights up the 600x600 Ray-Ban Display HUD.]
+[Glasses] Yes, Amlodipine 5 mg, your evening pill. You haven't taken it today.
+
+9
+00:48.000 --> 00:54.000
+[Audio description: Momin pinches the Neural Band to activate "I took it", logging today's dose on the phone.]
+[Narrator] One Neural Band pinch on "I took it" logs today's dose.
+
+10
+00:54.000 --> 01:00.000
+[Audio description: Holding up Amlodipine a second time triggers an amber WARNING card on the phone and CHECK on the HUD.]
+[Glasses] Warning: Amlodipine already taken today.
+
+11
+01:00.000 --> 01:07.500
+[Audio description: Momin holds up Ibuprofen 400 mg; amber WARNING and CHECK card appears.]
+[Glasses] This is Ibuprofen 400 mg. It isn't on your medication list and your list says to avoid NSAIDs.
+
+12
+01:07.500 --> 01:15.000
+[Audio description: Thumb and tape cover the strength digits on Metformin; blue NOT SURE card appears as HoldUp abstains below 0.8 confidence.]
+[Glasses] It looks like Metformin, but I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist.
+
+13
+01:15.000 --> 01:20.000
+[Narrator] Deterministic safety.ts only states a dose at confidence >= 0.8 and abstains below 0.8, with a < 0.95 allergen gate and EU FMD GS1 DataMatrix (01) GTIN and (17) expiry checks.
+
+14
+01:20.000 --> 01:26.500
+[Audio description: Glasses doffed while online; worn: false auto-switches the source to Phone camera.]
+[Narrator] Take the glasses off while online and HoldUp auto-switches to Phone camera.
+
+15
+01:26.500 --> 01:34.000
+[Audio description: Airplane mode turns ON with Bluetooth ON; scanning the Amlodipine barcode triggers an offline amber WARNING card.]
+[Glasses] You're offline. Warning: Amlodipine already taken today.
+
+16
+01:34.000 --> 01:40.000
+[Audio description: Airplane mode turns OFF; status recovers to Live assistant connected in under 10 seconds.]
+[Narrator] Restore the network and Gemini Live reconnects in under 10 seconds.
+
+17
+01:40.000 --> 01:50.500
+[Narrator] Speculative verify hits 2.1 s median, 3.4 s p95 across 26 live sessions; spoken-answer fidelity check: 16 live verdicts checked, 1 auto-corrected. Synthetic v1 (1,740 images): 0 / 754 confident-wrong strengths; v2: 3 / 4,730 (0.06%) silent unsafe.
+
+18
+01:50.500 --> 02:00.000
+[Narrator] On 1,060 unseen held-out v3 images: 1 / 536 (0.19%) confident-wrong strength and 4 / 3,033 (0.13%) silent unsafe, at ~$0.003 per label read. With our prototype 12.8 MB FieldSpotter ONNX (96.8% precision), we propose a 4-week, 20-member supervised study with Näkövammaisten liitto and Finnish pharmacies. HoldUp.
