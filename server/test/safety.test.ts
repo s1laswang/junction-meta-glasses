@@ -152,6 +152,21 @@ test("'none of your allergens' needs a near-certain, complete panel read (eval v
   assert.equal(c.level, "warning");
 });
 
+test("'Is this my morning pill?' on an evening-only medicine is a warning, not a yes (judge panel OC-07)", () => {
+  const aml = read({ product: f("Norvasc"), ingredient: f("amlodipine"), strength: f("5 mg"), expiry: f("2028-01") });
+  const asked = checkLabel(aml, profile, NOW, undefined, "is this my morning pill?");
+  assert.equal(asked.level, "warning");
+  assert.match(asked.speech, /evening medicine, not your morning one/);
+  // the right slot, or no slot asked -> unchanged match
+  assert.equal(checkLabel(aml, profile, NOW, undefined, "is this my evening pill?").level, "match");
+  assert.equal(checkLabel(aml, profile, NOW, undefined, "what is this?").level, "match");
+  // Finnish question; times-based schedule (08:00 + 20:00) covers morning and evening
+  assert.equal(checkLabel(aml, profile, NOW, undefined, "onko tämä aamupilleri?").level, "warning");
+  const met = read({ product: f("Metformin"), ingredient: f("metformin"), strength: f("500 mg"), expiry: f("2028-01") });
+  assert.equal(checkLabel(met, profile, NOW, undefined, "is this my morning pill?").level, "match");
+  assert.equal(checkLabel(met, profile, NOW, undefined, "is this for bedtime?").level, "warning");
+});
+
 test("a blurry non-medicine is never named without an allergen hedge for an allergic user (eval v2 'Recovery Gel')", () => {
   const blurry = checkLabel(read({ kind: "other", product: f("Recovery Gel", 0.6), readability: 0.2 }), profile, NOW);
   assert.equal(blurry.level, "unsure");
