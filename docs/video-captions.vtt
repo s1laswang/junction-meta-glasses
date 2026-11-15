@@ -50,12 +50,12 @@ WEBVTT
 
 12
 01:07.500 --> 01:15.000
-[Audio description: Thumb and tape cover the strength digits on Metformin; blue NOT SURE card appears with zero dose guessing.]
+[Audio description: Thumb and tape cover the strength digits on Metformin; blue NOT SURE card appears as HoldUp abstains below 0.8 confidence.]
 [Glasses] It looks like Metformin, but I can't read the strength confidently. Turn the box so the side panel faces you, or ask a pharmacist.
 
 13
 01:15.000 --> 01:20.000
-[Narrator] Deterministic safety.ts enforces a < 0.8 strength gate, a < 0.95 allergen gate, and EU FMD GS1 DataMatrix (01) GTIN and (17) expiry checks.
+[Narrator] Deterministic safety.ts only states a dose at confidence >= 0.8 and abstains below 0.8, with a < 0.95 allergen gate and EU FMD GS1 DataMatrix (01) GTIN and (17) expiry checks.
 
 14
 01:20.000 --> 01:26.500
@@ -74,8 +74,8 @@ WEBVTT
 
 17
 01:40.000 --> 01:50.500
-[Narrator] Speculative verify cuts first audio to 2.1 s median, 3.4 s p95 across 26 live sessions. Across 1,740 images: 0 of 754 confident-wrong strengths and 0.06% silent unsafe reassurance.
+[Narrator] Speculative verify hits 2.1 s median, 3.4 s p95 across 26 live sessions; spoken-answer fidelity check: 16 live verdicts checked, 1 auto-corrected. Synthetic v1 (1,740 images): 0 / 754 confident-wrong strengths; v2: 3 / 4,730 (0.06%) silent unsafe.
 
 18
 01:50.500 --> 02:00.000
-[Narrator] With a 12.8 MB Verda H100 FieldSpotter ONNX model at 96.8% precision, we propose a 4-week, 20-member supervised study with Näkövammaisten liitto and Finnish pharmacies. HoldUp.
+[Narrator] On 1,060 unseen held-out v3 images: 1 / 536 (0.19%) confident-wrong strength and 4 / 3,033 (0.13%) silent unsafe, at ~$0.003 per label read. With our prototype 12.8 MB FieldSpotter ONNX (96.8% precision), we propose a 4-week, 20-member supervised study with Näkövammaisten liitto and Finnish pharmacies. HoldUp.

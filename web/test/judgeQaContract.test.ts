@@ -12,6 +12,15 @@ const LINE_COMMENT = String.fromCharCode(47, 47);
 const BLOCK_COMMENT = String.fromCharCode(47, 42);
 const HTML_COMMENT = String.fromCharCode(60, 33, 45, 45);
 const ESCAPED_EM_DASH = ["\\u", "2014"].join("");
+const FORBIDDEN_SUBPROCESS_TOKENS = [
+  ["child", "_process"].join(""),
+  ["exec", "Sync"].join(""),
+  ["exec", "File"].join(""),
+  ["spawn", "Sync"].join(""),
+  ["spawn", "("].join(""),
+  ["git", " "].join(""),
+  [".", "git"].join(""),
+];
 
 type QaSection = {
   id: string;
@@ -175,9 +184,9 @@ function splitSpokenSentences(text: string): string[] {
 }
 
 function parseJudgeQa(markdown: string): Map<string, QaSection> {
-  const headingRe = /^## \(([a-f])\) (.+)$/gm;
+  const headingRe = /^## \(([a-g])\) (.+)$/gm;
   const matches = [...markdown.matchAll(headingRe)];
-  assert.equal(matches.length, 6, "docs/JUDGE_QA.md must contain exact 6 sections (a) through (f)");
+  assert.equal(matches.length, 7, "docs/JUDGE_QA.md must contain exact 7 sections (a) through (g)");
 
   const sections = new Map<string, QaSection>();
   matches.forEach((m, idx) => {
@@ -212,11 +221,21 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
   const judgeQa = readRepoFile("docs/JUDGE_QA.md");
   const sections = parseJudgeQa(judgeQa);
 
-  test("contains zero em dashes or comments in test and enforces 6 sections (a)-(f) with crisp 2-sentence answers + repo source lines", () => {
+  test("contains zero em dashes, comments, or subprocess calls and enforces 7 sections (a)-(g) with crisp 2-sentence answers + repo source lines", () => {
     assert.equal(
       judgeQa.includes(EM_DASH),
       false,
       "docs/JUDGE_QA.md must contain zero em dashes (U+2014)",
+    );
+    assert.equal(
+      judgeQa.includes(ESCAPED_EM_DASH),
+      false,
+      "docs/JUDGE_QA.md must contain zero escaped em dashes",
+    );
+    assert.equal(
+      judgeQa.includes(HTML_COMMENT),
+      false,
+      "docs/JUDGE_QA.md must contain zero HTML comments",
     );
 
     const selfSource = fs.readFileSync(SELF_FILE, "utf8");
@@ -225,9 +244,20 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
     assert.equal(selfSource.includes(HTML_COMMENT), false, "Self-check: zero HTML comments");
     assert.equal(selfSource.includes(EM_DASH), false, "Self-check: zero em dashes");
     assert.equal(selfSource.includes(ESCAPED_EM_DASH), false, "Self-check: zero escaped em dashes");
+    for (const forbidden of FORBIDDEN_SUBPROCESS_TOKENS) {
+      assert.equal(
+        selfSource.includes(forbidden),
+        false,
+        `Self-check (zip-safe): test must not contain subprocess or VCS shellout token ${forbidden}`,
+      );
+    }
 
-    const expectedIds = ["a", "b", "c", "d", "e", "f"];
+    const expectedIds = ["a", "b", "c", "d", "e", "f", "g"];
     assert.deepEqual([...sections.keys()], expectedIds);
+    assert.equal(
+      sections.get("g")!.heading,
+      "User testing honesty, Nordic FI/SV localization, and stage guardrails",
+    );
 
     for (const id of expectedIds) {
       const sec = sections.get(id)!;
@@ -259,6 +289,16 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       "^(?:GEMINI\\.md|GEMMA\\.md|README\\.md|(?:docs|eval|server|web|shared|deck|android-dat|scripts)\\x2f[A-Za-z0-9_./-]+)(?::(\\d+)(?:-(\\d+))?)?$",
     );
 
+    for (const [id, sec] of sections.entries()) {
+      const sourceTokens = [...sec.source.matchAll(codeSpanRe)].map((m) => m[1]);
+      for (const token of sourceTokens) {
+        assert.ok(
+          repoPathRe.test(token),
+          `Every backticked token in section (${id}) **Source:** must be a valid repo path, got ${token}`,
+        );
+      }
+    }
+
     const allSpans = [...judgeQa.matchAll(codeSpanRe)].map((m) => m[1]);
     let verifiedCount = 0;
 
@@ -288,7 +328,7 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       }
     }
 
-    assert.ok(verifiedCount >= 40, `Expected at least 40 verified repo references, found ${verifiedCount}`);
+    assert.ok(verifiedCount >= 55, `Expected at least 55 verified repo references, found ${verifiedCount}`);
   });
 
   test("section (a) & (b) match competitive, EU MDR Rule 11, 13-slide deck honesty, pilot, and epidemiology facts", () => {
@@ -629,6 +669,158 @@ describe("docs/JUDGE_QA.md stage & grand jury Q&A contract", () => {
       "DPA",
     ]) {
       assert.ok(secF.answer.includes(token), `Section (f) answer must cite ${token}`);
+    }
+  });
+
+  test("section (g) verifies user-testing honesty, SIM_USER_TESTS.md UX fixes, Nordic FI/SV localization, and MORNING_BRIEF.md stage guardrails", () => {
+    const userFeedback = readRepoFile("docs/USER_FEEDBACK.md");
+    const userTestKit = readRepoFile("docs/USER_TEST_KIT.md");
+    const simTests = readRepoFile("docs/SIM_USER_TESTS.md");
+    const checkerTs = readRepoFile("web/src/lib/checker.ts");
+    const liveTsx = readRepoFile("web/src/screens/Live.tsx");
+    const langQa = readRepoFile("docs/LANG_QA.md");
+    const safetyTs = readRepoFile("server/src/safety.ts");
+    const liveTs = readRepoFile("server/src/live.ts");
+    const morningBrief = readRepoFile("docs/MORNING_BRIEF.md");
+    const hardwareLog = readRepoFile("docs/HARDWARE_LOG.md");
+    const v3 = JSON.parse(readRepoFile("eval/results/v3_results.json")) as EvalV1Results;
+
+    assert.ok(
+      userFeedback.includes("Status: PENDING REAL SESSION - placeholder template only; never invent a quote"),
+    );
+    assert.ok(userFeedback.includes("[docs/USER_TEST_KIT.md](USER_TEST_KIT.md)"));
+    const uncheckedConsent = userFeedback.match(/^- \[ \] /gm) ?? [];
+    assert.equal(uncheckedConsent.length, 6);
+    assert.ok(userFeedback.includes("[TBD: paste exact consented quote"));
+
+    assert.ok(userTestKit.includes("10 minutes"));
+    assert.ok(userTestKit.includes("one consented quote"));
+    assert.ok(userTestKit.includes("docs/USER_FEEDBACK.md"));
+
+    assert.ok(simTests.includes("zero (`n = 0`) real blind or low-vision human user sessions"));
+    assert.ok(simTests.includes("100% SIMULATED"));
+    assert.ok(simTests.includes("**`40 / 40 = 100.00%`**"));
+    assert.ok(simTests.includes("**`80 / 80 = 100.00%`**"));
+    assert.ok(simTests.includes("?mock=1"));
+    assert.ok(simTests.includes("gemini-3.8-flash"));
+
+    let personaCount = 0;
+    for (let i = 1; i <= 40; i++) {
+      const pid = `P${String(i).padStart(2, "0")}`;
+      assert.ok(simTests.includes(`| **${pid}** |`), `Expected persona ${pid} in docs/SIM_USER_TESTS.md`);
+      personaCount++;
+    }
+    assert.equal(personaCount, 40);
+
+    const uxFixedIds = ["UX-01", "UX-02", "UX-03", "UX-04", "UX-05"].filter((uxId) => {
+      const row = simTests.split("\n").find((l) => l.includes(`| **${uxId}** |`));
+      return Boolean(row && row.includes("**FIXED in PR**"));
+    });
+    assert.equal(uxFixedIds.length, 5);
+    for (const docOnlyId of ["UX-06", "UX-07", "UX-08", "UX-09", "UX-10"]) {
+      const row = simTests.split("\n").find((l) => l.includes(`| **${docOnlyId}** |`));
+      assert.ok(row && !row.includes("**FIXED in PR**"));
+    }
+
+    const warnMatch = /const AUTO_STOP_WARN_MS = (\d+)_(\d+);/.exec(checkerTs);
+    assert.ok(warnMatch, "checker.ts must define AUTO_STOP_WARN_MS");
+    const warnSeconds = Number.parseInt(warnMatch[1] + warnMatch[2], 10) / 1000;
+    assert.equal(warnSeconds, 35);
+    assert.ok(
+      checkerTs.includes('announce("Still watching. Camera turns off in 10 seconds if no label is seen.", "polite");'),
+    );
+    assert.ok(
+      liveTsx.includes('if (e.key === "Escape" && s.verdict && !s.addProposal && !isTypingTarget(e.target) && !e.repeat)'),
+    );
+    assert.ok(liveTsx.includes("checker.dismissVerdict();"));
+
+    assert.ok(langQa.includes("MODEL-REVIEWED"));
+    assert.ok(langQa.includes("17 / 30 = 56.67%"));
+    assert.ok(langQa.includes("14 / 14 = 100.00%"));
+    assert.ok(langQa.includes("EU 1169/2011"));
+
+    const allergensBlockMatch = /const ALLERGENS: Record<string, string\[\]> = \{([\s\S]*?)\n\};/.exec(safetyTs);
+    assert.ok(allergensBlockMatch, "server/src/safety.ts must define ALLERGENS");
+    const allergenGroupCount = allergensBlockMatch[1]
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean).length;
+    assert.equal(allergenGroupCount, 14);
+    for (const inflection of [
+      '"maapahkinaa"',
+      '"maapahkinan"',
+      '"pahkinan"',
+      '"maitoa"',
+      '"vehnaa"',
+      '"kananmunaa"',
+      '"jordnotter"',
+      '"hasselnotter"',
+      '"mandlar"',
+      '"valnotter"',
+      '"kraftdjur"',
+      '"blotdjur"',
+      "saattaa sisaltaa",
+      "spar av",
+    ]) {
+      assert.ok(safetyTs.includes(inflection), `server/src/safety.ts must include ${inflection}`);
+    }
+
+    const fiOpeners = ["Oikea pakkaus.", "Varoitus.", "En ole varma.", "Tiedoksi."];
+    const svOpeners = ["Rätt förpackning.", "Varning.", "Jag är inte säker.", "För kännedom."];
+    for (const opener of [...fiOpeners, ...svOpeners]) {
+      assert.ok(liveTs.includes(`"${opener}"`), `server/src/live.ts must include opener ${opener}`);
+    }
+    assert.ok(liveTs.includes("using a decimal comma like 2,5 mg when speaking numbers"));
+
+    assert.ok(morningBrief.includes('"It only states a dose it can read clearly", not "it never makes mistakes"'));
+    assert.ok(morningBrief.includes("1 of 536 confident dose reads was wrong"));
+    assert.ok(morningBrief.includes("Call them prototypes."));
+    assert.ok(morningBrief.includes('the deck says "built for" the glasses'));
+    assert.ok(hardwareLog.includes("# HoldUp hardware proof log"));
+
+    const v3Wrong = v3.synthetic.per_field.strength.confident_wrong;
+    const v3Confident = v3.synthetic.per_field.strength.k.confident;
+    assert.equal(v3Wrong, 1);
+    assert.equal(v3Confident, 536);
+
+    const secG = sections.get("g")!;
+    for (const token of [
+      "`0`",
+      "10-minute",
+      "docs/USER_FEEDBACK.md",
+      "docs/USER_TEST_KIT.md",
+      `n = ${personaCount}`,
+      `${personaCount * 2} / ${personaCount * 2}`,
+      `${personaCount} / ${personaCount}`,
+      "?mock=1",
+      "gemini-3.8-flash",
+      "docs/SIM_USER_TESTS.md",
+      "100% SIMULATED",
+      `${uxFixedIds.length}`,
+      "UX-01",
+      "UX-05",
+      `${warnSeconds} s`,
+      "Escape",
+      "docs/LANG_QA.md",
+      "MODEL-REVIEWED",
+      "17 / 30",
+      `${allergenGroupCount} / ${allergenGroupCount}`,
+      "EU 1169/2011",
+      "partitive/genitive",
+      "Swedish plural",
+      "server/src/safety.ts",
+      ...fiOpeners,
+      ...svOpeners,
+      "2,5 mg",
+      "server/src/live.ts",
+      "docs/MORNING_BRIEF.md",
+      '"only states a dose it can read clearly"',
+      `${v3Wrong} / ${v3Confident}`,
+      "prototypes",
+      '"built for"',
+      "docs/HARDWARE_LOG.md",
+    ]) {
+      assert.ok(secG.answer.includes(token), `Section (g) answer must cite ${token}`);
     }
   });
 });
