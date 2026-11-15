@@ -62,7 +62,7 @@ Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w se
 | Phone PWA: consent, permissions, live check, snapshot and offline modes, device panel, a11y (axe-core WCAG 2.2 A+AA: 0 violations on 6 screens, docs/evidence/a11y-axe.json; Profile and Privacy tabs not yet covered by the script) | `web/` | ✅ done |
 | Ray-Ban Display HUD Web App (600×600 additive display, Neural Band input) | `web/src/screens/Hud.tsx`, `/hud/` | ✅ done |
 | Device Access Toolkit Android bridge (glasses camera → `/ingest/frame`) | `android-dat/` | ✅ compiles (freighter Slurm build, 4/4 unit tests, APK sha256 in HARDWARE_NOTES). ⏳ on-glasses proof: docs/HARDWARE_LOG.md |
-| Eval: synthetic labels (Gemini image) → accuracy, confident-wrong rate, calibration | `eval/`, results in `eval/results/v1_results.json` | ✅ v1: 1,740 images, 0/754 confident-wrong strengths, 1.0% unsafe before the allergen gate ([docs/EVAL.md](docs/EVAL.md)). ⏳ real photos |
+| Eval: synthetic labels (Gemini image) → accuracy, confident-wrong rate, calibration | `eval/`, results in `eval/results/v1_results.json` | ✅ v1: 1,740 images, 0/754 confident-wrong strengths, 1.0% unsafe before the allergen gate ([docs/EVAL.md](docs/EVAL.md)). Held-out v3 (1,060 new images): 1/536 confident-wrong strength, 4/3,033 silent unsafe. ⏳ real photos |
 | Deck, demo script, privacy one-pager, research, QA | `deck/`, `docs/` | ✅ drafts done, ⏳ eval numbers and the backup video still to add |
 
 **Contract:** [shared/types.ts](shared/types.ts) and [docs/TEAM.md](docs/TEAM.md) (WebSocket and HTTP messages). Only the CEO changes it.

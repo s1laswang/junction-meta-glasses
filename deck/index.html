@@ -473,15 +473,15 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   </ol>
   <div class="grid4">
     <div class="card stat"><p class="num">1,740</p><p>images scored: 172 Gemini-written labels → 210 renders (170 front, 40 back) → a sampled mix: 170 clean, 40 back-of-box, ~1,530 degraded (6 types, 3 severities). 0 API errors</p></div>
-    <div class="card stat"><p class="num">0<small>/754</small></p><p>confident-wrong strength reads (confidence ≥ 0.8). 95% upper bound 0.4%. Product names: 42/1,173 (3.6%) confident-wrong, mostly strength missing from the name</p></div>
-    <div class="card stat"><p class="num">0.06%</p><p>silent unsafe reassurances end to end, after the allergen gate: 3/4,730 (CI 0.02–0.19%; was 49 = 1.0%). Cost: safe foods now get "not sure" more often (34% vs 68% told "allergen-free")</p></div>
+    <div class="card stat"><p class="num">0<small>/754</small></p><p>confident-wrong strength reads (confidence ≥ 0.8). 95% upper bound 0.4%. <b>Held-out set (1,060 new images, never used for tuning): 1/536 (0.19%, CI 0.03–1.05%)</b>, an eye-drop strength misread under motion blur. Product names: 42/1,173 (3.6%) confident-wrong</p></div>
+    <div class="card stat"><p class="num">0.06%</p><p>silent unsafe reassurances end to end, after the allergen gate: 3/4,730 (CI 0.02–0.19%; was 49 = 1.0%). Cost: safe foods now get "not sure" more often (34% vs 68%). <b>Held-out: 4/3,033 = 0.13% (CI 0.05–0.34%)</b>; harder unseen look-alike cases 14/4,041 = 0.35%</p></div>
     <div class="card stat"><p class="num">0%</p><p>wrong strength when readable (83% read, 17% abstained, n=926) · calibration ECE 0.022</p></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>Red-teamed with Gemini</h3><p>32 attack families, 2,264 adversarial labels (look-alike names, 2.5 vs 25 mg, stickers over print, text on the pack telling the model what to say). Silent unsafe answers: 199 (8.8%) before the new guards, 13 (0.57%) after. That is in-sample: the guards came from those failures, and all 199 are pinned as tests. Real photos are not yet scored.</p></div>
     <div class="card"><h3>Gemini made the data, two small models learned from it</h3><p>Trained on Verda GPUs from the 1,740 labelled images: a 13 MB detector that finds the dose on a CPU (96.8% right when it says "dose in view", held out, n = 348), and a PaliGemma 2 (Gemma) detector that finds it 91.4% of the time. Caveat: all of this is synthetic and self-graded.</p></div>
   </div>
-  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json. gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">11</span></div>
+  <div class="foot"><span class="src">In repo: docs/EVAL.md, eval/results/v1_results.json, v3_results.json (held-out, checked by a different model). gemini-3.8-flash + shipped prompt + server/src/safety.ts, Sat 14 Nov 2026. 95% CIs: Wilson / rule of three; ECE bootstrap 0.018–0.028.</span><span class="pg">11</span></div>
 </section>
 
 <!-- 12 ADOPTION -->
