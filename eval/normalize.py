@@ -62,11 +62,12 @@ UNIT_MAP = {
     "mcg": "ug", "µg": "ug", "μg": "ug", "microg": "ug", "mikrog": "ug", "mikrogrammaa": "ug", "mikrogram": "ug",
     "microgram": "ug", "micrograms": "ug", "ug": "ug",
     "mg": "mg", "milligram": "mg", "milligrams": "mg", "milligrammaa": "mg",
-    "g": "g", "gram": "g", "grams": "g", "ml": "ml", "l": "l", "iu": "iu", "ie": "iu", "ky": "iu", "%": "%",
+    "g": "g", "gram": "g", "grams": "g", "ml": "ml", "l": "l", "iu": "iu", "ie": "iu", "ky": "iu",
+    "units": "iu", "unit": "iu", "enheter": "iu", "yksikkoa": "iu", "u": "iu", "%": "%",
     "mmol": "mmol", "mg/ml": "mg/ml",
 }
 UNITS_RE = (r"mikrogrammaa|mikrogram|micrograms|microgram|milligrammaa|milligrams|milligram|microg|mikrog|mcg|µg|μg|"
-            r"ug|mg|ml|mmol|iu|ie|ky|g|l|%")
+            r"yksikkoa|enheter|units|unit|ug|mg|ml|mmol|iu|ie|ky|u|g|l|%")
 NUM_UNIT = re.compile(r"(\d+(?:[.,]\d+)?)\s*(" + UNITS_RE + r")(?![a-z])", re.I)
 
 
