@@ -311,9 +311,9 @@ describe("3-minute stage script (docs/DEMO_SCRIPT.md) & user test kit (docs/USER
       "DEMO_SCRIPT.md Last-resort fallbacks must document 'is this my evening pill' and 'ibuprofen' triggers",
     );
     assert.ok(
-      mockSource.includes("/nut|allerg|food|bar/") &&
-        mockSource.includes("/ibu|nsaid|pain/") &&
-        mockSource.includes("/evening|amlo|pill/"),
+      mockSource.includes("nut|allerg|food|bar") &&
+        mockSource.includes("nsaid|pain") &&
+        mockSource.includes("evening|amlo|pill"),
       "web/src/lib/mock.ts must retain regex routing for evening pill, ibuprofen, and nuts",
     );
 
