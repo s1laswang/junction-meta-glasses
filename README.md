@@ -51,7 +51,7 @@ npm install && npm run dev
 ```
 Open http://localhost:5173 (add `?mock=1` to run without a server or Gemini). For a phone or the glasses you need HTTPS: run `npm start` (production build on :8787), then `npm run tunnel`, and open the printed `https://…trycloudflare.com` URL on the phone. The Ray-Ban Display page is at `https://<host>/hud/`.
 
-Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w server run smoke` (real Gemini Live end to end; SKIP if `GEMINI_API_KEY` is unset). `npm -w web test` (contract and a11y). Status on `main`, Sat 14 Nov 2026 late evening: typecheck clean, **server 223/223**, **web 226/226**, smoke **13/13** against real Gemini (incl. scene mode and readiness), `make accept` `RESULT: PASS`.
+Checks: `npm run typecheck` · `npm -w server test` (safety rules) · `npm -w server run smoke` (real Gemini Live end to end; SKIP if `GEMINI_API_KEY` is unset). `npm -w web test` (contract and a11y). Status on `main`, Sun 15 Nov 2026 early morning (keyless, re-measured after the PR merges and `/stage`): typecheck clean, **server 272/272** (3 of 3 runs), **web 323/323**. Last real-Gemini run (Sat 14 Nov late evening): smoke **13/13** (incl. scene mode and readiness), `make accept` `RESULT: PASS`.
 
 ## The plan (authoritative: read this before building anything)
 **THE CHOSEN PLAN IS HOLDUP, as described here and in [docs/PLAN.md](docs/PLAN.md). It is not a pill reminder or a "Did I take my pills?" app.** The core flow, the server, the phone app, the HUD and the glasses bridge are **already built and merged**. Don't rebuild them. Improve them through small PRs.
@@ -80,6 +80,7 @@ Work on branches, never on `main`. Open small PRs. Don't change `shared/types.ts
 ## How to demo
 - **No hardware, no key:** `npm run dev`, then open http://localhost:5173/?mock=1. A scripted in-browser server speaks the real message contract (coach → checking → verdict). Type "is this my evening pill", "ibuprofen" or "nuts". Open http://localhost:5173/hud/?mock=1 in a second tab to watch the Display HUD follow along. The device panel has demo controls (drop the connection, slow network, Gemini down, offline, glasses on, off or disconnected, low battery).
 - **Real, on a phone:** `npm start` + `npm run tunnel`, open the tunnel URL on the phone, agree to the consent cards, then **Start check**, hold up a box and ask. Profile → "Load demo profile" gives 3 medicines, nut allergies and "avoid NSAIDs".
+- **Projector (judging):** open `http://<host>/stage` on the laptop driving the projector (16:9, read-only, no camera images). It shows a live replica of the Display HUD, big captions, the coach cue, the readiness meter and an "under the hood" panel (Live model, question→voice latency, label-check latency, cache hits, the pack-code double-check, glasses and camera state, feature flags). It uses `/hud-ws?role=stage` and takes `?key=` like the HUD. `/stage?mock=1` runs a clearly labelled scripted loop, or follows a `?mock=1` phone tab in the same browser.
 - **On the glasses:** follow [docs/HARDWARE_NOTES.md](docs/HARDWARE_NOTES.md) (DAT bridge and Display Web App at `https://<host>/hud/`). The stage script, with a fallback for every step, is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 
 ## Architecture

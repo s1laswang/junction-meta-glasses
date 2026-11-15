@@ -103,7 +103,7 @@ Fallbacks, in order:
 - *Fallback:* if the taped box is read as a match (the strength is visible elsewhere on the box), say "It found the strength on the side panel, which is exactly what it should do", and move on.
 - *Optional (only if ahead of time):* the hazelnut snack: "Does this have nuts?" → warning, contains hazelnut.
 
-### 2:10–2:35 · Resilience (slide 9 next)
+### 2:10–2:35 · Resilience (slide 10 next)
 **Silas**: "Now the network dies."
 
 **Momin010** [switches the camera source to **Phone camera** (offline barcode reads the phone camera only), then turns on **airplane mode** on the phone; Bluetooth stays on, per the checklist].
@@ -130,9 +130,9 @@ Fallbacks:
 ### 2:35–3:00 · Proof and path (slides 7, 10, 11, 12)
 **Momin010** [switches the projector to the deck, slide 7].
 
-**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about two to three-and-a-half seconds, median 2.1 seconds over 26 live runs, down from nearly six." [slide 10] "We measure the failure that matters: a confident wrong dose. Gemini built us 1,740 test images with known answers. Out of 754 confident strength reads, zero were wrong. After a stricter allergen rule, 3 in 4,730 answers were silently over-reassuring, down from 49. We narrowed that gap; we haven't closed it." (Source: docs/EVAL.md, eval/results/v1_results.json.) [slide 11] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 12] "HoldUp. Hold it up, know it's the right one."
+**Silas**: "Under the hood: Gemini Live with tool calls mid-conversation. While I'm still asking, the server is already reading the label, so the answer starts in about two to three-and-a-half seconds, median 2.1 seconds over 26 live runs, down from nearly six." [slide 11] "We measure the failure that matters: a confident wrong dose. Gemini built us 1,740 test images with known answers. Out of 754 confident strength reads, zero were wrong. After a stricter allergen rule, 3 in 4,730 answers were silently over-reassuring, down from 49. We narrowed that gap; we haven't closed it." (Source: docs/EVAL.md, eval/results/v1_results.json.) [slide 12] "Next: a home pilot with Näkövammaisten liitto, with pharmacists adding new prescriptions at pick-up." [slide 13] "HoldUp. Hold it up, know it's the right one."
 
-- *Fallback:* if time has run out, jump straight to slide 12 and say the last line.
+- *Fallback:* if time has run out, jump straight to slide 13 and say the last line.
 
 ---
 

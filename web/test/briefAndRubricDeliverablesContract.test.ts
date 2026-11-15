@@ -163,7 +163,7 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
     }
     assert.equal(fs.statSync(path.join(REPO_DIR, "android-dat")).isDirectory(), true);
 
-    assert.equal(slides.size, 12, "Deliverable 1: deck/index.html must ship 12 slides");
+    assert.equal(slides.size, 13, "Deliverable 1: deck/index.html must ship 13 slides");
     assert.ok(
       hudTsx.includes("/hud-ws") &&
         hudTsx.includes("RIGHT ONE") &&
@@ -188,8 +188,8 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
       "Deliverable 2: Slide 2 and docs/RESEARCH.md must define a clear problem and audience with primary sources",
     );
 
-    const slide11 = slides.get(11)!;
-    const slide12 = slides.get(12)!;
+    const slide11 = slides.get(12)!;
+    const slide12 = slides.get(13)!;
     assert.ok(
       slide11.includes("Path to adoption") &&
         slide11.includes("Näkövammaisten liitto") &&
@@ -197,7 +197,7 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
         slide11.includes("Pharmacies") &&
         slide11.includes("Home-care nurses") &&
         slide12.includes("20 faces in Finland"),
-      "Deliverable 3: Slide 11 and Slide 12 must define a plausible pilot and adoption path",
+      "Deliverable 3: Slide 12 and Slide 13 must define a plausible pilot and adoption path",
     );
 
     assert.ok(
@@ -267,7 +267,7 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
     );
   });
 
-  test("verifies all 4 judging criteria in BRIEF.md (25% each) are addressed across all 12 slides of deck/index.html", () => {
+  test("verifies all 4 judging criteria in BRIEF.md (25% each) are addressed across all 13 slides of deck/index.html", () => {
     const criteria = extractBulletsBetween(brief, "**Judging (25% each).**", "**Prize.**");
     assert.deepEqual(
       criteria,
@@ -279,7 +279,7 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
       ],
       "BRIEF.md must define the exact 4 Meta judging criteria (25% each)",
     );
-    assert.equal(slides.size, 12, "deck/index.html must contain all 12 slides (#s1-h..#s12-h)");
+    assert.equal(slides.size, 13, "deck/index.html must contain all 13 slides (#s1-h..#s13-h)");
 
     const coveredSlides = new Set<number>();
     const checkSlide = (slideNum: number, requiredTokens: string[], rubricName: string) => {
@@ -343,7 +343,7 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
       "Technical execution",
     );
     checkSlide(
-      9,
+      10,
       [
         "Resilience",
         "snapshot mode",
@@ -355,7 +355,7 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
       "Technical execution",
     );
     checkSlide(
-      10,
+      11,
       ["Evaluation", "1,740", "0<small>/754</small>", "0.06%", "ECE 0.022", "docs/EVAL.md"],
       "Technical execution",
     );
@@ -366,12 +366,12 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
       "Real-world value and feasibility",
     );
     checkSlide(
-      11,
+      12,
       ["Näkövammaisten liitto", "4-week home pilot with 20 members", "Pharmacies", "Home-care nurses", "21 markets", "Business model"],
       "Real-world value and feasibility",
     );
     checkSlide(
-      12,
+      13,
       ["Team and the ask", "Help us put HoldUp on 20 faces in Finland.", "20 testers", "Google DeepMind"],
       "Real-world value and feasibility",
     );
@@ -391,6 +391,11 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
       ],
       "UX: input, accessibility and trust",
     );
+    checkSlide(
+      9,
+      ["Decision support, not diagnosis", "never recommends or changes a dose", "≥ 0.95", "Rule 11, Class IIa", "3/4,730", "0.02–0.19%"],
+      "UX: input, accessibility and trust",
+    );
 
     assert.ok(
       slides.get(4)!.includes("Bluetooth play/pause tap") &&
@@ -404,12 +409,12 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
 
     assert.deepEqual(
       [...coveredSlides].sort((a, b) => a - b),
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-      "All 12 slides of deck/index.html must map cleanly onto the 4 Meta judging criteria",
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      "All 13 slides of deck/index.html must map cleanly onto the 4 Meta judging criteria",
     );
   });
 
-  test("parses all 8 rows of ## Numbers used in the deck in docs/RESEARCH.md and verifies claims, numbers, https URLs, and Slide 2 & Slide 11 parity", () => {
+  test("parses all 8 rows of ## Numbers used in the deck in docs/RESEARCH.md and verifies claims, numbers, https URLs, and Slide 2 & Slide 12 parity", () => {
     const startIdx = research.indexOf("## Numbers used in the deck");
     const endIdx = research.indexOf("## Supporting numbers");
     assert.ok(startIdx >= 0 && endIdx > startIdx, "docs/RESEARCH.md must contain ## Numbers used in the deck before ## Supporting numbers");
@@ -512,9 +517,9 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
       assert.ok(slide2.includes(token), `Slide 2 in deck/index.html must maintain exact parity with RESEARCH.md token "${token}"`);
     }
 
-    const slide11 = slides.get(11)!;
+    const slide11 = slides.get(12)!;
     for (const token of ["Be My Eyes", "21 markets", "meta.com/ai-glasses/accessibility", "docs/RESEARCH.md"]) {
-      assert.ok(slide11.includes(token), `Slide 11 in deck/index.html must maintain exact parity with RESEARCH.md token "${token}"`);
+      assert.ok(slide11.includes(token), `Slide 12 in deck/index.html must maintain exact parity with RESEARCH.md token "${token}"`);
     }
   });
 

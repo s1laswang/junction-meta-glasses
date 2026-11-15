@@ -352,8 +352,8 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
     }
   });
 
-  test("deck/index.html Slide 2 (#s2-h) and Slide 11 (#s11-h) align with docs/PILOT_PLAN.md and fit cleanly within 1280x720 card and bullet density bounds", () => {
-    assert.equal(slides.length, 12, "Expected 12 slides in deck/index.html");
+  test("deck/index.html Slide 2 (#s2-h) and Slide 11 (#s12-h) align with docs/PILOT_PLAN.md and fit cleanly within 1280x720 card and bullet density bounds", () => {
+    assert.equal(slides.length, 13, "Expected 13 slides in deck/index.html");
     assert.match(deck, /--W:\s*1280px;\s*--H:\s*720px;/);
     assert.match(deck, /\.slide\s*\{[^}]*padding:\s*44px\s+64px\s+58px;[^}]*gap:\s*18px;[^}]*overflow:\s*hidden;/s);
     assert.match(deck, /\.foot\s*\{[^}]*bottom:\s*20px;[^}]*font-size:\s*14px;/s);
@@ -423,7 +423,7 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
     assert.ok(s2ContentH <= maxContentH, `Slide 2 content (${s2ContentH.toFixed(1)}px) exceeds ${maxContentH}px`);
     assert.ok(padTop + s2ContentH <= s2FootTopY, "Slide 2 content must stay above .foot");
 
-    const slide11 = findSlideByHeadingId(slides, "s11-h");
+    const slide11 = findSlideByHeadingId(slides, "s12-h");
     assert.equal(slide11.includes(EM_DASH), false, "Slide 11 must contain zero em dashes");
     for (const token of [
       "Näkövammaisten liitto",
@@ -447,8 +447,8 @@ describe("Pilot and adoption plan contract (docs/PILOT_PLAN.md)", () => {
     }
 
     const s11Eyebrow = /<p class="eyebrow">([\s\S]*?)<\/p>/.exec(slide11);
-    const s11H2 = /<h2 id="s11-h">([\s\S]*?)<\/h2>/.exec(slide11);
-    assert.ok(s11Eyebrow && s11H2, "Slide 11 must have .eyebrow and #s11-h");
+    const s11H2 = /<h2 id="s12-h">([\s\S]*?)<\/h2>/.exec(slide11);
+    assert.ok(s11Eyebrow && s11H2, "Slide 11 must have .eyebrow and #s12-h");
     assert.equal(countWrappedLines(stripTags(s11Eyebrow[1]), innerW, 10.5), 1, "Slide 11 eyebrow must be single-line");
     const s11H2Lines = countWrappedLines(stripTags(s11H2[1]), 1120, 18.7);
     assert.ok(s11H2Lines >= 1 && s11H2Lines <= 2, `Slide 11 h2 must stay <= 2 lines, got ${s11H2Lines}`);
