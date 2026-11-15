@@ -80,6 +80,7 @@ export type CheckState = {
 };
 
 const AUTO_STOP_MS = 45_000;
+const AUTO_STOP_WARN_MS = 35_000;
 const MAX_CAPTIONS = 40;
 
 function initial(): CheckState {
@@ -147,6 +148,7 @@ export class Checker {
   private barcodeTimer: ReturnType<typeof setInterval> | null = null;
   private healthTimer: ReturnType<typeof setInterval> | null = null;
   private autoStopTimer: ReturnType<typeof setTimeout> | null = null;
+  private autoStopWarnTimer: ReturnType<typeof setTimeout> | null = null;
   private healthFails = 0;
   private captionId = 0;
   private lastBarcode = "";
@@ -160,6 +162,7 @@ export class Checker {
   private readinessTimer: ReturnType<typeof setTimeout> | null = null;
   private proposalTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingText: string | null = null;
+  private pendingDm: string | null = null;
   private mockHudCh: BroadcastChannel | null = null;
   onProfileChange?: (p: Profile) => void;
 
@@ -271,6 +274,8 @@ export class Checker {
     this.player.flush();
     if (this.autoStopTimer) clearTimeout(this.autoStopTimer);
     this.autoStopTimer = null;
+    if (this.autoStopWarnTimer) clearTimeout(this.autoStopWarnTimer);
+    this.autoStopWarnTimer = null;
     this.ring.clear();
     this.lastSent = null;
     this.silentAudio?.pause();
@@ -555,6 +560,10 @@ export class Checker {
     this.set({ conn: st, connAttempt: info.attempt, nextRetryMs: info.nextRetryMs });
     if (!this.s.running) return;
     if (st === "open") {
+      if (this.pendingDm && this.live) {
+        this.live.send({ type: "datamatrix", raw: this.pendingDm, ts: Date.now() });
+        this.pendingDm = null;
+      }
       if (this.pendingText && this.live) {
         this.live.send({ type: "text", text: this.pendingText });
         this.pendingText = null;
@@ -683,7 +692,7 @@ export class Checker {
     // glasses camera: the bridge frames live on the server, so verify by session with no frames (QA #3)
     const useServerFrames = !extra && this.source === "glasses";
     const frames = extra ? [extra] : useServerFrames ? [] : this.ring.sharpest(2);
-    if (!frames.length && !useServerFrames) {
+    if (!frames.length && !useServerFrames && !IS_MOCK) {
       announce("I don't have a picture yet. Hold the label up to the camera, or take a photo.", "assertive");
       speak("I don't have a picture yet. Hold the label up to the camera, or take a photo.");
       return;
@@ -757,8 +766,9 @@ export class Checker {
       }
       return;
     }
-    if (dm && this.live?.isOpen) {
-      this.live.send({ type: "datamatrix", raw, ts: Date.now() });
+    if (dm && this.s.mode === "live") {
+      if (this.live?.isOpen) this.live.send({ type: "datamatrix", raw, ts: Date.now() });
+      else this.pendingDm = raw;
       earcon.coach();
       announce(`Pack code read${gs1?.expiry ? `, expiry ${gs1.expiry}` : ""}. Double-checking the label.`);
     }
@@ -955,8 +965,14 @@ export class Checker {
   private armAutoStop() {
     if (!this.s.running) return;
     if (this.autoStopTimer) clearTimeout(this.autoStopTimer);
+    if (this.autoStopWarnTimer) clearTimeout(this.autoStopWarnTimer);
     const at = Date.now() + AUTO_STOP_MS;
     this.set({ autoStopAt: at });
+    this.autoStopWarnTimer = setTimeout(() => {
+      if (this.s.running && !this.s.addProposal && !this.s.speaking) {
+        announce("Still watching. Camera turns off in 10 seconds if no label is seen.", "polite");
+      }
+    }, AUTO_STOP_WARN_MS);
     this.autoStopTimer = setTimeout(() => {
       void this.stop("Stopped automatically after 45 seconds without a label. Camera off.");
       speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");

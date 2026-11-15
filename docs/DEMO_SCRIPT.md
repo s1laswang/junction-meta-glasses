@@ -60,7 +60,7 @@ The words in quotes are spoken. **[Brackets]** are actions. Every step has a fal
 ### 0:20–0:40 · Consent and profile (slide 8 visible behind, phone mirrored)
 **Momin010** [switches the projector to the mirrored phone, Profile tab].
 
-**Silas**: "My medicine list and allergies live only on this phone. Before the camera ever turns on, HoldUp tells me in three plain cards what it captures, where it goes and what it keeps. The camera is only on during a check, and it switches itself off after 45 seconds."
+**Silas**: "My medicine list and allergies are stored only on this phone, and travel with a check only while it runs. Before the camera ever turns on, HoldUp tells me in three plain cards what it captures, where it goes and what it keeps. The camera is only on during a check, and it switches itself off after 45 seconds."
 
 **Momin010** [taps the **Check** tab].
 
@@ -135,6 +135,15 @@ Fallbacks:
 - *Fallback:* if time has run out, jump straight to slide 13 and say the last line.
 
 ---
+
+## Optional beats (use one only if it worked in the 08:00 rehearsal)
+These are built and tested, but not yet rehearsed on real glasses. Each replaces or extends a beat above; skip any that misbehaved.
+
+- **"Which one?" (opens the live part, 15 s).** Put the three boxes on the table, look at them, and ask: "Which one is my evening pill?" Expected: "Your evening pill is the box on the right. The middle one is Ibuprofen, not on your list." Then pick that box up and continue with the coaching beat. *If it says it isn't sure:* "It won't guess from a distance, so I pick one up." and continue.
+- **Dose finder (inside the coaching beat, needs `SPOTTER=1`).** Hold the amlodipine box with your thumb over "5 mg". Expected, spoken by the phone within about 2 s: "Something is covering the dose. Move your thumb." Line: "That cue comes from a small model we trained ourselves this weekend, on labels Gemini generated."
+- **Double-checked with the pack code (inside the match beat, needs a real EU prescription pack whose code you saved in Profile → Scan pack code).** Expected after the match: "...double-checked with the pack's code" and the badge on the card. Line: "It doesn't ask me to trust the AI. The AI has to agree with the pack's own code."
+- **Set up by voice (only if there is spare time).** "Add this to my list." → it reads the box, asks when you take it, and shows a confirmation sheet. Nothing is saved until you press Add.
+- **Corrected answer.** If the phone plays an alert tone and repeats a sentence in a different voice, that is the spoken-answer check: what Gemini said didn't match the checked sentence. Line: "It caught its own voice getting it wrong and repeated the checked answer."
 
 ## Last-resort fallbacks
 
