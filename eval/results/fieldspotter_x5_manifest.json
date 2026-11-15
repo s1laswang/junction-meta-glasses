@@ -1,0 +1,165 @@
+{
+  "dataset": "fieldspotter-x5",
+  "version": "v1",
+  "yolo_layout": "compatible with eval/make_yolo.py and eval/fs_eval.py",
+  "image_size_px": [
+    640,
+    640
+  ],
+  "classes": {
+    "0": "product",
+    "1": "strength",
+    "2": "expiry",
+    "3": "allergens"
+  },
+  "models_used": {
+    "spec_generators": [
+      "gemini-4-hydrogen",
+      "gemini-4-argon"
+    ],
+    "image_renderer": "gemini-3.1-flash-image",
+    "box_auditors": [
+      "gemini-4-hydrogen",
+      "gemini-4-argon"
+    ],
+    "direct_carbon_api_calls": 0
+  },
+  "total_images": 8000,
+  "total_boxes": 24666,
+  "total_jpeg_bytes": 379856740,
+  "unique_base_renders": 472,
+  "zero_train_val_src_leakage": true,
+  "images_by_split": {
+    "train": 6341,
+    "val": 1659
+  },
+  "boxes_by_split": {
+    "train": {
+      "product": 6713,
+      "strength": 4736,
+      "expiry": 6458,
+      "allergens": 1632
+    },
+    "val": {
+      "product": 1756,
+      "strength": 1258,
+      "expiry": 1680,
+      "allergens": 433
+    }
+  },
+  "boxes_by_class_total": {
+    "product": 8469,
+    "strength": 5994,
+    "expiry": 8138,
+    "allergens": 2065
+  },
+  "images_by_condition": {
+    "back_of_box": 237,
+    "clean_glasses_pov": 432,
+    "finger_grip_edge": 431,
+    "glasses_pov_wide_tilt": 864,
+    "low_light": 431,
+    "motion_blur": 862,
+    "multiple_boxes": 1293,
+    "partial_view_crop": 1724,
+    "specular_glare": 431,
+    "thumb_over_dose_full": 863,
+    "thumb_over_dose_partial": 432
+  },
+  "boxes_by_condition": {
+    "back_of_box": {
+      "product": 0,
+      "strength": 0,
+      "expiry": 0,
+      "allergens": 0
+    },
+    "clean_glasses_pov": {
+      "product": 432,
+      "strength": 326,
+      "expiry": 419,
+      "allergens": 106
+    },
+    "finger_grip_edge": {
+      "product": 431,
+      "strength": 325,
+      "expiry": 418,
+      "allergens": 106
+    },
+    "glasses_pov_wide_tilt": {
+      "product": 864,
+      "strength": 652,
+      "expiry": 838,
+      "allergens": 212
+    },
+    "low_light": {
+      "product": 431,
+      "strength": 325,
+      "expiry": 418,
+      "allergens": 106
+    },
+    "motion_blur": {
+      "product": 862,
+      "strength": 650,
+      "expiry": 821,
+      "allergens": 211
+    },
+    "multiple_boxes": {
+      "product": 2989,
+      "strength": 2255,
+      "expiry": 2557,
+      "allergens": 728
+    },
+    "partial_view_crop": {
+      "product": 1253,
+      "strength": 810,
+      "expiry": 1090,
+      "allergens": 384
+    },
+    "specular_glare": {
+      "product": 431,
+      "strength": 325,
+      "expiry": 418,
+      "allergens": 106
+    },
+    "thumb_over_dose_full": {
+      "product": 411,
+      "strength": 0,
+      "expiry": 742,
+      "allergens": 0
+    },
+    "thumb_over_dose_partial": {
+      "product": 365,
+      "strength": 326,
+      "expiry": 417,
+      "allergens": 106
+    }
+  },
+  "checksums_file": "checksums.sha256",
+  "checksums_entries": 16000,
+  "checksums_sha256": "8aa25ec222bd052124bc28125f66ee8d3339915e291dfd14774aacc37ec916c3",
+  "sample_checksums_first_10": [
+    "0d92115a2f668c4befa7bcaec8160c31ef622cbeccfc067ea2fd26d85aba3868  images/train/v3med0007_back__back_of_box_0.jpg",
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  labels/train/v3med0007_back__back_of_box_0.txt",
+    "0d2a7645c77f0c89dd75ae5c638acd4f913d12ba6bfbd8eea4320e6874fd8908  images/train/v3med0007_back__back_of_box_1.jpg",
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  labels/train/v3med0007_back__back_of_box_1.txt",
+    "bebfe51c7d8b4e53d3c9634068583a86dfeb5a0ad99ed062a6ffdd26418af4dc  images/train/v3med0007_back__back_of_box_2.jpg",
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  labels/train/v3med0007_back__back_of_box_2.txt",
+    "2838dbea7f920f90341834ae31908645c1e487158624039f78516f1623622871  images/train/v3med0011_back__back_of_box_0.jpg",
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  labels/train/v3med0011_back__back_of_box_0.txt",
+    "8de19bb5ece2002662e5b7c6cbe64eca8a53543f0f22f7d7f7233e4c8f499166  images/train/v3med0011_back__back_of_box_1.jpg",
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  labels/train/v3med0011_back__back_of_box_1.txt"
+  ],
+  "sample_checksums_last_10": [
+    "1f72744eab2b52e04a063e897cb8b25d1fa5edf4234904342bddabd21af6c44f  images/train/v3med0346__clean_glasses_pov_00.jpg",
+    "42c19c286e00b75ee11ee65e06bfc0c351334dea5bba77b23ebd770779c21566  labels/train/v3med0346__clean_glasses_pov_00.txt",
+    "63bb84ed445dc844dba756322d5852049e4561bd31dbeca7f92935535ce99838  images/train/v3med0346__glasses_pov_wide_tilt_01.jpg",
+    "775d71242931494d01667e922cd437866f0a0204968a7e2b6643ce269f38de7c  labels/train/v3med0346__glasses_pov_wide_tilt_01.txt",
+    "9996df550ab87a72850f01e00bcedf8fa150928fd485329b845d94166352658f  images/train/v3med0346__glasses_pov_wide_tilt_02.jpg",
+    "04a72be5265cf62f15120fedac3c7f5808f89a7568a1abc633384a72d096a641  labels/train/v3med0346__glasses_pov_wide_tilt_02.txt",
+    "89b093f384485d7eb38e1830085ba60b7488e3fd9b4d8d60df95ac2fdabf2b22  images/train/v3med0346__thumb_over_dose_full_03.jpg",
+    "a5ed22a92555782bf79ec8fa12d263d43cf3be653e608f97ed51381e964ad336  labels/train/v3med0346__thumb_over_dose_full_03.txt",
+    "ad199f8e15b5cad03bb11e1c7f0b909e7b2b0db0345c41a9f93bd01ac87c5f4a  images/train/v3med0346__thumb_over_dose_partial_04.jpg",
+    "b908b2cd67395cb7fca6f68424446c298b676f60a63d626f2ba18e0cdce40a36  labels/train/v3med0346__thumb_over_dose_partial_04.txt"
+  ],
+  "updated_at_iso": "2026-11-15T05:59:42+0200"
+}
