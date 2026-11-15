@@ -142,7 +142,47 @@ const FOOD_CULINARY_FALLBACK: Record<string, string[]> = {
 
 };
 // Profile allergy wording -> base allergens.
+/**
+ * Free-text allergy entries ("Allergic to peanuts", "Peanut allergy (severe)", "peanuts and tree nuts",
+ * "sesame seeds", "milk protein") -> cleaned single allergy phrases (judge-panel probe 19).
+ */
+/** "Allergic to peanuts (severe)" -> "peanuts" for speech; unchanged text stays as typed (keeps ä/ö). */
+export function allergyLabel(a: string): string {
+  const parts = allergyParts(a).join(" and ");
+  return !parts || parts === norm(a) ? a : parts;
+}
+/** "may contain X" without doubling a label phrase that already says "may contain …" / "kan innehålla …". */
+function containsPhrase(may: boolean, found: string): string {
+  const lead = /^(?:may contain|kan inneh[aå]lla|voi sis[aä]lt[aä][aä]|saattaa sis[aä]lt[aä][aä])(?:\s+(?:traces?\s+of|sp[aå]r\s+av|j[aä][aä]mi[aä]))?[:\s]\s*/i;
+  if (lead.test(found)) return `may contain ${found.replace(lead, "")}`;
+  return `${may ? "may contain" : "contains"} ${found}`;
+}
+const GENERIC_NUT_TERMS = ["nut", "nuts", "pahkina", "pahkinaa", "pahkinoita", "pahkinat", "notter"];
+export function allergyParts(allergy: string): string[] {
+  const cleaned = norm(allergy)
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\b(allergic|allergy|allergies|allergia|allergi|allerginen|yliherkkyys|intolerance|intolerans(si)?|severe|vakava|svar|to|for|mot|against|kind of|type of)\b/g, " ")
+    .replace(/\b(seeds?|siemen(et|ia)?|frö(n)?|fron|proteins?|proteiini|protein)\b/g, " ");
+  return cleaned.split(/\s*(?:,|;|\/|&|\+|\band\b|\bja\b|\boch\b)\s*/).map((x) => x.replace(/\s+/g, " ").trim()).filter(Boolean);
+}
 function allergyBases(allergy: string): string[] {
+  const out = new Set<string>();
+  for (const part of allergyParts(allergy)) {
+    let b = allergyBaseOne(part);
+    if (!b.length && part.endsWith("s")) b = allergyBaseOne(part.slice(0, -1));
+    for (const x of b) out.add(x);
+  }
+  return [...out];
+}
+/** Allergy entries the rules cannot map to a known allergen or drug class: never reassure about these. */
+export function unmappedAllergies(allergies: string[]): string[] {
+  return allergies.filter((a) => {
+    const n = norm(a);
+    if (CLASS_ALIASES[n] || CLASSES[n]) return false;
+    return allergyParts(a).some((p) => !allergyBaseOne(p).length && !(p.endsWith("s") && allergyBaseOne(p.slice(0, -1)).length));
+  });
+}
+function allergyBaseOne(allergy: string): string[] {
   const a = norm(allergy).replace(/\s*(allerg(y|ic|ies|ia|inen|i)|yliherkkyys|intolerans(si)?)\s*/g, " ").trim();
   if (/^(nut|nuts|pahkina|pahkinaa|pahkinat|pahkinoita|not|notter)$/.test(a)) return ["peanut", "tree nut"]; // "nut allergy": be conservative
   if (/^(peanuts?|maapahkina(a|t)?|jordnot(ter)?)$/.test(a)) return ["peanut"];
@@ -443,7 +483,7 @@ export function allergenHits(read: LabelRead, allergies: string[]): AllergenHit[
       if (m) hits.push({ allergy, found: m, mayContain: false });
       continue;
     }
-    const terms = bases.length ? bases.flatMap((b) => ALLERGENS[b] ?? []) : [norm(allergy)];
+    const terms = bases.length ? bases.flatMap((b) => ALLERGENS[b] ?? []) : allergyParts(allergy);
     let matched = false;
     for (const d of declared) {
       const t = terms.find((term) => hasWord(d.n, term) || d.n === term);
@@ -452,6 +492,12 @@ export function allergenHits(read: LabelRead, allergies: string[]): AllergenHit[
         matched = true;
         break;
       }
+    }
+    // A label that only says "nuts" ("may contain traces of nuts") can mean peanuts too: be conservative. "Tree nuts"
+    // explicitly excludes peanuts, so it doesn't count here.
+    if (!matched && bases.includes("peanut")) {
+      const d = declared.find((x) => GENERIC_NUT_TERMS.some((t) => hasWord(x.n, t)) && !/\btree\s*nuts?\b|puupahkin|tradnot/.test(x.n));
+      if (d) { hits.push({ allergy, found: d.raw.replace(/^(?:may contain|voi sis[aä]lt[aä][aä]|saattaa sis[aä]lt[aä][aä]|kan inneh[aå]lla(?:\s+sp[aå]r\s+av)?):\s*/i, ""), mayContain: d.may }); matched = true; }
     }
     if (!matched && read.kind === "food" && bases.length) {
       const foodHead = norm([read.product.value, read.ingredient.value].filter(Boolean).join(" "));
@@ -495,6 +541,33 @@ export function monthYear(iso: string): string {
   return m ? `${MONTHS[+m[2] - 1]} ${m[1]}` : iso;
 }
 
+/** Timestamp of the latest dose of `medId` within `windowMs` before `now`, if any. */
+export function lastDoseWithin(profile: Profile, medId: string, now: Date, windowMs: number): number | undefined {
+  const t = now.getTime();
+  const hits = profile.doseLog.filter((d) => d.medId === medId && d.ts <= t && t - d.ts < windowMs).map((d) => d.ts);
+  return hits.length ? Math.max(...hits) : undefined;
+}
+/** True for liquid strengths ("5 mg/5 ml", "10 mg/ml", "per ml"). */
+export function isPerVolume(s: string | null | undefined): boolean {
+  return /(\/\s*\d*[.,]?\d*\s*(ml|millilit|millilitre|milliliter)\b)|\bper\s*\d*\s*ml\b|mg\s*\/\s*ml/i.test(s ?? "");
+}
+/** Drug-like tokens: known brands/INNs, profile meds, or a typical INN suffix. */
+const INN_SUFFIX = /(olol|pril|sartan|dipine|statin|profen|fenac|azole|cillin|mycin|cycline|floxacin|formin|gliptin|gliflozin|oxetine|azepam|zolam|tidine|prazole|lukast|parin|xaban|gatran|semide|thiazide|triptan|setron|codone|morphine)$/;
+function drugTokens(text: string | null | undefined, profile: Profile): Set<string> {
+  const known = new Set<string>([...Object.values(BRANDS), ...Object.values(CLASSES).flat(), ...profile.meds.flatMap((m) => [...ingredientsOf(spokenIngredient(m.ingredient))])]);
+  return new Set([...ingredientsOf(text)].filter((t) => known.has(t) || INN_SUFFIX.test(t)));
+}
+/** Product and ingredient each name a medicine, and they are different medicines. */
+export function productIngredientClash(read: LabelRead, profile: Profile): { product: string; ingredient: string } | undefined {
+  if (!read.product.value || !read.ingredient.value) return undefined;
+  if (read.product.confidence < NAME_MIN_CONF || read.ingredient.confidence < NAME_MIN_CONF) return undefined;
+  const p = drugTokens(read.product.value, profile);
+  const i = ingredientsOf(read.ingredient.value);
+  if (!p.size || !i.size) return undefined;
+  const overlap = [...p].some((x) => [...i].some((y) => fuzzyEq(x, y)));
+  if (overlap) return undefined;
+  return { product: [...p][0], ingredient: [...i][0] };
+}
 export function dosesToday(profile: Profile, medId: string, now = new Date()): number {
   const start = new Date(now); start.setHours(0, 0, 0, 0);
   return profile.doseLog.filter((d) => d.medId === medId && d.ts >= start.getTime() && d.ts <= now.getTime()).length;
@@ -574,7 +647,7 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
 
     if (allergyHits.length) {
       const h = allergyHits[0];
-      return v("warning", `Warning: ${h.found}, you're allergic`, `Warning: this is ${label} and it ${h.mayContain ? "may contain" : "contains"} ${h.found}. Your profile lists an allergy to ${h.allergy}.`, { matchedMedId: med?.id });
+      return v("warning", `Warning: ${h.found}, you're allergic`, `Warning: this is ${label} and it ${containsPhrase(h.mayContain, h.found)}. Your profile lists an allergy to ${allergyLabel(h.allergy)}.`, { matchedMedId: med?.id });
     }
     if (!med) {
       if (!nameOk) {
@@ -587,6 +660,13 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
     }
     // matched a saved med
     if (avoid.length) return v("warning", `${label}: on your avoid list`, `This is ${label}. Your profile says to avoid it.`, { matchedMedId: med.id });
+    // Product name and ingredient name two different medicines (e.g. a "Bisoprolol 5 mg" box read with ingredient
+    // amlodipine): the read is self-contradictory, so never say yes (judge-panel probe 7).
+    const clash = productIngredientClash(read, profile);
+    if (clash) {
+      reasons.push(`product names ${clash.product}, ingredient reads ${clash.ingredient}`);
+      return v("unsure", "Name and ingredient disagree", `The box name says ${cap(clash.product)} but the ingredient reads ${clash.ingredient}. I can't be sure which medicine this is, so please ask a pharmacist.`, { matchedMedId: med.id });
+    }
     const nameConf = Math.max(read.ingredient.value ? read.ingredient.confidence : 0, read.product.value ? read.product.confidence : 0);
     if (nameConf < MATCH_NAME_MIN_CONF || read.readability < MATCH_MIN_READABILITY) {
       reasons.push(`identity not confident (name ${nameConf.toFixed(2)}, readability ${read.readability.toFixed(2)})`);
@@ -595,6 +675,11 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
     if (!strengthOk) {
       reasons.push(read.strength.value ? `strength confidence ${read.strength.confidence.toFixed(2)} < ${STRENGTH_MIN_CONF}` : "strength not readable");
       return v("unsure", `${name}: strength unclear`, `It looks like ${name}, but I can't read the strength confidently. ${guidance ?? "Turn the box so the side panel faces you, or ask a pharmacist."}`, { matchedMedId: med.id });
+    }
+    // A liquid (mg per ml) is never the same product as a tablet strength, even if the numbers agree (probe 9).
+    if (isPerVolume(read.strength.value) !== isPerVolume(med.strength)) {
+      reasons.push(`form differs: label ${read.strength.value}, your list ${med.strength}`);
+      return v("warning", `${name}: different form`, `This looks like ${label}, but your list has ${fmtStrength(med.strength)}, a different form. Don't take it before checking with a pharmacist.`, { matchedMedId: med.id });
     }
     if (!sameStrength(read.strength.value, med.strength)) {
       reasons.push(`strength ${read.strength.value} differs from your ${med.strength}`);
@@ -607,9 +692,17 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
     // expiry unknown (not legible / low confidence): still a match, but say so
     const expiryUnknown = !read.expiry.value || read.expiry.confidence < 0.7;
     if (expiryUnknown) reasons.push("expiry not readable");
-    const taken = dosesToday(profile, med.id, now);
     const perDay = Math.max(1, med.schedule.length);
+    const taken = dosesToday(profile, med.id, now);
     const sw = scheduleWord(med);
+    // Rolling window, not the calendar day: a dose at 23:50 still counts at 00:10, and a twice-daily morning dose
+    // still counts an hour later (judge-panel probes 11 and 13). Window = half the dosing interval.
+    const recent = lastDoseWithin(profile, med.id, now, (24 / perDay) * 0.5 * 3600_000);
+    if (recent && taken < perDay) {
+      const at = new Date(recent).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      reasons.push(`dose logged at ${at}, within the dosing interval`);
+      return v("warning", `${label}: taken at ${at}`, `This is ${label}, but you already took it at ${at}. Don't take another unless your plan says so.`, { matchedMedId: med.id, takenToday: true });
+    }
     const yours = sw ? `your ${sw} pill` : "on your list";
     const takenSpeech = (taken === 0 ? "You haven't taken it today" : taken >= perDay ? `You already took it today${taken > 1 ? `, ${taken} times` : ""}` : `You've taken ${taken} of ${perDay} doses today`)
       // speech stays <= 2 sentences: the expiry note joins the second sentence
@@ -626,8 +719,8 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
     const sure = allergyHits.filter((h) => !h.mayContain);
     const h = sure[0] ?? allergyHits[0];
     const found = listAnd([...new Set((sure.length ? sure : allergyHits).map((x) => x.found))]);
-    return v("warning", `Warning: ${h.mayContain ? "may contain" : "contains"} ${h.found}`,
-      `Warning: ${what} ${h.mayContain ? "may contain" : "contains"} ${found}. Your profile lists an allergy to ${listAnd([...new Set(allergyHits.map((x) => x.allergy))])}.`);
+    return v("warning", `Warning: ${containsPhrase(h.mayContain, h.found)}`,
+      `Warning: ${what} ${containsPhrase(h.mayContain, found)}. Your profile lists an allergy to ${listAnd([...new Set(allergyHits.map((x) => allergyLabel(x.allergy)))])}.`);
   }
   if (avoid.length) return v("warning", `${cap(what)}: on your avoid list`, `${cap(what)} is on your avoid list.`);
   if (expired) return v("warning", `${cap(what)}: past its date`, `${cap(what)} was best before ${sayDate(exp!)}.`);
@@ -641,8 +734,15 @@ export function checkLabelText(read: LabelRead, profile: Profile, now = new Date
       reasons.push("allergen panel may be incomplete");
       return v("unsure", "Not sure it's free of your allergens", `I can see part of the allergen list on ${what}, but I can't be sure it's complete. ${guidance ?? "Turn the pack so the whole ingredients panel faces you."}`);
     }
+    const unmapped = unmappedAllergies(profile.allergies);
+    if (unmapped.length) {
+      // never reassure about an allergy the rules can't map to label terms (judge-panel probe 19)
+      reasons.push(`allergy not recognised: ${unmapped.join(", ")}`);
+      return v("unsure", "Can't check one of your allergies", `I can read the allergen list on ${what}, but I can't check "${unmapped[0]}" automatically. Please read the list with someone, or ask a pharmacist.`);
+    }
     reasons.push("no listed allergen matches your profile");
-    return v("info", `${cap(what)}: none of your allergens`, `${cap(what)}: no ${listAnd(profile.allergies)} listed.${expSpeech}`);
+    const named = listAnd(profile.allergies.flatMap((a) => allergyParts(a)));
+    return v("info", `${cap(what)}: none of your allergens`, `${cap(what)}: no ${named} listed.${expSpeech}`);
   }
   // Eval v2 finding: a blurred milk carton read as kind "other" ("Recovery Gel", readability 0.2). For a user
   // with allergies, a poorly readable non-medicine must never get a bare "This is X." without an allergen hedge.
@@ -727,6 +827,7 @@ function checkLabelCore(read: LabelRead, profile: Profile, now = new Date(), cod
   if (!code || (!code.gtin && !code.expiry)) return checkLabelText(read, profile, now);
   const details: string[] = [];
   let agree = 0, conflict = false;
+  let otherPack: Med | undefined;
 
   const nameOk = (read.ingredient.value && read.ingredient.confidence >= NAME_MIN_CONF) || (read.product.value && read.product.confidence >= NAME_MIN_CONF);
   const textMed = nameOk ? matchMed(read, profile.meds) : undefined;
@@ -750,6 +851,8 @@ function checkLabelCore(read: LabelRead, profile: Profile, now = new Date(), cod
     else if (gtinMed && !textMed && nameOk) { conflict = true; details.push(`GTIN ${g} = your ${gtinMed.name}, but the print reads a medicine not on your list`); }
     else if (gtinMed && textMed) { agree++; details.push(`GTIN ${g} = your ${gtinMed.name}`); }
     else if (gtinMed) details.push(`GTIN ${g} = your ${gtinMed.name} (print not legible)`);
+    // the print matches a saved med that has its own saved GTIN, but this pack's code is a different product (probe 8)
+    else if (textMed && medGtin(textMed) && medGtin(textMed) !== codeG) { otherPack = textMed; details.push(`GTIN ${g} is not your saved ${textMed.name} pack (${medGtin(textMed)})`); }
     else details.push(`GTIN ${g} not saved in your list`);
   }
   const crossCheck: CrossCheck = { source: "datamatrix", code, agrees: conflict ? false : agree > 0 ? true : null, details };
@@ -775,6 +878,11 @@ function checkLabelCore(read: LabelRead, profile: Profile, now = new Date(), cod
   v.read = read;
   v.reasons = [...v.reasons, ...details];
   v.crossCheck = crossCheck;
+  // pack code is not the one saved for this medicine (different product, or a different pack size): never a plain yes
+  if (otherPack && v.level === "match") {
+    return { ...v, level: "unsure", headline: clampHeadline(`${medName(otherPack)}: not your saved pack`),
+      speech: clampSpeech(`The label reads ${medName(otherPack)}, but this pack's code isn't the one you saved. It may be a different pack size or a different product, so please check with a pharmacist.`) };
+  }
   if (crossCheck.agrees) v.speech = clampSpeech(withPhrase(v.speech, "double-checked with the pack's code"));
   return v;
 }
