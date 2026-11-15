@@ -15,7 +15,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
-import requests
+import tempfile
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 NODE_BINS = ("/usr/local/bin", "/tmp/fleet-silas/node/bin", "/home/silas/tools/node/bin")
@@ -26,7 +26,7 @@ for _nb in reversed(NODE_BINS):
 REPO = pathlib.Path(__file__).resolve().parents[3]
 SUITE_DIR = pathlib.Path(__file__).resolve().parent
 SUITE_NAME = "scene_which_one"
-TMP_ROOT = pathlib.Path("/tmp/opencode") if pathlib.Path("/tmp/opencode").is_dir() else pathlib.Path("/dev/shm")
+TMP_ROOT = pathlib.Path("/dev/shm") if pathlib.Path("/dev/shm").is_dir() else pathlib.Path(tempfile.gettempdir())
 TMP_IMG_DIR = TMP_ROOT / "holdup_scene_which_one"
 OUT_JSON = SUITE_DIR / "results.json"
 README_MD = SUITE_DIR / "README.md"
@@ -469,7 +469,7 @@ def find_node() -> str:
 def build_node_env() -> tuple[dict[str, str], str]:
     env = dict(os.environ)
     env["GEMINI_API_KEY"] = env.get("GEMINI_API_KEY") or "offline-check"
-    env["TMPDIR"] = "/dev/shm" if os.path.isdir("/dev/shm") else str(TMP_ROOT)
+    env["TMPDIR"] = "/dev/shm" if os.path.isdir("/dev/shm") else tempfile.gettempdir()
     nm_candidates = [
         REPO / "node_modules",
         REPO.parent / "node_modules",
@@ -688,6 +688,7 @@ def call_flash_scene(api_key: str, prompt: str, schema: dict[str, Any], frame_b6
             "maxOutputTokens": 8192,
         },
     }
+    import requests
     sess = requests.Session()
     last = "failed"
     timed_out = False
