@@ -1,7 +1,3 @@
-// Runs the server's real deterministic safety check (server/src/safety.ts) over eval cases.
-// stdin: JSON lines {read: LabelRead, profile: Profile, now?: ISO string}
-// stdout: JSON lines {level, reasons, matchedMedId}
-// Usage: HOLDUP_SAFETY_TS=/path/to/server/src/safety.ts npx tsx eval/safety_bridge.mts < cases.jsonl
 import { pathToFileURL } from "node:url";
 import readline from "node:readline";
 
@@ -15,8 +11,10 @@ for await (const line of rl) {
   if (!line.trim()) continue;
   const c = JSON.parse(line);
   try {
-    const v = checkLabel(c.read, c.profile, c.now ? new Date(c.now) : new Date("2026-11-14T12:00:00+02:00"));
-    out.push(JSON.stringify({ level: v.level, reasons: v.reasons, matchedMedId: v.matchedMedId ?? null }));
+    const v = checkLabel(c.read, c.profile, c.now ? new Date(c.now) : new Date("2026-11-14T12:00:00+02:00"), c.code);
+    const row: Record<string, unknown> = { level: v.level, reasons: v.reasons, matchedMedId: v.matchedMedId ?? null };
+    if ("code" in c || v.crossCheck !== undefined) row.crossCheck = v.crossCheck ?? null;
+    out.push(JSON.stringify(row));
   } catch (e) {
     out.push(JSON.stringify({ level: "error", reasons: [String(e)], matchedMedId: null }));
   }
