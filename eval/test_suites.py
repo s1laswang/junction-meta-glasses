@@ -40,6 +40,7 @@ COMPILE_MOD = load_compile_module()
 
 def build_check_env(base_env: dict[str, str] | None = None) -> dict[str, str]:
     env = dict(os.environ if base_env is None else base_env)
+    env["TZ"] = "Europe/Helsinki"
     env["TMPDIR"] = "/dev/shm" if os.path.isdir("/dev/shm") else tempfile.gettempdir()
     path_parts = [p for p in NODE_BIN_DIRS if os.path.isdir(p)]
     if NODE_BIN_DIRS[0] not in path_parts:
@@ -251,7 +252,7 @@ def write_synthetic_suite(
         "args = ap.parse_args()\n"
         "assert args.check\n"
         "assert '/tmp/fleet-silas/node/bin' in os.environ.get('PATH', '')\n"
-        "assert os.environ.get('TMPDIR') in ('/dev/shm', '/tmp')\n"
+        "assert bool(os.environ.get('TMPDIR')) and os.path.isdir(os.environ['TMPDIR'])\n"
         "data = json.loads((pathlib.Path(__file__).parent / 'results.json').read_text(encoding='utf-8'))\n"
         "assert isinstance(data, dict)\n"
         f"sys.exit({check_exit_code})\n"
