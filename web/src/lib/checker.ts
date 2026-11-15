@@ -13,7 +13,7 @@ import { audioRoute, classifyError, explain, getCamera, getMic, type PermState }
 import { IS_MOCK, mockCtl, mockHudChannel } from "./mock.ts";
 import { loadProfile, loadSettings, logDose, newMedId, saveProfile, saveSettings, sessionCode } from "./storage.ts";
 import { AuthError } from "./key.ts";
-import { sayPhrase } from "./phrases.ts";
+import { sayPhrase, stopPhrase } from "./phrases.ts";
 import { findByBarcode, findByGtin, matchVerdict, offlineUnknownBarcode, offlineUnknownCode } from "./verdicts.ts";
 
 export type Mode = "live" | "snapshot" | "offline";
@@ -231,6 +231,7 @@ export class Checker {
     if (this.s.running) return;
     // everything that needs the user gesture happens before the first await (iOS Safari)
     stopSpeaking();
+    stopPhrase();
     primeSpeech();
     this.mic.prime();
     const unlocked = this.player.unlock();
@@ -271,6 +272,7 @@ export class Checker {
     this.stopFrames();
     this.stopBarcodeScan();
     this.stopCamera();
+    stopPhrase();
     await this.mic.stop();
     this.player.flush();
     if (this.autoStopTimer) clearTimeout(this.autoStopTimer);
@@ -438,6 +440,7 @@ export class Checker {
           // barge-in: the user is talking, stop the assistant mid-sentence
           this.player.flush();
           stopSpeaking();
+          stopPhrase();
           this.armAutoStop();
         }
         // the assistant is still talking: don't auto-stop mid-answer (QA #11)
@@ -509,8 +512,8 @@ export class Checker {
   private onServerStatus(live: LiveState, detail: string) {
     this.set({ serverLive: live, serverDetail: detail });
     if (live === "closed" && /auto-stop/i.test(detail)) {
-      speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");
       void this.stop("Stopped automatically after 45 seconds without a label. Camera off.");
+      speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");
       return;
     }
     if (live === "degraded" || live === "closed") {
@@ -947,8 +950,8 @@ export class Checker {
     const at = Date.now() + AUTO_STOP_MS;
     this.set({ autoStopAt: at });
     this.autoStopTimer = setTimeout(() => {
-      speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");
       void this.stop("Stopped automatically after 45 seconds without a label. Camera off.");
+      speakPhrase("camera_off", "No label for 45 seconds. I've turned the camera off.");
     }, AUTO_STOP_MS);
   }
 
