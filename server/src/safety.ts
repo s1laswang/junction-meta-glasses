@@ -30,7 +30,7 @@ const words = (s: string) => norm(s).split(/[\s,/+()-]+/).filter((w) => w.length
 // Brand / local name -> INN ingredient. Small, demo-relevant, extendable.
 const BRANDS: Record<string, string> = {
   norvasc: "amlodipine", amlodipin: "amlodipine", amlodipiini: "amlodipine", amlodipinbesilat: "amlodipine",
-  burana: "ibuprofen", advil: "ibuprofen", nurofen: "ibuprofen", ibumax: "ibuprofen", ibuprofeeni: "ibuprofen", brufen: "ibuprofen",
+  burana: "ibuprofen", advil: "ibuprofen", nurofen: "ibuprofen", ibumax: "ibuprofen", ibuprofeeni: "ibuprofen", brufen: "ibuprofen", ipren: "ibuprofen",
   panadol: "paracetamol", pamol: "paracetamol", "para-tabs": "paracetamol", paratabs: "paracetamol", tylenol: "paracetamol",
   acetaminophen: "paracetamol", parasetamoli: "paracetamol", tylenol500: "paracetamol", alvedon: "paracetamol",
   aleve: "naproxen", pronaxen: "naproxen", naprosyn: "naproxen", naprokseeni: "naproxen",
@@ -50,7 +50,7 @@ const BRANDS: Record<string, string> = {
   marevan: "warfarin", varfariini: "warfarin",
   simvastatiini: "simvastatin", zocor: "simvastatin", atorvastatiini: "atorvastatin", lipitor: "atorvastatin",
   levothyroxine: "levothyroxine", thyroxin: "levothyroxine", levotyroksiini: "levothyroxine",
-  bisoprololi: "bisoprolol", emconcor: "bisoprolol", ramipriili: "ramipril", cardace: "ramipril",
+  bisoprololi: "bisoprolol", emconcor: "bisoprolol", metoprololi: "metoprolol", ramipriili: "ramipril", cardace: "ramipril",
 };
 
 // Multi-word / alphanumeric substances whose qualifying word carries drug identity (must run before salt stripping).
@@ -121,7 +121,7 @@ const CLASS_ALIASES: Record<string, string> = {
 // Allergen synonyms (base allergen -> label terms, including Finnish partitive/genitive/plural and Swedish plural/definite forms).
 const ALLERGENS: Record<string, string[]> = {
   peanut: ["peanut", "peanuts", "arachis", "groundnut", "groundnuts", "maapahkina", "maapahkinaa", "maapahkinoita", "maapahkinaoljy", "jordnot", "jordnotter", "maapahkinan", "maapahkinat", "maapahkinaoljya", "jordnotsolja"],
-  "tree nut": ["tree nut", "tree nuts", "hazelnut", "hazelnuts", "almond", "almonds", "cashew", "cashews", "walnut", "walnuts", "pecan", "pistachio", "brazil nut", "macadamia", "praline", "praliini", "marzipan", "marsipaani", "marsipan", "nougat", "gianduja", "hasselpahkina", "hasselpahkinaa", "hasselpahkinoita", "manteli", "mantelia", "manteleita", "cashewpahkina", "cashewpahkinaa", "saksanpahkina", "saksanpahkinaa", "pekaanipahkina", "pistaasipahkina", "hasselnot", "hasselnotter", "mandel", "mandelmassa", "valnot", "valnotter", "cashewnotter", "nuts", "notter", "pahkina", "pahkinaa", "pahkinoita", "pecans", "pistachios", "brazil nuts", "hasselpahkinan", "hasselpahkinat", "mantelin", "mantelit", "cashewpahkinan", "cashewpahkinat", "cashewpahkinoita", "saksanpahkinan", "saksanpahkinat", "saksanpahkinoita", "pekaanipahkinaa", "pekaanipahkinan", "pekaanipahkinat", "pekaanipahkinoita", "pistaasipahkinaa", "pistaasipahkinan", "pistaasipahkinat", "pistaasipahkinoita", "pistaasi", "pistaasia", "parapahkina", "parapahkinaa", "parapahkinan", "parapahkinat", "parapahkinoita", "macadamiapahkina", "macadamiapahkinaa", "macadamiapahkinan", "pahkinan", "pahkinat", "mandlar", "cashewnot", "pekannot", "pekannotter", "pistagenot", "pistagenotter", "paranot", "paranotter"],
+  "tree nut": ["tree nut", "tree nuts", "hazelnut", "hazelnuts", "almond", "almonds", "cashew", "cashews", "walnut", "walnuts", "pecan", "pistachio", "brazil nut", "macadamia", "praline", "praliini", "marzipan", "marsipaani", "marsipan", "nougat", "gianduja", "hasselpahkina", "hasselpahkinaa", "hasselpahkinoita", "manteli", "mantelia", "manteleita", "cashewpahkina", "cashewpahkinaa", "saksanpahkina", "saksanpahkinaa", "pekaanipahkina", "pistaasipahkina", "hasselnot", "hasselnotter", "mandel", "mandelmassa", "valnot", "valnotter", "cashewnotter", "nuts", "notter", "pahkina", "pahkinaa", "pahkinoita", "pecans", "pistachios", "brazil nuts", "hasselpahkinan", "hasselpahkinat", "mantelin", "mantelit", "cashewpahkinan", "cashewpahkinat", "cashewpahkinoita", "saksanpahkinan", "saksanpahkinat", "saksanpahkinoita", "pekaanipahkinaa", "pekaanipahkinan", "pekaanipahkinat", "pekaanipahkinoita", "pistaasipahkinaa", "pistaasipahkinan", "pistaasipahkinat", "pistaasipahkinoita", "pistaasi", "pistaasia", "parapahkina", "parapahkinaa", "parapahkinan", "parapahkinat", "parapahkinoita", "macadamiapahkina", "macadamiapahkinaa", "macadamiapahkinan", "pahkinan", "pahkinat", "mandlar", "cashewnot", "pekannot", "pekannotter", "pistagenot", "pistagenotter", "paranot", "paranotter", "puupahkina", "puupahkinat", "puupahkinoita", "puupahkinaa", "puupahkinan", "puupahkinoiden", "tradnot", "tradnotter", "tradnotterna"],
   milk: ["milk", "lactose", "whey", "casein", "caseinate", "butter", "cream", "ghee", "maito", "maitoa", "maitojauhe", "laktoosi", "laktoosia", "hera", "herajauhe", "kaseiini", "kerma", "juusto", "mjolk", "mjolkpulver", "skummjolkspulver", "vassle", "vasslepulver", "gradde", "smor", "dairy", "maidon", "maitojauhetta", "maitoproteiini", "maitoproteiinia", "laktoosin", "heraa", "heran", "heraproteiini", "kaseiinia", "voita", "kermaa", "mjolksocker", "mjolkprotein", "laktos", "kasein"],
   gluten: ["gluten", "wheat", "barley", "rye", "spelt", "semolina", "durum", "kamut", "vehna", "vehnaa", "vehnajauho", "ohra", "ohraa", "ruis", "ruista", "speltti", "gluteeni", "gluteenia", "vete", "vetemjol", "korn", "dinkel", "wheat starch", "vehnan", "vehnajauhoa", "vehnagluteeni", "vehnagluteenia", "vehnatarahkkelys", "vehnattarkkelys", "ohran", "ohramallas", "rukiin", "ruisjauho", "spelttia", "gluteenin", "vetestarkelse", "kornmalt", "rag", "ragmjol"],
   egg: ["egg", "eggs", "albumin", "albumen", "ovalbumin", "lysozyme", "kananmuna", "kananmunaa", "munajauhe", "muna", "munaa", "agg", "aggvita", "kananmunan", "kananmunat", "kananmunia", "munan", "munat", "munia", "munanvalkuainen", "albumiini", "albumiinia", "aggula", "aggpulver"],
@@ -186,7 +186,7 @@ function allergyBaseOne(allergy: string): string[] {
   const a = norm(allergy).replace(/\s*(allerg(y|ic|ies|ia|inen|i)|yliherkkyys|intolerans(si)?)\s*/g, " ").trim();
   if (/^(nut|nuts|pahkina|pahkinaa|pahkinat|pahkinoita|not|notter)$/.test(a)) return ["peanut", "tree nut"]; // "nut allergy": be conservative
   if (/^(peanuts?|maapahkina(a|t)?|jordnot(ter)?)$/.test(a)) return ["peanut"];
-  if (/^tree ?nuts?$/.test(a)) return ["tree nut"];
+  if (/^(tree[- ]?nuts?|puupahkin(a|at|aa|an|oita|oiden)|tradnot(s|ter|terna)?)$/.test(a)) return ["tree nut"];
   if (/^(lactose|dairy|milk|maito|maitoa|laktoosi|mjolk|laktos)$/.test(a)) return ["milk"];
   if (/^(wheat|gluten|celiac|coeliac|keliakia|vehna|gluteeni|vete)$/.test(a)) return ["gluten"];
   if (/^(shellfish|skaldjur)$/.test(a)) return ["crustacean", "mollusc"];
@@ -311,7 +311,8 @@ export function ingredientsOf(...texts: (string | null | undefined)[]): Set<stri
     if (!n) continue;
     for (const [brand, inns] of Object.entries(COMBO_BRANDS)) if (hasWord(n, brand)) for (const inn of inns) out.add(inn);
     for (const [brand, inn] of Object.entries(BRANDS)) if (hasWord(n, brand)) out.add(inn);
-    for (const w of words(n)) {
+    for (const rawW of words(n)) {
+      const w = spokenIngredient(rawW) || rawW;
       if (/^\d/.test(w) || w.length < 4 || STOP.has(w) || LABEL_META.has(w)) continue;
       if (COMBO_BRANDS[w]) { for (const inn of COMBO_BRANDS[w]) out.add(inn); continue; }
       out.add(BRANDS[w] ?? w);
@@ -530,7 +531,7 @@ export function sayDate(iso: string): string {
 }
 
 /** "amlodipine besilate" -> "amlodipine": salt forms are on the box in small print, people say the base name. */
-const SALTS = /\s+(besilate|besylate|maleate|mesilate|mesylate|hydrochloride|hcl|sodium|potassium|calcium|magnesium|tartrate|succinate|fumarate|citrate|sulfate|sulphate|phosphate|acetate|bromide|dihydrate|monohydrate|trihydrate)\b/gi;
+const SALTS = /\s+(besilate|besylate|besilaatti|besylaatti|besilat|besylat|maleate|maleaatti|maleat|mesilate|mesylate|mesilaatti|mesylaatti|mesilat|mesylat|hydrochloride|hydrokloridi|hydroklorid|hcl|sodium|potassium|calcium|magnesium|tartrate|tartraatti|tartrat|succinate|suksinaatti|succinat|fumarate|fumaraatti|fumarat|citrate|sulfate|sulphate|phosphate|acetate|bromide|dihydrate|dihydraatti|dihydrat|monohydrate|monohydraatti|monohydrat|trihydrate|trihydraatti|trihydrat)\b|(?<=[a-z]{6})(?:(?:fumaraatti|suksinaatti|tartraatti|besilaatti|besylaatti)a?|fumarat|succinat|tartrat|besilat|besylat)(?:dihydraatti|monohydraatti|trihydraatti|dihydrat|monohydrat|trihydrat)?\b/gi;
 export function spokenIngredient(s: string | null | undefined): string {
   return (s ?? "").replace(SALTS, "").replace(/\s+/g, " ").trim();
 }
