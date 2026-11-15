@@ -126,5 +126,8 @@ There are 49 small targeted suites (prompt injection, insulin and inhalers, Nord
 That comparison is directional only; it isn't a headline.
 
 ## Caveats
+- **Recomputable:** the per-image predictions (`eval/results/v1/preds_synthetic.jsonl`, 1,740 rows) and ground truth (`eval/results/v1/ground_truth.jsonl`) are committed. Every number above can be recomputed with `eval/run_eval.py score` and `eval/rescore_safety.py` without new model calls.
+- **One ground-truth override** (`eval/gt_overrides.json`): med113's strength is "30 mg + 70 mg", because the render prints "30 mg Fe + 70 mg Vit. C"; the spec said "30 mg". It was checked by eye against the clean render, and it affects 1 of 172 labels.
+- **Self-graded and synthetic:** Gemini wrote the specs, rendered the images and filtered legibility, and the allergen gate (≥ 0.95 / 0.8) was tuned on this same set. Treat v1/v2 as in-sample; real photos are not yet scored.
 - The legibility check uses the same model family as the reader, which may make synthetic ground truth easier. That's why the headline is the confident-wrong rate and unsafe reassurance, not raw accuracy.
 - Real photos (`eval/real/`) aren't scored yet: as of Sat 23:30, `origin/main` has only the template `labels.csv` (one `example.jpg` row) and no JPGs. `eval/run_eval.py predict --set real` and `score` handle them and report them separately once they land.
