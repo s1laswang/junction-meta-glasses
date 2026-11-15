@@ -12,11 +12,11 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 import numpy as np
-import requests
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 NODE_BINS = ("/home/silas/tools/node/bin", "/tmp/fleet-silas/node/bin")
@@ -30,7 +30,7 @@ if SHM_DIR.is_dir():
 
 REPO = pathlib.Path(__file__).resolve().parents[3]
 SUITE_DIR = pathlib.Path(__file__).resolve().parent
-TMP_BASE = pathlib.Path("/tmp/opencode") if pathlib.Path("/tmp/opencode").is_dir() else pathlib.Path("/tmp")
+TMP_BASE = pathlib.Path("/tmp/opencode") if pathlib.Path("/tmp/opencode").is_dir() else pathlib.Path(tempfile.gettempdir())
 OUT_IMG_DIR = TMP_BASE / "holdup_glasses_bimanual_countertop"
 OUT_JSON = SUITE_DIR / "results.json"
 README_MD = SUITE_DIR / "README.md"
@@ -715,6 +715,7 @@ def render_case_frames(case: dict[str, Any], idx: int) -> list[Image.Image]:
 
 
 def call_flash(api_key: str, prompt: str, schema: dict[str, Any], frames_b64: list[str], question: str) -> dict[str, Any]:
+    import requests
     url = f"https:{SLASH2}generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
     parts = [{"inlineData": {"mimeType": "image/jpeg", "data": b}} for b in frames_b64] + [{"text": f'The person asked: "{question}"'}]
     payload = {
@@ -789,7 +790,7 @@ def check_existing() -> int:
     src_py = pathlib.Path(__file__).read_text(encoding="utf-8")
     assert HASH_CHAR not in src_py and SLASH2 not in src_py and EM_DASH not in src_py and EN_DASH not in src_py
     assert MAX_WORKERS <= 4
-    assert str(OUT_IMG_DIR).startswith("/tmp")
+    assert OUT_IMG_DIR.parent == TMP_BASE and TMP_BASE.is_dir()
     raw_bytes = OUT_JSON.read_bytes()
     assert len(raw_bytes) <= 15360, f"results.json size {len(raw_bytes)} > 15360"
     raw_txt = raw_bytes.decode("utf-8")
