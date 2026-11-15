@@ -581,8 +581,10 @@ test("feedback.ts speak, primeSpeech, and stopSpeaking map profile.lang (en/fi/s
 
   const langCases: Array<{ profileLang: string; expectedBcp47: string }> = [
     { profileLang: "en", expectedBcp47: "en-GB" },
-    { profileLang: "fi", expectedBcp47: "fi-FI" },
-    { profileLang: "sv", expectedBcp47: "sv-SE" },
+    // app-generated speech is English text, so it is read with an English voice whatever the profile language
+    // (FI/SV come from pre-rendered clips and the live Gemini voice; judge panel OC-04)
+    { profileLang: "fi", expectedBcp47: "en-GB" },
+    { profileLang: "sv", expectedBcp47: "en-GB" },
     { profileLang: "de", expectedBcp47: "en-GB" },
   ];
 
