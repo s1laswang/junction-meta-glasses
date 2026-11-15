@@ -102,7 +102,7 @@ export function createApp() {
 
   // ---------- TTS (optional; browser speechSynthesis is the fallback) ----------
   app.post("/api/tts", express.json({ limit: "64kb" }), async (req, res) => {
-    const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 600) : "";
+    const text = typeof req.body?.text === "string" ? req.body.text.trim().slice(0, 600) : "";
     if (!text) { res.status(400).json({ type: "error", code: "bad_input", message: "text required", recoverable: true }); return; }
     for (const model of env.ttsModels) {
       const t = Date.now();
@@ -115,7 +115,8 @@ export function createApp() {
         const part = r.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
         if (!part?.inlineData?.data) throw new Error("empty reply");
         const pcm = Buffer.from(part.inlineData.data, "base64");
-        const rate = Number(/rate=(\d+)/.exec(part.inlineData.mimeType ?? "")?.[1] ?? 24000);
+        const parsedRate = Number(/rate=(\d+)/.exec(part.inlineData.mimeType ?? "")?.[1] ?? 24000);
+        const rate = parsedRate >= 8000 && parsedRate <= 96000 ? parsedRate : 24000;
         ledger({ feature: "tts", model, latency_s: (Date.now() - t) / 1000, ok: true, in: r.usageMetadata?.promptTokenCount ?? 0, out: r.usageMetadata?.candidatesTokenCount ?? 0 });
         res.type("audio/wav").send(wav(pcm, rate));
         return;
@@ -130,7 +131,7 @@ export function createApp() {
   // ---------- ElevenLabs (optional; see server/src/elevenlabs.ts) ----------
   // Streaming TTS for snapshot-mode verdicts: opt-in (ELEVENLABS_LIVE=1) because the text names the user's medicine.
   app.post("/api/tts/eleven", express.json({ limit: "16kb" }), async (req, res) => {
-    const text = typeof req.body?.text === "string" ? req.body.text.slice(0, 600) : "";
+    const text = typeof req.body?.text === "string" ? req.body.text.trim().slice(0, 600) : "";
     const lang = ["en", "fi", "sv"].includes(req.body?.lang) ? req.body.lang : "en";
     if (!elevenEnabled() || !eleven.live) { res.status(404).json({ type: "error", code: "disabled", message: "ElevenLabs live TTS disabled, use /api/tts or speechSynthesis", recoverable: true }); return; }
     if (!text) { res.status(400).json({ type: "error", code: "bad_input", message: "text required", recoverable: true }); return; }
@@ -236,7 +237,14 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
       case "start": {
         hub.profile = toProfile(msg.profile);
         if (msg.lang) hub.profile.lang = String(msg.lang).slice(0, 16);
-        if (live?.active) { log("ws.live.profile_update", { session: shortId(id) }); return; }
+        if (live?.active) {
+          if (msg.source === "phone" || msg.source === "glasses") {
+            hub.source = msg.source;
+            hub.emit({ type: "device", device: { ...(hub.device ?? { connected: msg.source === "glasses", worn: msg.source === "glasses" ? true : null, battery: null, streaming: false }), source: msg.source } }, { clients: false });
+          }
+          log("ws.live.profile_update", { session: shortId(id) });
+          return;
+        }
         // feature flags: server FEATURES intersected with what the phone asked for (all, if it didn't say)
         const want = Array.isArray(msg.features) ? new Set<string>(msg.features) : null;
         hub.features = new Set(env.features.filter((f) => !want || want.has(f)));
@@ -284,7 +292,7 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
       case "source":
         if (msg.source === "phone" || msg.source === "glasses") {
           hub.source = msg.source;
-          if (hub.device) hub.emit({ type: "device", device: { ...hub.device, source: msg.source } }, { clients: false });
+          hub.emit({ type: "device", device: { ...(hub.device ?? { connected: msg.source === "glasses", worn: msg.source === "glasses" ? true : null, battery: null, streaming: false }), source: msg.source } }, { clients: false });
           log("ws.live.source", { session: shortId(id), source: msg.source });
         }
         return;
