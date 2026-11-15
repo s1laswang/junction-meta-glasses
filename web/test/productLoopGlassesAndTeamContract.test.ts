@@ -629,6 +629,8 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
 
       assert.ok(
         steps[4].body.includes("The checker writes the sentence") &&
+          steps[4].body.includes("checks what was said") &&
+          steps[4].body.includes("repeats the checked sentence") &&
           steps[4].body.includes("FI/SV: fixed openers, details translated") &&
           steps[4].body.includes("deterministic"),
       );
@@ -685,9 +687,9 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
       const footMatch = new RegExp("<div class=\"foot\">([\\s\\S]*?)<\\x2fdiv>").exec(slide4);
       assert.ok(footMatch && stripTags(footMatch[1]).includes("server/src/safety.ts") && stripTags(footMatch[1]).includes("amlodipine besilate"));
 
-      const now = new Date();
-      const futureYear = now.getFullYear() + 1;
-      const validExpiry = `${futureYear}-08`;
+      const eveningNow = new Date(2026, 10, 15, 20, 0, 0, 0);
+      const morningNow = new Date(2026, 10, 15, 8, 30, 0, 0);
+      const validExpiry = "2027-08";
 
       const profile = demoProfile();
       saveProfile(profile);
@@ -701,7 +703,7 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
         expiry: { value: validExpiry, confidence: 0.92 },
         readability: 0.92,
       });
-      const matchVerdictOut = checkLabel(amlodipineRead, profile, now);
+      const matchVerdictOut = checkLabel(amlodipineRead, profile, eveningNow);
       assert.equal(matchVerdictOut.level, "match");
       assert.equal(matchVerdictOut.matchedMedId, "amlodipine");
       assert.equal(matchVerdictOut.takenToday, false);
@@ -711,11 +713,22 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
       );
       assert.equal(matchVerdictOut.speech, vrows[0].quote, "Slide 4 Match <q> must match checkLabel() word-for-word");
 
+      const morningMatchOut = checkLabel(amlodipineRead, profile, morningNow);
+      assert.equal(morningMatchOut.level, "match");
+      assert.equal(
+        morningMatchOut.speech,
+        "Yes, Amlodipine 5 mg, your evening pill, but it's only morning now. You haven't taken it today.",
+      );
+
       const loggedProfile = logDose(profile, "amlodipine");
       assert.equal(takenToday(loggedProfile, "amlodipine"), true);
       assert.equal(loadProfile().doseLog.length, 1);
-      const afterLogNow = new Date(Date.now() + 10);
-      const secondCheckAfterLog = checkLabel(amlodipineRead, loggedProfile, afterLogNow);
+      const loggedEveningProfile = {
+        ...loggedProfile,
+        doseLog: [{ medId: "amlodipine", ts: eveningNow.getTime() }],
+      };
+      const afterLogNow = new Date(2026, 10, 15, 20, 5, 0, 0);
+      const secondCheckAfterLog = checkLabel(amlodipineRead, loggedEveningProfile, afterLogNow);
       assert.equal(secondCheckAfterLog.level, "warning");
       assert.equal(secondCheckAfterLog.takenToday, true);
       assert.ok(secondCheckAfterLog.headline.includes("already taken"), "Post-log headline must warn already taken");
@@ -732,7 +745,7 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
         expiry: { value: validExpiry, confidence: 0.92 },
         readability: 0.92,
       });
-      const warningVerdictOut = checkLabel(ibuprofenRead, profile, now);
+      const warningVerdictOut = checkLabel(ibuprofenRead, profile, eveningNow);
       assert.equal(warningVerdictOut.level, "warning");
       assert.equal(
         warningVerdictOut.speech,
@@ -749,7 +762,7 @@ describe("Deck Slides 1, 3, 4, Adoption, Team+Ask + docs/HUD_SPEC.md & docs/HARD
         readability: 0.85,
       });
       assert.ok(metforminLowConfRead.strength.confidence < STRENGTH_MIN_CONF);
-      const unsureVerdictOut = checkLabel(metforminLowConfRead, profile, now);
+      const unsureVerdictOut = checkLabel(metforminLowConfRead, profile, eveningNow);
       assert.equal(unsureVerdictOut.level, "unsure");
       assert.ok(unsureVerdictOut.speech.includes("can't read the strength confidently"));
       assert.ok(unsureVerdictOut.speech.includes("or ask a pharmacist"));

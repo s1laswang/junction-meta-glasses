@@ -813,7 +813,8 @@ test("judge-panel probes 14 and 17: low-confidence past expiry is unsure and off
   assert.doesNotMatch(adjacentSlot.speech, /only .* now/);
 });
 
-test("LiveProxy: spoken-answer fidelity check emits correction on mutated dose and stays silent on faithful speech", async () => {
+test("LiveProxy: spoken-answer fidelity check emits correction on mutated dose and stays silent on faithful speech", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: NOW });
   process.env.HOLDUP_QUIET = "1";
   const shm = fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir();
   const dir = fs.mkdtempSync(path.join(shm, "holdup-fid-"));

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { after, afterEach, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
@@ -19,7 +20,7 @@ const origLedgerPath = env.ledgerPath;
 const origModelsGet = ai.models.get;
 const origGenerateContent = ai.models.generateContent;
 
-const ledgerTmpDir = fs.mkdtempSync("/dev/shm/holdup-g4-tunnel-");
+const ledgerTmpDir = fs.mkdtempSync(path.join(fs.existsSync("/dev/shm") ? "/dev/shm" : os.tmpdir(), "holdup-g4-tunnel-"));
 env.ledgerPath = path.join(ledgerTmpDir, "ledger.jsonl");
 
 let server: http.Server;
