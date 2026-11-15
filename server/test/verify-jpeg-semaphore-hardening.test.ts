@@ -85,6 +85,7 @@ async function measureGateCap(sem: Semaphore, probeCount = 10): Promise<number> 
 test("jpegSize returns exact dimensions for all server/fixtures JPEGs and handles repeated 0xff fill bytes", () => {
   const expected: Record<string, { w: number; h: number }> = {
     "amlodipine.jpg": { w: 768, h: 768 },
+    "amlodipine_covered.jpg": { w: 768, h: 768 },
     "dm_amlodipine.jpg": { w: 660, h: 100 },
     "three_boxes.jpg": { w: 768, h: 768 },
   };
