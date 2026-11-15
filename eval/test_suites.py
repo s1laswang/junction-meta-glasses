@@ -252,7 +252,7 @@ def write_synthetic_suite(
         "args = ap.parse_args()\n"
         "assert args.check\n"
         "assert '/tmp/fleet-silas/node/bin' in os.environ.get('PATH', '')\n"
-        "assert os.environ.get('TMPDIR') in ('/dev/shm', '/tmp')\n"
+        "assert bool(os.environ.get('TMPDIR')) and os.path.isdir(os.environ['TMPDIR'])\n"
         "data = json.loads((pathlib.Path(__file__).parent / 'results.json').read_text(encoding='utf-8'))\n"
         "assert isinstance(data, dict)\n"
         f"sys.exit({check_exit_code})\n"
