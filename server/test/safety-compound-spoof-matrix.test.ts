@@ -361,7 +361,7 @@ test("GS1 DataMatrix spoofing and conflict matrix enforces cross-check invariant
   assert.ok(unreadableExpValidCode.reasons.some((r) => r.includes("expiry from code 2028-06-30")));
 
   const codeOnlyExpiryRescue: Gs1Code = parseGs1(`(01)${UNLISTED_GTIN}(17)280630`)!;
-  const rescueWithUnlistedGtin = checkLabel(
+  const rescueWithDifferentGtinOnSavedPack = checkLabel(
     makeRead({
       product: f("Amlodipin", 0.97),
       ingredient: f("amlodipine", 0.97),
@@ -369,6 +369,24 @@ test("GS1 DataMatrix spoofing and conflict matrix enforces cross-check invariant
       expiry: f<string>(null, 0.1),
     }),
     prof,
+    NOW,
+    codeOnlyExpiryRescue,
+  );
+  assert.equal(rescueWithDifferentGtinOnSavedPack.level, "unsure");
+  assert.equal(rescueWithDifferentGtinOnSavedPack.crossCheck?.agrees, null);
+  assert.match(rescueWithDifferentGtinOnSavedPack.speech, /code isn't the one you saved/);
+
+  const profWithoutSavedGtin = makeProfile({
+    meds: DEMO_MEDS.map((m) => (m.id === "aml" ? { id: m.id, name: m.name, ingredient: m.ingredient, strength: m.strength, schedule: m.schedule } : m)),
+  });
+  const rescueWithUnlistedGtin = checkLabel(
+    makeRead({
+      product: f("Amlodipin", 0.97),
+      ingredient: f("amlodipine", 0.97),
+      strength: f("5 mg", 0.97),
+      expiry: f<string>(null, 0.1),
+    }),
+    profWithoutSavedGtin,
     NOW,
     codeOnlyExpiryRescue,
   );
