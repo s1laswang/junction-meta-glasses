@@ -8,7 +8,7 @@ import { Modality } from "@google/genai";
 import type { ClientMsg, DeviceState } from "../../shared/types.ts";
 import { env, REPO_ROOT } from "./env.ts";
 import { ai, unaryGate } from "./gemini.ts";
-import { addHud, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
+import { addHud, addStage, getHub, getOrCreateHub, hubStats, hudTarget, markLatest, resolveHub, setDevice, safeSend } from "./hub.ts";
 import { ledger, stats } from "./ledger.ts";
 import { eleven, elevenEnabled, elevenStream, scribeToken } from "./elevenlabs.ts";
 import { requireKey, wsKeyOk } from "./auth.ts";
@@ -262,8 +262,11 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
       }
       case "text":
         if (typeof msg.text === "string" && msg.text.trim()) {
-          if (live?.active) live.text(msg.text);
-          else err("bad_input", "send start first");
+          if (live?.active) {
+            live.text(msg.text);
+            // typed questions get no Live input transcription: caption them on the stage only (phone unchanged)
+            hub.toStages(JSON.stringify({ type: "transcript", role: "user", text: msg.text.trim().slice(0, 300), final: true }));
+          } else err("bad_input", "send start first");
         }
         return;
       case "event":
@@ -303,6 +306,13 @@ function onLive(ws: WebSocket, sessionParam: string | null) {
   ws.on("error", () => { /* close follows */ });
 }
 
+/** /hud-ws?role=stage: the projector view. Read-only: anything it sends is ignored. */
+function onStage(ws: WebSocket, sessionParam: string | null) {
+  addStage(ws, sessionParam);
+  log("ws.stage.connect", { session: sessionParam ? shortId(sessionParam) : "latest" });
+  ws.on("error", () => { /* */ });
+}
+
 function onHud(ws: WebSocket, sessionParam: string | null) {
   addHud(ws, sessionParam);
   log("ws.hud.connect", { session: sessionParam ? shortId(sessionParam) : "latest" });
@@ -316,6 +326,7 @@ function onHud(ws: WebSocket, sessionParam: string | null) {
       // (it sends {type:"event"} back on /live for repeat / log_dose).
       const s = JSON.stringify({ type: "hud_event", name: m.name });
       for (const c of hub.clients) safeSend(c, s);
+      hub.toStages(s); // the projector replica mirrors the HUD (e.g. clears on Dismiss)
       log("ws.hud.event", { session: shortId(hub.id), name: m.name });
     } catch { /* ignore */ }
   });
@@ -337,7 +348,10 @@ export function startServer(port = env.port): Promise<http.Server> {
       return;
     }
     if (url.pathname === "/live") wssLive.handleUpgrade(req, socket, head, (ws) => onLive(ws, session));
-    else if (url.pathname === "/hud-ws") wssHud.handleUpgrade(req, socket, head, (ws) => onHud(ws, session));
+    else if (url.pathname === "/hud-ws") {
+      const stage = url.searchParams.get("role") === "stage";
+      wssHud.handleUpgrade(req, socket, head, (ws) => (stage ? onStage(ws, session) : onHud(ws, session)));
+    }
     else socket.destroy();
   });
   return new Promise((resolve) => server.listen(port, () => {

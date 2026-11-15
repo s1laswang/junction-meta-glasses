@@ -1,0 +1,95 @@
+{
+  "id": "rt_f05_003__pharmacy_sticker",
+  "spec_id": "rt_f05_003",
+  "family": "F05_vitamin_subtype_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "The held box is Vitamin B1 50 mg, whereas the user's saved medication is Vitamin B6 50 mg.",
+  "perturbation": "pharmacy_sticker",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Apoteket Vitamin B1 50 mg",
+    "ingredient": "Vitamin B1",
+    "strength": "50 mg",
+    "expiry": "2027-06",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Apoteket Vitamin B6 50 mg",
+        "ingredient": "Vitamin B6",
+        "strength": "50 mg",
+        "schedule": [
+          "08:00"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "sv"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Apoteket Vitamin B1",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "thiamine",
+      "confidence": 0.95
+    },
+    "strength": {
+      "value": "50 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": "1 kapseli aamulla",
+      "confidence": 0.95
+    },
+    "expiry": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.0
+    },
+    "readability": 0.7,
+    "guidance": "Turn the box to show the other sides."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)07310400001042(17)270600(10)RT01(21)SN003"
+}

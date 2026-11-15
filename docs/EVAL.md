@@ -88,6 +88,25 @@ The same 150 images go to all three models: a fixed, stratified subset of the v1
 - Gemma runs under a 16k input-token/min quota on our key. Its latency was about 27 s both in a 12-worker pass and in the 3-worker pass that finished it, so concurrency isn't the cause. The earlier 12-case fleet suite measured 5.6 s for Gemma on a different day, so Gemma latency depends on the endpoint.
 - Synthetic images only.
 
+## Red-team v1: 32 attack families (Sun night, `eval/results/redteam_v1.json`, `eval/redteam/`)
+**Who built it:** a separate Gemini session.
+- `gemini-4-carbon` designed 32 clinical and packaging attack families: look-alike drug names (LASA), 2.5 vs 25 mg, mg vs mcg, combination products, pharmacy stickers over the print, prompt injection printed on packs, two boxes in frame, a thumb over a digit, odd expiry formats, hidden "may contain" traces, E-number sulphites, and more.
+- `gemini-4-hydrogen` wrote 2,048 specs, and `gemini-3.1-flash-image` rendered 566 verified images, which became 2,264 test images.
+- The **shipped reader** (`gemini-3.8-flash`, prompt `814770315c42`) read every image, and `server/src/safety.ts` judged it.
+
+| Silent unsafe reassurance (n = 2,264) | Before (`safety.ts` at `1d395b3`) | After (main) |
+|---|---|---|
+| All families | 199 = 8.79% (7.69–10.03%) | **13 = 0.57% (0.34–0.98%)** |
+| Wrong drug or wrong strength called a match | 0 | 0 |
+| Families with 0 unsafe | | 29 of 32 |
+| Safe controls still reassured (n = 2,120) | 1,338 = 63.1% | 1,340 = 63.2% (no extra over-caution) |
+
+**What remains:** 12 missed allergens or excipients (food or medicine), and 1 expired pack.
+
+**Caveat (in-sample):** the `safety.ts` guards were written by looking at these same 199 failures (a broader Finnish/Nordic brand map, the anticoagulant and sulfonamide classes, molluscs, marzipan/praline as tree nuts, E220–E228 sulphites, per-gram concentrations). So "after" is a **training-set number, not a held-out one**. Every failing case is pinned as a regression test (`server/test/safety-redteam-ws1.test.ts`, 199 fixtures).
+
+**No regression on the held-out v2 set:** re-scoring the 4,730 v2 verdicts with the merged rules still gives 3/4,730 = 0.06%.
+
 ## Gemini as the workforce
 These calls built the eval set:
 - 26 spec calls (`gemini-3.8-flash`);

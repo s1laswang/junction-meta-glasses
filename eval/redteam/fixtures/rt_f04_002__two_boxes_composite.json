@@ -1,0 +1,95 @@
+{
+  "id": "rt_f04_002__two_boxes_composite",
+  "spec_id": "rt_f04_002",
+  "family": "F04_multiword_salt_cation_collision",
+  "trap_category": "wrong_drug_lasa",
+  "trap_explanation": "Pack contains lithium carbonate 300 mg, a narrow-therapeutic-index psychiatric drug, instead of the user's saved calcium carbonate 300 mg.",
+  "perturbation": "two_boxes_composite",
+  "eval_now_iso": "2026-11-14T12:00:00+02:00",
+  "oracle_world": "warning",
+  "gt_summary": {
+    "product": "Lito 300 mg",
+    "ingredient": "lithium carbonate",
+    "strength": "300 mg",
+    "expiry": "2027-11",
+    "allergens": [],
+    "may_contain": []
+  },
+  "profile": {
+    "meds": [
+      {
+        "id": "m_target",
+        "name": "Kalsiumkarbonaatti 300 mg",
+        "ingredient": "calcium carbonate",
+        "strength": "300 mg",
+        "schedule": [
+          "evening"
+        ]
+      },
+      {
+        "id": "d_allop",
+        "name": "Zyloric",
+        "ingredient": "allopurinol",
+        "strength": "300 mg",
+        "schedule": [
+          "morning"
+        ]
+      }
+    ],
+    "allergies": [],
+    "avoid": [],
+    "doseLog": [],
+    "lang": "fi"
+  },
+  "read": {
+    "kind": "medication",
+    "product": {
+      "value": "Lito",
+      "confidence": 0.95
+    },
+    "ingredient": {
+      "value": "lithium carbonate",
+      "confidence": 0.9
+    },
+    "strength": {
+      "value": "300 mg",
+      "confidence": 0.95
+    },
+    "dosing": {
+      "value": null,
+      "confidence": 0.1
+    },
+    "expiry": {
+      "value": "2021-11",
+      "confidence": 0.6
+    },
+    "allergens": {
+      "value": null,
+      "confidence": 0.1
+    },
+    "barcode": {
+      "value": null,
+      "confidence": 0.1
+    },
+    "readability": 0.7,
+    "guidance": "Move the medicine bottle closer to read smaller details."
+  },
+  "baseline_verdict": {
+    "level": "match",
+    "reasons": [
+      "expiry not readable",
+      "matches m_target",
+      "taken today: 0/1"
+    ],
+    "matchedMedId": "m_target"
+  },
+  "patched_verdict": {
+    "level": "warning",
+    "reasons": [
+      "not on your medication list"
+    ],
+    "matchedMedId": null
+  },
+  "fixed_by_safety_ts": true,
+  "pack_gs1_raw": "(01)06410100345678(17)271100(10)RT01(21)SN002"
+}
