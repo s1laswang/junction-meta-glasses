@@ -101,6 +101,13 @@ object YuvJpeg {
     for (s in strides) for (sh in heights) {
       if (s * sh * 3 / 2 == size) return Pair(s, sh)
     }
+    for (s in strides) for (sh in heights) {
+      if (sh > h && s * sh + s * (h / 2) == size) return Pair(s, sh)
+    }
+    val guardHeights = listOf(align(h + 1, 16), align(h + 1, 32), align(h + 1, 64)).distinct()
+    for (s in strides) for (sh in guardHeights) {
+      if (sh > h && s * sh + s * (h / 2) == size) return Pair(s, sh)
+    }
     return null
   }
 
