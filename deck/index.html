@@ -216,7 +216,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
   </div>
   <div class="card hl">
     <h3>Beyond mirroring the phone</h3>
-    <p class="body">A phone app takes a snapshot and reads whatever text it finds. HoldUp watches a continuous first-person stream, talks you into a readable view, and then answers <b>one personal question</b>: is this the right one <i>for me</i>, now? It works on <b>Ray-Ban Meta</b> (camera via the Device Access Toolkit, audio over Bluetooth) and <b>Ray-Ban Display</b> (HUD Web App + Neural Band), and falls back to the phone camera when the glasses aren't available.</p>
+    <p class="body">A phone app takes a snapshot and reads whatever text it finds. HoldUp watches a continuous first-person stream, talks you into a readable view, and then answers <b>one personal question</b>: is this the right one <i>for me</i>, now? It is built for <b>Ray-Ban Meta</b> (camera via the Device Access Toolkit; the bridge APK compiles and its tests pass) and <b>Ray-Ban Display</b> (HUD Web App + Neural Band). Today the full loop runs on the phone camera, with the glasses as a Bluetooth headset; the on-glasses run is logged in docs/HARDWARE_LOG.md.</p>
   </div>
   <div class="foot"><span></span><span class="pg">3</span></div>
 </section>
@@ -244,7 +244,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
 <!-- 5 DEMO -->
 <section class="slide" aria-roledescription="slide" aria-labelledby="s5-h">
   <p class="eyebrow">Live demo · 3 minutes</p>
-  <h2 id="s5-h">Watch it on the glasses.</h2>
+  <h2 id="s5-h">Watch it work.</h2>
   <div class="grid2" style="grid-template-columns: 1.25fr 1fr; flex:1">
     <div class="card hl" style="justify-content:center; align-items:center; text-align:center; gap:14px">
       <svg width="120" height="120" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#ffd23f"/><path d="M7 12V8h4M21 8h4v4M25 20v4h-4M11 24H7v-4" stroke="#0b1018" stroke-width="2.6" fill="none" stroke-linecap="round"/><rect x="12.5" y="11" width="7" height="10" rx="1.2" fill="#0b1018"/></svg>
@@ -506,7 +506,7 @@ tbody tr:nth-child(odd) td { background: rgba(255,255,255,.025); }
     <div class="card">
       <h3>Why it's feasible</h3>
       <ul class="bul">
-        <li>Runs on shipping hardware. Blind users already use Ray-Ban Meta with Be My Eyes, in 21 markets.</li>
+        <li>Built for shipping hardware. Blind users already use Ray-Ban Meta with Be My Eyes, in 21 markets.</li>
         <li>Phone-only works today as a PWA: no install, any phone with a browser.</li>
       </ul>
     </div>

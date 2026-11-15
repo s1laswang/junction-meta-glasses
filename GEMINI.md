@@ -10,7 +10,7 @@
 ## 1. The problem and why it matters
 About 55,000 people in Finland are visually impaired, most of them over 65, and many manage several look-alike medicine boxes a day. "Is this my evening pill?" and "does this contain nuts?" are questions they can't answer alone. A wrong answer is a medication error or an allergic reaction. Existing options leave a safety gap: **Seeing AI** needs a free hand to aim a phone blind and reads raw text aloud, **Be My Eyes** exposes private prescriptions to a volunteer or gives general AI descriptions, and **built-in "Hey Meta"** describes a scene without abstaining on partial text or knowing *your* regimen. HoldUp closes that gap with hands-free voice coaching into calibrated per-field confidence (abstaining when dose confidence `< 0.8` or allergen confidence `< 0.95`), a deterministic `safety.ts` check against your on-device medication, allergy, and dose profile, and an EU FMD DataMatrix cross-check.
 
-**HoldUp** runs on Meta AI glasses:
+**HoldUp** is built for Meta AI glasses (today the full loop runs on the phone camera; on-glasses evidence in `docs/HARDWARE_LOG.md`):
 - you hold the item up;
 - it coaches you by voice until the label is readable;
 - it reads the label with a confidence for each field;

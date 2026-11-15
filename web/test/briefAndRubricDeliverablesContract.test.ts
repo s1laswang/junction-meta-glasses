@@ -311,7 +311,7 @@ describe("Challenge Brief (BRIEF.md), Judging Rubric, Research Sources (docs/RES
     );
     checkSlide(
       5,
-      ["Live demo", "Watch it on the glasses.", "1 · Coach.", "2 · Match.", "3 · Catch.", "4 · Break it."],
+      ["Live demo", "Watch it work.", "1 · Coach.", "2 · Match.", "3 · Catch.", "4 · Break it."],
       "Creativity and use case",
     );
 
